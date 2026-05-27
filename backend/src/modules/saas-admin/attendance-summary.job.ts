@@ -17,7 +17,7 @@ import { AttendanceType, EmployeeStatus } from '../../common/enums';
  * calendar days for every active tenant and upserts one row per (tenant, date)
  * into attendance_daily_summaries.
  *
- * Why pre-compute?
+ * Why pre-computed summaries?
  * ─────────────────
  *  With 1 000+ schools × 100+ employees each you easily reach 100 000 employee
  *  records. Computing presence rates on every dashboard page-load by scanning

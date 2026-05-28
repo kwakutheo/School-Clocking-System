@@ -30,17 +30,19 @@ import { TenantMiddleware } from './common/tenant/tenant.middleware';
     ConfigModule.forRoot({ isGlobal: true }),
 
     // ── Rate limiting ─────────────────────────────────────────────────────────
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
+    // TTL is in seconds for @nestjs/throttler — use 60s window with 60 requests
+    ThrottlerModule.forRoot({ ttl: 60, limit: 60 } as any),
 
     // ── Database ──────────────────────────────────────────────────────────────
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const nodeEnv = config.get<string>('NODE_ENV', 'development');
+        const dbPort = parseInt(config.get<string>('DB_PORT', '5432'), 10) || 5432;
         return {
           type: 'postgres',
           host: config.get<string>('DB_HOST', 'localhost'),
-          port: config.get<number>('DB_PORT', 5432),
+          port: dbPort,
           username: config.get<string>('DB_USER', 'postgres'),
           password: config.get<string>('DB_PASS', 'postgres'),
           database: config.get<string>('DB_NAME', 'tk_clocking'),

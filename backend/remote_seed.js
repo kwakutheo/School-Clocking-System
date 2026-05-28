@@ -1,14 +1,17 @@
 const { DataSource } = require('typeorm');
 const bcrypt = require('bcrypt');
+require('dotenv').config();
 
+// IMPORTANT: This script used to contain hard-coded production credentials.
+// It now reads connection information from environment variables.
 const ds = new DataSource({
   type: 'postgres',
-  host: 'dpg-d802fgu7r5hc73b85qcg-a.frankfurt-postgres.render.com',
-  port: 5432,
-  username: 'theo',
-  password: 'Tbxtx3at4yicnVKPZksGEdTCLSn92GC5',
-  database: 'tk_clocking',
-  ssl: { rejectUnauthorized: false },
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT) || 5432,
+  username: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASS || 'postgres',
+  database: process.env.DB_NAME || 'tk_clocking',
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
   entities: [__dirname + '/dist/**/*.entity.js'],
   synchronize: true, // This will create the tables if they don't exist
 });

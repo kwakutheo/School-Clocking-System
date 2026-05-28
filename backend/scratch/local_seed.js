@@ -15,6 +15,8 @@ const ds = new DataSource({
     __dirname + '/../dist/**/*.entity.js'
   ],
   synchronize: true,
+  // Allow enabling SSL for remote Postgres (Supabase, managed DBs)
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 });
 
 const DEFAULT_PERMISSIONS = {

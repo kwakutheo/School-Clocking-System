@@ -35,17 +35,22 @@ import { TenantMiddleware } from './common/tenant/tenant.middleware';
     // ── Database ──────────────────────────────────────────────────────────────
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        host: config.get<string>('DB_HOST', 'localhost'),
-        port: config.get<number>('DB_PORT', 5432),
-        username: config.get<string>('DB_USER', 'postgres'),
-        password: config.get<string>('DB_PASS', 'postgres'),
-        database: config.get<string>('DB_NAME', 'tk_clocking'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: config.get<string>('NODE_ENV') !== 'production',
-        logging: config.get<string>('NODE_ENV') === 'development',
-      }),
+      useFactory: (config: ConfigService) => {
+        const nodeEnv = config.get<string>('NODE_ENV', 'development');
+        return {
+          type: 'postgres',
+          host: config.get<string>('DB_HOST', 'localhost'),
+          port: config.get<number>('DB_PORT', 5432),
+          username: config.get<string>('DB_USER', 'postgres'),
+          password: config.get<string>('DB_PASS', 'postgres'),
+          database: config.get<string>('DB_NAME', 'tk_clocking'),
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: nodeEnv !== 'production',
+          logging: nodeEnv === 'development',
+          // Enable SSL when DB_SSL=true (useful for Supabase / managed Postgres)
+          ssl: config.get<string>('DB_SSL', 'false') === 'true' ? { rejectUnauthorized: false } : false,
+        };
+      },
     }),
 
     // ── Feature modules ───────────────────────────────────────────────────────

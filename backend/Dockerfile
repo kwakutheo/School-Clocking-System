@@ -18,9 +18,11 @@ ENV NODE_ENV=production
 
 COPY package*.json ./
 RUN npm ci --omit=dev --legacy-peer-deps && npm cache clean --force
-
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/start.sh ./start.sh
+
+RUN chmod +x ./start.sh || true
 
 EXPOSE 3000
 
-CMD ["node", "dist/main"]
+CMD ["sh", "/app/start.sh"]

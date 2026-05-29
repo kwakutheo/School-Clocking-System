@@ -613,7 +613,7 @@ class _DashboardTabState extends State<_DashboardTab> {
             effectiveLateStatus == LateStatus.none) {
           final minutesLate = now.difference(shiftStart).inMinutes;
           effectiveLateStatus =
-              minutesLate > 180 ? LateStatus.persistentLate : LateStatus.late;
+              minutesLate > 120 ? LateStatus.persistentLate : LateStatus.late;
         }
       }
     }
@@ -1050,7 +1050,21 @@ class _LiveStatusBanner extends StatelessWidget {
       );
     }
 
-    // ── Late banners — only shown during active shift hours ──────────────────
+    // ── Absent today: shift is over and employee never clocked in ────────────
+    // This MUST be checked before the lateStatus blocks because an absent
+    // employee will still have lateStatus == persistentLate when the shift ends,
+    // which would otherwise block this banner from ever showing.
+    if (data.isAbsentToday) {
+      return _buildBanner(
+        context,
+        color: Colors.grey,
+        icon: Icons.history_toggle_off_rounded,
+        title: 'Shift Ended',
+        subtitle: 'You did not clock in today.',
+      );
+    }
+
+    // ── Late banners — only shown while the shift is still active ────────────
     if (lateStatus == LateStatus.persistentLate) {
       // > 3 hours late: escalated, deep-orange urgent alert
       return Container(
@@ -1194,17 +1208,6 @@ class _LiveStatusBanner extends StatelessWidget {
         icon: Icons.weekend_rounded,
         title: 'Weekend',
         subtitle: 'Have a great weekend!',
-      );
-    }
-
-    // Shift has ended and employee was absent — show a neutral info banner
-    if (data.isAbsentToday) {
-      return _buildBanner(
-        context,
-        color: Colors.grey,
-        icon: Icons.history_toggle_off_rounded,
-        title: 'Shift Ended',
-        subtitle: 'You did not clock in today.',
       );
     }
 

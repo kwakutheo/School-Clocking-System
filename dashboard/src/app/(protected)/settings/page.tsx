@@ -25,7 +25,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (user?.tenant) {
       setBrandingName(user.tenant.name ?? '');
-      setBrandingInitials(getInitials(user.tenant.name) ?? '');
+      setBrandingInitials((user.tenant.initials || getInitials(user.tenant.name)) ?? '');
       setBrandingColor(user.tenant.primaryColor ?? '#3b82f6');
       setBrandingLogo(user.tenant.logoUrl ?? '');
 
@@ -42,7 +42,7 @@ export default function SettingsPage() {
   const handleCancel = () => {
     if (user?.tenant) {
       setBrandingName(user.tenant.name ?? '');
-      setBrandingInitials(getInitials(user.tenant.name) ?? '');
+      setBrandingInitials((user.tenant.initials || getInitials(user.tenant.name)) ?? '');
       setBrandingColor(user.tenant.primaryColor ?? '#3b82f6');
       setBrandingLogo(user.tenant.logoUrl ?? '');
       if (user.tenant.logoUrl && (user.tenant.logoUrl.startsWith('http') || user.tenant.logoUrl.startsWith('/'))) {
@@ -124,8 +124,6 @@ export default function SettingsPage() {
 
     try {
       const res = await authApi.updateMyBranding({
-        name: brandingName.trim(),
-        initials: brandingInitials.trim().toUpperCase(),
         primaryColor: brandingColor.trim(),
         logoUrl: brandingLogo.trim(),
       });
@@ -149,8 +147,6 @@ export default function SettingsPage() {
 
   const isBrandingUnchanged =
     !user?.tenant ? true : (
-      brandingName.trim() === user.tenant.name.trim() &&
-      brandingInitials.trim().toUpperCase() === (getInitials(user.tenant.name) ?? '').trim().toUpperCase() &&
       brandingColor.trim().toLowerCase() === user.tenant.primaryColor.trim().toLowerCase() &&
       brandingLogo.trim() === (user.tenant.logoUrl ?? '').trim()
     );
@@ -229,38 +225,54 @@ export default function SettingsPage() {
           <div className="form-grid">
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
               <label htmlFor="brandName">School Name</label>
-              <input
-                id="brandName"
-                className="form-input"
-                value={brandingName}
-                onChange={(e) => setBrandingName(e.target.value)}
-                placeholder="e.g. Otwetiri M/A Basic School"
-                required
-                disabled={!isEditing}
-                style={{
-                  opacity: !isEditing ? 0.75 : 1,
-                  background: !isEditing ? 'var(--bg-card-alt, rgba(255,255,255,0.02))' : 'var(--bg-input)',
-                  cursor: !isEditing ? 'default' : 'text'
-                }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="brandName"
+                  className="form-input"
+                  value={brandingName}
+                  readOnly
+                  placeholder="e.g. Otwetiri M/A Basic School"
+                  style={{
+                    opacity: 0.75,
+                    background: 'var(--bg-card-alt, rgba(255,255,255,0.02))',
+                    cursor: 'default'
+                  }}
+                />
+                <span style={{
+                  position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                  fontSize: '10px', color: 'var(--text-secondary)', background: 'var(--bg-card)', padding: '2px 6px',
+                  borderRadius: '4px', border: '1px solid var(--border)', whiteSpace: 'nowrap'
+                }}>Central Control Only</span>
+              </div>
+              <small style={{ color: 'var(--text-secondary)', display: 'block', marginTop: '4px' }}>School name can only be changed from the Central Management Dashboard.</small>
             </div>
 
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
               <label htmlFor="brandInitials">School Initials (Used for Employee Codes)</label>
-              <input
-                id="brandInitials"
-                className="form-input"
-                value={brandingInitials}
-                onChange={(e) => setBrandingInitials(e.target.value.toUpperCase())}
-                placeholder="e.g. OB for Obom"
-                maxLength={4}
-                disabled={!isEditing}
-                style={{
-                  opacity: !isEditing ? 0.75 : 1,
-                  background: !isEditing ? 'var(--bg-card-alt, rgba(255,255,255,0.02))' : 'var(--bg-input)',
-                  cursor: !isEditing ? 'default' : 'text'
-                }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="brandInitials"
+                  className="form-input"
+                  value={brandingInitials}
+                  readOnly
+                  placeholder="e.g. OB"
+                  maxLength={4}
+                  style={{
+                    opacity: 0.75,
+                    background: 'var(--bg-card-alt, rgba(255,255,255,0.02))',
+                    cursor: 'default',
+                    letterSpacing: '4px',
+                    fontWeight: 700,
+                    fontSize: '16px'
+                  }}
+                />
+                <span style={{
+                  position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                  fontSize: '10px', color: 'var(--text-secondary)', background: 'var(--bg-card)', padding: '2px 6px',
+                  borderRadius: '4px', border: '1px solid var(--border)', whiteSpace: 'nowrap'
+                }}>Central Control Only</span>
+              </div>
+              <small style={{ color: 'var(--text-secondary)', display: 'block', marginTop: '4px' }}>School initials can only be changed from the Central Management Dashboard.</small>
             </div>
 
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>

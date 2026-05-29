@@ -538,6 +538,24 @@ export class EmployeesService implements OnModuleInit {
         );
 
         emp.statusChangeDate = today;
+
+        // ── Real-time SaaS Summary Sync ─────────────────────────────────────
+        // If an employee is deactivated today, we must immediately decrease the 
+        // expected count for today (and future days) so SaaS presence rates don't 
+        // look bad before the nightly cron job runs.
+        const isActivating = data.status !== EmployeeStatus.INACTIVE && emp.status === EmployeeStatus.INACTIVE;
+        const isDeactivating = data.status === EmployeeStatus.INACTIVE && emp.status !== EmployeeStatus.INACTIVE;
+        if ((isActivating || isDeactivating) && emp.tenantId) {
+          const diff = isActivating ? 1 : -1;
+          const todayStr = today.toISOString().split('T')[0];
+          // Use expected_count > 0 as a quick heuristic to avoid adding counts on weekends/holidays
+          await this.dataSource.query(
+            `UPDATE attendance_daily_summaries 
+             SET expected_count = GREATEST(0, expected_count + $1) 
+             WHERE tenant_id = $2 AND date >= $3 AND expected_count > 0`,
+            [diff, emp.tenantId, todayStr]
+          ).catch(e => this.logger.error('Failed to sync daily summary expected count', e));
+        }
       }
       emp.status = data.status;
     }

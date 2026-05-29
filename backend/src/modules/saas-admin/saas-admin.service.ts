@@ -7,7 +7,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Connection, ILike } from 'typeorm';
+import { Repository, Connection, ILike, Not } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Tenant } from '../tenants/tenant.entity';
 import { User } from '../users/user.entity';
@@ -221,11 +221,14 @@ export class SaasAdminService implements OnModuleInit {
     }
     if (tenants.length === 0) return { results: [], total: 0 };
 
-    // 1. Fetch total employees count grouped by tenant in a single indexed query
+    // 1. Fetch non-inactive employees count grouped by tenant.
+    //    INACTIVE employees have resigned/been fired and must not appear in
+    //    SaaS headcount metrics.  SUSPENDED employees are still on payroll.
     const employeeStats = await this.employeeRepo
       .createQueryBuilder('e')
       .select('e.tenantId', 'tenantId')
       .addSelect('COUNT(*)', 'count')
+      .where('e.status != :inactive', { inactive: EmployeeStatus.INACTIVE })
       .groupBy('e.tenantId')
       .getRawMany();
 
@@ -458,6 +461,7 @@ export class SaasAdminService implements OnModuleInit {
         id: tenant.id,
         name: tenant.name,
         slug: tenant.slug,
+        initials: tenant.initials,
         isActive: tenant.isActive,
         primaryColor: tenant.primaryColor,
         logoUrl: tenant.logoUrl,
@@ -528,6 +532,7 @@ export class SaasAdminService implements OnModuleInit {
     name: string;
     slug: string;
     primaryColor?: string;
+    initials?: string;
     adminUsername: string;
     adminPasswordHash: string; // Plain password passed from controller which we will hash
   }): Promise<Tenant> {
@@ -564,6 +569,7 @@ export class SaasAdminService implements OnModuleInit {
         name: data.name,
         slug: cleanSlug,
         primaryColor: data.primaryColor || '#3b82f6',
+        initials: data.initials ? data.initials.toUpperCase() : null,
         isActive: true,
       });
       const savedTenant = await queryRunner.manager.save(Tenant, tenant);
@@ -607,7 +613,11 @@ export class SaasAdminService implements OnModuleInit {
     const activeTenants = await this.tenantRepo.count({
       where: { isActive: true },
     });
-    const totalEmployees = await this.employeeRepo.count();
+    // Exclude INACTIVE (resigned/fired) employees from the global headcount.
+    // SUSPENDED employees are still considered active workforce members.
+    const totalEmployees = await this.employeeRepo.count({
+      where: { status: Not(EmployeeStatus.INACTIVE) },
+    });
 
     // Call findAllTenants to get precise tenant-specific aggregates
     const { results: schools } = await this.findAllTenants(timeframe);
@@ -798,6 +808,7 @@ export class SaasAdminService implements OnModuleInit {
       name?: string;
       slug?: string;
       primaryColor?: string;
+      initials?: string;
       logoUrl?: string;
       customDomain?: string;
     },
@@ -841,6 +852,7 @@ export class SaasAdminService implements OnModuleInit {
 
     if (data.name) tenant.name = data.name;
     if (data.primaryColor) tenant.primaryColor = data.primaryColor;
+    if (data.initials !== undefined) tenant.initials = data.initials ? data.initials.toUpperCase() : null;
     if (data.logoUrl !== undefined) tenant.logoUrl = data.logoUrl || null;
 
     return this.tenantRepo.save(tenant);
@@ -1161,8 +1173,10 @@ export class SaasAdminService implements OnModuleInit {
           }
         }
 
+        // If the employee never clocked in, they cannot be "punctual".
+        // Default to 0 instead of 100 to avoid inflating absent employees' scores.
         const punctualityRate =
-          totalExpectedEvents > 0
+          daysPresent > 0 && totalExpectedEvents > 0
             ? Math.min(100, (onTimeEvents / totalExpectedEvents) * 100)
             : 0;
 
@@ -1178,7 +1192,16 @@ export class SaasAdminService implements OnModuleInit {
               const cin = inMap.get(dateKey)!;
               const cout = outMap.get(dateKey);
               if (cout) {
-                const actualMins = (cout.getTime() - cin.ts.getTime()) / 60000;
+                // If the employee clocked in BEFORE their shift start, do not credit
+                // the pre-shift minutes — start counting from the shift start time.
+                // If they clocked in LATE, count from the actual (late) clock-in time.
+                const shiftStart = new Date(cin.ts);
+                shiftStart.setHours(sh, sm, 0, 0);
+                const effectiveStart =
+                  cin.ts < shiftStart ? shiftStart : cin.ts;
+
+                const actualMins =
+                  (cout.getTime() - effectiveStart.getTime()) / 60000;
                 totalActualMinutes += Math.max(0, actualMins);
               }
             }
@@ -1195,7 +1218,10 @@ export class SaasAdminService implements OnModuleInit {
         for (const dateKey of presentDates) {
           if (!outMap.has(dateKey)) forgotOutCount++;
         }
-        const forgotOutRate = Math.max(0, 100 - forgotOutCount * 10);
+        // If never present, sign-out rate is 0 — cannot have a sign-out record
+        // for a shift that was never attended.
+        const forgotOutRate =
+          daysPresent > 0 ? Math.max(0, 100 - forgotOutCount * 10) : 0;
 
         const score = Number(
           (

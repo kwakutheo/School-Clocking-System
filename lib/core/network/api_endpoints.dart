@@ -10,6 +10,9 @@ abstract final class ApiEndpoints {
   static const String refreshToken = '/auth/refresh';
   static const String me = '/auth/me';
 
+  // ── Users ─────────────────────────────────────────────────────────────
+  static const String checkUsername = '/users/check-username';
+
   // ── Attendance ────────────────────────────────────────────────────────────
   static const String clockIn = '/attendance/clock-in';
   static const String clockOut = '/attendance/clock-out';

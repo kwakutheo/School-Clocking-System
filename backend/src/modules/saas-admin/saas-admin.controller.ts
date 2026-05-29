@@ -76,6 +76,7 @@ export class SaasAdminController {
       name: string;
       slug: string;
       primaryColor?: string;
+      initials?: string;
       adminUsername: string;
       adminPasswordHash: string;
     },
@@ -97,6 +98,7 @@ export class SaasAdminController {
       name?: string;
       slug?: string;
       primaryColor?: string;
+      initials?: string;
       logoUrl?: string;
       customDomain?: string;
     },

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -35,6 +36,9 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isSaving = false;
   bool _isChangingPassword = false;
   String? _lastSyncedUserId;
+  String _usernameStatus = 'idle'; // 'idle', 'checking', 'available', 'taken'
+  List<String> _usernameSuggestions = [];
+  Timer? _usernameDebounce;
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _fullNameController;
@@ -48,6 +52,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final user = _currentUser;
     _fullNameController = TextEditingController(text: user?.fullName ?? '');
     _usernameController = TextEditingController(text: user?.username ?? '');
+    _usernameController.addListener(_onUsernameChanged);
     _passwordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
 
@@ -64,8 +69,52 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  void _onUsernameChanged() {
+    if (_usernameDebounce?.isActive ?? false) _usernameDebounce!.cancel();
+    
+    final username = _usernameController.text.trim();
+    if (username.isEmpty || username == _currentUser?.username) {
+      setState(() {
+        _usernameStatus = 'idle';
+        _usernameSuggestions = [];
+      });
+      return;
+    }
+
+    setState(() => _usernameStatus = 'checking');
+
+    _usernameDebounce = Timer(const Duration(milliseconds: 400), () async {
+      try {
+        final api = sl<ApiClient>();
+        final response = await api.get<Map<String, dynamic>>(
+          ApiEndpoints.checkUsername,
+          queryParameters: {
+            'username': username,
+            'fullName': _currentUser?.fullName,
+          },
+        );
+        if (mounted) {
+          final data = response.data!;
+          setState(() {
+            if (data['available'] == true) {
+              _usernameStatus = 'available';
+              _usernameSuggestions = [];
+            } else {
+              _usernameStatus = 'taken';
+              _usernameSuggestions = List<String>.from(data['suggestions'] ?? []);
+            }
+          });
+        }
+      } catch (e) {
+        if (mounted) setState(() => _usernameStatus = 'idle');
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _usernameDebounce?.cancel();
+    _usernameController.removeListener(_onUsernameChanged);
     _fullNameController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
@@ -80,6 +129,15 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_usernameStatus == 'taken') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please choose an available username'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     setState(() => _isSaving = true);
     try {
@@ -350,12 +408,52 @@ class _ProfilePageState extends State<ProfilePage> {
                                           onPressed: () => setState(() {
                                             _isEditing = false;
                                             _isChangingPassword = false;
+                                            _usernameController.text = _currentUser?.username ?? '';
+                                            _usernameStatus = 'idle';
                                           }),
                                         ),
                                         validator: (v) => v == null || v.isEmpty
                                             ? 'Username is required'
                                             : null,
                                       ),
+                                      if (_usernameStatus == 'checking')
+                                        const Padding(
+                                          padding: EdgeInsets.only(top: 4, left: 16),
+                                          child: Text('Checking availability...', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                        ),
+                                      if (_usernameStatus == 'available')
+                                        const Padding(
+                                          padding: EdgeInsets.only(top: 4, left: 16),
+                                          child: Text('✓ Username is available', style: TextStyle(color: Colors.green, fontSize: 12)),
+                                        ),
+                                      if (_usernameStatus == 'taken')
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4, left: 16),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Text('✗ Username already taken', style: TextStyle(color: Colors.red, fontSize: 12)),
+                                              if (_usernameSuggestions.isNotEmpty) ...[
+                                                const SizedBox(height: 8),
+                                                const Text('Suggestions:', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                                const SizedBox(height: 4),
+                                                Wrap(
+                                                  spacing: 8,
+                                                  children: _usernameSuggestions.map((sug) {
+                                                    return ActionChip(
+                                                      label: Text(sug),
+                                                      onPressed: () {
+                                                        _usernameController.text = sug;
+                                                        // Move cursor to end
+                                                        _usernameController.selection = TextSelection.fromPosition(TextPosition(offset: sug.length));
+                                                      },
+                                                    );
+                                                  }).toList(),
+                                                ),
+                                              ]
+                                            ],
+                                          ),
+                                        ),
                                       const SizedBox(height: 12),
                                       if (!_isChangingPassword)
                                         Center(

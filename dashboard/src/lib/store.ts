@@ -14,6 +14,7 @@ export interface AuthUser {
     id: string;
     name: string;
     slug: string;
+    initials?: string | null;
     primaryColor: string;
     logoUrl: string | null;
     customDomain: string | null;
@@ -24,6 +25,7 @@ export interface ImpersonatedTenant {
   id: string;
   name: string;
   slug: string;
+  initials?: string | null;
   primaryColor: string;
   logoUrl: string | null;
   customDomain: string | null;

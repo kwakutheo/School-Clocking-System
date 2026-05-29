@@ -2,7 +2,7 @@
 import useSWR from 'swr';
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { format } from 'date-fns';
-import { employeesApi, branchesApi, departmentsApi, shiftsApi } from '@/lib/api';
+import { employeesApi, branchesApi, departmentsApi, shiftsApi, usersApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import { can } from '@/lib/permissions';
 
@@ -48,6 +48,8 @@ export default function EmployeesPage() {
     departmentId: '', branchId: '', shiftId: '', position: '',
     phone: '', hireDate: '', role: 'employee', status: 'active',
   });
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
 
   // ── Debounce search ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -56,6 +58,33 @@ export default function EmployeesPage() {
   }, [searchInput]);
 
   useEffect(() => { setPage(1); }, [activeStatus, activeBranch, activeRoleView]);
+
+  useEffect(() => {
+    if (editingId) return; // Only check on create
+    if (!form.username) {
+      setUsernameStatus('idle');
+      setUsernameSuggestions([]);
+      return;
+    }
+    
+    setUsernameStatus('checking');
+    const t = setTimeout(async () => {
+      try {
+        const fullName = `${form.firstName} ${form.lastName}`.trim();
+        const res = await usersApi.checkUsername(form.username, fullName);
+        if (res.data.available) {
+          setUsernameStatus('available');
+          setUsernameSuggestions([]);
+        } else {
+          setUsernameStatus('taken');
+          setUsernameSuggestions(res.data.suggestions || []);
+        }
+      } catch (e) {
+        setUsernameStatus('idle');
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [form.username, form.firstName, form.lastName, editingId]);
 
   // ── Data fetching ──────────────────────────────────────────────────────────
   const listKey = ['employees-paginated', page, LIMIT, debouncedSearch, activeStatus, activeBranch];
@@ -105,6 +134,7 @@ export default function EmployeesPage() {
       branchId: '', shiftId: '', position: '', phone: '',
       hireDate: format(new Date(), 'yyyy-MM-dd'), role: 'employee', status: 'active' });
     setEditingId(null); setError('');
+    setUsernameStatus('idle'); setUsernameSuggestions([]);
   }, []);
 
   const openCreate = useCallback(() => { resetForm(); setShowModal(true); }, [resetForm]);
@@ -138,6 +168,11 @@ export default function EmployeesPage() {
           setAuth((res.data as any).user, token);
         }
       } else {
+        if (usernameStatus === 'taken') {
+          setError('Please choose an available username.');
+          setIsSubmitting(false);
+          return;
+        }
         await employeesApi.register({
           fullName, username: form.username, password: form.password,
           departmentId: form.departmentId || undefined, branchId: form.branchId || undefined,
@@ -444,7 +479,7 @@ export default function EmployeesPage() {
                 </div>
                 {!editingId && (
                   <>
-                    <div className="form-group">
+                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                       <label htmlFor="username">Username <span style={{ color: 'var(--danger)' }}>*</span></label>
                       <input
                         id="username"
@@ -452,9 +487,37 @@ export default function EmployeesPage() {
                         value={form.username}
                         onChange={(e) => setForm({ ...form, username: e.target.value })}
                         required
+                        style={{ 
+                          borderColor: usernameStatus === 'taken' ? 'var(--danger)' : usernameStatus === 'available' ? 'var(--success)' : undefined
+                        }}
                       />
+                      {usernameStatus === 'checking' && <small style={{ color: 'var(--text-secondary)' }}>Checking availability...</small>}
+                      {usernameStatus === 'available' && <small style={{ color: 'var(--success)' }}>✓ Username is available</small>}
+                      {usernameStatus === 'taken' && (
+                        <div style={{ marginTop: 4 }}>
+                          <small style={{ color: 'var(--danger)' }}>✗ Username already taken</small>
+                          {usernameSuggestions.length > 0 && (
+                            <div style={{ marginTop: 8 }}>
+                              <small style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Suggestions:</small>
+                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                {usernameSuggestions.map(sug => (
+                                  <button 
+                                    key={sug} 
+                                    type="button" 
+                                    onClick={() => setForm({ ...form, username: sug })}
+                                    className="badge badge-blue" 
+                                    style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', fontSize: 13 }}
+                                  >
+                                    {sug}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <div className="form-group">
+                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                       <label htmlFor="password">Password <span style={{ color: 'var(--danger)' }}>*</span></label>
                       <input
                         id="password"

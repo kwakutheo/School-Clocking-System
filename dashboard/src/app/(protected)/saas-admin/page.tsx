@@ -1329,7 +1329,7 @@ export default function SaasOverviewPage() {
                   marginBottom: "8px",
                 }}
               >
-                Tracked Employees
+                Active Employees
               </div>
               <div
                 style={{

@@ -9,6 +9,7 @@ interface SchoolTenant {
   id: string;
   name: string;
   slug: string;
+  initials?: string | null;
   isActive: boolean;
   primaryColor: string;
   logoUrl: string | null;
@@ -35,6 +36,7 @@ export default function SchoolsRegistryPage() {
       id: school.id,
       name: school.name,
       slug: school.slug,
+      initials: school.initials || null,
       primaryColor: school.primaryColor,
       logoUrl: school.logoUrl,
       customDomain: school.customDomain
@@ -52,6 +54,7 @@ export default function SchoolsRegistryPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
+  const [initials, setInitials] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#3b82f6');
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
@@ -62,6 +65,7 @@ export default function SchoolsRegistryPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedSchool, setSelectedSchool] = useState<SchoolTenant | null>(null);
   const [editName, setEditName] = useState('');
+  const [editInitials, setEditInitials] = useState('');
   const [editSlug, setEditSlug] = useState('');
   const [editPrimaryColor, setEditPrimaryColor] = useState('#3b82f6');
   const [editLogoUrl, setEditLogoUrl] = useState('');
@@ -142,7 +146,7 @@ export default function SchoolsRegistryPage() {
   // Submit dynamic onboarding form
   const handleOnboard = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !slug || !adminUsername || !adminPassword) {
+    if (!name || !slug || !initials.trim() || !adminUsername || !adminPassword) {
       setModalError('All fields are required.');
       return;
     }
@@ -153,6 +157,7 @@ export default function SchoolsRegistryPage() {
     saasAdminApi.onboardTenant({
       name: name.trim(),
       slug: slug.trim().toLowerCase(),
+      initials: initials.trim().toUpperCase(),
       primaryColor,
       adminUsername: adminUsername.trim(),
       adminPasswordHash: adminPassword,
@@ -163,6 +168,7 @@ export default function SchoolsRegistryPage() {
         // Clear fields
         setName('');
         setSlug('');
+        setInitials('');
         setPrimaryColor('#3b82f6');
         setAdminUsername('');
         setAdminPassword('');
@@ -179,6 +185,7 @@ export default function SchoolsRegistryPage() {
   const openEditModal = (school: SchoolTenant) => {
     setSelectedSchool(school);
     setEditName(school.name);
+    setEditInitials((school as any).initials ?? '');
     setEditSlug(school.slug);
     setEditPrimaryColor(school.primaryColor);
     setEditLogoUrl(school.logoUrl || '');
@@ -193,8 +200,8 @@ export default function SchoolsRegistryPage() {
     e?.preventDefault();
     if (!selectedSchool) return;
 
-    if (!editName.trim() || !editSlug.trim()) {
-      setEditModalError('Name and Subdomain Slug are required.');
+    if (!editName.trim() || !editSlug.trim() || !editInitials.trim()) {
+      setEditModalError('Name, Initials and Subdomain Slug are required.');
       return;
     }
 
@@ -204,6 +211,7 @@ export default function SchoolsRegistryPage() {
     saasAdminApi.updateBranding(selectedSchool.id, {
       name: editName.trim(),
       slug: editSlug.trim().toLowerCase(),
+      initials: editInitials.trim().toUpperCase(),
       primaryColor: selectedSchool.primaryColor,
       logoUrl: selectedSchool.logoUrl || undefined,
       customDomain: editCustomDomain.trim() || '',
@@ -413,7 +421,7 @@ export default function SchoolsRegistryPage() {
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
                 <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>School Name</th>
-                <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Routing & Domains</th>
+                <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>School Portal Links</th>
                 <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Active Seats</th>
                 <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Workforce Status</th>
                 <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Portal Status</th>
@@ -745,6 +753,21 @@ export default function SchoolsRegistryPage() {
               </div>
 
               <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>School Initials <span style={{ color: 'var(--danger)' }}>*</span></label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. PC for Prempeh College"
+                  value={initials}
+                  onChange={(e) => setInitials(e.target.value.toUpperCase().slice(0, 4))}
+                  maxLength={4}
+                  required
+                  style={{ letterSpacing: '4px', fontWeight: 700, fontSize: '15px' }}
+                />
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>Used as prefix for auto-generated employee codes (e.g. PC-0042).</span>
+              </div>
+
+              <div>
                 <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Subdomain Slug</label>
                 <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
                   <input
@@ -873,6 +896,27 @@ export default function SchoolsRegistryPage() {
               </div>
 
               <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>School Initials <span style={{ color: 'var(--danger)' }}>*</span></label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={editInitials}
+                  onChange={(e) => setEditInitials(e.target.value.toUpperCase().slice(0, 4))}
+                  placeholder="e.g. AA"
+                  maxLength={4}
+                  required
+                  disabled={!isModalEditing}
+                  style={{
+                    letterSpacing: '4px', fontWeight: 700, fontSize: '15px',
+                    opacity: !isModalEditing ? 0.75 : 1,
+                    background: !isModalEditing ? 'var(--bg-card-alt, rgba(255,255,255,0.02))' : 'var(--bg-input)',
+                    cursor: !isModalEditing ? 'default' : 'text'
+                  }}
+                />
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>Used as prefix for auto-generated employee codes (e.g. AA-0001).</span>
+              </div>
+
+              <div>
                 <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Subdomain Slug</label>
                 <input
                   type="text"
@@ -942,6 +986,7 @@ export default function SchoolsRegistryPage() {
                       onClick={() => {
                         if (selectedSchool) {
                           setEditName(selectedSchool.name);
+                          setEditInitials((selectedSchool as any).initials ?? '');
                           setEditSlug(selectedSchool.slug);
                           setEditCustomDomain(selectedSchool.customDomain || '');
                         }

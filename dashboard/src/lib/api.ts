@@ -266,7 +266,14 @@ export const branchesApi = {
 
 // ── Audit Logs ─────────────────────────────────────────────────────────────
 export const auditApi = {
-  list: () => api.get("/audit"),
+  list: (params?: Record<string, any>) => api.get('/audit', { params }),
+};
+
+export const usersApi = {
+  checkUsername: (username: string, fullName?: string) =>
+    api.get<{ available: boolean; suggestions?: string[] }>('/users/check-username', {
+      params: { username, fullName },
+    }),
 };
 
 // ── Settings ───────────────────────────────────────────────────────────────
@@ -285,6 +292,7 @@ export const saasAdminApi = {
   onboardTenant: (data: {
     name: string;
     slug: string;
+    initials: string;
     primaryColor?: string;
     adminUsername: string;
     adminPasswordHash: string;
@@ -296,6 +304,7 @@ export const saasAdminApi = {
     data: {
       name?: string;
       slug?: string;
+      initials?: string;
       primaryColor?: string;
       logoUrl?: string;
       customDomain?: string;

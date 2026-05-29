@@ -74,4 +74,58 @@ export class UsersService {
   async updateFcmToken(id: string, token: string | null): Promise<void> {
     await this.repo.update(id, { fcmToken: token });
   }
+
+  async checkUsernameAvailability(
+    username: string,
+    fullName?: string,
+  ): Promise<{ available: boolean; suggestions?: string[] }> {
+    const isTaken = await this.repo.findOne({ where: { username } });
+    if (!isTaken) {
+      return { available: true };
+    }
+
+    const suggestions: string[] = [];
+    if (fullName) {
+      const parts = fullName.trim().toLowerCase().split(/\s+/);
+      if (parts.length >= 2) {
+        const first = parts[0];
+        const last = parts[parts.length - 1];
+
+        const rawCandidates = [
+          `${first}.${last}`,
+          `${first}${last}`,
+          `${first[0]}${last}`,
+          `${first}${last}${Math.floor(10 + Math.random() * 90)}`,
+        ];
+
+        const candidates = [...new Set(rawCandidates)];
+
+        for (const candidate of candidates) {
+          if (candidate === username.toLowerCase()) continue;
+          if (suggestions.includes(candidate)) continue;
+          
+          const candidateTaken = await this.repo.findOne({
+            where: { username: candidate },
+          });
+          if (!candidateTaken && suggestions.length < 3) {
+            suggestions.push(candidate);
+          }
+          if (suggestions.length === 3) break;
+        }
+      }
+    }
+
+    // Fallback if no full name or could not generate enough from name
+    while (suggestions.length < 3) {
+      const randomCandidate = `${username}${Math.floor(10 + Math.random() * 90)}`;
+      const candidateTaken = await this.repo.findOne({
+        where: { username: randomCandidate },
+      });
+      if (!candidateTaken && !suggestions.includes(randomCandidate)) {
+        suggestions.push(randomCandidate);
+      }
+    }
+
+    return { available: false, suggestions };
+  }
 }

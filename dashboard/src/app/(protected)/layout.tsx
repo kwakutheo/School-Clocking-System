@@ -49,16 +49,14 @@ const NAV: NavItem[] = [
   { href: '/branches',    icon: MapPin,           label: 'Branches',          permission: 'branches.manage'    },
   { href: '/mobile-app',  icon: Smartphone,       label: 'Mobile App',        permission: 'employees.view'     },
   { href: '/settings',    icon: Settings,         label: 'School Settings',   permission: 'permissions.manage' },
-  { href: '/profile',     icon: UserCircle,       label: 'My Profile'   },
 ];
 
 const DEVELOPER_NAV: NavItem[] = [
-  { href: '/saas-admin',         icon: LayoutDashboard, label: 'SaaS Overview' },
+  { href: '/saas-admin',         icon: LayoutDashboard, label: 'Overview' },
   { href: '/saas-admin/schools', icon: Building2,        label: 'Schools Registry' },
-  { href: '/saas-admin/calendar', icon: Calendar,         label: 'Global Calendar' },
-  { href: '/saas-admin/holidays', icon: Calendar,         label: 'Global Holidays' },
+  { href: '/saas-admin/calendar', icon: Calendar,         label: 'Academic Calendar' },
+  { href: '/saas-admin/holidays', icon: Calendar,         label: 'Holidays' },
   { href: '/saas-admin/bulletins', icon: Megaphone,      label: 'Announcements' },
-  { href: '/profile',            icon: UserCircle,       label: 'My Profile' },
 ];
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
@@ -69,6 +67,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [bannerPosition, setBannerPosition] = useState<'top' | 'bottom'>('top');
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const [permissionsTick, setPermissionsTick] = useState(0);
 
@@ -77,6 +76,18 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   useEffect(() => { 
     hydrate(); 
     fetchAndCachePermissions();
+
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      import('@/lib/api').then(({ authApi }) => {
+        authApi.me().then(res => {
+          const { user: currentUser } = useAuthStore.getState();
+          if (currentUser) {
+            useAuthStore.getState().setAuth(res.data, token);
+          }
+        }).catch(() => {});
+      });
+    }
   }, [hydrate]);
 
   useEffect(() => {
@@ -185,7 +196,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                 router.push('/saas-admin');
               }}
             >
-              Return to Global Console
+              Return to Central Management Dashboard
             </button>
           </div>
         </div>
@@ -258,12 +269,12 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                 priority
               />
             )}
-            <div>
-              <div className="sidebar-logo-text" style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: collapsed ? '0px' : '130px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, paddingRight: '8px' }}>
+              <div className="sidebar-logo-text">
                 {activeTenant?.name ?? 'TK Clocking'}
               </div>
               <div className="sidebar-logo-sub">
-                {activeTenant ? `${activeTenant.slug.toUpperCase()} Portal` : 'Global Console'}
+                {activeTenant ? `${activeTenant.slug.toUpperCase()} Portal` : 'Central Management Dashboard'}
               </div>
             </div>
           </div>
@@ -300,7 +311,12 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         </div>
 
         <div className="sidebar-footer">
-          <div className="user-card" title={collapsed ? user.fullName : undefined}>
+          <div 
+            className="user-card" 
+            title="Go to My Profile"
+            onClick={() => { setMobileOpen(false); router.push('/profile'); }}
+            style={{ cursor: 'pointer' }}
+          >
             <div className="user-avatar" style={{ 
               background: 'linear-gradient(135deg, var(--primary), #a855f7)',
               boxShadow: '0 4px 12px rgba(59,130,246,0.3)'
@@ -324,11 +340,13 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             )}
             {(!collapsed || mobileOpen) && (
               <button
-                onClick={logout}
+                onClick={(e) => { e.stopPropagation(); setShowLogoutConfirm(true); }}
                 aria-label="Sign out"
                 title="Sign out"
                 className="btn-ghost"
-                style={{ padding: '6px', borderRadius: '8px', minWidth: 'auto' }}
+                style={{ padding: '6px', borderRadius: '8px', minWidth: 'auto', transition: 'all 0.2s' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--danger)'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = ''; e.currentTarget.style.background = 'transparent'; }}
               >
                 <LogOut size={16} />
               </button>
@@ -368,6 +386,37 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         </button>
         {children}
       </main>
+
+      {/* ── Logout Confirmation Modal ────────────────────────────────────── */}
+      {showLogoutConfirm && (
+        <div className="modal-overlay" onClick={() => setShowLogoutConfirm(false)} style={{ zIndex: 9999 }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px', textAlign: 'center', padding: '32px 24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', color: 'var(--danger)' }}>
+              <LogOut size={48} strokeWidth={1.5} />
+            </div>
+            <h3 style={{ marginBottom: '12px', fontSize: '20px' }}>Confirm Logout</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', fontSize: '15px' }}>
+              Are you sure you want to sign out of your account?
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button 
+                className="btn btn-ghost" 
+                onClick={() => setShowLogoutConfirm(false)}
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn" 
+                style={{ background: 'var(--danger)', color: 'white', flex: 1, border: 'none' }} 
+                onClick={() => { setShowLogoutConfirm(false); logout(); }}
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

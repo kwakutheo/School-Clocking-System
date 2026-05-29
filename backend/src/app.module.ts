@@ -47,7 +47,11 @@ import { TenantMiddleware } from './common/tenant/tenant.middleware';
           password: config.get<string>('DB_PASS', 'postgres'),
           database: config.get<string>('DB_NAME', 'tk_clocking'),
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: nodeEnv !== 'production',
+          // FIRST-DEPLOY: synchronize=true so TypeORM auto-creates all tables on
+          // the empty Supabase DB. Disable this (set to false) after the first
+          // successful deploy and re-deploy, or tables will be re-synced on every
+          // restart (safe but slow).
+          synchronize: true,
           logging: nodeEnv === 'development',
           // Fail fast on bad DB config — 3 retries × 3 s = ~9 s then crash with a
           // clear error rather than blocking the port for 15+ minutes on Render.

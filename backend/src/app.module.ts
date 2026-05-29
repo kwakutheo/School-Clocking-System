@@ -49,6 +49,10 @@ import { TenantMiddleware } from './common/tenant/tenant.middleware';
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: nodeEnv !== 'production',
           logging: nodeEnv === 'development',
+          // Fail fast on bad DB config — 3 retries × 3 s = ~9 s then crash with a
+          // clear error rather than blocking the port for 15+ minutes on Render.
+          retryAttempts: 3,
+          retryDelay: 3000,
           // Enable SSL when DB_SSL=true (useful for Supabase / managed Postgres)
           ssl:
             config.get<string>('DB_SSL', 'false') === 'true'

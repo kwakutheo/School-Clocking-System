@@ -18,7 +18,6 @@ import { LeavesModule } from './modules/leaves/leaves.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
 import { SaasAdminModule } from './modules/saas-admin/saas-admin.module';
-import { PermissionsGuard } from './modules/auth/guards/permissions.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { ReadonlyImpersonationGuard } from './modules/auth/guards/readonly-impersonation.guard';
 import { TenantSubscriber } from './common/tenant/tenant.subscriber';
@@ -38,7 +37,8 @@ import { TenantMiddleware } from './common/tenant/tenant.middleware';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const nodeEnv = config.get<string>('NODE_ENV', 'development');
-        const dbPort = parseInt(config.get<string>('DB_PORT', '5432'), 10) || 5432;
+        const dbPort =
+          parseInt(config.get<string>('DB_PORT', '5432'), 10) || 5432;
         return {
           type: 'postgres',
           host: config.get<string>('DB_HOST', 'localhost'),
@@ -50,7 +50,10 @@ import { TenantMiddleware } from './common/tenant/tenant.middleware';
           synchronize: nodeEnv !== 'production',
           logging: nodeEnv === 'development',
           // Enable SSL when DB_SSL=true (useful for Supabase / managed Postgres)
-          ssl: config.get<string>('DB_SSL', 'false') === 'true' ? { rejectUnauthorized: false } : false,
+          ssl:
+            config.get<string>('DB_SSL', 'false') === 'true'
+              ? { rejectUnauthorized: false }
+              : false,
         };
       },
     }),
@@ -83,8 +86,6 @@ import { TenantMiddleware } from './common/tenant/tenant.middleware';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(TenantMiddleware)
-      .forRoutes('*');
+    consumer.apply(TenantMiddleware).forRoutes('*');
   }
 }

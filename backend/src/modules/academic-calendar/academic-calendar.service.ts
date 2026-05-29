@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, IsNull } from 'typeorm';
 import { AcademicTerm } from './term.entity';
@@ -29,7 +33,9 @@ export class AcademicCalendarService {
 
     if (globalTerms.length === 0) return;
 
-    console.log(`🌱 [Academic Calendar] Auto-seeding ${globalTerms.length} global term templates to tenant: ${tenantId}`);
+    console.log(
+      `🌱 [Academic Calendar] Auto-seeding ${globalTerms.length} global term templates to tenant: ${tenantId}`,
+    );
 
     // 3. Clone each term and its breaks to the local tenant
     for (const gTerm of globalTerms) {
@@ -92,7 +98,9 @@ export class AcademicCalendarService {
     // Priority 1: term that spans today's date
     const spanningTerm = await this.termRepo
       .createQueryBuilder('term')
-      .where(':today BETWEEN term.startDate AND term.endDate', { today: todayStr })
+      .where(':today BETWEEN term.startDate AND term.endDate', {
+        today: todayStr,
+      })
       .andWhere('term.tenantId = :tenantId', { tenantId })
       .orderBy('term.startDate', 'ASC')
       .getOne();
@@ -119,7 +127,9 @@ export class AcademicCalendarService {
       targetYear = `${startYear}/${startYear + 1}`;
     }
 
-    const where: any = tenantId ? { academicYear: targetYear, tenantId } : { academicYear: targetYear };
+    const where: any = tenantId
+      ? { academicYear: targetYear, tenantId }
+      : { academicYear: targetYear };
 
     return this.termRepo.find({
       where,
@@ -144,7 +154,10 @@ export class AcademicCalendarService {
     return this.termRepo.save(term);
   }
 
-  async updateTerm(id: string, data: Partial<AcademicTerm>): Promise<AcademicTerm> {
+  async updateTerm(
+    id: string,
+    data: Partial<AcademicTerm>,
+  ): Promise<AcademicTerm> {
     const tenantId = getCurrentTenantId();
     const where: any = tenantId ? { id, tenantId } : { id };
     const term = await this.termRepo.findOne({ where });
@@ -161,7 +174,10 @@ export class AcademicCalendarService {
     await this.termRepo.remove(term);
   }
 
-  async createBreak(termId: string, data: Partial<TermBreak>): Promise<TermBreak> {
+  async createBreak(
+    termId: string,
+    data: Partial<TermBreak>,
+  ): Promise<TermBreak> {
     const tenantId = getCurrentTenantId();
     const where: any = tenantId ? { id: termId, tenantId } : { id: termId };
     const term = await this.termRepo.findOne({ where });
@@ -186,15 +202,20 @@ export class AcademicCalendarService {
     });
   }
 
-  async cloneTemplate(academicYear: string, overwrite?: boolean): Promise<AcademicTerm[]> {
+  async cloneTemplate(
+    academicYear: string,
+    overwrite?: boolean,
+  ): Promise<AcademicTerm[]> {
     const tenantId = getCurrentTenantId();
     if (!tenantId) {
-      throw new BadRequestException('Cannot clone templates in a global SaaS context.');
+      throw new BadRequestException(
+        'Cannot clone templates in a global SaaS context.',
+      );
     }
 
     // 1. Check if the tenant already has any terms for this academic year
     const existingTerms = await this.termRepo.find({
-      where: { tenantId, academicYear }
+      where: { tenantId, academicYear },
     });
 
     if (existingTerms.length > 0) {
@@ -203,7 +224,9 @@ export class AcademicCalendarService {
       }
 
       // If overwrite is requested, atomically remove all existing terms and their breaks
-      console.log(`♻️ [Academic Calendar] Overwriting existing academic year terms for tenant ${tenantId} | Year: ${academicYear}`);
+      console.log(
+        `♻️ [Academic Calendar] Overwriting existing academic year terms for tenant ${tenantId} | Year: ${academicYear}`,
+      );
       await this.termRepo.remove(existingTerms);
     }
 
@@ -215,7 +238,9 @@ export class AcademicCalendarService {
     });
 
     if (globalTerms.length === 0) {
-      throw new NotFoundException(`No global master template was found for the ${academicYear} academic year.`);
+      throw new NotFoundException(
+        `No global master template was found for the ${academicYear} academic year.`,
+      );
     }
 
     const clonedTerms: AcademicTerm[] = [];
@@ -253,7 +278,8 @@ export class AcademicCalendarService {
   async getTermForDate(date: Date): Promise<AcademicTerm | null> {
     const dateStr = date.toISOString().split('T')[0];
     const tenantId = getCurrentTenantId();
-    return this.termRepo.createQueryBuilder('term')
+    return this.termRepo
+      .createQueryBuilder('term')
       .leftJoinAndSelect('term.breaks', 'breaks')
       .where(':dateStr BETWEEN term.startDate AND term.endDate', { dateStr })
       .andWhere('term.tenantId = :tenantId', { tenantId })
@@ -263,7 +289,8 @@ export class AcademicCalendarService {
   async isBreak(date: Date): Promise<string | null> {
     const dateStr = date.toISOString().split('T')[0];
     const tenantId = getCurrentTenantId();
-    const breakItem = await this.breakRepo.createQueryBuilder('break')
+    const breakItem = await this.breakRepo
+      .createQueryBuilder('break')
       .where(':dateStr BETWEEN break.startDate AND break.endDate', { dateStr })
       .andWhere('break.tenantId = :tenantId', { tenantId })
       .getOne();

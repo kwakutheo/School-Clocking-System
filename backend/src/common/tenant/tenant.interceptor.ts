@@ -1,4 +1,9 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tenantLocalStorage } from './tenant.context';
 import { TenantsService } from '../../modules/tenants/tenants.service';
@@ -7,11 +12,15 @@ import { TenantsService } from '../../modules/tenants/tenants.service';
 export class TenantInterceptor implements NestInterceptor {
   constructor(private readonly tenantsService: TenantsService) {}
 
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
+  async intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Promise<Observable<any>> {
     const request = context.switchToHttp().getRequest();
 
     let tenantId = request.user?.tenantId;
-    const isGlobalSuperAdmin = request.user?.role === 'super_admin' && !request.user?.tenantId;
+    const isGlobalSuperAdmin =
+      request.user?.role === 'super_admin' && !request.user?.tenantId;
 
     // If not in user context and not global super admin, try reading headers
     if (!tenantId && !isGlobalSuperAdmin) {
@@ -30,8 +39,6 @@ export class TenantInterceptor implements NestInterceptor {
         }
       }
     }
-
-
 
     return new Observable((subscriber) => {
       tenantLocalStorage.run(tenantId, () => {

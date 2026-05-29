@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ShiftsService } from './shifts.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -17,17 +26,23 @@ export class ShiftsController {
 
   @Get()
   @ApiOperation({ summary: 'List all shifts' })
-  findAll() { return this.service.findAll(); }
+  findAll() {
+    return this.service.findAll();
+  }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get shift details' })
-  findOne(@Param('id') id: string) { return this.service.findOne(id); }
+  findOne(@Param('id') id: string) {
+    return this.service.findOne(id);
+  }
 
   @Post()
   @UseGuards(PermissionsGuard)
   @RequirePermissions('shifts.manage')
   @ApiOperation({ summary: 'Create a shift' })
-  create(@Body() body: CreateShiftDto) { return this.service.create(body); }
+  create(@Body() body: CreateShiftDto) {
+    return this.service.create(body);
+  }
 
   @Patch(':id')
   @UseGuards(PermissionsGuard)
@@ -41,5 +56,7 @@ export class ShiftsController {
   @UseGuards(PermissionsGuard)
   @RequirePermissions('shifts.manage')
   @ApiOperation({ summary: 'Delete a shift' })
-  remove(@Param('id') id: string) { return this.service.remove(id); }
+  remove(@Param('id') id: string) {
+    return this.service.remove(id);
+  }
 }

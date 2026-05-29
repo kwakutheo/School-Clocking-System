@@ -46,7 +46,7 @@ describe('AcademicCalendarService', () => {
       // Mock Priority 1 query: a term that spans today
       const spanningTerm = new AcademicTerm();
       spanningTerm.academicYear = '2025/2026';
-      
+
       const mockQueryBuilder = {
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
@@ -64,7 +64,7 @@ describe('AcademicCalendarService', () => {
       expect(mockTermRepo.createQueryBuilder).toHaveBeenCalledWith('term');
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         ':today BETWEEN term.startDate AND term.endDate',
-        expect.any(Object)
+        expect.any(Object),
       );
       expect(mockTermRepo.find).toHaveBeenCalledWith({
         where: { academicYear: '2025/2026' },

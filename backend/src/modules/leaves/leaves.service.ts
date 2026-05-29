@@ -1,5 +1,8 @@
 import {
-  Injectable, NotFoundException, ForbiddenException, BadRequestException,
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -44,12 +47,14 @@ export class LeavesService {
 
     // ── Guard 1: Date Sanity Checks ───────────────────────────────────────────
     const start = new Date(data.startDate);
-    const end   = new Date(data.endDate);
+    const end = new Date(data.endDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      throw new BadRequestException('Invalid date format. Please use YYYY-MM-DD.');
+      throw new BadRequestException(
+        'Invalid date format. Please use YYYY-MM-DD.',
+      );
     }
 
     if (end < start) {
@@ -80,8 +85,8 @@ export class LeavesService {
     if (conflicting) {
       throw new BadRequestException(
         `You already have an overlapping ${conflicting.status.toLowerCase()} ${conflicting.leaveType} leave ` +
-        `from ${conflicting.startDate} to ${conflicting.endDate}. ` +
-        `Please cancel it first or choose different dates.`,
+          `from ${conflicting.startDate} to ${conflicting.endDate}. ` +
+          `Please cancel it first or choose different dates.`,
       );
     }
 
@@ -100,7 +105,7 @@ export class LeavesService {
   async cancelLeave(leaveId: string, userId: string): Promise<LeaveRequest> {
     const leave = await this._findById(leaveId);
     if (leave.employee.user.id !== userId) {
-      throw new ForbiddenException('You cannot cancel someone else\'s leave.');
+      throw new ForbiddenException("You cannot cancel someone else's leave.");
     }
     if (leave.status !== LeaveStatus.PENDING) {
       throw new ForbiddenException('Only PENDING leaves can be cancelled.');
@@ -145,7 +150,7 @@ export class LeavesService {
       qb.andWhere('leave.tenantId = :tenantId', { tenantId });
     }
 
-    if (status && status !== 'ALL' as any) {
+    if (status && status !== ('ALL' as any)) {
       qb.andWhere('leave.status = :status', { status });
     }
 
@@ -154,7 +159,10 @@ export class LeavesService {
     }
 
     if (search) {
-      qb.andWhere('(user.fullName ILIKE :search OR emp.employeeCode ILIKE :search)', { search: `%${search}%` });
+      qb.andWhere(
+        '(user.fullName ILIKE :search OR emp.employeeCode ILIKE :search)',
+        { search: `%${search}%` },
+      );
     }
 
     const totalItems = await qb.getCount();
@@ -230,12 +238,17 @@ export class LeavesService {
   async reviewLeave(
     leaveId: string,
     reviewer: User,
-    decision: { status: LeaveStatus.APPROVED | LeaveStatus.REJECTED; reviewNote?: string },
+    decision: {
+      status: LeaveStatus.APPROVED | LeaveStatus.REJECTED;
+      reviewNote?: string;
+    },
   ): Promise<LeaveRequest> {
     const leave = await this._findById(leaveId);
 
     if (leave.status !== LeaveStatus.PENDING) {
-      throw new ForbiddenException('Only PENDING leave requests can be reviewed.');
+      throw new ForbiddenException(
+        'Only PENDING leave requests can be reviewed.',
+      );
     }
 
     const oldStatus = leave.status;
@@ -258,14 +271,14 @@ export class LeavesService {
     if (leave.employee?.user?.fcmToken) {
       await this.notificationsService.sendSilentSyncToToken(
         leave.employee.user.fcmToken,
-        'refresh_dashboard'
+        'refresh_dashboard',
       );
-      
+
       // Also send a visible push notification to inform them of the decision
       await this.notificationsService.sendPushToToken(
         leave.employee.user.fcmToken,
         'Leave Request Update',
-        `Your leave request has been ${decision.status.toLowerCase()}.`
+        `Your leave request has been ${decision.status.toLowerCase()}.`,
       );
     }
 
@@ -292,10 +305,12 @@ export class LeavesService {
 
     // ── Guard 1: Date Sanity Checks ───────────────────────────────────────────
     const start = new Date(data.startDate);
-    const end   = new Date(data.endDate);
+    const end = new Date(data.endDate);
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      throw new BadRequestException('Invalid date format. Please use YYYY-MM-DD.');
+      throw new BadRequestException(
+        'Invalid date format. Please use YYYY-MM-DD.',
+      );
     }
 
     if (end < start) {
@@ -318,7 +333,7 @@ export class LeavesService {
     if (conflicting) {
       throw new BadRequestException(
         `This employee already has an overlapping ${conflicting.status.toLowerCase()} ${conflicting.leaveType} leave ` +
-        `from ${conflicting.startDate} to ${conflicting.endDate}.`,
+          `from ${conflicting.startDate} to ${conflicting.endDate}.`,
       );
     }
 
@@ -359,12 +374,12 @@ export class LeavesService {
     if (employee.user?.fcmToken) {
       await this.notificationsService.sendSilentSyncToToken(
         employee.user.fcmToken,
-        'refresh_dashboard'
+        'refresh_dashboard',
       );
       await this.notificationsService.sendPushToToken(
         employee.user.fcmToken,
         'New Leave Registered',
-        `A ${leave.leaveType.toLowerCase()} leave request has been submitted on your behalf and is ${leave.status.toLowerCase()}.`
+        `A ${leave.leaveType.toLowerCase()} leave request has been submitted on your behalf and is ${leave.status.toLowerCase()}.`,
       );
     }
 

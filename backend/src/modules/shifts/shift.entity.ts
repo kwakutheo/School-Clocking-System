@@ -27,4 +27,3 @@ export class Shift extends TenantBaseEntity {
   })
   workingDays!: number[];
 }
-

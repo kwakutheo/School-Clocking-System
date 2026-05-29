@@ -22,26 +22,48 @@ import { randomUUID } from 'crypto';
 
 // ── 15 Ghanaian surnames — one per employee slot ─────────────────────────
 const SURNAMES = [
-  'Mensah', 'Asante',                                          // super_admin × 2
-  'Boateng', 'Darko',                                          // hr_admin × 2
-  'Owusu', 'Amponsah',                                         // supervisor × 2
-  'Agyei', 'Ntim', 'Adomako', 'Frimpong', 'Osei',             // employee × 9
-  'Kwarteng', 'Antwi', 'Acheampong', 'Opoku',
+  'Mensah',
+  'Asante', // super_admin × 2
+  'Boateng',
+  'Darko', // hr_admin × 2
+  'Owusu',
+  'Amponsah', // supervisor × 2
+  'Agyei',
+  'Ntim',
+  'Adomako',
+  'Frimpong',
+  'Osei', // employee × 9
+  'Kwarteng',
+  'Antwi',
+  'Acheampong',
+  'Opoku',
 ];
 
 const ROLES = [
-  'super_admin', 'super_admin',
-  'hr_admin',    'hr_admin',
-  'supervisor',  'supervisor',
-  'employee', 'employee', 'employee', 'employee', 'employee',
-  'employee', 'employee', 'employee', 'employee',
+  'super_admin',
+  'super_admin',
+  'hr_admin',
+  'hr_admin',
+  'supervisor',
+  'supervisor',
+  'employee',
+  'employee',
+  'employee',
+  'employee',
+  'employee',
+  'employee',
+  'employee',
+  'employee',
+  'employee',
 ];
 
 const TOTAL_SCHOOLS = 1000;
-const BATCH_SIZE    = 50;   // schools per DB transaction
+const BATCH_SIZE = 50; // schools per DB transaction
 
 async function bootstrap() {
-  const app        = await NestFactory.createApplicationContext(AppModule, { logger: ['error'] });
+  const app = await NestFactory.createApplicationContext(AppModule, {
+    logger: ['error'],
+  });
   const dataSource = app.get(DataSource);
 
   // Hash once → reuse for every record (saves ~60 s of bcrypt CPU)
@@ -53,60 +75,60 @@ async function bootstrap() {
 
   for (let b = 0; b < totalBatches; b++) {
     const start = b * BATCH_SIZE + 1;
-    const end   = Math.min(start + BATCH_SIZE - 1, TOTAL_SCHOOLS);
+    const end = Math.min(start + BATCH_SIZE - 1, TOTAL_SCHOOLS);
     console.log(`Batch ${b + 1}/${totalBatches}: schools ${start}–${end}`);
 
     // Use camelCase property names — TypeORM entity-mapped insert
-    const tenantRows:     Partial<Tenant>[]   = [];
-    const userRows:       Partial<User>[]     = [];
-    const employeeRows:   Partial<Employee>[] = [];
-    const statusLogRows:  any[]               = [];
+    const tenantRows: Partial<Tenant>[] = [];
+    const userRows: Partial<User>[] = [];
+    const employeeRows: Partial<Employee>[] = [];
+    const statusLogRows: any[] = [];
 
     for (let n = start; n <= end; n++) {
       const tenantId = randomUUID();
 
       tenantRows.push({
-        id:           tenantId,
-        slug:         `school-${n}`,
-        name:         `School ${n}`,
-        initials:     `S${n}`,
-        isActive:     true,
+        id: tenantId,
+        slug: `school-${n}`,
+        name: `School ${n}`,
+        initials: `S${n}`,
+        isActive: true,
         primaryColor: '#3b82f6',
       });
 
       for (let pos = 0; pos < 15; pos++) {
-        const surname    = SURNAMES[pos];
-        const role       = ROLES[pos] as any;
-        const userId     = randomUUID();
+        const surname = SURNAMES[pos];
+        const role = ROLES[pos] as any;
+        const userId = randomUUID();
         const employeeId = randomUUID();
-        const username   = `${surname.toLowerCase()}_${n}`;
-        const empCode    = `S${n}/2501/${String(pos + 1).padStart(3, '0')}`;
+        const username = `${surname.toLowerCase()}_${n}`;
+        const empCode = `S${n}/2501/${String(pos + 1).padStart(3, '0')}`;
 
         userRows.push({
-          id:                     userId,
-          tenantId:               tenantId,
-          fullName:               surname,
-          username:               username,
-          passwordHash:           passwordHash,
-          role:                   role,
-          isActive:               true,
+          id: userId,
+          tenantId: tenantId,
+          fullName: surname,
+          username: username,
+          passwordHash: passwordHash,
+          role: role,
+          isActive: true,
           requiresPasswordChange: false,
         });
 
         // employees use a FK to user — set via the relation property
         employeeRows.push({
-          id:           employeeId,
-          tenantId:     tenantId,
-          user:         { id: userId } as any,
+          id: employeeId,
+          tenantId: tenantId,
+          user: { id: userId } as any,
           employeeCode: empCode,
-          status:       'active' as any,
+          status: 'active' as any,
         });
 
         // status log — keep as plain values for raw SQL below
         statusLogRows.push([
-          randomUUID(),          // id
-          employeeId,            // employee_id
-          'active',              // status
+          randomUUID(), // id
+          employeeId, // employee_id
+          'active', // status
           new Date().toISOString().split('T')[0], // start_date (DATE)
         ]);
       }
@@ -120,23 +142,32 @@ async function bootstrap() {
     try {
       await qr.manager
         .createQueryBuilder()
-        .insert().into(Tenant).values(tenantRows)
+        .insert()
+        .into(Tenant)
+        .values(tenantRows)
         .execute();
 
       await qr.manager
         .createQueryBuilder()
-        .insert().into(User).values(userRows)
+        .insert()
+        .into(User)
+        .values(userRows)
         .execute();
 
       await qr.manager
         .createQueryBuilder()
-        .insert().into(Employee).values(employeeRows)
+        .insert()
+        .into(Employee)
+        .values(employeeRows)
         .execute();
 
       // status logs — use raw SQL because QueryBuilder mis-handles DATE columns
       // statusLogRows is: [ [id, employee_id, status, start_date], ... ]
       const logPlaceholders = statusLogRows
-        .map((_, i) => `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`)
+        .map(
+          (_, i) =>
+            `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4})`,
+        )
         .join(', ');
       const logParams = statusLogRows.flat();
       await qr.query(
@@ -147,7 +178,10 @@ async function bootstrap() {
       await qr.commitTransaction();
     } catch (err) {
       await qr.rollbackTransaction();
-      console.error(`\nBatch ${b + 1} FAILED — rolled back.\n`, err.message ?? err);
+      console.error(
+        `\nBatch ${b + 1} FAILED — rolled back.\n`,
+        err.message ?? err,
+      );
       await qr.release();
       await app.close();
       process.exit(1);
@@ -162,7 +196,7 @@ async function bootstrap() {
   await app.close();
 }
 
-bootstrap().catch(err => {
+bootstrap().catch((err) => {
   console.error(err);
   process.exit(1);
 });

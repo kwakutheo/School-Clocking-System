@@ -1,6 +1,9 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, UpdateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity('tenants')
@@ -23,7 +26,12 @@ export class Tenant {
   @Column({ name: 'primary_color', default: '#3b82f6' })
   primaryColor: string;
 
-  @Column({ name: 'custom_domain', type: 'varchar', nullable: true, unique: true })
+  @Column({
+    name: 'custom_domain',
+    type: 'varchar',
+    nullable: true,
+    unique: true,
+  })
   customDomain: string | null;
 
   @Column({ type: 'varchar', length: 10, nullable: true })

@@ -1,8 +1,4 @@
-import {
-  IsString,
-  IsOptional,
-  IsNumber,
-} from 'class-validator';
+import { IsString, IsOptional, IsNumber } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateBranchDto {
@@ -16,7 +12,7 @@ export class UpdateBranchDto {
   @IsOptional()
   latitude?: number;
 
-  @ApiPropertyOptional({ example: -0.1870 })
+  @ApiPropertyOptional({ example: -0.187 })
   @IsNumber()
   @IsOptional()
   longitude?: number;

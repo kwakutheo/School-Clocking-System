@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/typeorm';
-import { Connection, EntitySubscriberInterface, EventSubscriber, InsertEvent } from 'typeorm';
+import {
+  Connection,
+  EntitySubscriberInterface,
+  EventSubscriber,
+  InsertEvent,
+} from 'typeorm';
 import { tenantLocalStorage } from './tenant.context';
 
 @Injectable()
@@ -14,7 +19,9 @@ export class TenantSubscriber implements EntitySubscriberInterface {
     const tenantId = tenantLocalStorage.getStore();
     if (tenantId) {
       // Use metadata to check if the entity natively supports tenantId
-      const hasTenantId = event.metadata.columns.some(col => col.propertyName === 'tenantId');
+      const hasTenantId = event.metadata.columns.some(
+        (col) => col.propertyName === 'tenantId',
+      );
       if (hasTenantId) {
         event.entity.tenantId = tenantId;
       }

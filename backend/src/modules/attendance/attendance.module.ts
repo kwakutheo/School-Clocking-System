@@ -15,11 +15,14 @@ import { AcademicCalendarModule } from '../academic-calendar/academic-calendar.m
 import { AuditModule } from '../audit/audit.module';
 import { LeavesModule } from '../leaves/leaves.module';
 
-
-
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AttendanceLog, AttendanceDailySummary, Employee, EmployeeStatusLog]),
+    TypeOrmModule.forFeature([
+      AttendanceLog,
+      AttendanceDailySummary,
+      Employee,
+      EmployeeStatusLog,
+    ]),
     EmployeesModule,
     BranchesModule,
     HolidaysModule,
@@ -28,7 +31,11 @@ import { LeavesModule } from '../leaves/leaves.module';
     LeavesModule,
   ],
   controllers: [AttendanceController],
-  providers: [AttendanceService, AttendanceReportService, AttendanceExportService],
+  providers: [
+    AttendanceService,
+    AttendanceReportService,
+    AttendanceExportService,
+  ],
   exports: [AttendanceService],
 })
 export class AttendanceModule {}

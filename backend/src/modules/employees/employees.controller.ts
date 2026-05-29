@@ -1,5 +1,23 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Request, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+  Request,
+  Query,
+  DefaultValuePipe,
+  ParseIntPipe,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { EmployeesService } from './employees.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -60,7 +78,10 @@ export class EmployeesController {
   @UseGuards(PermissionsGuard)
   @RequirePermissions('employees.create')
   @ApiOperation({ summary: 'Register new employee' })
-  register(@Body() dto: CreateEmployeeDto, @CurrentUser() adminUser: User): Promise<Employee> {
+  register(
+    @Body() dto: CreateEmployeeDto,
+    @CurrentUser() adminUser: User,
+  ): Promise<Employee> {
     return this.service.createEmployeeWithUser(dto, adminUser);
   }
 
@@ -101,13 +122,18 @@ export class EmployeesController {
   @UseGuards(PermissionsGuard)
   @RequirePermissions('employees.delete')
   @ApiOperation({ summary: 'Delete employee' })
-  remove(@Param('id') id: string, @CurrentUser() adminUser: User): Promise<void> {
+  remove(
+    @Param('id') id: string,
+    @CurrentUser() adminUser: User,
+  ): Promise<void> {
     return this.service.remove(id, adminUser);
   }
 
   @Get('me/history')
   @ApiOperation({ summary: 'Get current employee status history' })
-  async getMyHistory(@CurrentUser() user: { id: string }): Promise<EmployeeStatusLog[]> {
+  async getMyHistory(
+    @CurrentUser() user: { id: string },
+  ): Promise<EmployeeStatusLog[]> {
     const emp = await this.service.findByUserId(user.id);
     if (!emp) throw new Error('Employee profile not found.');
     return this.service.getStatusHistory(emp.id);

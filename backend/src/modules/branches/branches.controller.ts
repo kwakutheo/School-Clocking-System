@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { BranchesService } from './branches.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -42,7 +51,10 @@ export class BranchesController {
   @UseGuards(PermissionsGuard)
   @RequirePermissions('branches.manage')
   @ApiOperation({ summary: 'Update a branch' })
-  update(@Param('id') id: string, @Body() dto: UpdateBranchDto): Promise<Branch> {
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateBranchDto,
+  ): Promise<Branch> {
     return this.service.update(id, dto);
   }
 

@@ -14,7 +14,10 @@ export class HolidaysService {
   async findAll(): Promise<Holiday[]> {
     const tenantId = getCurrentTenantId();
     if (!tenantId) {
-      return this.repo.find({ where: { tenantId: IsNull() }, order: { date: 'ASC' } });
+      return this.repo.find({
+        where: { tenantId: IsNull() },
+        order: { date: 'ASC' },
+      });
     }
     return this.repo.find({ where: { tenantId }, order: { date: 'ASC' } });
   }
@@ -68,10 +71,12 @@ export class HolidaysService {
 
     // Use tenant-scoped findAll — this is called internally during clock-in validation
     const holidays = await this.findAll();
-    return holidays.find(h => {
-      if (h.date === dateStr) return true;
-      if (h.isRecurring && h.date.substring(5) === monthDay) return true;
-      return false;
-    }) || null;
+    return (
+      holidays.find((h) => {
+        if (h.date === dateStr) return true;
+        if (h.isRecurring && h.date.substring(5) === monthDay) return true;
+        return false;
+      }) || null
+    );
   }
 }

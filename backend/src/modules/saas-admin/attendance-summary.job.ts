@@ -112,13 +112,7 @@ export class AttendanceSummaryJob {
     // ── 3. Load all employees for all tenants (id, tenantId, hireDate, shift.workingDays) ─
     const employees = await this.employeeRepo
       .createQueryBuilder('e')
-      .select([
-        'e.id',
-        'e.tenantId',
-        'e.hireDate',
-        'e.status',
-        's.workingDays',
-      ])
+      .select(['e.id', 'e.tenantId', 'e.hireDate', 'e.status', 's.workingDays'])
       .leftJoin('e.shift', 's')
       .where('e.tenantId IN (:...tenantIds)', { tenantIds })
       .getMany();
@@ -149,7 +143,8 @@ export class AttendanceSummaryJob {
     // Index clock-in counts: tenantId → dateStr → count
     const clockInMap = new Map<string, Map<string, number>>();
     for (const row of clockInRows) {
-      if (!clockInMap.has(row.tenantId)) clockInMap.set(row.tenantId, new Map());
+      if (!clockInMap.has(row.tenantId))
+        clockInMap.set(row.tenantId, new Map());
       clockInMap.get(row.tenantId)!.set(row.day, Number(row.cnt));
     }
 
@@ -157,7 +152,8 @@ export class AttendanceSummaryJob {
     const employeesByTenant = new Map<string, typeof employees>();
     for (const emp of employees) {
       if (!emp.tenantId) continue;
-      if (!employeesByTenant.has(emp.tenantId)) employeesByTenant.set(emp.tenantId, []);
+      if (!employeesByTenant.has(emp.tenantId))
+        employeesByTenant.set(emp.tenantId, []);
       employeesByTenant.get(emp.tenantId)!.push(emp);
     }
 
@@ -176,13 +172,29 @@ export class AttendanceSummaryJob {
     // Global set
     const globalSet = new Set<string>();
     for (const h of globalHolidays) {
-      this.expandHolidayDates(h.date, h.isRecurring, startYear, endYear, startStr, endStr, globalSet);
+      this.expandHolidayDates(
+        h.date,
+        h.isRecurring,
+        startYear,
+        endYear,
+        startStr,
+        endStr,
+        globalSet,
+      );
     }
 
     for (const tenant of tenants) {
       const tSet = new Set<string>(globalSet);
       for (const h of schoolHolidays.filter((h) => h.tenantId === tenant.id)) {
-        this.expandHolidayDates(h.date, h.isRecurring, startYear, endYear, startStr, endStr, tSet);
+        this.expandHolidayDates(
+          h.date,
+          h.isRecurring,
+          startYear,
+          endYear,
+          startStr,
+          endStr,
+          tSet,
+        );
       }
       holidayExclusionByTenant.set(tenant.id, tSet);
     }
@@ -200,8 +212,10 @@ export class AttendanceSummaryJob {
 
     for (const tenant of tenants) {
       const tenantEmployees = employeesByTenant.get(tenant.id) ?? [];
-      const holidaySet = holidayExclusionByTenant.get(tenant.id) ?? new Set<string>();
-      const tenantClockIns = clockInMap.get(tenant.id) ?? new Map<string, number>();
+      const holidaySet =
+        holidayExclusionByTenant.get(tenant.id) ?? new Set<string>();
+      const tenantClockIns =
+        clockInMap.get(tenant.id) ?? new Map<string, number>();
 
       for (const dateStr of dates) {
         const isHoliday = holidaySet.has(dateStr);
@@ -220,7 +234,9 @@ export class AttendanceSummaryJob {
             }
 
             // b) Check shift working days (default Mon-Fri if no shift)
-            const workingDays: number[] = emp.shift?.workingDays ?? [1, 2, 3, 4, 5];
+            const workingDays: number[] = emp.shift?.workingDays ?? [
+              1, 2, 3, 4, 5,
+            ];
             if (!workingDays.includes(isoDow)) continue;
 
             // c) Reconstruct status on this specific date using status logs
@@ -257,7 +273,7 @@ export class AttendanceSummaryJob {
         .createQueryBuilder()
         .insert()
         .into(AttendanceDailySummary)
-        .values(chunk as AttendanceDailySummary[])
+        .values(chunk)
         .orUpdate(
           ['expected_count', 'present_count', 'is_holiday', 'computed_at'],
           ['tenant_id', 'date'],

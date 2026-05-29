@@ -30,7 +30,12 @@ export class NotificationsService implements OnModuleInit {
   /**
    * Sends a push notification to a specific FCM token.
    */
-  async sendPushToToken(token: string, title: string, body: string, data?: Record<string, string>): Promise<boolean> {
+  async sendPushToToken(
+    token: string,
+    title: string,
+    body: string,
+    data?: Record<string, string>,
+  ): Promise<boolean> {
     if (!this.initialized || !token) return false;
 
     try {
@@ -44,7 +49,10 @@ export class NotificationsService implements OnModuleInit {
       });
       return true;
     } catch (error) {
-      this.logger.error(`Failed to send push notification to token ${token}`, error);
+      this.logger.error(
+        `Failed to send push notification to token ${token}`,
+        error,
+      );
       return false;
     }
   }

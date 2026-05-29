@@ -1,6 +1,11 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  ManyToOne, JoinColumn, CreateDateColumn, Index,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  Index,
 } from 'typeorm';
 import { Employee } from './employee.entity';
 import { EmployeeStatus } from '../../common/enums';
@@ -16,7 +21,9 @@ export class EmployeeStatusLog extends TenantBaseEntity {
   @Index()
   employeeId: string;
 
-  @ManyToOne(() => Employee, (employee) => employee.statusLogs, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Employee, (employee) => employee.statusLogs, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'employee_id' })
   employee: Employee;
 

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomBytes } from 'crypto';
@@ -83,11 +87,17 @@ export class BranchesService {
     await this.repo.delete(id);
   }
 
-  async generateQrCode(id: string, userId: string, password: string): Promise<Branch> {
+  async generateQrCode(
+    id: string,
+    userId: string,
+    password: string,
+  ): Promise<Branch> {
     const user = await this.users.findById(userId);
     const matches = await bcrypt.compare(password, user.passwordHash);
     if (!matches) {
-      throw new BadRequestException('Incorrect password. QR code was not regenerated.');
+      throw new BadRequestException(
+        'Incorrect password. QR code was not regenerated.',
+      );
     }
 
     // findById enforces tenant scope — admin cannot regenerate QR for another school's branch

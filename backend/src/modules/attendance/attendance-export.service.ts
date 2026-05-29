@@ -17,8 +17,16 @@ export class AttendanceExportService {
     pdfmake.setFonts(fonts);
   }
 
-  async exportMonthlyPdf(employeeId: string, month: number, year: number): Promise<Buffer> {
-    const report = await this.reportService.getMonthlyReport(employeeId, month, year);
+  async exportMonthlyPdf(
+    employeeId: string,
+    month: number,
+    year: number,
+  ): Promise<Buffer> {
+    const report = await this.reportService.getMonthlyReport(
+      employeeId,
+      month,
+      year,
+    );
     const docDefinition = this.buildMonthlyDocDefinition(report, month, year);
     const pdfDoc = pdfmake.createPdf(docDefinition);
     return await pdfDoc.getBuffer();
@@ -31,65 +39,134 @@ export class AttendanceExportService {
     return await pdfDoc.getBuffer();
   }
 
-  async exportBulkMonthlyPdf(month: number, year: number, branchId?: string, branchName?: string): Promise<Buffer> {
-    const reports = await this.reportService.getBulkMonthlyReport(month, year, branchId);
-    
+  async exportBulkMonthlyPdf(
+    month: number,
+    year: number,
+    branchId?: string,
+    branchName?: string,
+  ): Promise<Buffer> {
+    const reports = await this.reportService.getBulkMonthlyReport(
+      month,
+      year,
+      branchId,
+    );
+
     const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     const monthName = monthNames[month - 1];
     const title = `Bulk Attendance Summary - ${monthName} ${year}`;
     const subtitle = branchId ? `Branch: ${branchName}` : 'All Branches';
 
-    const docDefinition = this.buildBulkSummaryDocDefinition(reports, title, subtitle);
+    const docDefinition = this.buildBulkSummaryDocDefinition(
+      reports,
+      title,
+      subtitle,
+    );
     const pdfDoc = pdfmake.createPdf(docDefinition);
     return await pdfDoc.getBuffer();
   }
 
-  async exportBulkTermPdf(termId: string, branchId?: string, branchName?: string, termName?: string): Promise<Buffer> {
-    const reports = await this.reportService.getBulkTermReport(termId, branchId);
-    
+  async exportBulkTermPdf(
+    termId: string,
+    branchId?: string,
+    branchName?: string,
+    termName?: string,
+  ): Promise<Buffer> {
+    const reports = await this.reportService.getBulkTermReport(
+      termId,
+      branchId,
+    );
+
     const title = `Bulk Attendance Summary - ${termName || 'Term'}`;
     const subtitle = branchId ? `Branch: ${branchName}` : 'All Branches';
 
-    const docDefinition = this.buildBulkSummaryDocDefinition(reports, title, subtitle);
+    const docDefinition = this.buildBulkSummaryDocDefinition(
+      reports,
+      title,
+      subtitle,
+    );
     const pdfDoc = pdfmake.createPdf(docDefinition);
     return await pdfDoc.getBuffer();
   }
 
-  private buildBulkSummaryDocDefinition(reports: any[], title: string, subtitle: string): any {
+  private buildBulkSummaryDocDefinition(
+    reports: any[],
+    title: string,
+    subtitle: string,
+  ): any {
     const now = new Date();
     const dd = String(now.getDate()).padStart(2, '0');
     const mm = String(now.getMonth() + 1).padStart(2, '0');
     const yyyy = now.getFullYear();
     const generatedStr = `${dd}/${mm}/${yyyy} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    
-    const footerFn = function(currentPage: number, pageCount: number) {
+
+    const footerFn = function (currentPage: number, pageCount: number) {
       return {
         columns: [
           {
             width: '*',
             columns: [
-              { image: require('path').join(process.cwd(), '..', 'dashboard', 'public', 'logo.png'), width: 20, margin: [0, -2, 5, 0] },
-              { text: 'TK Clocking System', alignment: 'left', margin: [0, 2, 0, 0], color: '#6b7280', fontSize: 9 }
-            ]
+              {
+                image: require('path').join(
+                  process.cwd(),
+                  '..',
+                  'dashboard',
+                  'public',
+                  'logo.png',
+                ),
+                width: 20,
+                margin: [0, -2, 5, 0],
+              },
+              {
+                text: 'TK Clocking System',
+                alignment: 'left',
+                margin: [0, 2, 0, 0],
+                color: '#6b7280',
+                fontSize: 9,
+              },
+            ],
           },
-          { text: `Report generated on ${generatedStr}`, alignment: 'center', margin: [0, 2, 0, 0], color: '#6b7280', fontSize: 9, width: '*' },
-          { text: `Page ${currentPage} of ${pageCount}`, alignment: 'right', margin: [0, 2, 0, 0], color: '#6b7280', fontSize: 9, width: '*' }
+          {
+            text: `Report generated on ${generatedStr}`,
+            alignment: 'center',
+            margin: [0, 2, 0, 0],
+            color: '#6b7280',
+            fontSize: 9,
+            width: '*',
+          },
+          {
+            text: `Page ${currentPage} of ${pageCount}`,
+            alignment: 'right',
+            margin: [0, 2, 0, 0],
+            color: '#6b7280',
+            fontSize: 9,
+            width: '*',
+          },
         ],
-        margin: [40, 10, 40, 0]
+        margin: [40, 10, 40, 0],
       };
     };
 
-    const tableBody = reports.map(r => [
+    const tableBody = reports.map((r) => [
       { text: r.employee.fullName, bold: true },
       `${r.summary.totalHours}h`,
       r.summary.daysWorked.toString(),
       r.summary.daysAbsent.toString(),
       `${r.summary.daysLate} (${this.formatMinutes(r.summary.totalLateMinutes)})`,
       `${r.summary.daysEarlyDeparture} (${this.formatMinutes(r.summary.totalEarlyOutMinutes)})`,
-      r.summary.daysForgotClockOut.toString()
+      r.summary.daysForgotClockOut.toString(),
     ]);
 
     tableBody.unshift([
@@ -99,7 +176,7 @@ export class AttendanceExportService {
       { text: 'Abs', style: 'tableHeader' },
       { text: 'Late', style: 'tableHeader' },
       { text: 'EarlyOut', style: 'tableHeader' },
-      { text: 'MissOut', style: 'tableHeader' }
+      { text: 'MissOut', style: 'tableHeader' },
     ]);
 
     return {
@@ -109,32 +186,62 @@ export class AttendanceExportService {
       footer: footerFn,
       defaultStyle: { font: 'Helvetica', fontSize: 10 },
       content: [
-        { text: title, style: 'coverTitle', alignment: 'center', margin: [0, 10, 0, 5] },
-        { text: subtitle, style: 'coverSub', alignment: 'center', margin: [0, 0, 0, 15] },
-        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 760, y2: 0, lineWidth: 2, lineColor: '#e5e7eb' }], margin: [0, 0, 0, 20] },
+        {
+          text: title,
+          style: 'coverTitle',
+          alignment: 'center',
+          margin: [0, 10, 0, 5],
+        },
+        {
+          text: subtitle,
+          style: 'coverSub',
+          alignment: 'center',
+          margin: [0, 0, 0, 15],
+        },
+        {
+          canvas: [
+            {
+              type: 'line',
+              x1: 0,
+              y1: 0,
+              x2: 760,
+              y2: 0,
+              lineWidth: 2,
+              lineColor: '#e5e7eb',
+            },
+          ],
+          margin: [0, 0, 0, 20],
+        },
         {
           table: {
             headerRows: 1,
             widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
-            body: tableBody
+            body: tableBody,
           },
           layout: {
-            fillColor: (rowIndex: number) => (rowIndex !== 0 && rowIndex % 2 === 0) ? '#f8fafc' : null,
-            hLineWidth: (i: number, node: any) => (i === 0 || i === node.table.body.length) ? 2 : 1,
+            fillColor: (rowIndex: number) =>
+              rowIndex !== 0 && rowIndex % 2 === 0 ? '#f8fafc' : null,
+            hLineWidth: (i: number, node: any) =>
+              i === 0 || i === node.table.body.length ? 2 : 1,
             vLineWidth: () => 0,
             hLineColor: () => '#e2e8f0',
             paddingLeft: () => 10,
             paddingRight: () => 10,
             paddingTop: () => 8,
-            paddingBottom: () => 8
-          }
-        }
+            paddingBottom: () => 8,
+          },
+        },
       ],
       styles: {
         coverTitle: { fontSize: 22, bold: true, color: '#111827' },
         coverSub: { fontSize: 14, color: '#4b5563' },
-        tableHeader: { bold: true, fillColor: '#2563eb', color: '#ffffff', margin: [0, 4, 0, 4] }
-      }
+        tableHeader: {
+          bold: true,
+          fillColor: '#2563eb',
+          color: '#ffffff',
+          margin: [0, 4, 0, 4],
+        },
+      },
     };
   }
 
@@ -146,10 +253,24 @@ export class AttendanceExportService {
     return m > 0 ? `${h}h ${m}m` : `${h}h`;
   }
 
-  private buildMonthlyDocDefinition(report: any, month: number, year: number): any {
+  private buildMonthlyDocDefinition(
+    report: any,
+    month: number,
+    year: number,
+  ): any {
     const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     const monthName = monthNames[month - 1];
 
@@ -159,20 +280,50 @@ export class AttendanceExportService {
     const yyyy = now.getFullYear();
     const generatedStr = `${dd}/${mm}/${yyyy} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-    const footerFn = function(currentPage: number, pageCount: number) {
+    const footerFn = function (currentPage: number, pageCount: number) {
       return {
         columns: [
           {
             width: '*',
             columns: [
-              { image: require('path').join(process.cwd(), '..', 'dashboard', 'public', 'logo.png'), width: 20, margin: [0, -2, 5, 0] },
-              { text: 'TK Clocking System', alignment: 'left', margin: [0, 2, 0, 0], color: '#6b7280', fontSize: 9 }
-            ]
+              {
+                image: require('path').join(
+                  process.cwd(),
+                  '..',
+                  'dashboard',
+                  'public',
+                  'logo.png',
+                ),
+                width: 20,
+                margin: [0, -2, 5, 0],
+              },
+              {
+                text: 'TK Clocking System',
+                alignment: 'left',
+                margin: [0, 2, 0, 0],
+                color: '#6b7280',
+                fontSize: 9,
+              },
+            ],
           },
-          { text: `Report generated on ${generatedStr}`, alignment: 'center', margin: [0, 2, 0, 0], color: '#6b7280', fontSize: 9, width: '*' },
-          { text: `Page ${currentPage} of ${pageCount}`, alignment: 'right', margin: [0, 2, 0, 0], color: '#6b7280', fontSize: 9, width: '*' }
+          {
+            text: `Report generated on ${generatedStr}`,
+            alignment: 'center',
+            margin: [0, 2, 0, 0],
+            color: '#6b7280',
+            fontSize: 9,
+            width: '*',
+          },
+          {
+            text: `Page ${currentPage} of ${pageCount}`,
+            alignment: 'right',
+            margin: [0, 2, 0, 0],
+            color: '#6b7280',
+            fontSize: 9,
+            width: '*',
+          },
         ],
-        margin: [40, 10, 40, 0]
+        margin: [40, 10, 40, 0],
       };
     };
 
@@ -182,36 +333,85 @@ export class AttendanceExportService {
       content: [
         { text: 'Monthly Attendance Report', style: 'header' },
         { text: `Employee: ${report.employee.fullName}`, style: 'subheader' },
-        { text: `Period: ${monthName} ${year}`, style: 'subheader', margin: [0, 0, 0, 15] },
+        {
+          text: `Period: ${monthName} ${year}`,
+          style: 'subheader',
+          margin: [0, 0, 0, 15],
+        },
         this.buildSummaryTable(report.summary),
         { text: 'Daily Log', style: 'sectionHeader', margin: [0, 20, 0, 10] },
-        this.buildDailyLogTable(report.days)
+        this.buildDailyLogTable(report.days),
       ],
       styles: {
         header: { fontSize: 18, bold: true, margin: [0, 0, 0, 5] },
         subheader: { fontSize: 12, color: '#000000', margin: [0, 0, 0, 5] },
         sectionHeader: { fontSize: 14, bold: true },
-        tableHeader: { bold: true, fillColor: '#f3f4f6', color: '#374151' }
-      }
+        tableHeader: { bold: true, fillColor: '#f3f4f6', color: '#374151' },
+      },
     };
   }
 
   private buildTermDocDefinition(report: any): any {
     const content: any[] = [
-      { text: 'Academic Term Attendance Report', style: 'coverTitle', alignment: 'center', margin: [0, 60, 0, 10] },
-      { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#00000038' }], margin: [0, 0, 0, 20] },
-      { text: report.employee.fullName, style: 'coverName', alignment: 'center' },
+      {
+        text: 'Academic Term Attendance Report',
+        style: 'coverTitle',
+        alignment: 'center',
+        margin: [0, 60, 0, 10],
+      },
+      {
+        canvas: [
+          {
+            type: 'line',
+            x1: 0,
+            y1: 0,
+            x2: 515,
+            y2: 0,
+            lineWidth: 1,
+            lineColor: '#00000038',
+          },
+        ],
+        margin: [0, 0, 0, 20],
+      },
+      {
+        text: report.employee.fullName,
+        style: 'coverName',
+        alignment: 'center',
+      },
       { text: ``, alignment: 'center', margin: [0, 5, 0, 20] },
-      { text: `Term: ${report.term.name}`, style: 'coverSub', alignment: 'center' },
-      { text: `Academic Year: ${report.term.academicYear}`, style: 'coverSub', alignment: 'center', margin: [0, 5, 0, 40] },
-      { text: 'Term Summary Overview', style: 'sectionHeader', alignment: 'center', margin: [0, 0, 0, 15] },
-      this.buildSummaryTable(report.summary)
+      {
+        text: `Term: ${report.term.name}`,
+        style: 'coverSub',
+        alignment: 'center',
+      },
+      {
+        text: `Academic Year: ${report.term.academicYear}`,
+        style: 'coverSub',
+        alignment: 'center',
+        margin: [0, 5, 0, 40],
+      },
+      {
+        text: 'Term Summary Overview',
+        style: 'sectionHeader',
+        alignment: 'center',
+        margin: [0, 0, 0, 15],
+      },
+      this.buildSummaryTable(report.summary),
     ];
 
     report.months.forEach((m: any) => {
-      content.push({ text: m.name, style: 'sectionHeader', margin: [0, 20, 0, 10], pageBreak: 'before' });
+      content.push({
+        text: m.name,
+        style: 'sectionHeader',
+        margin: [0, 20, 0, 10],
+        pageBreak: 'before',
+      });
       content.push(this.buildSummaryTable(m.summary));
-      content.push({ text: 'Daily Log', style: 'subheader', margin: [0, 15, 0, 5] });
+      content.push({
+        text: 'Daily Log',
+        style: 'subheader',
+        margin: [0, 15, 0, 5],
+      });
       content.push(this.buildDailyLogTable(m.days));
     });
 
@@ -221,20 +421,50 @@ export class AttendanceExportService {
     const yyyy = now.getFullYear();
     const generatedStr = `${dd}/${mm}/${yyyy} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-    const footerFn = function(currentPage: number, pageCount: number) {
+    const footerFn = function (currentPage: number, pageCount: number) {
       return {
         columns: [
           {
             width: '*',
             columns: [
-              { image: require('path').join(process.cwd(), '..', 'dashboard', 'public', 'logo.png'), width: 20, margin: [0, -2, 5, 0] },
-              { text: 'TK Clocking System', alignment: 'left', margin: [0, 2, 0, 0], color: '#6b7280', fontSize: 9 }
-            ]
+              {
+                image: require('path').join(
+                  process.cwd(),
+                  '..',
+                  'dashboard',
+                  'public',
+                  'logo.png',
+                ),
+                width: 20,
+                margin: [0, -2, 5, 0],
+              },
+              {
+                text: 'TK Clocking System',
+                alignment: 'left',
+                margin: [0, 2, 0, 0],
+                color: '#6b7280',
+                fontSize: 9,
+              },
+            ],
           },
-          { text: `Report generated on ${generatedStr}`, alignment: 'center', margin: [0, 2, 0, 0], color: '#6b7280', fontSize: 9, width: '*' },
-          { text: `Page ${currentPage} of ${pageCount}`, alignment: 'right', margin: [0, 2, 0, 0], color: '#6b7280', fontSize: 9, width: '*' }
+          {
+            text: `Report generated on ${generatedStr}`,
+            alignment: 'center',
+            margin: [0, 2, 0, 0],
+            color: '#6b7280',
+            fontSize: 9,
+            width: '*',
+          },
+          {
+            text: `Page ${currentPage} of ${pageCount}`,
+            alignment: 'right',
+            margin: [0, 2, 0, 0],
+            color: '#6b7280',
+            fontSize: 9,
+            width: '*',
+          },
         ],
-        margin: [40, 10, 40, 0]
+        margin: [40, 10, 40, 0],
       };
     };
 
@@ -249,8 +479,8 @@ export class AttendanceExportService {
         header: { fontSize: 18, bold: true, margin: [0, 0, 0, 5] },
         subheader: { fontSize: 12, color: '#4b5563', margin: [0, 0, 0, 5] },
         sectionHeader: { fontSize: 14, bold: true },
-        tableHeader: { bold: true, fillColor: '#f3f4f6', color: '#374151' }
-      }
+        tableHeader: { bold: true, fillColor: '#f3f4f6', color: '#374151' },
+      },
     };
   }
 
@@ -264,21 +494,25 @@ export class AttendanceExportService {
             { text: 'Total Hours', bold: true, fillColor: '#f8fafc' },
             { text: `${summary.totalHours}h` },
             { text: 'Days Worked', bold: true, fillColor: '#f8fafc' },
-            { text: summary.daysWorked.toString() }
+            { text: summary.daysWorked.toString() },
           ],
           [
             { text: 'Days Absent', bold: true, fillColor: '#f8fafc' },
             { text: summary.daysAbsent.toString() },
             { text: 'Days Late', bold: true, fillColor: '#f8fafc' },
-            { text: `${summary.daysLate} (${this.formatMinutes(summary.totalLateMinutes)})` }
+            {
+              text: `${summary.daysLate} (${this.formatMinutes(summary.totalLateMinutes)})`,
+            },
           ],
           [
             { text: 'Early Departures', bold: true, fillColor: '#f8fafc' },
-            { text: `${summary.daysEarlyDeparture} (${this.formatMinutes(summary.totalEarlyOutMinutes)})` },
+            {
+              text: `${summary.daysEarlyDeparture} (${this.formatMinutes(summary.totalEarlyOutMinutes)})`,
+            },
             { text: 'Missed Clock-Out', bold: true, fillColor: '#f8fafc' },
-            { text: summary.daysForgotClockOut.toString() }
-          ]
-        ]
+            { text: summary.daysForgotClockOut.toString() },
+          ],
+        ],
       },
       layout: {
         hLineWidth: (i: number, node: any) => 1,
@@ -289,7 +523,7 @@ export class AttendanceExportService {
         paddingRight: (i: number, node: any) => 12,
         paddingTop: (i: number, node: any) => 10,
         paddingBottom: (i: number, node: any) => 10,
-      }
+      },
     };
   }
 
@@ -298,17 +532,30 @@ export class AttendanceExportService {
     const today = new Date();
     // Use local timezone offset to get correct today date
     const offset = today.getTimezoneOffset();
-    const todayLocal = new Date(today.getTime() - (offset * 60 * 1000));
+    const todayLocal = new Date(today.getTime() - offset * 60 * 1000);
     const todayStr = todayLocal.toISOString().split('T')[0];
 
     const formatDate = (dateStr: string) => {
       const d = new Date(dateStr);
       const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
       return `${daysOfWeek[d.getDay()]}, ${d.getDate().toString().padStart(2, '0')} ${months[d.getMonth()]}`;
     };
 
-    const tableBody = days.map(d => {
+    const tableBody = days.map((d) => {
       const isFuture = d.date > todayStr;
 
       if (isFuture) {
@@ -319,25 +566,48 @@ export class AttendanceExportService {
           '-',
           '-',
           '-',
-          '-'
+          '-',
         ];
       }
 
       let statusColor = '#000000';
-      if (d.status === 'ABSENT') statusColor = '#ef4444'; // Red
-      else if (d.status === 'SUSPENDED' || d.status === 'INACTIVE') statusColor = '#f59e0b'; // Amber/Orange
-      else if (d.status.includes('HOLIDAY') || d.status === 'WEEKEND' || d.status.includes('BREAK') || d.status.includes('OFF-TERM')) statusColor = '#6b7280'; // Gray
-      else if (d.status === 'PRESENT') statusColor = '#059669'; // Green
+      if (d.status === 'ABSENT')
+        statusColor = '#ef4444'; // Red
+      else if (d.status === 'SUSPENDED' || d.status === 'INACTIVE')
+        statusColor = '#f59e0b'; // Amber/Orange
+      else if (
+        d.status.includes('HOLIDAY') ||
+        d.status === 'WEEKEND' ||
+        d.status.includes('BREAK') ||
+        d.status.includes('OFF-TERM')
+      )
+        statusColor = '#6b7280'; // Gray
+      else if (d.status === 'PRESENT')
+        statusColor = '#059669'; // Green
       else if (d.status.includes('LEAVE')) statusColor = '#0284c7'; // Blue
 
       return [
         formatDate(d.date),
-        { text: d.status, color: statusColor, bold: d.status === 'ABSENT' || d.status === 'PRESENT' },
-        d.clockIn ? new Date(d.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-',
-        d.clockOut ? new Date(d.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-',
+        {
+          text: d.status,
+          color: statusColor,
+          bold: d.status === 'ABSENT' || d.status === 'PRESENT',
+        },
+        d.clockIn
+          ? new Date(d.clockIn).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : '-',
+        d.clockOut
+          ? new Date(d.clockOut).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          : '-',
         `${d.hours}h`,
         d.isLate ? `Yes (${this.formatMinutes(d.lateMinutes)})` : 'No',
-        d.isEarlyOut ? `Yes (${this.formatMinutes(d.earlyOutMinutes)})` : 'No'
+        d.isEarlyOut ? `Yes (${this.formatMinutes(d.earlyOutMinutes)})` : 'No',
       ];
     });
 
@@ -348,14 +618,14 @@ export class AttendanceExportService {
       { text: 'Out', style: 'tableHeader' },
       { text: 'Hours', style: 'tableHeader' },
       { text: 'Late', style: 'tableHeader' },
-      { text: 'Early Out', style: 'tableHeader' }
+      { text: 'Early Out', style: 'tableHeader' },
     ]);
 
     return {
       table: {
         headerRows: 1,
         widths: ['auto', '*', 55, 55, 'auto', 'auto', 'auto'],
-        body: tableBody
+        body: tableBody,
       },
       layout: {
         hLineWidth: (i: number, node: any) => 1,
@@ -363,7 +633,7 @@ export class AttendanceExportService {
         hLineColor: (i: number, node: any) => '#e5e7eb',
         paddingTop: (i: number, node: any) => 6,
         paddingBottom: (i: number, node: any) => 6,
-      }
+      },
     };
   }
 }

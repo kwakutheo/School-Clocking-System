@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { AcademicTerm } from './term.entity';
 import { TenantBaseEntity } from '../../common/entities/tenant-base.entity';
 
@@ -16,7 +23,7 @@ export class TermBreak extends TenantBaseEntity {
   @Column({ type: 'date' })
   endDate: string;
 
-  @ManyToOne(() => AcademicTerm, term => term.breaks, { onDelete: 'CASCADE' })
+  @ManyToOne(() => AcademicTerm, (term) => term.breaks, { onDelete: 'CASCADE' })
   term: AcademicTerm;
 
   @CreateDateColumn({ name: 'created_at' })

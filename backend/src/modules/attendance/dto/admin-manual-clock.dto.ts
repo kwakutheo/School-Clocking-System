@@ -20,13 +20,17 @@ export class AdminManualClockDto {
   type: AttendanceType;
 
   /** Optional: defaults to now. Allows backdating (e.g. "he arrived at 08:05"). */
-  @ApiPropertyOptional({ description: 'ISO8601 timestamp — defaults to now if omitted' })
+  @ApiPropertyOptional({
+    description: 'ISO8601 timestamp — defaults to now if omitted',
+  })
   @IsDateString()
   @IsOptional()
   timestamp?: string;
 
   /** Required reason for the audit trail. */
-  @ApiProperty({ description: 'Reason for the manual override (shown in audit log)' })
+  @ApiProperty({
+    description: 'Reason for the manual override (shown in audit log)',
+  })
   @IsString()
   @IsNotEmpty()
   note: string;

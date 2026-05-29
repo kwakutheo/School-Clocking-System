@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, Delete, Put, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AcademicCalendarService } from './academic-calendar.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -32,13 +41,19 @@ export class AcademicCalendarController {
   @Post('clone-template')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('calendar.create')
-  @ApiOperation({ summary: 'Clone a global master calendar template by academic year' })
-  async cloneTemplate(@Body() dto: { academicYear: string; overwrite?: boolean }) {
+  @ApiOperation({
+    summary: 'Clone a global master calendar template by academic year',
+  })
+  async cloneTemplate(
+    @Body() dto: { academicYear: string; overwrite?: boolean },
+  ) {
     return this.service.cloneTemplate(dto.academicYear, dto.overwrite);
   }
 
   @Get('terms/current-year')
-  @ApiOperation({ summary: 'List academic terms for the current academic year' })
+  @ApiOperation({
+    summary: 'List academic terms for the current academic year',
+  })
   findCurrentYearTerms() {
     return this.service.findCurrentYearTerms();
   }

@@ -75,7 +75,10 @@ describe('LeavesService', () => {
     it('should approve a PENDING leave request and save it', async () => {
       const leave = buildLeave();
       mockLeaveRepo.findOne.mockResolvedValue(leave);
-      mockLeaveRepo.save.mockResolvedValue({ ...leave, status: LeaveStatus.APPROVED });
+      mockLeaveRepo.save.mockResolvedValue({
+        ...leave,
+        status: LeaveStatus.APPROVED,
+      });
 
       const result = await service.reviewLeave(leaveId, reviewer, {
         status: LeaveStatus.APPROVED,
@@ -89,7 +92,10 @@ describe('LeavesService', () => {
     it('should reject a PENDING leave request and save it', async () => {
       const leave = buildLeave();
       mockLeaveRepo.findOne.mockResolvedValue(leave);
-      mockLeaveRepo.save.mockResolvedValue({ ...leave, status: LeaveStatus.REJECTED });
+      mockLeaveRepo.save.mockResolvedValue({
+        ...leave,
+        status: LeaveStatus.REJECTED,
+      });
 
       const result = await service.reviewLeave(leaveId, reviewer, {
         status: LeaveStatus.REJECTED,
@@ -104,7 +110,9 @@ describe('LeavesService', () => {
       mockLeaveRepo.findOne.mockResolvedValue(leave);
 
       await expect(
-        service.reviewLeave(leaveId, reviewer, { status: LeaveStatus.REJECTED }),
+        service.reviewLeave(leaveId, reviewer, {
+          status: LeaveStatus.REJECTED,
+        }),
       ).rejects.toThrow(ForbiddenException);
     });
 
@@ -112,21 +120,27 @@ describe('LeavesService', () => {
       mockLeaveRepo.findOne.mockResolvedValue(null);
 
       await expect(
-        service.reviewLeave('non-existent-id', reviewer, { status: LeaveStatus.APPROVED }),
+        service.reviewLeave('non-existent-id', reviewer, {
+          status: LeaveStatus.APPROVED,
+        }),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should send silent sync + push notification if employee has FCM token', async () => {
       const leave = buildLeave('valid-fcm-token');
       mockLeaveRepo.findOne.mockResolvedValue(leave);
-      mockLeaveRepo.save.mockResolvedValue({ ...leave, status: LeaveStatus.APPROVED });
+      mockLeaveRepo.save.mockResolvedValue({
+        ...leave,
+        status: LeaveStatus.APPROVED,
+      });
 
-      await service.reviewLeave(leaveId, reviewer, { status: LeaveStatus.APPROVED });
+      await service.reviewLeave(leaveId, reviewer, {
+        status: LeaveStatus.APPROVED,
+      });
 
-      expect(mockNotificationsService.sendSilentSyncToToken).toHaveBeenCalledWith(
-        'valid-fcm-token',
-        'refresh_dashboard',
-      );
+      expect(
+        mockNotificationsService.sendSilentSyncToToken,
+      ).toHaveBeenCalledWith('valid-fcm-token', 'refresh_dashboard');
       expect(mockNotificationsService.sendPushToToken).toHaveBeenCalledWith(
         'valid-fcm-token',
         'Leave Request Update',
@@ -137,20 +151,32 @@ describe('LeavesService', () => {
     it('should NOT send notifications if employee has no FCM token', async () => {
       const leave = buildLeave(undefined); // No token
       mockLeaveRepo.findOne.mockResolvedValue(leave);
-      mockLeaveRepo.save.mockResolvedValue({ ...leave, status: LeaveStatus.APPROVED });
+      mockLeaveRepo.save.mockResolvedValue({
+        ...leave,
+        status: LeaveStatus.APPROVED,
+      });
 
-      await service.reviewLeave(leaveId, reviewer, { status: LeaveStatus.APPROVED });
+      await service.reviewLeave(leaveId, reviewer, {
+        status: LeaveStatus.APPROVED,
+      });
 
-      expect(mockNotificationsService.sendSilentSyncToToken).not.toHaveBeenCalled();
+      expect(
+        mockNotificationsService.sendSilentSyncToToken,
+      ).not.toHaveBeenCalled();
       expect(mockNotificationsService.sendPushToToken).not.toHaveBeenCalled();
     });
 
     it('should always log an audit entry regardless of FCM token', async () => {
       const leave = buildLeave();
       mockLeaveRepo.findOne.mockResolvedValue(leave);
-      mockLeaveRepo.save.mockResolvedValue({ ...leave, status: LeaveStatus.APPROVED });
+      mockLeaveRepo.save.mockResolvedValue({
+        ...leave,
+        status: LeaveStatus.APPROVED,
+      });
 
-      await service.reviewLeave(leaveId, reviewer, { status: LeaveStatus.APPROVED });
+      await service.reviewLeave(leaveId, reviewer, {
+        status: LeaveStatus.APPROVED,
+      });
 
       expect(mockAuditService.log).toHaveBeenCalledTimes(1);
       expect(mockAuditService.log).toHaveBeenCalledWith(
@@ -166,7 +192,7 @@ describe('LeavesService', () => {
 
   describe('requestLeave', () => {
     const userId = 'user-uuid';
-    const empId  = 'emp-uuid';
+    const empId = 'emp-uuid';
 
     const mockEmployee = { id: empId, user: { id: userId } };
 
@@ -179,7 +205,9 @@ describe('LeavesService', () => {
 
     beforeEach(() => {
       // Employee repo: always resolves the mock employee
-      mockEmployeeRepo.createQueryBuilder.mockReturnValue(buildQb(mockEmployee));
+      mockEmployeeRepo.createQueryBuilder.mockReturnValue(
+        buildQb(mockEmployee),
+      );
     });
 
     it('should throw BadRequestException when endDate is before startDate', async () => {
@@ -216,7 +244,10 @@ describe('LeavesService', () => {
       // No overlap
       mockLeaveRepo.createQueryBuilder.mockReturnValue(buildQb(null));
       mockLeaveRepo.create.mockReturnValue({ leaveType: 'SICK' });
-      mockLeaveRepo.save.mockResolvedValue({ leaveType: 'SICK', status: LeaveStatus.PENDING });
+      mockLeaveRepo.save.mockResolvedValue({
+        leaveType: 'SICK',
+        status: LeaveStatus.PENDING,
+      });
 
       const result = await service.requestLeave(userId, {
         leaveType: 'SICK',
@@ -236,7 +267,9 @@ describe('LeavesService', () => {
         endDate: '2099-06-18',
       };
       // Employee QB resolves the employee; leave QB resolves conflicting leave
-      mockEmployeeRepo.createQueryBuilder.mockReturnValue(buildQb(mockEmployee));
+      mockEmployeeRepo.createQueryBuilder.mockReturnValue(
+        buildQb(mockEmployee),
+      );
       mockLeaveRepo.createQueryBuilder.mockReturnValue(buildQb(conflicting));
 
       await expect(
@@ -256,7 +289,9 @@ describe('LeavesService', () => {
         startDate: '2099-07-01',
         endDate: '2099-07-07',
       };
-      mockEmployeeRepo.createQueryBuilder.mockReturnValue(buildQb(mockEmployee));
+      mockEmployeeRepo.createQueryBuilder.mockReturnValue(
+        buildQb(mockEmployee),
+      );
       mockLeaveRepo.createQueryBuilder.mockReturnValue(buildQb(conflicting));
 
       await expect(
@@ -272,7 +307,10 @@ describe('LeavesService', () => {
       // No overlap
       mockLeaveRepo.createQueryBuilder.mockReturnValue(buildQb(null));
       mockLeaveRepo.create.mockReturnValue({ leaveType: 'ANNUAL' });
-      mockLeaveRepo.save.mockResolvedValue({ leaveType: 'ANNUAL', status: LeaveStatus.PENDING });
+      mockLeaveRepo.save.mockResolvedValue({
+        leaveType: 'ANNUAL',
+        status: LeaveStatus.PENDING,
+      });
 
       const result = await service.requestLeave(userId, {
         leaveType: 'ANNUAL',

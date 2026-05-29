@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { TermBreak } from './term-break.entity';
 import { TenantBaseEntity } from '../../common/entities/tenant-base.entity';
 
@@ -22,7 +29,7 @@ export class AcademicTerm extends TenantBaseEntity {
   @Column({ default: true })
   isActive: boolean;
 
-  @OneToMany(() => TermBreak, breakItem => breakItem.term)
+  @OneToMany(() => TermBreak, (breakItem) => breakItem.term)
   breaks: TermBreak[];
 
   @CreateDateColumn({ name: 'created_at' })

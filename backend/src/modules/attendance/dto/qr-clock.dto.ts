@@ -1,4 +1,10 @@
-import { IsString, IsEnum, IsOptional, IsISO8601, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsISO8601,
+  IsNumber,
+} from 'class-validator';
 import { AttendanceType } from '../../../common/enums';
 
 export class QrClockDto {

@@ -1,4 +1,8 @@
-import { Injectable, NestMiddleware, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NestMiddleware,
+  BadRequestException,
+} from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { tenantLocalStorage } from './tenant.context';
 import { TenantsService } from '../../modules/tenants/tenants.service';
@@ -38,7 +42,8 @@ export class TenantMiddleware implements NestMiddleware {
               const impersonatedSlug = req.headers['x-tenant-slug'] as string;
               if (impersonatedSlug) {
                 try {
-                  const tenant = await this.tenantsService.findBySlug(impersonatedSlug);
+                  const tenant =
+                    await this.tenantsService.findBySlug(impersonatedSlug);
                   tenantId = tenant.id;
                 } catch (e) {
                   // Ignored
@@ -76,10 +81,11 @@ export class TenantMiddleware implements NestMiddleware {
     }
 
     // 2.5 Bypass local dev default sandbox for global endpoints
-    const isGlobalRoute = req.originalUrl.includes('/saas-admin') || 
-                          (req.originalUrl.includes('/auth/login') && !tenantId) ||
-                          req.originalUrl.includes('/api/docs') ||
-                          req.originalUrl.includes('/health');
+    const isGlobalRoute =
+      req.originalUrl.includes('/saas-admin') ||
+      (req.originalUrl.includes('/auth/login') && !tenantId) ||
+      req.originalUrl.includes('/api/docs') ||
+      req.originalUrl.includes('/health');
     if (isGlobalRoute) {
       tenantId = null;
       hasResolved = true;
@@ -87,10 +93,14 @@ export class TenantMiddleware implements NestMiddleware {
 
     // 3. Strict Tenant Resolution Check (Fail-Fast)
     if (!hasResolved && !isGlobalRoute && req.originalUrl.includes('/api/v1')) {
-      throw new BadRequestException('School tenant context could not be resolved. Please specify a valid tenant context.');
+      throw new BadRequestException(
+        'School tenant context could not be resolved. Please specify a valid tenant context.',
+      );
     }
 
-    console.log(`🔌 [Tenant Middleware] Active request URL: ${req.originalUrl} | Bound Tenant ID: ${tenantId}`);
+    console.log(
+      `🔌 [Tenant Middleware] Active request URL: ${req.originalUrl} | Bound Tenant ID: ${tenantId}`,
+    );
 
     // 4. Run request synchronously inside AsyncLocalStorage context
     tenantLocalStorage.run(tenantId, () => {

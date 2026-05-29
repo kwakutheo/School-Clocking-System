@@ -6,7 +6,7 @@ import { UsersService } from '../../users/users.service';
 import { TenantsService } from '../../tenants/tenants.service';
 
 export interface JwtPayload {
-  sub: string;   // user.id
+  sub: string; // user.id
   role: string;
   iat?: number;
   exp?: number;
@@ -34,7 +34,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
     // Check if school subscription is active (suspended check)
     if (user.tenantId) {
-      const tenant = await this.tenantsService.findById(user.tenantId).catch(() => null);
+      const tenant = await this.tenantsService
+        .findById(user.tenantId)
+        .catch(() => null);
       if (tenant && !tenant.isActive) {
         throw new UnauthorizedException(
           'Your school subscription is suspended. Please contact the platform administrator.',

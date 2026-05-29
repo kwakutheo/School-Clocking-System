@@ -1,6 +1,10 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, UpdateDateColumn, Index,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 export enum BulletinType {
@@ -10,7 +14,9 @@ export enum BulletinType {
   MAINTENANCE = 'maintenance',
 }
 
-@Index('idx_system_bulletins_active', ['isActive'], { where: '"is_active" = true' })
+@Index('idx_system_bulletins_active', ['isActive'], {
+  where: '"is_active" = true',
+})
 @Index('idx_system_bulletins_created_at', ['createdAt'])
 @Entity('system_bulletins')
 export class SystemBulletin {
@@ -47,4 +53,3 @@ export class SystemBulletin {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 }
-

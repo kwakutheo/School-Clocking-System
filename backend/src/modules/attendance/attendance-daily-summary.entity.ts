@@ -1,6 +1,9 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  Index, UpdateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  Index,
+  UpdateDateColumn,
 } from 'typeorm';
 
 /**

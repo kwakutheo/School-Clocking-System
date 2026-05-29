@@ -2004,7 +2004,7 @@ export default function SaasOverviewPage() {
                   cursor: "pointer",
                   transition: "all 0.2s",
                   background:
-                    rankTab === "employees" ? "#8b5cf6" : "transparent",
+                    rankTab === "employees" ? "var(--primary)" : "transparent",
                   color:
                     rankTab === "employees" ? "#fff" : "var(--text-secondary)",
                   display: "flex",
@@ -2109,7 +2109,8 @@ export default function SaasOverviewPage() {
           {/* ── SCHOOLS TAB ─────────────────────────────────────────────── */}
           {rankTab === "schools" && (
             <>
-              <div style={{ marginTop: "12px" }}>
+              <div 
+              style={{ marginTop: "12px" }}>
                 {allRanked.length === 0 ? (
                   <div
                     style={{
@@ -2171,7 +2172,7 @@ export default function SaasOverviewPage() {
                     e.currentTarget.style.color = "var(--text-secondary)";
                   }}
                 >
-                  View All Schools
+                  View All Schools Ranking
                 </button>
               </div>
             </>
@@ -2285,9 +2286,9 @@ export default function SaasOverviewPage() {
                     borderRadius: "8px",
                     fontSize: "13px",
                     fontWeight: 600,
-                    border: "1px solid rgba(139,92,246,0.3)",
-                    background: "rgba(139,92,246,0.06)",
-                    color: "#8b5cf6",
+                    border: "1px solid var(--border)",
+                    background: "transparent",
+                    color: "var(--text-secondary)",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
@@ -2296,20 +2297,22 @@ export default function SaasOverviewPage() {
                     transition: "all 0.2s",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(139,92,246,0.14)";
+                    e.currentTarget.style.background = "var(--bg-card-hover)";
+                    e.currentTarget.style.color = "var(--text-primary)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(139,92,246,0.06)";
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "var(--text-secondary)";
                   }}
                 >
-                  <Trophy size={13} /> View All Staff Rankings
+                  View All Staff Rankings
                 </button>
               </div>
             </>
           )}
         </div>
 
-        {/* Right Column: Sustained Performers */}
+        {/* Right Column: Sustained Performers handleOpenEmpModal*/}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {/* Sustained Performers */}
           <div
@@ -2507,7 +2510,7 @@ export default function SaasOverviewPage() {
                         justifyContent: "center",
                       }}
                     >
-                      <Trophy size={16} color="#8b5cf6" />
+                      <Trophy size={16} color="#0011ffff" />
                     </div>
                     Staff Performance Rankings
                   </h2>
@@ -3474,12 +3477,12 @@ export default function SaasOverviewPage() {
               }}
             >
               <div
-                style={{ fontWeight: 700, fontSize: "14px", color: "#8b5cf6" }}
+                style={{ fontWeight: 700, fontSize: "14px", color: "#0011ffff" }}
               >
-                Final Composite Score
+                Final Score
               </div>
               <div
-                style={{ fontSize: "24px", fontWeight: 900, color: "#8b5cf6" }}
+                style={{ fontSize: "24px", fontWeight: 900, color: "#0011ffff" }}
               >
                 {formatPct(explainEmpModal.metrics.score)}%
               </div>

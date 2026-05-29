@@ -52,7 +52,9 @@ export class AuthService {
 
     // Check if school subscription is active (suspended check)
     if (user.tenantId) {
-      const tenant = await this.tenantsService.findById(user.tenantId).catch(() => null);
+      const tenant = await this.tenantsService
+        .findById(user.tenantId)
+        .catch(() => null);
       if (tenant && !tenant.isActive) {
         throw new UnauthorizedException(
           'Your school subscription is suspended. Please contact the platform administrator.',
@@ -61,7 +63,9 @@ export class AuthService {
     }
 
     // Check employee status before allowing login
-    const employee = await this.employees.findByUserId(user.id).catch(() => null);
+    const employee = await this.employees
+      .findByUserId(user.id)
+      .catch(() => null);
     if (employee && employee.status === 'inactive') {
       throw new UnauthorizedException(
         'Your account has been deactivated. Please contact your HR administrator for assistance.',
@@ -83,11 +87,11 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.signAsync(payload, {
         secret: this.config.get<string>('JWT_SECRET'),
-        expiresIn: this.config.get('JWT_EXPIRES_IN', '8h') as any,
+        expiresIn: this.config.get('JWT_EXPIRES_IN', '8h'),
       }),
       this.jwt.signAsync(payload, {
         secret: this.config.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN', '7d') as any,
+        expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN', '7d'),
       }),
     ]);
 
@@ -95,7 +99,9 @@ export class AuthService {
 
     // Check if school subscription is active (suspended check)
     if (user.tenantId) {
-      const tenant = await this.tenantsService.findById(user.tenantId).catch(() => null);
+      const tenant = await this.tenantsService
+        .findById(user.tenantId)
+        .catch(() => null);
       if (tenant && !tenant.isActive) {
         throw new UnauthorizedException(
           'Your school subscription is suspended. Please contact the platform administrator.',
@@ -214,7 +220,7 @@ export class AuthService {
     await this.users.update(user.id, {
       resetPin: pin,
       requiresPasswordChange: true,
-    } as any);
+    });
 
     // Send email
     const hasSmtpConfig = !!(process.env.SMTP_USER && process.env.SMTP_PASS);

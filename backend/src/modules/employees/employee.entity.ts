@@ -1,7 +1,14 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  OneToOne, JoinColumn, ManyToOne, OneToMany,
-  CreateDateColumn, UpdateDateColumn, Unique,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Unique,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Department } from '../departments/department.entity';
@@ -23,11 +30,19 @@ export class Employee extends TenantBaseEntity {
   @Column({ name: 'employee_code' })
   employeeCode: string;
 
-  @ManyToOne(() => Department, { nullable: true, eager: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Department, {
+    nullable: true,
+    eager: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'department_id' })
   department: Department;
 
-  @ManyToOne(() => Branch, { nullable: true, eager: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => Branch, {
+    nullable: true,
+    eager: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'branch_id' })
   branch: Branch;
 

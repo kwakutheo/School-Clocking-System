@@ -19,13 +19,16 @@ export class ReadonlyImpersonationGuard implements CanActivate {
     }
 
     // Allow auth and saas-admin endpoints to be mutated by Super Admins
-    const isSaaSOrAuth = originalUrl.includes('/saas-admin') || originalUrl.includes('/auth');
+    const isSaaSOrAuth =
+      originalUrl.includes('/saas-admin') || originalUrl.includes('/auth');
     if (isSaaSOrAuth) {
       return true;
     }
 
     // Check if there is an active impersonation context (header x-tenant-id or x-tenant-slug)
-    const hasImpersonationHeader = !!(headers['x-tenant-id'] || headers['x-tenant-slug']);
+    const hasImpersonationHeader = !!(
+      headers['x-tenant-id'] || headers['x-tenant-slug']
+    );
     if (!hasImpersonationHeader) {
       return true;
     }
@@ -39,7 +42,7 @@ export class ReadonlyImpersonationGuard implements CanActivate {
         if (decoded && decoded.role === 'super_admin' && !decoded.tenantId) {
           // A super_admin impersonating a tenant cannot perform mutating requests
           throw new ForbiddenException(
-            'This portal is in view-only mode for Super Admins. Modifications are disabled.'
+            'This portal is in view-only mode for Super Admins. Modifications are disabled.',
           );
         }
       } catch (e) {

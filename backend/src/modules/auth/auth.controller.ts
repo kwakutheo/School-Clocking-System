@@ -42,7 +42,10 @@ export class AuthController {
 
   @Post('refresh')
   @ApiOperation({ summary: 'Refresh the access token' })
-  @ApiResponse({ status: 200, description: 'Returns new access + refresh tokens' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns new access + refresh tokens',
+  })
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
   refresh(@Body('refreshToken') token: string) {
     return this.auth.refresh(token);
@@ -66,7 +69,10 @@ export class AuthController {
 
   @Post('request-password-reset')
   @ApiOperation({ summary: 'Request password reset for dashboard admins' })
-  @ApiResponse({ status: 200, description: 'If the email exists, a PIN is sent.' })
+  @ApiResponse({
+    status: 200,
+    description: 'If the email exists, a PIN is sent.',
+  })
   requestPasswordReset(@Body() dto: RequestPasswordResetDto) {
     return this.auth.requestPasswordReset(dto);
   }
@@ -74,7 +80,10 @@ export class AuthController {
   @Post('complete-password-reset')
   @ApiOperation({ summary: 'Complete password reset using PIN' })
   @ApiResponse({ status: 200, description: 'Password reset successful' })
-  @ApiResponse({ status: 401, description: 'Invalid PIN or no reset requested' })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid PIN or no reset requested',
+  })
   completePasswordReset(@Body() dto: CompletePasswordResetDto) {
     return this.auth.completePasswordReset(dto);
   }

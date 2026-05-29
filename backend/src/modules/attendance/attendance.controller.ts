@@ -118,9 +118,16 @@ export class AttendanceController {
     @Query('year', ParseIntPipe) year: number,
     @Res() res: Response,
   ) {
-    const pdfBuffer = await this.exportService.exportMonthlyPdf(employeeId, month, year);
+    const pdfBuffer = await this.exportService.exportMonthlyPdf(
+      employeeId,
+      month,
+      year,
+    );
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="attendance-report-${month}-${year}.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="attendance-report-${month}-${year}.pdf"`,
+    );
     res.send(pdfBuffer);
   }
 
@@ -133,9 +140,15 @@ export class AttendanceController {
     @Param('termId') termId: string,
     @Res() res: Response,
   ) {
-    const pdfBuffer = await this.exportService.exportTermPdf(employeeId, termId);
+    const pdfBuffer = await this.exportService.exportTermPdf(
+      employeeId,
+      termId,
+    );
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="attendance-report-term.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="attendance-report-term.pdf"`,
+    );
     res.send(pdfBuffer);
   }
 
@@ -150,9 +163,17 @@ export class AttendanceController {
     @Query('branchName') branchName: string,
     @Res() res: Response,
   ) {
-    const pdfBuffer = await this.exportService.exportBulkMonthlyPdf(month, year, branchId, branchName);
+    const pdfBuffer = await this.exportService.exportBulkMonthlyPdf(
+      month,
+      year,
+      branchId,
+      branchName,
+    );
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="bulk-attendance-${month}-${year}.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="bulk-attendance-${month}-${year}.pdf"`,
+    );
     res.send(pdfBuffer);
   }
 
@@ -167,9 +188,17 @@ export class AttendanceController {
     @Query('termName') termName: string,
     @Res() res: Response,
   ) {
-    const pdfBuffer = await this.exportService.exportBulkTermPdf(termId, branchId, branchName, termName);
+    const pdfBuffer = await this.exportService.exportBulkTermPdf(
+      termId,
+      branchId,
+      branchName,
+      termName,
+    );
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="bulk-attendance-term.pdf"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="bulk-attendance-term.pdf"`,
+    );
     res.send(pdfBuffer);
   }
 
@@ -196,7 +225,10 @@ export class AttendanceController {
   @Get('clockable-employees')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('attendance.admin_clock')
-  @ApiOperation({ summary: 'List employees the acting admin can manually clock (excludes self)' })
+  @ApiOperation({
+    summary:
+      'List employees the acting admin can manually clock (excludes self)',
+  })
   async getClockableEmployees(@CurrentUser() user: User) {
     const all = await this.employeesService.findAllUnpaginated();
     // Exclude the acting admin from the list (no self-clocking)
@@ -207,10 +239,19 @@ export class AttendanceController {
   @UseGuards(PermissionsGuard)
   @RequirePermissions('attendance.admin_clock')
   @ApiOperation({
-    summary: 'Admin manually clocks in/out an employee (HR Admin and Super Admin only)',
+    summary:
+      'Admin manually clocks in/out an employee (HR Admin and Super Admin only)',
   })
-  adminManualClock(@CurrentUser() user: User, @Body() dto: AdminManualClockDto) {
-    return this.service.adminManualClock(user.id, user.role, user.fullName, dto);
+  adminManualClock(
+    @CurrentUser() user: User,
+    @Body() dto: AdminManualClockDto,
+  ) {
+    return this.service.adminManualClock(
+      user.id,
+      user.role,
+      user.fullName,
+      dto,
+    );
   }
 
   @Get('home-data')

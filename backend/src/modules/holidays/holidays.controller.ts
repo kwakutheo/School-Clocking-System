@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Body, Param, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { HolidaysService } from './holidays.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -21,7 +30,10 @@ export class HolidaysController {
   }
 
   @Get('current-year')
-  @ApiOperation({ summary: 'List holidays for the current calendar year (includes all recurring holidays)' })
+  @ApiOperation({
+    summary:
+      'List holidays for the current calendar year (includes all recurring holidays)',
+  })
   findCurrentYear() {
     return this.service.findCurrentYear();
   }

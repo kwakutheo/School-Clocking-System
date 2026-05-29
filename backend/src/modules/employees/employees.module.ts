@@ -8,7 +8,10 @@ import { EmployeesController } from './employees.controller';
 import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Employee, EmployeeStatusLog, User]), UsersModule],
+  imports: [
+    TypeOrmModule.forFeature([Employee, EmployeeStatusLog, User]),
+    UsersModule,
+  ],
   controllers: [EmployeesController],
   providers: [EmployeesService],
   exports: [EmployeesService],

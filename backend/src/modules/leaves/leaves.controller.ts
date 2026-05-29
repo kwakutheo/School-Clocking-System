@@ -1,6 +1,12 @@
 import {
-  Controller, Get, Post, Patch, Body, Param,
-  UseGuards, Query,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { LeavesService } from './leaves.service';
@@ -24,7 +30,13 @@ export class LeavesController {
   @ApiOperation({ summary: 'Submit a new leave request (employee)' })
   requestLeave(
     @CurrentUser() user: User,
-    @Body() body: { leaveType: string; startDate: string; endDate: string; reason?: string },
+    @Body()
+    body: {
+      leaveType: string;
+      startDate: string;
+      endDate: string;
+      reason?: string;
+    },
   ) {
     return this.service.requestLeave(user.id, body);
   }
@@ -46,10 +58,13 @@ export class LeavesController {
   @Post('admin-request')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('leaves.manage')
-  @ApiOperation({ summary: 'Submit a new leave request on behalf of an employee (admin/HR)' })
+  @ApiOperation({
+    summary: 'Submit a new leave request on behalf of an employee (admin/HR)',
+  })
   adminRequestLeave(
     @CurrentUser() admin: User,
-    @Body() body: {
+    @Body()
+    body: {
       employeeId: string;
       leaveType: string;
       startDate: string;
@@ -78,7 +93,9 @@ export class LeavesController {
   @Get('employee/:employeeId')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('leaves.manage')
-  @ApiOperation({ summary: 'List leave requests for a specific employee (admin/HR)' })
+  @ApiOperation({
+    summary: 'List leave requests for a specific employee (admin/HR)',
+  })
   findByEmployee(@Param('employeeId') employeeId: string) {
     return this.service.findByEmployee(employeeId);
   }
@@ -90,7 +107,11 @@ export class LeavesController {
   reviewLeave(
     @Param('id') id: string,
     @CurrentUser() reviewer: User,
-    @Body() body: { status: LeaveStatus.APPROVED | LeaveStatus.REJECTED; reviewNote?: string },
+    @Body()
+    body: {
+      status: LeaveStatus.APPROVED | LeaveStatus.REJECTED;
+      reviewNote?: string;
+    },
   ) {
     return this.service.reviewLeave(id, reviewer, body);
   }

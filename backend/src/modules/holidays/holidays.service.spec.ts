@@ -46,7 +46,7 @@ describe('HolidaysService', () => {
     };
 
     it('should always include recurring holidays regardless of year', async () => {
-      const recurringOldDate = buildHoliday(`${lastYear}-12-25`, true);  // Christmas in past year
+      const recurringOldDate = buildHoliday(`${lastYear}-12-25`, true); // Christmas in past year
       const recurringNextDate = buildHoliday(`${nextYear}-01-01`, true); // New Year in future year
       mockRepo.find.mockResolvedValue([recurringOldDate, recurringNextDate]);
 
@@ -61,7 +61,11 @@ describe('HolidaysService', () => {
       const currentYearHoliday = buildHoliday(`${currentYear}-06-15`, false);
       const lastYearHoliday = buildHoliday(`${lastYear}-06-15`, false);
       const nextYearHoliday = buildHoliday(`${nextYear}-06-15`, false);
-      mockRepo.find.mockResolvedValue([lastYearHoliday, currentYearHoliday, nextYearHoliday]);
+      mockRepo.find.mockResolvedValue([
+        lastYearHoliday,
+        currentYearHoliday,
+        nextYearHoliday,
+      ]);
 
       const result = await service.findCurrentYear();
 
@@ -127,7 +131,9 @@ describe('HolidaysService', () => {
   describe('delete', () => {
     it('should throw NotFoundException if holiday does not exist', async () => {
       mockRepo.delete.mockResolvedValue({ affected: 0 });
-      await expect(service.delete('non-existent-id')).rejects.toThrow(NotFoundException);
+      await expect(service.delete('non-existent-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should resolve without error if delete is successful', async () => {

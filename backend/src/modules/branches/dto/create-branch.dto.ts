@@ -1,9 +1,4 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsNumber,
-} from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateBranchDto {
@@ -17,7 +12,7 @@ export class CreateBranchDto {
   @IsNotEmpty()
   latitude: number;
 
-  @ApiProperty({ example: -0.1870 })
+  @ApiProperty({ example: -0.187 })
   @IsNumber()
   @IsNotEmpty()
   longitude: number;

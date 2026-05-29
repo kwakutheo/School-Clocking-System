@@ -29,10 +29,7 @@ async function bootstrap() {
   app.enableCors({
     // In development, reflect the request origin so localhost / 127.0.0.1
     // and any local tunnel work without manual CORS_ORIGIN configuration.
-    origin:
-      nodeEnv === 'development'
-        ? true
-        : corsOrigin?.split(',') ?? '*',
+    origin: nodeEnv === 'development' ? true : (corsOrigin?.split(',') ?? '*'),
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
   });
@@ -40,8 +37,8 @@ async function bootstrap() {
   // ── Validation ──────────────────────────────────────────────────────────────
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,        // strip unknown properties
-      transform: true,        // auto-transform DTOs to class instances
+      whitelist: true, // strip unknown properties
+      transform: true, // auto-transform DTOs to class instances
       transformOptions: { enableImplicitConversion: true },
     }),
   );

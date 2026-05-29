@@ -50,7 +50,11 @@ describe('AllExceptionsFilter', () => {
 
   it('should handle a generic NestJS validation error with array of messages', () => {
     const exception = new HttpException(
-      { message: ['field is required', 'field must be a string'], error: 'Bad Request', statusCode: 400 },
+      {
+        message: ['field is required', 'field must be a string'],
+        error: 'Bad Request',
+        statusCode: 400,
+      },
       HttpStatus.BAD_REQUEST,
     );
 
@@ -63,7 +67,10 @@ describe('AllExceptionsFilter', () => {
     expect(typeof body.message).toBe('string');
     expect(body.message).toBe('field is required');
     // Full list of errors should be in 'details'
-    expect(body.details).toEqual(['field is required', 'field must be a string']);
+    expect(body.details).toEqual([
+      'field is required',
+      'field must be a string',
+    ]);
   });
 
   it('should handle an unknown/generic Error with 500 status', () => {
@@ -71,7 +78,9 @@ describe('AllExceptionsFilter', () => {
 
     filter.catch(exception, mockHost);
 
-    expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(mockResponse.status).toHaveBeenCalledWith(
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
     expect(mockResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,

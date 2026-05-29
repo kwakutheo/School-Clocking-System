@@ -101,9 +101,9 @@ export class SaasAdminService implements OnModuleInit {
       { start: Date; end: Date; weekdays: number }
     >();
 
-    let defaultStart = new Date();
+    const defaultStart = new Date();
     defaultStart.setHours(0, 0, 0, 0);
-    let defaultEnd = new Date(endOfToday);
+    const defaultEnd = new Date(endOfToday);
 
     if (timeframe === '7d') {
       defaultStart.setDate(defaultStart.getDate() - 6);
@@ -1164,7 +1164,7 @@ export class SaasAdminService implements OnModuleInit {
         const punctualityRate =
           totalExpectedEvents > 0
             ? Math.min(100, (onTimeEvents / totalExpectedEvents) * 100)
-            : 100;
+            : 0;
 
         let totalActualMinutes = 0;
         let totalExpectedMinutes = 0;

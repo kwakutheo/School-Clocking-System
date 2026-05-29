@@ -1,4 +1,12 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException, BadRequestException, OnModuleInit, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+  BadRequestException,
+  OnModuleInit,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, IsNull } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -36,11 +44,14 @@ export class EmployeesService implements OnModuleInit {
     try {
       // 1. Auto-migrate missing columns and tables for Render production
       this.logger.log('Running automatic database migrations...');
-      
-      await this.dataSource.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS status_change_date DATE NULL;`);
-      await this.dataSource.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS fcm_token TEXT NULL;`);
 
-      
+      await this.dataSource.query(
+        `ALTER TABLE employees ADD COLUMN IF NOT EXISTS status_change_date DATE NULL;`,
+      );
+      await this.dataSource.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS fcm_token TEXT NULL;`,
+      );
+
       await this.dataSource.query(`
         CREATE TABLE IF NOT EXISTS employee_status_logs (
           id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -51,8 +62,12 @@ export class EmployeesService implements OnModuleInit {
           employee_id   UUID         NOT NULL REFERENCES employees(id) ON DELETE CASCADE
         );
       `);
-      await this.dataSource.query(`CREATE INDEX IF NOT EXISTS idx_status_logs_employee ON employee_status_logs(employee_id);`);
-      await this.dataSource.query(`CREATE INDEX IF NOT EXISTS idx_status_logs_dates ON employee_status_logs(start_date, end_date);`);
+      await this.dataSource.query(
+        `CREATE INDEX IF NOT EXISTS idx_status_logs_employee ON employee_status_logs(employee_id);`,
+      );
+      await this.dataSource.query(
+        `CREATE INDEX IF NOT EXISTS idx_status_logs_dates ON employee_status_logs(start_date, end_date);`,
+      );
 
       await this.dataSource.query(`
         CREATE TABLE IF NOT EXISTS leave_requests (
@@ -69,9 +84,15 @@ export class EmployeesService implements OnModuleInit {
           reviewed_by  UUID         NULL     REFERENCES users(id) ON DELETE SET NULL
         );
       `);
-      await this.dataSource.query(`CREATE INDEX IF NOT EXISTS idx_leave_requests_employee ON leave_requests(employee_id);`);
-      await this.dataSource.query(`CREATE INDEX IF NOT EXISTS idx_leave_requests_status ON leave_requests(status);`);
-      await this.dataSource.query(`CREATE INDEX IF NOT EXISTS idx_leave_requests_dates ON leave_requests(start_date, end_date);`);
+      await this.dataSource.query(
+        `CREATE INDEX IF NOT EXISTS idx_leave_requests_employee ON leave_requests(employee_id);`,
+      );
+      await this.dataSource.query(
+        `CREATE INDEX IF NOT EXISTS idx_leave_requests_status ON leave_requests(status);`,
+      );
+      await this.dataSource.query(
+        `CREATE INDEX IF NOT EXISTS idx_leave_requests_dates ON leave_requests(start_date, end_date);`,
+      );
 
       this.logger.log('Database migrations completed successfully.');
 
@@ -110,18 +131,25 @@ export class EmployeesService implements OnModuleInit {
     });
   }
 
-  async findAll(opts: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    status?: string;
-    branchId?: string;
-  } = {}): Promise<{
+  async findAll(
+    opts: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      status?: string;
+      branchId?: string;
+    } = {},
+  ): Promise<{
     data: Employee[];
     total: number;
     page: number;
     limit: number;
-    counts: { all: number; active: number; inactive: number; suspended: number };
+    counts: {
+      all: number;
+      active: number;
+      inactive: number;
+      suspended: number;
+    };
   }> {
     const page = Math.max(1, opts.page ?? 1);
     const limit = Math.min(Math.max(1, opts.limit ?? 50), 1000);
@@ -130,7 +158,8 @@ export class EmployeesService implements OnModuleInit {
     const tenantId = getCurrentTenantId();
 
     // ── Main paginated query ──────────────────────────────────────────────────
-    const qb = this.repo.createQueryBuilder('emp')
+    const qb = this.repo
+      .createQueryBuilder('emp')
       .leftJoinAndSelect('emp.user', 'user')
       .leftJoinAndSelect('emp.department', 'department')
       .leftJoinAndSelect('emp.branch', 'branch')
@@ -159,7 +188,8 @@ export class EmployeesService implements OnModuleInit {
     const [data, total] = await qb.getManyAndCount();
 
     // ── Status counts (same search + branch, no status filter) ───────────────
-    const cqb = this.repo.createQueryBuilder('empC')
+    const cqb = this.repo
+      .createQueryBuilder('empC')
       .leftJoin('empC.user', 'userC')
       .leftJoin('empC.department', 'deptC')
       .leftJoin('empC.branch', 'branchC');
@@ -243,11 +273,15 @@ export class EmployeesService implements OnModuleInit {
   private async _generateEmployeeCode(): Promise<string> {
     const tenantId = tenantLocalStorage.getStore();
     let prefix = 'TK';
-    
+
     if (tenantId) {
-      const tenant = await this.dataSource.getRepository(Tenant).findOne({ where: { id: tenantId } });
+      const tenant = await this.dataSource
+        .getRepository(Tenant)
+        .findOne({ where: { id: tenantId } });
       if (tenant) {
-        prefix = tenant.initials ? tenant.initials.toUpperCase() : tenant.slug.substring(0, 2).toUpperCase();
+        prefix = tenant.initials
+          ? tenant.initials.toUpperCase()
+          : tenant.slug.substring(0, 2).toUpperCase();
       }
     }
 
@@ -255,15 +289,16 @@ export class EmployeesService implements OnModuleInit {
     const yy = String(now.getFullYear()).slice(-2);
     const mm = String(now.getMonth() + 1).padStart(2, '0');
     const yymm = `${yy}${mm}`;
-    
+
     const basePrefix = `${prefix}/${yymm}/`;
-    
+
     // Find the highest serial number for this prefix
-    const highestEmp = await this.repo.createQueryBuilder('emp')
+    const highestEmp = await this.repo
+      .createQueryBuilder('emp')
       .where('emp.employeeCode LIKE :pattern', { pattern: `${basePrefix}%` })
       .orderBy('emp.employeeCode', 'DESC')
       .getOne();
-      
+
     let nextSerial = 1;
     if (highestEmp) {
       const parts = highestEmp.employeeCode.split('/');
@@ -277,33 +312,37 @@ export class EmployeesService implements OnModuleInit {
         }
       }
     }
-    
+
     const code = `${basePrefix}${String(nextSerial).padStart(3, '0')}`;
-    
+
     // Fallback sanity check just in case
     const existing = await this.repo.findOne({ where: { employeeCode: code } });
     if (existing) {
-       const num = Math.floor(100 + Math.random() * 900);
-       return `${basePrefix}${num}`;
+      const num = Math.floor(100 + Math.random() * 900);
+      return `${basePrefix}${num}`;
     }
-    
+
     return code;
   }
 
-  async createEmployeeWithUser(payload: {
-    fullName: string;
-    username: string;
-    password: string;
-    employeeCode?: string;
-    departmentId?: string;
-    branchId?: string;
-    shiftId?: string;
-    position?: string;
-    hireDate?: string;
-    phone?: string;
-    role?: UserRole;
-  }, adminUser?: User): Promise<Employee> {
-    const employeeCode = payload.employeeCode ?? await this._generateEmployeeCode();
+  async createEmployeeWithUser(
+    payload: {
+      fullName: string;
+      username: string;
+      password: string;
+      employeeCode?: string;
+      departmentId?: string;
+      branchId?: string;
+      shiftId?: string;
+      position?: string;
+      hireDate?: string;
+      phone?: string;
+      role?: UserRole;
+    },
+    adminUser?: User,
+  ): Promise<Employee> {
+    const employeeCode =
+      payload.employeeCode ?? (await this._generateEmployeeCode());
 
     const existingCode = await this.repo.findOne({
       where: { employeeCode },
@@ -355,7 +394,9 @@ export class EmployeesService implements OnModuleInit {
       const savedEmployee = await queryRunner.manager.save(employee);
 
       // Create the first status history log (Active from hire date)
-      const logStartDate = payload.hireDate ? new Date(payload.hireDate) : new Date();
+      const logStartDate = payload.hireDate
+        ? new Date(payload.hireDate)
+        : new Date();
       logStartDate.setHours(0, 0, 0, 0);
       await queryRunner.manager.save(
         this.statusLogRepo.create({
@@ -395,7 +436,10 @@ export class EmployeesService implements OnModuleInit {
 
   async update(
     id: string,
-    data: Omit<Partial<Employee>, 'hireDate' | 'department' | 'branch' | 'shift'> & {
+    data: Omit<
+      Partial<Employee>,
+      'hireDate' | 'department' | 'branch' | 'shift'
+    > & {
       fullName?: string;
       email?: string;
       phone?: string;
@@ -410,8 +454,6 @@ export class EmployeesService implements OnModuleInit {
     adminUser?: User,
   ): Promise<Employee> {
     const emp = await this.findById(id);
-
-
 
     const oldValues = {
       fullName: emp.user.fullName,
@@ -432,7 +474,13 @@ export class EmployeesService implements OnModuleInit {
       }
     }
 
-    if (data.fullName || data.email || data.phone || data.role || data.username) {
+    if (
+      data.fullName ||
+      data.email ||
+      data.phone ||
+      data.role ||
+      data.username
+    ) {
       await this.userRepo.update(emp.user.id, {
         fullName: data.fullName,
         email: data.email,
@@ -455,10 +503,14 @@ export class EmployeesService implements OnModuleInit {
       ...employeeData
     } = data;
 
-    if (departmentId !== undefined) (emp as any).department = departmentId ? { id: departmentId } : null;
-    if (branchId !== undefined) (emp as any).branch = branchId ? { id: branchId } : null;
-    if (shiftId !== undefined) (emp as any).shift = shiftId ? { id: shiftId } : null;
-    if (hireDate !== undefined) emp.hireDate = hireDate ? new Date(hireDate) : null as any;
+    if (departmentId !== undefined)
+      (emp as any).department = departmentId ? { id: departmentId } : null;
+    if (branchId !== undefined)
+      (emp as any).branch = branchId ? { id: branchId } : null;
+    if (shiftId !== undefined)
+      (emp as any).shift = shiftId ? { id: shiftId } : null;
+    if (hireDate !== undefined)
+      emp.hireDate = hireDate ? new Date(hireDate) : (null as any);
     if (data.status !== undefined) {
       if (emp.status !== data.status) {
         const today = new Date();
@@ -487,7 +539,7 @@ export class EmployeesService implements OnModuleInit {
 
         emp.statusChangeDate = today;
       }
-      emp.status = data.status as any;
+      emp.status = data.status;
     }
     Object.assign(emp, employeeData);
 
@@ -519,14 +571,17 @@ export class EmployeesService implements OnModuleInit {
     return updatedEmp;
   }
 
-  async updateProfile(userId: string, data: {
-    fullName?: string;
-    email?: string;
-    phone?: string;
-    photoUrl?: string;
-    username?: string;
-    password?: string;
-  }): Promise<Employee> {
+  async updateProfile(
+    userId: string,
+    data: {
+      fullName?: string;
+      email?: string;
+      phone?: string;
+      photoUrl?: string;
+      username?: string;
+      password?: string;
+    },
+  ): Promise<Employee> {
     const employee = await this.findByUserId(userId);
     if (!employee) {
       throw new NotFoundException('Employee profile not found.');
@@ -563,23 +618,32 @@ export class EmployeesService implements OnModuleInit {
     return this.findById(employee.id);
   }
 
-  async resetPassword(id: string, adminPassword: string, adminUserPayload: { id: string }): Promise<{ pin: string }> {
+  async resetPassword(
+    id: string,
+    adminPassword: string,
+    adminUserPayload: { id: string },
+  ): Promise<{ pin: string }> {
     const adminUser = await this.users.findById(adminUserPayload.id);
-    const isValidAdminPassword = await bcrypt.compare(adminPassword, adminUser.passwordHash);
+    const isValidAdminPassword = await bcrypt.compare(
+      adminPassword,
+      adminUser.passwordHash,
+    );
     if (!isValidAdminPassword) {
-      throw new BadRequestException('Invalid admin password. Action not authorized.');
+      throw new BadRequestException(
+        'Invalid admin password. Action not authorized.',
+      );
     }
 
     const emp = await this.findById(id);
-    
+
     // Generate 6-digit PIN
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
-    
+
     // Set requiresPasswordChange so the user is forced to change it on their next login
-    await this.userRepo.update(emp.user.id, { 
+    await this.userRepo.update(emp.user.id, {
       resetPin: pin,
-      requiresPasswordChange: true 
-    } as any);
+      requiresPasswordChange: true,
+    });
 
     await this.auditService.log({
       user: adminUser,

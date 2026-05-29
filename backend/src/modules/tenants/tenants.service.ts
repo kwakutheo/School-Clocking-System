@@ -33,13 +33,19 @@ export class TenantsService {
 
   async updateBranding(
     id: string,
-    data: { name?: string; primaryColor?: string; logoUrl?: string; initials?: string },
+    data: {
+      name?: string;
+      primaryColor?: string;
+      logoUrl?: string;
+      initials?: string;
+    },
   ): Promise<Tenant> {
     const tenant = await this.findById(id);
     if (data.name) tenant.name = data.name;
     if (data.primaryColor) tenant.primaryColor = data.primaryColor;
     if (data.logoUrl !== undefined) tenant.logoUrl = data.logoUrl || null;
-    if (data.initials !== undefined) tenant.initials = data.initials ? data.initials.toUpperCase() : null;
+    if (data.initials !== undefined)
+      tenant.initials = data.initials ? data.initials.toUpperCase() : null;
     return this.tenantRepository.save(tenant);
   }
 }

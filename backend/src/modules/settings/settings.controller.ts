@@ -16,7 +16,9 @@ export class SettingsController {
   constructor(private readonly service: SettingsService) {}
 
   @Get('permissions')
-  @ApiOperation({ summary: 'Get role permissions matrix (all authenticated users)' })
+  @ApiOperation({
+    summary: 'Get role permissions matrix (all authenticated users)',
+  })
   async getPermissions() {
     const raw = await this.service.get(PERMISSIONS_KEY);
     return raw ? JSON.parse(raw) : null;

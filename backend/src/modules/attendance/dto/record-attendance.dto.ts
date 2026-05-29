@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsEnum, IsNumber, IsOptional, IsBoolean, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+  IsDateString,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AttendanceType } from '../../../common/enums';
 
@@ -32,7 +40,9 @@ export class RecordAttendanceDto {
   @IsOptional()
   deviceId?: string;
 
-  @ApiPropertyOptional({ description: 'True when submitted from offline queue' })
+  @ApiPropertyOptional({
+    description: 'True when submitted from offline queue',
+  })
   @IsBoolean()
   @IsOptional()
   isOfflineSync?: boolean;

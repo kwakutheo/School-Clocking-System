@@ -24,7 +24,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const res: any = exception.getResponse();
-      
+
       // Handle NestJS built-in validation errors which return { message: string[], error: string, statusCode: number }
       if (typeof res === 'object' && res !== null) {
         message = res.message || res.error || exception.message;
@@ -40,9 +40,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // Log the error for backend debugging
     if (status >= 500) {
-      this.logger.error(`[${request.method} ${request.url}] ${errorType}: ${message}`, (exception as any)?.stack);
+      this.logger.error(
+        `[${request.method} ${request.url}] ${errorType}: ${message}`,
+        (exception as any)?.stack,
+      );
     } else {
-      this.logger.warn(`[${request.method} ${request.url}] ${status} ${errorType}: ${Array.isArray(message) ? message[0] : message}`);
+      this.logger.warn(
+        `[${request.method} ${request.url}] ${status} ${errorType}: ${Array.isArray(message) ? message[0] : message}`,
+      );
     }
 
     // Standardized response body

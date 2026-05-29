@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { DepartmentsService } from './departments.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -17,23 +26,31 @@ export class DepartmentsController {
 
   @Get()
   @ApiOperation({ summary: 'List all departments' })
-  findAll() { return this.service.findAll(); }
+  findAll() {
+    return this.service.findAll();
+  }
 
   @Post()
   @UseGuards(PermissionsGuard)
   @RequirePermissions('departments.manage')
   @ApiOperation({ summary: 'Create a department' })
-  create(@Body() dto: CreateDepartmentDto) { return this.service.create(dto.name); }
+  create(@Body() dto: CreateDepartmentDto) {
+    return this.service.create(dto.name);
+  }
 
   @Patch(':id')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('departments.manage')
   @ApiOperation({ summary: 'Update a department' })
-  update(@Param('id') id: string, @Body() dto: UpdateDepartmentDto) { return this.service.update(id, dto.name!); }
+  update(@Param('id') id: string, @Body() dto: UpdateDepartmentDto) {
+    return this.service.update(id, dto.name!);
+  }
 
   @Delete(':id')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('departments.manage')
   @ApiOperation({ summary: 'Delete a department' })
-  remove(@Param('id') id: string) { return this.service.remove(id); }
+  remove(@Param('id') id: string) {
+    return this.service.remove(id);
+  }
 }

@@ -1,13 +1,15 @@
 
 My domain
-tkclocking.qzz.io
+tkclocking.qzz.io (not working now)
 
-
+supabase password
 Aythlus@sup86
 
 
-https://miokputfdhvyarnkdpaj.supabase.co
+https://miokputfdhvyarnkdpaj.supabase.co  (for database)
 
 https://github.com/kwakutheo/School-Clocking-System.git
 
-https://dashboard.render.com/project/prj-d8bicu57vvec738r64eg
+https://dashboard.render.com/project/prj-d8bicu57vvec738r64eg  (for backend)
+
+vercel (for frontend)

@@ -15,4 +15,4 @@ elif [ -n "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
 fi
 
 echo "Starting TK Clocking backend..."
-exec node dist/main
+exec node dist/src/main

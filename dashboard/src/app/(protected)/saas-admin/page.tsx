@@ -2556,8 +2556,8 @@ export default function SaasOverviewPage() {
                 </button>
               </div>
               {/* Search + school filter row */}
-              <div style={{ display: "flex", gap: "10px" }}>
-                <div style={{ position: "relative", flex: 1 }}>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                <div style={{ position: "relative", flex: 1, minWidth: "140px" }}>
                   <Search
                     size={14}
                     style={{
@@ -2596,7 +2596,7 @@ export default function SaasOverviewPage() {
                     }}
                   />
                 </div>
-                <div style={{ position: "relative", minWidth: "200px" }}>
+                <div style={{ position: "relative", flex: 1, minWidth: "140px" }}>
                   <Building2
                     size={14}
                     style={{
@@ -2638,12 +2638,15 @@ export default function SaasOverviewPage() {
               </div>
             </div>
 
+            {/* Scrollable table area (headers + body scroll together) */}
+            <div style={{ overflowX: "auto", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+              <div style={{ minWidth: "780px" }}>
             {/* Column headers */}
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns:
-                  "40px 46px 1fr 100px 100px 100px 100px 88px",
+                  "40px 46px minmax(180px, 1fr) 90px 90px 80px 80px 80px",
                 padding: "8px 20px",
                 borderBottom: "1px solid var(--border)",
                 background: "var(--bg-card-hover)",
@@ -2652,6 +2655,9 @@ export default function SaasOverviewPage() {
                 color: "var(--text-secondary)",
                 textTransform: "uppercase",
                 letterSpacing: "0.06em",
+                position: "sticky",
+                top: 0,
+                zIndex: 2,
               }}
             >
               <span>#</span>
@@ -2667,7 +2673,6 @@ export default function SaasOverviewPage() {
             {/* Body */}
             <div
               style={{
-                flex: 1,
                 overflowY: "auto",
                 background: "var(--bg-dashboard)",
               }}
@@ -2725,7 +2730,7 @@ export default function SaasOverviewPage() {
                       style={{
                         display: "grid",
                         gridTemplateColumns:
-                          "40px 46px 1fr 100px 100px 100px 100px 88px",
+                          "40px 46px minmax(180px, 1fr) 90px 90px 80px 80px 80px",
                         padding: "10px 20px",
                         borderBottom: "1px solid var(--border)",
                         alignItems: "center",
@@ -2858,6 +2863,8 @@ export default function SaasOverviewPage() {
                 });
               })()}
             </div>
+            </div>{/* end minWidth wrapper */}
+            </div>{/* end scrollable area */}
 
             {/* Footer */}
             <div

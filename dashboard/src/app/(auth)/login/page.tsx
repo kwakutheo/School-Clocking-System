@@ -56,7 +56,7 @@ export default function LoginPage() {
     setSuccess('');
     setLoading(true);
     try {
-      const res = await authApi.login(identifier, password);
+      const res = await authApi.login(identifier.trim(), password.trim());
       const { access_token, user } = res.data;
 
       const allowed = ['supervisor', 'hr_admin', 'super_admin'];
@@ -108,7 +108,7 @@ export default function LoginPage() {
     setSuccess('');
     setLoading(true);
     try {
-      await authApi.completePasswordReset({ username: resetUsername, pin, newPassword });
+      await authApi.completePasswordReset({ username: resetUsername.trim(), pin: pin.trim(), newPassword });
       setSuccess('Password reset successfully! You can now log in.');
       setTimeout(() => {
         setStep('login');

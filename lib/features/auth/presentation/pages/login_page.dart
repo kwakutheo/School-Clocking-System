@@ -38,7 +38,7 @@ class _LoginPageState extends State<LoginPage> {
     context.read<AuthBloc>().add(
           AuthLoginEvent(
             username: _identifierController.text.trim(),
-            password: _passwordController.text,
+            password: _passwordController.text.trim(),
           ),
         );
   }
@@ -202,10 +202,10 @@ class _LoginPageState extends State<LoginPage> {
                   setState(() => _obscurePassword = !_obscurePassword),
             ),
             validator: (value) {
-              if (value == null || value.isEmpty) {
+              if (value == null || value.trim().isEmpty) {
                 return 'Please enter your password';
               }
-              if (value.length < 6) {
+              if (value.trim().length < 6) {
                 return 'Password must be at least 6 characters';
               }
               return null;

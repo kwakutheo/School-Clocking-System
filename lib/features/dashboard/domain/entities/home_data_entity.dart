@@ -36,6 +36,10 @@ class HomeDataEntity extends Equatable {
 
   /// Shift start time in "HH:mm" format, used for the pre-shift countdown banner.
   final String? shiftStartTime;
+
+  /// Shift end time in "HH:mm" format, used for the forgot-to-clock-out reminder.
+  final String? shiftEndTime;
+
   final String? nextShiftStartTime;
   final DateTime? nextShiftDate;
   final String? upcomingHolidayName;
@@ -73,6 +77,7 @@ class HomeDataEntity extends Equatable {
     this.vacationName,
     this.noShiftAssigned = false,
     this.shiftStartTime,
+    this.shiftEndTime,
     this.nextShiftStartTime,
     this.nextShiftDate,
     this.upcomingHolidayName,
@@ -109,6 +114,7 @@ class HomeDataEntity extends Equatable {
         vacationName,
         noShiftAssigned,
         shiftStartTime,
+        shiftEndTime,
         nextShiftStartTime,
         nextShiftDate,
         upcomingHolidayName,

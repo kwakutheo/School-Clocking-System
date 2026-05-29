@@ -23,6 +23,7 @@ class HomeDataModel extends HomeDataEntity {
     super.isOnBreak,
     super.noShiftAssigned,
     super.shiftStartTime,
+    super.shiftEndTime,
     super.nextShiftStartTime,
     super.nextShiftDate,
     super.upcomingHolidayName,
@@ -88,6 +89,7 @@ class HomeDataModel extends HomeDataEntity {
       vacationName: json['vacationName'] as String?,
       noShiftAssigned: json['noShiftAssigned'] as bool? ?? false,
       shiftStartTime: json['shiftStartTime'] as String?,
+      shiftEndTime: json['shiftEndTime'] as String?,
       nextShiftStartTime: json['nextShiftStartTime'] as String?,
       nextShiftDate: json['nextShiftDate'] != null
           ? DateTime.tryParse(json['nextShiftDate'].toString())
@@ -138,6 +140,7 @@ class HomeDataModel extends HomeDataEntity {
       'isHoliday': isHoliday,
       'holidayName': holidayName,
       'shiftStartTime': shiftStartTime,
+      'shiftEndTime': shiftEndTime,
       'nextShiftStartTime': nextShiftStartTime,
       'nextShiftDate': nextShiftDate?.toIso8601String(),
       'upcomingHolidayName': upcomingHolidayName,

@@ -217,11 +217,16 @@ class _DashboardTabState extends State<_DashboardTab> {
     final cached = box.get('home_data_cache');
     if (cached != null) {
       try {
+        final cachedData = HomeDataModel.fromJson(Map<String, dynamic>.from(cached));
         setState(() {
-          _data = HomeDataModel.fromJson(Map<String, dynamic>.from(cached));
+          _data = cachedData;
           _isLoading = false;
         });
         _checkGeofence();
+        // Schedule reminders from cache immediately. If the network call
+        // succeeds later, scheduleShiftReminders will be called again
+        // (it cancels and re-schedules, so this is safe / idempotent).
+        sl<NotificationService>().scheduleShiftReminders(cachedData);
       } catch (_) {
         // Cache corrupted, just move on to network load
       }
@@ -259,6 +264,10 @@ class _DashboardTabState extends State<_DashboardTab> {
             });
             // Run geofence check before saving to cache
             _checkGeofence(silent: silent);
+
+            // Re-schedule OS-level local notifications to mirror the banners.
+            // This is idempotent — safe to call on every refresh.
+            sl<NotificationService>().scheduleShiftReminders(data);
 
             // Update cache safely
             if (data is HomeDataModel) {
@@ -347,6 +356,19 @@ class _DashboardTabState extends State<_DashboardTab> {
         if (state is AttendanceRecorded) {
           _checkPending();
           _loadData(silent: true);
+
+          // Cancel shift reminders that are no longer relevant based on
+          // what action was just recorded.
+          final notifService = sl<NotificationService>();
+          final type = state.record.type; // AttendanceType from the recorded entity
+          if (type == AttendanceType.clockIn) {
+            // Clocked in — cancel only the pre-shift / late warnings (IDs 200-203).
+            // Do NOT cancel ID 204; _loadData will schedule it correctly with fresh data.
+            notifService.cancelPreShiftReminders();
+          } else if (type == AttendanceType.clockOut) {
+            // Clocked out — cancel the "forgot to clock out" reminder.
+            notifService.cancelClockOutReminder();
+          }
         } else if (state is AttendanceSynced) {
           _checkPending();
           _loadData(silent: true);
@@ -421,9 +443,10 @@ class _DashboardTabState extends State<_DashboardTab> {
             child: RefreshIndicator(
               edgeOffset: 40,
               onRefresh: () async {
+                final authBloc = context.read<AuthBloc>();
                 await _loadData(silent: true, force: true);
                 if (mounted) {
-                  context.read<AuthBloc>().add(const AuthSyncProfileEvent());
+                  authBloc.add(const AuthSyncProfileEvent());
                 }
               },
               child: CustomScrollView(
@@ -1001,7 +1024,7 @@ class _LiveStatusBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lateStatus = lateStatusOverride ?? data.lateStatus;
-    // ── Forgot to clock out (shift ended > 1h ago, still clocked in) ────────
+    // ── Forgot to clock out (shift ended > 10 min ago, still clocked in) ──────
     if (data.noShiftAssigned) {
       return _buildBanner(
         context,

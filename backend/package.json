@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node -r tsconfig-paths/register src/database/seed.ts",
     "seed:prod": "node scratch/local_seed.js",
+    "seed:landlord": "node scratch/seed_landlord.js",
     "seed:docker": "docker compose exec api npx ts-node -r tsconfig-paths/register src/database/seed.ts"
   },
   "dependencies": {

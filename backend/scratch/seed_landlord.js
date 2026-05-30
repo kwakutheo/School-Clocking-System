@@ -12,30 +12,41 @@ const ds = new DataSource({
   entities: [
     __dirname + '/../dist/**/*.entity.js'
   ],
-  synchronize: true,
+  synchronize: false,
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 });
 
 async function seed() {
-  console.log('🔌 Connecting to local tk_clocking database...');
+  const adminUsername = process.env.LANDLORD_ADMIN_USERNAME || 'admin';
+  const adminPassword = process.env.LANDLORD_ADMIN_PASSWORD;
+  const adminFullName = process.env.LANDLORD_ADMIN_FULL_NAME || 'Platform Admin';
+
+  if (!adminPassword) {
+    console.error('❌ LANDLORD_ADMIN_PASSWORD is required.');
+    console.error('Set it in your deployment environment, then run this seed again.');
+    process.exit(1);
+  }
+
+  console.log('🔌 Connecting to tk_clocking database...');
   await ds.initialize();
   console.log('✓ Connected successfully!');
 
   const userRepo = ds.getRepository('User');
-  let platformOwner = await userRepo.findOne({ where: { username: 'owner.admin' } });
+  let platformOwner = await userRepo.findOne({ where: { username: adminUsername } });
   
   if (!platformOwner) {
     console.log('🚀 Creating global Platform Owner user...');
-    const hashedPassword = await bcrypt.hash('112233', 12);
+    const hashedPassword = await bcrypt.hash(adminPassword, 12);
     platformOwner = userRepo.create({
-      username: 'owner.admin',
-      fullName: 'Platform Owner',
+      username: adminUsername,
+      fullName: adminFullName,
       passwordHash: hashedPassword,
       role: 'super_admin',
       isActive: true,
       tenantId: null, // Global landlord
     });
     await userRepo.save(platformOwner);
-    console.log('✓ Global Platform Owner created: username="owner.admin", password="112233"');
+    console.log(`✓ Global Platform Owner created: username="${adminUsername}"`);
   } else {
     console.log('✓ Global Platform Owner user already exists.');
   }

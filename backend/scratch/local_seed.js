@@ -53,22 +53,22 @@ async function seed() {
 
   // 0. Seed Default Tenant
   const tenantRepo = ds.getRepository('Tenant');
-  let tenant = await tenantRepo.findOne({ where: { slug: 'accra' } });
+  let tenant = await tenantRepo.findOne({ where: { slug: 'otwetiri' } });
   if (!tenant) {
     console.log('🚀 Creating local default Tenant...');
     tenant = tenantRepo.create({
-      slug: 'accra',
-      name: 'Accra Academy',
+      slug: 'otwetiri',
+      name: 'Otwetiri M/A Basic School',
       primaryColor: '#3b82f6',
     });
     await tenantRepo.save(tenant);
-    console.log('✓ Default Tenant created: "Accra Academy" (slug: "accra")');
+    console.log('✓ Default Tenant created: "Otwetiri M/A Basic School" (slug: "otwetiri")');
   } else {
     console.log('✓ Local default Tenant already exists.');
   }
 
   // Migration: Migrate existing records to the default tenant
-  console.log('🔧 Migrating existing local records to default Tenant Accra Academy...');
+  console.log('🔧 Migrating existing local records to default Tenant Otwetiri M/A Basic School...');
   await ds.query(`UPDATE users SET tenant_id = '${tenant.id}' WHERE tenant_id IS NULL`);
   await ds.query(`UPDATE branches SET tenant_id = '${tenant.id}' WHERE tenant_id IS NULL`);
   await ds.query(`UPDATE departments SET tenant_id = '${tenant.id}' WHERE tenant_id IS NULL`);
@@ -89,16 +89,16 @@ async function seed() {
   
   if (!existingUser) {
     console.log('🚀 Creating local Super Admin user...');
-    const hashedPassword = await bcrypt.hash('112233', 12);
+    const hashedPassword = await bcrypt.hash('admin123', 12);
     const superAdmin = userRepo.create({
-      username: 'theo',
-      fullName: 'Theophilus Kwaku',
+      username: 'admin',
+      fullName: 'Admin',
       passwordHash: hashedPassword,
       role: 'super_admin',
       isActive: true,
     });
     await userRepo.save(superAdmin);
-    console.log('✓ Super Admin created: username="theo", password="112233"');
+    console.log('✓ Super Admin created: username="admin", password="admin123"');
   } else {
     console.log('✓ Local Super Admin user already exists.');
   }
@@ -119,8 +119,8 @@ async function seed() {
   }
 
   console.log('\n🎉 Local Database successfully seeded! You can now log into http://localhost:3001 using:');
-  console.log('👉 Username: theo');
-  console.log('👉 Password: 112233\n');
+  console.log('👉 Username: admin');
+  console.log('👉 Password: admin123\n');
   process.exit(0);
 }
 

@@ -1,6 +1,7 @@
 
 My domain
 www.tkclocking.online 
+https://hpanel.hostinger.com
 
 supabase password
 Aythlus@sup86
@@ -13,3 +14,5 @@ https://github.com/kwakutheo/School-Clocking-System.git
 https://dashboard.render.com/project/prj-d8bicu57vvec738r64eg  (for backend)
 
 vercel (for frontend)
+
+optimeRobot (signed with github)

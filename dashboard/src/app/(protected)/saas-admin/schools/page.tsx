@@ -23,6 +23,22 @@ interface SchoolTenant {
   };
 }
 
+const configuredPortalBaseDomain =
+  process.env.NEXT_PUBLIC_PORTAL_BASE_DOMAIN?.replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+function getPortalBaseDomain() {
+  if (configuredPortalBaseDomain) return configuredPortalBaseDomain;
+  if (typeof window === 'undefined') return 'localhost';
+
+  const host = window.location.host;
+  return host.startsWith('www.') ? host.slice(4) : host;
+}
+
+function getPortalUrl(slug: string) {
+  const protocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
+  return `${protocol}//${slug}.${getPortalBaseDomain()}`;
+}
+
 export default function SchoolsRegistryPage() {
   const router = useRouter();
   const { setImpersonatedTenant } = useAuthStore();
@@ -439,9 +455,8 @@ export default function SchoolsRegistryPage() {
                 </tr>
               ) : (
                 currentSchools.map((school) => {
-                  const subdomainUrl = typeof window !== 'undefined'
-                    ? `${window.location.protocol}//${school.slug}.${window.location.host}`
-                    : '';
+                  const subdomainUrl = getPortalUrl(school.slug);
+                  const subdomainLabel = `${school.slug}.${getPortalBaseDomain()}`;
 
                   return (
                     <tr key={school.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}>
@@ -488,7 +503,7 @@ export default function SchoolsRegistryPage() {
                             }}
                           >
                             <Globe size={14} />
-                            {school.slug}.localhost
+                            {subdomainLabel}
                           </a>
                           {school.customDomain && (
                             <span style={{
@@ -780,7 +795,7 @@ export default function SchoolsRegistryPage() {
                     required
                   />
                   <span style={{ position: 'absolute', right: '14px', fontSize: '13px', color: 'var(--text-secondary)', pointerEvents: 'none' }}>
-                    .localhost
+                    .{getPortalBaseDomain()}
                   </span>
                 </div>
               </div>

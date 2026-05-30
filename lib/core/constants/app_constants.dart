@@ -3,7 +3,7 @@ abstract final class AppConstants {
   // ── API ───────────────────────────────────────────────────────────────────
   static String baseUrl = const String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://172.29.41.141:3000/api/v1',
+    defaultValue: 'https://school-clocking-system.onrender.com/api/v1',
   ); // Cloud backend
   static const Duration connectTimeout = Duration(seconds: 15);
   static const Duration receiveTimeout = Duration(seconds: 30);

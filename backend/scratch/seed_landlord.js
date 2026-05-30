@@ -18,14 +18,8 @@ const ds = new DataSource({
 
 async function seed() {
   const adminUsername = process.env.LANDLORD_ADMIN_USERNAME || 'admin';
-  const adminPassword = process.env.LANDLORD_ADMIN_PASSWORD;
+  const adminPassword = process.env.LANDLORD_ADMIN_PASSWORD || 'admin123';
   const adminFullName = process.env.LANDLORD_ADMIN_FULL_NAME || 'Platform Admin';
-
-  if (!adminPassword) {
-    console.error('❌ LANDLORD_ADMIN_PASSWORD is required.');
-    console.error('Set it in your deployment environment, then run this seed again.');
-    process.exit(1);
-  }
 
   console.log('🔌 Connecting to tk_clocking database...');
   await ds.initialize();

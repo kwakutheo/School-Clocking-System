@@ -1588,21 +1588,34 @@ export class SaasAdminService implements OnModuleInit {
         const presenceRate = Math.min(100, (daysPresent / expectedDays) * 100);
 
         let onTimeEvents = 0;
-        const totalExpectedEvents = daysPresent * 2;
+        let totalExpectedEvents = 0;
         let earlyOutCount = 0;
 
         for (const dateKey of presentDates) {
           const cin = inMap.get(dateKey)!;
           const cout = outMap.get(dateKey);
 
-          if (!cin.isLate) onTimeEvents++;
+          // 1. Evaluate Clock-In (with 5-min grace period)
+          totalExpectedEvents++;
+          if (shift?.startTime) {
+            const [sh, sm] = shift.startTime.split(':').map(Number);
+            const shiftStart = new Date(cin.ts);
+            shiftStart.setHours(sh, sm, 0, 0);
+            const graceStart = new Date(shiftStart.getTime() + 5 * 60000); // 5 mins late is okay
+            if (cin.ts <= graceStart) onTimeEvents++;
+          } else {
+            if (!cin.isLate) onTimeEvents++;
+          }
 
+          // 2. Evaluate Clock-Out (Only if it exists! No double jeopardy)
           if (cout) {
+            totalExpectedEvents++;
             if (shift?.endTime) {
               const [eh, em] = shift.endTime.split(':').map(Number);
               const shiftEnd = new Date(cout);
               shiftEnd.setHours(eh, em, 0, 0);
-              if (cout >= shiftEnd) {
+              const graceEnd = new Date(shiftEnd.getTime() - 5 * 60000); // leaving 5 mins early is okay
+              if (cout >= graceEnd) {
                 onTimeEvents++;
               } else {
                 earlyOutCount++;
@@ -1649,7 +1662,7 @@ export class SaasAdminService implements OnModuleInit {
         }
         const hoursCompletionRate =
           totalExpectedMinutes > 0
-            ? Math.min(100, (totalActualMinutes / totalExpectedMinutes) * 100)
+            ? Math.min(110, (totalActualMinutes / totalExpectedMinutes) * 100) // Allow up to 110% for overtime
             : daysPresent > 0
               ? 100
               : 0;

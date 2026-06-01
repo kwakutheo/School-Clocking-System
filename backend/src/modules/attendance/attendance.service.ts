@@ -456,12 +456,9 @@ export class AttendanceService {
       );
     }
 
-    // ── Current Day Guard (Same Day Enforcement) ────────────────────────────
-    if (now.toDateString() !== new Date().toDateString()) {
-      throw new BadRequestException(
-        'Action denied: Manual clocking can only be performed for the current calendar day.',
-      );
-    }
+    // ── Current Day Guard (Same Day Enforcement) [REMOVED] ──────────────────
+    // Relaxed to allow admins to manually clock employees for past dates, enabling
+    // them to fix forgotten clock-outs from previous days without restriction.
 
     // ── Real-Time Ceiling Guard ─────────────────────────────────────────────
     if (now > new Date()) {

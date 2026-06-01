@@ -1703,7 +1703,7 @@ export default function SaasOverviewPage() {
 
         </div>
 
-        {/* Right: 6-Week Trend Chart */}
+        {/* Right: 6-Week global Trend Chart */}
         <div className="card" style={{ padding: "28px 24px" }}>
           <div
             style={{

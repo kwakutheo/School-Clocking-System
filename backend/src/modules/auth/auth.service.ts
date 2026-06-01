@@ -217,6 +217,11 @@ export class AuthService {
 
     // Generate 6-digit PIN
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedPin = await bcrypt.hash(pin, SALT_ROUNDS);
+    
+    // Expires in 15 minutes
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15);
 
     // Update user in database and send email inside the user's tenant context so
     // any tenant-aware side-effects (audit logs, triggers) are properly
@@ -225,7 +230,9 @@ export class AuthService {
       tenantLocalStorage.run(user.tenantId, async () => {
         try {
           await this.users.update(user.id, {
-            resetPin: pin,
+            resetPin: hashedPin,
+            resetPinExpiresAt: expiresAt,
+            resetPinAttempts: 0,
             requiresPasswordChange: true,
           });
 
@@ -283,10 +290,13 @@ export class AuthService {
   // ── Complete Password Reset ────────────────────────────────────────────────
   async completePasswordReset(dto: CompletePasswordResetDto) {
     const user = await this.users.findByUsername(dto.username);
-    if (!user)
-      throw new UnauthorizedException(
-        'Username not found. Please check your username and try again.',
-      );
+    const genericErrorMessage = 'Invalid username or PIN, or reset not requested.';
+
+    if (!user) {
+      // Simulate bcrypt delay to prevent timing attacks for username enumeration
+      await bcrypt.compare(dto.pin, '$2b$12$invalidhashinvalidhashinvalidhashinvalidhashinvalidhas');
+      throw new UnauthorizedException(genericErrorMessage);
+    }
 
     // Execute password update inside the user's tenant context so the change
     // and audit log are associated with the correct tenant and do not affect
@@ -294,8 +304,41 @@ export class AuthService {
     return await new Promise<any>((resolve, reject) => {
       tenantLocalStorage.run(user.tenantId, async () => {
         try {
-          if (!user.requiresPasswordChange || user.resetPin !== dto.pin) {
-            reject(new UnauthorizedException('Invalid PIN or no reset requested.'));
+          if (!user.requiresPasswordChange || !user.resetPin || !user.resetPinExpiresAt) {
+            reject(new UnauthorizedException(genericErrorMessage));
+            return;
+          }
+
+          if (new Date() > user.resetPinExpiresAt) {
+            // Expired PIN, clean up
+            await this.users.update(user.id, {
+              resetPin: null,
+              resetPinExpiresAt: null,
+              resetPinAttempts: 0,
+              requiresPasswordChange: false,
+            });
+            reject(new UnauthorizedException('PIN has expired. Please request a new one.'));
+            return;
+          }
+
+          if (user.resetPinAttempts >= 3) {
+            // Max attempts reached, clean up
+            await this.users.update(user.id, {
+              resetPin: null,
+              resetPinExpiresAt: null,
+              resetPinAttempts: 0,
+              requiresPasswordChange: false,
+            });
+            reject(new UnauthorizedException('Maximum attempts exceeded. Please request a new PIN.'));
+            return;
+          }
+
+          const isValidPin = await bcrypt.compare(dto.pin, user.resetPin);
+          if (!isValidPin) {
+            await this.users.update(user.id, {
+              resetPinAttempts: user.resetPinAttempts + 1,
+            });
+            reject(new UnauthorizedException(genericErrorMessage));
             return;
           }
 
@@ -303,6 +346,8 @@ export class AuthService {
           await this.users.update(user.id, {
             passwordHash,
             resetPin: null,
+            resetPinExpiresAt: null,
+            resetPinAttempts: 0,
             requiresPasswordChange: false,
           });
 

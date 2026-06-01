@@ -48,6 +48,12 @@ export class User extends TenantBaseEntity {
   @Column({ name: 'reset_pin', type: 'varchar', nullable: true })
   resetPin: string | null;
 
+  @Column({ name: 'reset_pin_expires_at', type: 'timestamp', nullable: true })
+  resetPinExpiresAt: Date | null;
+
+  @Column({ name: 'reset_pin_attempts', type: 'int', default: 0 })
+  resetPinAttempts: number;
+
   @Column({ name: 'fcm_token', type: 'text', nullable: true })
   fcmToken: string | null;
 

@@ -20,6 +20,8 @@ import { AuditService } from '../audit/audit.service';
 import { LeavesService } from '../leaves/leaves.service';
 import { User } from '../users/user.entity';
 import { getCurrentTenantId } from '../../common/tenant/tenant-filter.helper';
+import { InjectQueue } from '@nestjs/bull';
+import type { Queue } from 'bull';
 
 @Injectable()
 export class AttendanceService {
@@ -32,6 +34,7 @@ export class AttendanceService {
     private readonly academicCalendar: AcademicCalendarService,
     private readonly auditService: AuditService,
     private readonly leavesService: LeavesService,
+    @InjectQueue('attendance_queue') private readonly attendanceQueue: Queue,
   ) {}
 
   // ── Record single event ───────────────────────────────────────────────────
@@ -325,20 +328,26 @@ export class AttendanceService {
       );
     }
 
-    const log = this.repo.create({
-      employee,
-      branch: branch ?? undefined,
+    await this.attendanceQueue.add('process-clockin', {
+      employeeId: employee.id,
+      branchId: branch?.id,
       type: dto.type,
-      timestamp: now,
+      timestamp: now.toISOString(),
       latitude: dto.latitude,
       longitude: dto.longitude,
       deviceId: dto.deviceId,
       isOfflineSync: dto.isOfflineSync ?? false,
     });
 
-    const savedLog = await this.repo.save(log);
-
-    return savedLog;
+    return {
+      id: `queued-${Date.now()}`,
+      employee: { id: employee.id },
+      type: dto.type,
+      timestamp: now,
+      status: 'queued',
+      latitude: dto.latitude,
+      longitude: dto.longitude,
+    } as any;
   }
 
   // ── Batch offline sync ────────────────────────────────────────────────────
@@ -832,19 +841,37 @@ export class AttendanceService {
       );
     }
 
-    const log = this.repo.create({
-      employee,
+    const jobId = `qr-clockin-${employee.id}-${now.getTime()}`;
+    const logData = {
+      employeeId: employee.id,
+      branchId: branch?.id,
+      type: dto.type,
+      timestamp: now.toISOString(),
+      latitude: dto.latitude,
+      longitude: dto.longitude,
+      isOfflineSync: false,
+    };
+
+    await this.attendanceQueue.add('process-clockin', logData, {
+      jobId,
+      removeOnComplete: true,
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 1000 },
+    });
+
+    const queuedLog = {
+      id: `queued-${jobId}`,
+      employee: { id: employee.id },
       branch: branch ?? undefined,
       type: dto.type,
       timestamp: now,
       latitude: dto.latitude,
       longitude: dto.longitude,
       isOfflineSync: false,
-    });
+      status: 'queued',
+    } as any;
 
-    const savedLog = await this.repo.save(log);
-
-    return savedLog;
+    return queuedLog;
   }
 
   // ── History ───────────────────────────────────────────────────────────────

@@ -1,0 +1,28 @@
+Here are several features that can be added to enhance the Admin Users management page:
+
+### 1. Search and Filtering Controls
+As the number of global admin users grows, finding specific accounts becomes more difficult.
+* **Text Search**: Add an input field to filter the table in real-time by Name, Username, or Email.
+* **Role & Status Filters**: Add dropdowns to filter users by their role (`super_admin`, `hr_admin`, `supervisor`) or status (`Active`, `Disabled`).
+
+### 2. Last Login / Activity Tracking
+Adding visibility into when accounts were last accessed helps monitor security and identify inactive accounts.
+* **Last Active Timestamp**: Display a "Last Active" or "Last Login" column in the table, pulling from the user session data.
+* **IP Address/Location Logging**: Track the last logged IP address for security audits.
+
+### 3. Password Reset Flow
+Manually entering a password on behalf of another user is less secure.
+* **Reset Link Generator**: Add a "Send Password Reset" button that generates a temporary tokenized link or triggers an automated reset email to the administrator's email.
+
+### 4. Delete or Archive Accounts
+Currently, accounts can only be marked as inactive.
+* **Soft Delete / Archival**: Add an "Archive" action to hide the user from the primary list while preserving past audit trails and logs associated with their ID.
+
+### 5. Multi-Factor Authentication (MFA) Status
+Since central admins have high levels of clearance, tracking security compliance is important.
+* **MFA Status Badge**: Display whether the user has configured Multi-Factor Authentication (e.g., TOTP/Google Authenticator).
+* **Force MFA Toggle**: Allow super admins to require MFA enrollment for specific roles.
+
+### 6. Admin Action Audit Logs
+Provide transparency on central platform operations.
+* **Recent Activity Modal**: Add a button to view a list of recent actions performed by the selected administrator (e.g., "Updated tenant settings", "Created new school tenant").

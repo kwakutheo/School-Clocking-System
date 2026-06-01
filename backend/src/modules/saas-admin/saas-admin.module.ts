@@ -14,9 +14,11 @@ import { SystemBulletin } from './system-bulletin.entity';
 import { Holiday } from '../holidays/holiday.entity';
 import { AttendanceLog } from '../attendance/attendance-log.entity';
 import { AttendanceDailySummary } from '../attendance/attendance-daily-summary.entity';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [
+    AuditModule,
     TypeOrmModule.forFeature([
       Tenant,
       User,

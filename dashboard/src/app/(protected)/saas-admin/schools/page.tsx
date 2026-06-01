@@ -77,6 +77,10 @@ export default function SchoolsRegistryPage() {
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
 
+  // Onboard form validation state
+  const [onboardSlugError, setOnboardSlugError] = useState<string | null>(null);
+  const [onboardInitialsError, setOnboardInitialsError] = useState<string | null>(null);
+
   // Edit Branding Modal States
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedSchool, setSelectedSchool] = useState<SchoolTenant | null>(null);
@@ -85,10 +89,12 @@ export default function SchoolsRegistryPage() {
   const [editSlug, setEditSlug] = useState('');
   const [editPrimaryColor, setEditPrimaryColor] = useState('#3b82f6');
   const [editLogoUrl, setEditLogoUrl] = useState('');
-  const [editCustomDomain, setEditCustomDomain] = useState('');
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editModalError, setEditModalError] = useState<string | null>(null);
   const [isModalEditing, setIsModalEditing] = useState(false);
+  // Edit form validation state
+  const [editSlugError, setEditSlugError] = useState<string | null>(null);
+  const [editInitialsError, setEditInitialsError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSchools();
@@ -112,6 +118,24 @@ export default function SchoolsRegistryPage() {
         setLoading(false);
       });
   };
+
+  // Normalization helpers for validation
+  const normalizeSlugValue = (v: string) =>
+    v
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+  const normalizeInitialsValue = (v?: string | null) =>
+    (v || '')
+      .toString()
+      .trim()
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .toUpperCase();
 
   // Toggle active/suspended state of a school
   const handleToggleStatus = (id: string, currentStatus: boolean) => {
@@ -167,33 +191,86 @@ export default function SchoolsRegistryPage() {
       return;
     }
 
+    // Prevent submission when client-side uniqueness errors exist
+    if (onboardSlugError || onboardInitialsError) {
+      setModalError('Please fix the highlighted errors before submitting.');
+      return;
+    }
+
+    // Run an authoritative uniqueness check on the server before submitting
     setSubmitting(true);
     setModalError(null);
+    saasAdminApi.checkTenantUnique({ slug: normalizeSlugValue(slug), initials: normalizeInitialsValue(initials) })
+      .then((r) => {
+        const data = r.data || {};
+        if (data.slugTaken) {
+          setOnboardSlugError('This subdomain slug is already taken.');
+          setModalError('Please pick a different subdomain slug.');
+          setSubmitting(false);
+          return;
+        }
+        if (data.initialsTaken) {
+          setOnboardInitialsError('These initials are already in use by another school.');
+          setModalError('Please pick a different school initials.');
+          setSubmitting(false);
+          return;
+        }
 
-    saasAdminApi.onboardTenant({
-      name: name.trim(),
-      slug: slug.trim().toLowerCase(),
-      initials: initials.trim().toUpperCase(),
-      primaryColor,
-      adminUsername: adminUsername.trim(),
-      adminPasswordHash: adminPassword,
-    })
-      .then(() => {
-        setSubmitting(false);
-        setModalOpen(false);
-        // Clear fields
-        setName('');
-        setSlug('');
-        setInitials('');
-        setPrimaryColor('#3b82f6');
-        setAdminUsername('');
-        setAdminPassword('');
-        fetchSchools();
+        // no conflicts — proceed to create
+        saasAdminApi.onboardTenant({
+          name: name.trim(),
+          slug: normalizeSlugValue(slug),
+          initials: normalizeInitialsValue(initials),
+          primaryColor,
+          adminUsername: adminUsername.trim(),
+          adminPasswordHash: adminPassword,
+        })
+          .then(() => {
+            setSubmitting(false);
+            setModalOpen(false);
+            // Clear fields
+            setName('');
+            setSlug('');
+            setInitials('');
+            setPrimaryColor('#3b82f6');
+            setAdminUsername('');
+            setAdminPassword('');
+            fetchSchools();
+          })
+          .catch((err) => {
+            console.error(err);
+            setModalError(err.response?.data?.message || 'Failed to onboard new school.');
+            setSubmitting(false);
+          });
       })
       .catch((err) => {
-        console.error(err);
-        setModalError(err.response?.data?.message || 'Failed to onboard new school.');
-        setSubmitting(false);
+        // If the check endpoint is not available or errors, fall back to client-side checks and try to submit.
+        console.warn('checkTenantUnique failed, falling back to submit', err);
+        saasAdminApi.onboardTenant({
+          name: name.trim(),
+          slug: normalizeSlugValue(slug),
+          initials: normalizeInitialsValue(initials),
+          primaryColor,
+          adminUsername: adminUsername.trim(),
+          adminPasswordHash: adminPassword,
+        })
+          .then(() => {
+            setSubmitting(false);
+            setModalOpen(false);
+            // Clear fields
+            setName('');
+            setSlug('');
+            setInitials('');
+            setPrimaryColor('#3b82f6');
+            setAdminUsername('');
+            setAdminPassword('');
+            fetchSchools();
+          })
+          .catch((err2) => {
+            console.error(err2);
+            setModalError(err2.response?.data?.message || 'Failed to onboard new school.');
+            setSubmitting(false);
+          });
       });
   };
 
@@ -205,7 +282,6 @@ export default function SchoolsRegistryPage() {
     setEditSlug(school.slug);
     setEditPrimaryColor(school.primaryColor);
     setEditLogoUrl(school.logoUrl || '');
-    setEditCustomDomain(school.customDomain || '');
     setEditModalError(null);
     setIsModalEditing(false); // Start in Read-Only mode!
     setEditModalOpen(true);
@@ -221,27 +297,71 @@ export default function SchoolsRegistryPage() {
       return;
     }
 
+    if (editSlugError || editInitialsError) {
+      setEditModalError('Please fix the highlighted errors before saving.');
+      return;
+    }
+
+    // Run server-side uniqueness check for the edited values
     setEditSubmitting(true);
     setEditModalError(null);
+    saasAdminApi.checkTenantUnique({ slug: normalizeSlugValue(editSlug), initials: normalizeInitialsValue(editInitials), excludeId: selectedSchool.id })
+      .then((r) => {
+        const data = r.data || {};
+        if (data.slugTaken) {
+          setEditSlugError('This subdomain slug is already taken.');
+          setEditModalError('Please pick a different subdomain slug.');
+          setEditSubmitting(false);
+          return;
+        }
+        if (data.initialsTaken) {
+          setEditInitialsError('These initials are already in use by another school.');
+          setEditModalError('Please pick a different school initials.');
+          setEditSubmitting(false);
+          return;
+        }
 
-    saasAdminApi.updateBranding(selectedSchool.id, {
-      name: editName.trim(),
-      slug: editSlug.trim().toLowerCase(),
-      initials: editInitials.trim().toUpperCase(),
-      primaryColor: selectedSchool.primaryColor,
-      logoUrl: selectedSchool.logoUrl || undefined,
-      customDomain: editCustomDomain.trim() || '',
-    })
-      .then(() => {
-        setEditSubmitting(false);
-        setIsModalEditing(false);
-        setEditModalOpen(false);
-        fetchSchools();
+        // proceed to update
+          saasAdminApi.updateBranding(selectedSchool.id, {
+          name: editName.trim(),
+          slug: normalizeSlugValue(editSlug),
+          initials: normalizeInitialsValue(editInitials),
+          primaryColor: selectedSchool.primaryColor,
+          logoUrl: selectedSchool.logoUrl || undefined,
+        })
+          .then(() => {
+            setEditSubmitting(false);
+            setIsModalEditing(false);
+            setEditModalOpen(false);
+            fetchSchools();
+          })
+          .catch((err) => {
+            console.error(err);
+            setEditModalError(err.response?.data?.message || 'Failed to update school branding details.');
+            setEditSubmitting(false);
+          });
       })
       .catch((err) => {
-        console.error(err);
-        setEditModalError(err.response?.data?.message || 'Failed to update school branding details.');
-        setEditSubmitting(false);
+        // if check fails, fallback to direct update attempt
+        console.warn('checkTenantUnique failed (edit), falling back to update', err);
+        saasAdminApi.updateBranding(selectedSchool.id, {
+          name: editName.trim(),
+          slug: normalizeSlugValue(editSlug),
+          initials: normalizeInitialsValue(editInitials),
+          primaryColor: selectedSchool.primaryColor,
+          logoUrl: selectedSchool.logoUrl || undefined,
+        })
+          .then(() => {
+            setEditSubmitting(false);
+            setIsModalEditing(false);
+            setEditModalOpen(false);
+            fetchSchools();
+          })
+          .catch((err2) => {
+            console.error(err2);
+            setEditModalError(err2.response?.data?.message || 'Failed to update school branding details.');
+            setEditSubmitting(false);
+          });
       });
   };
 
@@ -774,12 +894,28 @@ export default function SchoolsRegistryPage() {
                   className="form-input"
                   placeholder="e.g. PC for Prempeh College"
                   value={initials}
-                  onChange={(e) => setInitials(e.target.value.toUpperCase().slice(0, 4))}
+                  onChange={(e) => {
+                    const v = e.target.value.toUpperCase().slice(0, 4);
+                    setInitials(v);
+                    // basic client-side validation: check against existing schools
+                    const normInit = normalizeInitialsValue(v);
+                    const normInitLower = normInit.toLowerCase();
+                    const clash = schools.some(s => normalizeInitialsValue(s.initials) === normInit);
+                    // Also check initials against existing slugs
+                    const clashSlug = schools.some(s => normalizeSlugValue(s.slug) === normInitLower);
+                    if (clash) setOnboardInitialsError('These initials are already in use by another school.');
+                    else if (clashSlug) setOnboardInitialsError('These initials conflict with an existing subdomain slug.');
+                    else setOnboardInitialsError(null);
+                  }}
                   maxLength={4}
                   required
                   style={{ letterSpacing: '4px', fontWeight: 700, fontSize: '15px' }}
                 />
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>Used as prefix for auto-generated employee codes (e.g. PC-0042).</span>
+                {onboardInitialsError ? (
+                  <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>{onboardInitialsError}</div>
+                ) : (
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>Used as prefix for auto-generated employee codes (e.g. PC-0042).</span>
+                )}
               </div>
 
               <div>
@@ -790,7 +926,16 @@ export default function SchoolsRegistryPage() {
                     className="form-input"
                     placeholder="e.g. prempeh"
                     value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setSlug(v);
+                      const norm = normalizeSlugValue(v);
+                      const clash = schools.some(s => normalizeSlugValue(s.slug) === norm);
+                      const clashInit = schools.some(s => normalizeInitialsValue(s.initials).toLowerCase() === norm);
+                      if (clash) setOnboardSlugError('This subdomain slug is already taken.');
+                      else if (clashInit) setOnboardSlugError('This subdomain conflicts with an existing school initials.');
+                      else setOnboardSlugError(null);
+                    }}
                     style={{ paddingRight: '120px' }}
                     required
                   />
@@ -798,6 +943,7 @@ export default function SchoolsRegistryPage() {
                     .{getPortalBaseDomain()}
                   </span>
                 </div>
+                {onboardSlugError && <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>{onboardSlugError}</div>}
               </div>
 
               <div>
@@ -910,17 +1056,27 @@ export default function SchoolsRegistryPage() {
                 />
               </div>
 
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>School Initials <span style={{ color: 'var(--danger)' }}>*</span></label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={editInitials}
-                  onChange={(e) => setEditInitials(e.target.value.toUpperCase().slice(0, 4))}
-                  placeholder="e.g. AA"
-                  maxLength={4}
-                  required
-                  disabled={!isModalEditing}
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>School Initials <span style={{ color: 'var(--danger)' }}>*</span></label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editInitials}
+                    onChange={(e) => {
+                      const v = e.target.value.toUpperCase().slice(0, 4);
+                      setEditInitials(v);
+                      // client-side validation for edit
+                      const normInit = normalizeInitialsValue(v);
+                      const clash = schools.some(s => s.id !== selectedSchool?.id && normalizeInitialsValue(s.initials) === normInit);
+                      const clashSlug = schools.some(s => s.id !== selectedSchool?.id && normalizeSlugValue(s.slug) === normInit.toLowerCase());
+                      if (clash) setEditInitialsError('These initials are already in use by another school.');
+                      else if (clashSlug) setEditInitialsError('These initials conflict with an existing subdomain slug.');
+                      else setEditInitialsError(null);
+                    }}
+                    placeholder="e.g. AA"
+                    maxLength={4}
+                    required
+                    disabled={!isModalEditing}
                   style={{
                     letterSpacing: '4px', fontWeight: 700, fontSize: '15px',
                     opacity: !isModalEditing ? 0.75 : 1,
@@ -929,49 +1085,38 @@ export default function SchoolsRegistryPage() {
                   }}
                 />
                 <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>Used as prefix for auto-generated employee codes (e.g. AA-0001).</span>
+                {editInitialsError && <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>{editInitialsError}</div>}
               </div>
 
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Subdomain Slug</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={editSlug}
-                  onChange={(e) => setEditSlug(e.target.value)}
-                  placeholder="e.g. accra"
-                  required
-                  disabled={!isModalEditing}
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Subdomain Slug</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editSlug}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setEditSlug(v);
+                      const norm = normalizeSlugValue(v);
+                      const clash = schools.some(s => s.id !== selectedSchool?.id && normalizeSlugValue(s.slug) === norm);
+                      const clashInit = schools.some(s => s.id !== selectedSchool?.id && normalizeInitialsValue(s.initials).toLowerCase() === norm);
+                      if (clash) setEditSlugError('This subdomain slug is already taken.');
+                      else if (clashInit) setEditSlugError('This subdomain conflicts with an existing school initials.');
+                      else setEditSlugError(null);
+                    }}
+                    placeholder="e.g. accra"
+                    required
+                    disabled={!isModalEditing}
                   style={{
                     opacity: !isModalEditing ? 0.75 : 1,
                     background: !isModalEditing ? 'var(--bg-card-alt, rgba(255,255,255,0.02))' : 'var(--bg-input)',
                     cursor: !isModalEditing ? 'default' : 'text'
                   }}
                 />
-              </div>
+                </div>
+                {editSlugError && <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>{editSlugError}</div>}
 
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <LinkIcon size={13} /> White-Label Custom Domain
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. portal.accraacademy.edu.gh"
-                  value={editCustomDomain}
-                  onChange={(e) => setEditCustomDomain(e.target.value)}
-                  disabled={!isModalEditing}
-                  style={{
-                    opacity: !isModalEditing ? 0.75 : 1,
-                    background: !isModalEditing ? 'var(--bg-card-alt, rgba(255,255,255,0.02))' : 'var(--bg-input)',
-                    cursor: !isModalEditing ? 'default' : 'text'
-                  }}
-                />
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>
-                  Leave blank to fall back to the default subdomain slug route.
-                </span>
-              </div>
+                {/* White-label custom domain removed — handled by ops only. */}
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
                 {!isModalEditing ? (
@@ -1003,7 +1148,6 @@ export default function SchoolsRegistryPage() {
                           setEditName(selectedSchool.name);
                           setEditInitials((selectedSchool as any).initials ?? '');
                           setEditSlug(selectedSchool.slug);
-                          setEditCustomDomain(selectedSchool.customDomain || '');
                         }
                         setIsModalEditing(false);
                         setEditModalError(null);

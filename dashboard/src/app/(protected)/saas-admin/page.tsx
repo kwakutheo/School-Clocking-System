@@ -1815,7 +1815,7 @@ export default function SaasOverviewPage() {
                   marginTop: "4px",
                 }}
               >
-                Weekly attendance rate across all institutions
+                Weekly (last 7 days) attendance rate across all institutions
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>

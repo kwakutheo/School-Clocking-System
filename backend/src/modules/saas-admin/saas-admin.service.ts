@@ -6,8 +6,9 @@ import {
   Logger,
   OnModuleInit,
 } from '@nestjs/common';
+import { QueryFailedError } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Connection, ILike, Not } from 'typeorm';
+import { Repository, Connection, ILike, Not, IsNull } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Tenant } from '../tenants/tenant.entity';
 import { User } from '../users/user.entity';
@@ -20,6 +21,7 @@ import { SystemBulletin, BulletinType } from './system-bulletin.entity';
 import { AttendanceLog } from '../attendance/attendance-log.entity';
 import { AttendanceDailySummary } from '../attendance/attendance-daily-summary.entity';
 import { AcademicTerm } from '../academic-calendar/term.entity';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class SaasAdminService implements OnModuleInit {
@@ -39,6 +41,7 @@ export class SaasAdminService implements OnModuleInit {
     @InjectRepository(SystemBulletin)
     private readonly bulletinRepo: Repository<SystemBulletin>,
     private readonly connection: Connection,
+    private readonly auditService: AuditService,
   ) {}
 
   private readonly logger = new Logger(SaasAdminService.name);
@@ -49,8 +52,318 @@ export class SaasAdminService implements OnModuleInit {
   private employeeRankingsInFlight = new Map<string, Promise<any[]>>();
   private readonly CACHE_TTL = 1000 * 60 * 5; // 5 minutes
 
+  private toPublicAdmin(user: User) {
+    const { passwordHash: _, resetPin: __, fcmToken: ___, ...safe } = user;
+    return {
+      ...safe,
+      accountScope: user.tenantId === null ? 'global' : 'tenant',
+    };
+  }
+
+  private ensureGlobalAdminRole(role: UserRole) {
+    if (
+      ![UserRole.SUPER_ADMIN, UserRole.HR_ADMIN, UserRole.SUPERVISOR].includes(
+        role,
+      )
+    ) {
+      throw new BadRequestException(
+        'Global admin role must be super_admin, hr_admin, or supervisor.',
+      );
+    }
+  }
+
+  async findGlobalAdmins(showArchived: boolean = false): Promise<any[]> {
+    const users = await this.userRepo.find({
+      where: [
+        { tenantId: IsNull(), role: UserRole.SUPER_ADMIN },
+        { tenantId: IsNull(), role: UserRole.HR_ADMIN },
+        { tenantId: IsNull(), role: UserRole.SUPERVISOR },
+      ],
+      order: { createdAt: 'DESC' },
+      withDeleted: showArchived,
+    });
+
+    return users.map((user) => this.toPublicAdmin(user));
+  }
+
+  async createGlobalAdmin(
+    data: {
+      fullName: string;
+      username: string;
+      password: string;
+      role: UserRole;
+      email?: string;
+      phone?: string;
+    },
+    actor: User,
+  ): Promise<any> {
+    const role = data.role ?? UserRole.SUPERVISOR;
+    this.ensureGlobalAdminRole(role);
+
+    if (!data.fullName?.trim() || !data.username?.trim() || !data.password) {
+      throw new BadRequestException(
+        'Full name, username and password are required.',
+      );
+    }
+    if (data.password.length < 8) {
+      throw new BadRequestException('Password must be at least 8 characters.');
+    }
+
+    const username = data.username.trim();
+    const existingUsername = await this.userRepo.findOne({
+      where: { username },
+    });
+    if (existingUsername) {
+      throw new BadRequestException('Username already in use.');
+    }
+
+    if (data.email) {
+      const existingEmail = await this.userRepo.findOne({
+        where: { email: data.email.trim().toLowerCase() },
+      });
+      if (existingEmail) {
+        throw new BadRequestException('Email already in use.');
+      }
+    }
+
+    if (data.phone) {
+      const existingPhone = await this.userRepo.findOne({
+        where: { phone: data.phone.trim() },
+      });
+      if (existingPhone) {
+        throw new BadRequestException('Phone number already in use.');
+      }
+    }
+
+    const user = this.userRepo.create({
+      fullName: data.fullName.trim(),
+      username,
+      email: data.email?.trim().toLowerCase() || null,
+      phone: data.phone?.trim() || null,
+      passwordHash: await bcrypt.hash(data.password, 12),
+      role,
+      tenantId: null,
+      isActive: true,
+    });
+
+    const saved = await this.userRepo.save(user);
+    await this.auditService.log({
+      user: actor,
+      action: 'CREATE_GLOBAL_ADMIN',
+      module: 'SAAS_ADMIN',
+      targetId: saved.id,
+      newValues: {
+        fullName: saved.fullName,
+        username: saved.username,
+        email: saved.email,
+        role: saved.role,
+        accountScope: 'global',
+      },
+    });
+
+    return this.toPublicAdmin(saved);
+  }
+
+  async updateGlobalAdmin(
+    id: string,
+    data: {
+      fullName?: string;
+      username?: string;
+      email?: string | null;
+      phone?: string | null;
+      role?: UserRole;
+      isActive?: boolean;
+      password?: string;
+    },
+    actor: User,
+  ): Promise<any> {
+    const user = await this.userRepo.findOne({
+      where: { id, tenantId: IsNull() },
+    });
+    if (!user) {
+      throw new NotFoundException('Global admin account not found.');
+    }
+
+    if (
+      user.id === actor.id &&
+      (data.isActive === false || (data.role && data.role !== user.role))
+    ) {
+      throw new BadRequestException(
+        'You cannot deactivate or change the role of your own global admin account.',
+      );
+    }
+
+    if (data.role) {
+      this.ensureGlobalAdminRole(data.role);
+    }
+
+    const oldValues = {
+      fullName: user.fullName,
+      username: user.username,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      isActive: user.isActive,
+    };
+
+    if (data.username && data.username.trim() !== user.username) {
+      const existing = await this.userRepo.findOne({
+        where: { username: data.username.trim() },
+      });
+      if (existing && existing.id !== user.id) {
+        throw new BadRequestException('Username already in use.');
+      }
+      user.username = data.username.trim();
+    }
+
+    if (data.email !== undefined) {
+      const email = data.email?.trim().toLowerCase() || null;
+      if (email && email !== user.email) {
+        const existing = await this.userRepo.findOne({ where: { email } });
+        if (existing && existing.id !== user.id) {
+          throw new BadRequestException('Email already in use.');
+        }
+      }
+      user.email = email;
+    }
+
+    if (data.phone !== undefined) {
+      const phone = data.phone?.trim() || null;
+      if (phone && phone !== user.phone) {
+        const existing = await this.userRepo.findOne({ where: { phone } });
+        if (existing && existing.id !== user.id) {
+          throw new BadRequestException('Phone number already in use.');
+        }
+      }
+      user.phone = phone;
+    }
+
+    if (data.fullName) user.fullName = data.fullName.trim();
+    if (data.role) user.role = data.role;
+    if (data.isActive !== undefined) user.isActive = data.isActive;
+    if (data.password) {
+      if (data.password.length < 8) {
+        throw new BadRequestException('Password must be at least 8 characters.');
+      }
+      user.passwordHash = await bcrypt.hash(data.password, 12);
+      user.requiresPasswordChange = false;
+      user.resetPin = null;
+    }
+
+    const saved = await this.userRepo.save(user);
+    await this.auditService.log({
+      user: actor,
+      action: 'UPDATE_GLOBAL_ADMIN',
+      module: 'SAAS_ADMIN',
+      targetId: saved.id,
+      oldValues,
+      newValues: {
+        fullName: saved.fullName,
+        username: saved.username,
+        email: saved.email,
+        phone: saved.phone,
+        role: saved.role,
+        isActive: saved.isActive,
+        passwordChanged: !!data.password,
+      },
+    });
+
+    return this.toPublicAdmin(saved);
+  }
+
+  async deleteGlobalAdmin(id: string, actor: User): Promise<void> {
+    const user = await this.userRepo.findOne({
+      where: { id, tenantId: IsNull() },
+    });
+    if (!user) {
+      throw new NotFoundException('Global admin account not found.');
+    }
+    if (user.id === actor.id) {
+      throw new BadRequestException('You cannot delete your own account.');
+    }
+
+    await this.userRepo.softDelete(user.id);
+
+    await this.auditService.log({
+      user: actor,
+      action: 'DELETE_GLOBAL_ADMIN',
+      module: 'SAAS_ADMIN',
+      targetId: id,
+    });
+  }
+
+  async restoreGlobalAdmin(id: string, actor: User): Promise<void> {
+    const user = await this.userRepo.findOne({
+      where: { id, tenantId: IsNull() },
+      withDeleted: true,
+    });
+    if (!user) {
+      throw new NotFoundException('Global admin account not found.');
+    }
+
+    await this.userRepo.restore(user.id);
+
+    await this.auditService.log({
+      user: actor,
+      action: 'RESTORE_GLOBAL_ADMIN',
+      module: 'SAAS_ADMIN',
+      targetId: id,
+    });
+  }
+
+  async triggerPasswordReset(id: string, actor: User): Promise<any> {
+    const user = await this.userRepo.findOne({
+      where: { id, tenantId: IsNull() },
+    });
+    if (!user) {
+      throw new NotFoundException('Global admin account not found.');
+    }
+
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    await this.userRepo.update(user.id, {
+      resetPin: pin,
+      requiresPasswordChange: true,
+    });
+
+    await this.auditService.log({
+      user: actor,
+      action: 'TRIGGER_PASSWORD_RESET',
+      module: 'SAAS_ADMIN',
+      targetId: id,
+    });
+
+    // Simulate email dispatch
+    console.warn('\n========================================================');
+    console.warn(`Simulated Email Dispatch: Password Reset`);
+    console.warn(`To: ${user.email || user.username}`);
+    console.warn(`PIN: ${pin}`);
+    console.warn('========================================================\n');
+
+    return { success: true, message: 'Password reset link simulated and logged to console.' };
+  }
+
   private toDateStr(d: Date): string {
     return d.toISOString().split('T')[0];
+  }
+
+  // Normalization helpers (mirror frontend rules)
+  private normalizeSlugValue(v?: string) {
+    return (v || '')
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  private normalizeInitialsValue(v?: string) {
+    return (v || '')
+      .toString()
+      .trim()
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .toUpperCase();
   }
 
   async onModuleInit() {
@@ -527,6 +840,56 @@ export class SaasAdminService implements OnModuleInit {
     return { results, total };
   }
 
+  /**
+   * Check tenant slug/initials uniqueness and cross-field conflicts.
+   * Mirrors frontend normalization rules so client and server agree.
+   */
+  async checkTenantUnique(params: {
+    slug?: string;
+    initials?: string;
+    excludeId?: string;
+  }): Promise<{
+    slugTaken?: boolean;
+    initialsTaken?: boolean;
+    initialsConflictWithSlug?: boolean;
+    slugConflictWithInitials?: boolean;
+  }> {
+    const { slug, initials, excludeId } = params || {};
+
+    const result: any = {};
+
+    const slugNorm = this.normalizeSlugValue(slug);
+    const initialsNorm = this.normalizeInitialsValue(initials);
+
+    // Check slug itself and whether it conflicts with any existing initials
+    if (slugNorm) {
+      const slugWhere: any = { slug: slugNorm };
+      if (excludeId) slugWhere.id = Not(excludeId);
+      const existingSlug = await this.tenantRepo.findOne({ where: slugWhere });
+      result.slugTaken = !!existingSlug;
+
+      const initialsConflictWhere: any = { initials: slugNorm.toUpperCase() };
+      if (excludeId) initialsConflictWhere.id = Not(excludeId);
+      const initialsConflict = await this.tenantRepo.findOne({ where: initialsConflictWhere });
+      result.slugConflictWithInitials = !!initialsConflict;
+    }
+
+    // Check initials itself and whether it conflicts with any existing slug
+    if (initialsNorm) {
+      const initialsWhere: any = { initials: initialsNorm };
+      if (excludeId) initialsWhere.id = Not(excludeId);
+      const existingInitials = await this.tenantRepo.findOne({ where: initialsWhere });
+      result.initialsTaken = !!existingInitials;
+
+      const slugConflictWhere: any = { slug: initialsNorm.toLowerCase() };
+      if (excludeId) slugConflictWhere.id = Not(excludeId);
+      const slugConflict = await this.tenantRepo.findOne({ where: slugConflictWhere });
+      result.initialsConflictWithSlug = !!slugConflict;
+    }
+
+    return result;
+  }
+
   /** Dynamically onboard a brand new school. */
   async onboardTenant(data: {
     name: string;
@@ -536,22 +899,47 @@ export class SaasAdminService implements OnModuleInit {
     adminUsername: string;
     adminPasswordHash: string; // Plain password passed from controller which we will hash
   }): Promise<Tenant> {
-    const cleanSlug = data.slug.toLowerCase().trim();
+    const cleanSlug = this.normalizeSlugValue(data.slug);
+    const initialsNorm = this.normalizeInitialsValue(data.initials);
 
     // 1. Verify unique slug
-    const existingTenant = await this.tenantRepo.findOne({
-      where: { slug: cleanSlug },
-    });
+    const existingTenant = await this.tenantRepo.findOne({ where: { slug: cleanSlug } });
     if (existingTenant) {
       throw new BadRequestException(
         `A school with the subdomain "${cleanSlug}" already exists.`,
       );
     }
 
-    // 2. Verify unique username
-    const existingUser = await this.userRepo.findOne({
-      where: { username: data.adminUsername },
-    });
+    // When creating a tenant we must perform the full set of cross-field checks
+    // so that slugs and initials are mutually exclusive and cannot collide.
+    if (cleanSlug) {
+      const initialsConflict = await this.tenantRepo.findOne({ where: { initials: cleanSlug.toUpperCase() } });
+      if (initialsConflict) {
+        throw new BadRequestException(
+          `Subdomain "${cleanSlug}" conflicts with existing school initials "${initialsConflict.initials}".`,
+        );
+      }
+    }
+
+    if (initialsNorm) {
+      const existingInitials = await this.tenantRepo.findOne({ where: { initials: initialsNorm } });
+      if (existingInitials) {
+        throw new BadRequestException(
+          `School initials "${initialsNorm}" are already in use.`,
+        );
+      }
+
+      // initials must not collide with existing slugs
+      const slugConflict = await this.tenantRepo.findOne({ where: { slug: initialsNorm.toLowerCase() } });
+      if (slugConflict) {
+        throw new BadRequestException(
+          `Initials "${initialsNorm}" conflict with existing subdomain slug "${slugConflict.slug}".`,
+        );
+      }
+    }
+
+    // 3. Verify unique username
+    const existingUser = await this.userRepo.findOne({ where: { username: data.adminUsername } });
     if (existingUser) {
       throw new BadRequestException(
         `A user with the admin username "${data.adminUsername}" already exists.`,
@@ -569,7 +957,7 @@ export class SaasAdminService implements OnModuleInit {
         name: data.name,
         slug: cleanSlug,
         primaryColor: data.primaryColor || '#3b82f6',
-        initials: data.initials ? data.initials.toUpperCase() : null,
+        initials: initialsNorm || null,
         isActive: true,
       });
       const savedTenant = await queryRunner.manager.save(Tenant, tenant);
@@ -588,8 +976,28 @@ export class SaasAdminService implements OnModuleInit {
 
       await queryRunner.commitTransaction();
       return savedTenant;
-    } catch (err) {
+    } catch (err: any) {
       await queryRunner.rollbackTransaction();
+      // Map Postgres unique constraint violations to friendly errors
+      if (err && (err.code === '23505' || err.constraint)) {
+        const constraint = err.constraint || err.detail || '';
+        if (/initials/i.test(constraint)) {
+          throw new BadRequestException(
+            `School initials "${initialsNorm}" are already in use.`,
+          );
+        }
+        if (/slug/i.test(constraint)) {
+          throw new BadRequestException(
+            `Subdomain "${cleanSlug}" already exists.`,
+          );
+        }
+        if (/username/i.test(constraint)) {
+          throw new BadRequestException(
+            `A user with the admin username "${data.adminUsername}" already exists.`,
+          );
+        }
+        throw new BadRequestException('Duplicate value violates unique constraint.');
+      }
       throw err;
     } finally {
       await queryRunner.release();
@@ -818,17 +1226,27 @@ export class SaasAdminService implements OnModuleInit {
       throw new NotFoundException(`School with ID "${id}" not found.`);
     }
 
-    if (data.slug) {
-      const cleanSlug = data.slug.toLowerCase().trim();
+    // If slug is being updated, normalize and enforce uniqueness + cross-field checks
+    if (data.slug !== undefined) {
+      const cleanSlug = this.normalizeSlugValue(data.slug);
       if (cleanSlug !== tenant.slug) {
-        const existing = await this.tenantRepo.findOne({
-          where: { slug: cleanSlug },
-        });
-        if (existing) {
+        const existing = await this.tenantRepo.findOne({ where: { slug: cleanSlug } });
+        if (existing && existing.id !== tenant.id) {
           throw new BadRequestException(
             `Subdomain "${cleanSlug}" is already registered to another school.`,
           );
         }
+
+        // Ensure the new slug does not conflict with any tenant initials
+        if (cleanSlug) {
+          const initialsConflict = await this.tenantRepo.findOne({ where: { initials: cleanSlug.toUpperCase() } });
+          if (initialsConflict && initialsConflict.id !== tenant.id) {
+            throw new BadRequestException(
+              `Subdomain "${cleanSlug}" conflicts with existing school initials "${initialsConflict.initials}".`,
+            );
+          }
+        }
+
         tenant.slug = cleanSlug;
       }
     }
@@ -852,7 +1270,29 @@ export class SaasAdminService implements OnModuleInit {
 
     if (data.name) tenant.name = data.name;
     if (data.primaryColor) tenant.primaryColor = data.primaryColor;
-    if (data.initials !== undefined) tenant.initials = data.initials ? data.initials.toUpperCase() : null;
+    if (data.initials !== undefined) {
+      const initialsNorm = this.normalizeInitialsValue(data.initials);
+      if ((tenant.initials || null) !== (initialsNorm || null)) {
+        if (initialsNorm) {
+          const existing = await this.tenantRepo.findOne({ where: { initials: initialsNorm } });
+          if (existing && existing.id !== tenant.id) {
+            throw new BadRequestException(
+              `School initials "${initialsNorm}" are already in use.`,
+            );
+          }
+
+          // Ensure initials do not collide with any existing slug
+          const slugConflict = await this.tenantRepo.findOne({ where: { slug: initialsNorm.toLowerCase() } });
+          if (slugConflict && slugConflict.id !== tenant.id) {
+            throw new BadRequestException(
+              `Initials "${initialsNorm}" conflict with existing subdomain slug "${slugConflict.slug}".`,
+            );
+          }
+        }
+
+        tenant.initials = initialsNorm || null;
+      }
+    }
     if (data.logoUrl !== undefined) tenant.logoUrl = data.logoUrl || null;
 
     return this.tenantRepo.save(tenant);

@@ -33,6 +33,7 @@ interface NavItem {
   icon: any;
   label: string;
   permission?: Permission;
+  globalRoles?: string[];
 }
 
 const NAV: NavItem[] = [
@@ -54,9 +55,10 @@ const NAV: NavItem[] = [
 const DEVELOPER_NAV: NavItem[] = [
   { href: '/saas-admin',         icon: LayoutDashboard, label: 'Overview' },
   { href: '/saas-admin/schools', icon: Building2,        label: 'Schools Registry' },
+  { href: '/saas-admin/admins',  icon: ShieldCheck,      label: 'Admin Users', globalRoles: ['super_admin'] },
   { href: '/saas-admin/calendar', icon: Calendar,         label: 'Academic Calendar' },
   { href: '/saas-admin/holidays', icon: Calendar,         label: 'Holidays' },
-  { href: '/saas-admin/bulletins', icon: Megaphone,      label: 'Announcements' },
+  { href: '/saas-admin/bulletins', icon: Megaphone,      label: 'Announcements', globalRoles: ['super_admin', 'hr_admin'] },
 ];
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
@@ -291,7 +293,10 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         <div className="sidebar-nav">
           <span className="nav-section-label">Main Menu</span>
           <nav>
-            {(user?.tenantId === null && !impersonatedTenant ? DEVELOPER_NAV : NAV).filter(item => !item.permission || can(user?.role, item.permission)).map((item) => {
+            {(user?.tenantId === null && !impersonatedTenant ? DEVELOPER_NAV : NAV).filter(item => {
+              if (item.globalRoles && !item.globalRoles.includes(user?.role ?? '')) return false;
+              return !item.permission || can(user?.role, item.permission);
+            }).map((item) => {
               const Icon = item.icon;
               
               return (

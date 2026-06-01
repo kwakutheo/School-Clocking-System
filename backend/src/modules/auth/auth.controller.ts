@@ -7,6 +7,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -35,7 +36,12 @@ export class AuthController {
   @ApiOperation({ summary: 'Login with email/phone and password' })
   @ApiResponse({ status: 200, description: 'Returns access + refresh tokens' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  login(@CurrentUser() user: User) {
+  login(@CurrentUser() user: User, @Body('context') context?: string) {
+    if (user.tenantId === null && context !== 'central_dashboard') {
+      throw new UnauthorizedException(
+        'Central admin accounts can only sign in from the central dashboard.',
+      );
+    }
     // passport-local has already validated credentials; user is attached.
     return this.auth.login(user);
   }

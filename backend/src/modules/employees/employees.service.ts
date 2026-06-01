@@ -97,25 +97,25 @@ export class EmployeesService implements OnModuleInit {
       this.logger.log('Database migrations completed successfully.');
 
       // 2. Perform the one-time data migration for status history
-      const employees = await this.repo.find();
-      for (const emp of employees) {
-        const existing = await this.statusLogRepo.findOne({
-          where: { employee: { id: emp.id } },
-        });
-        if (!existing) {
-          const startDate = emp.hireDate
-            ? new Date(emp.hireDate)
-            : new Date(emp.createdAt);
-          startDate.setHours(0, 0, 0, 0);
-          await this.statusLogRepo.save(
-            this.statusLogRepo.create({
-              employee: emp,
-              status: emp.status,
-              startDate,
-              endDate: null,
-            }),
-          );
-        }
+      const employeesMissingStatusLogs = await this.repo
+        .createQueryBuilder('emp')
+        .leftJoin('emp.statusLogs', 'statusLog')
+        .where('statusLog.id IS NULL')
+        .getMany();
+
+      for (const emp of employeesMissingStatusLogs) {
+        const startDate = emp.hireDate
+          ? new Date(emp.hireDate)
+          : new Date(emp.createdAt);
+        startDate.setHours(0, 0, 0, 0);
+        await this.statusLogRepo.save(
+          this.statusLogRepo.create({
+            employee: emp,
+            status: emp.status,
+            startDate,
+            endDate: null,
+          }),
+        );
       }
       this.logger.log('Employee status history migration complete.');
     } catch (err) {

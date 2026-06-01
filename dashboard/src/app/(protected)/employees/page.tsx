@@ -61,17 +61,18 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     if (editingId) return; // Only check on create
-    if (!form.username) {
+    const username = form.username?.trim();
+    if (!username) {
       setUsernameStatus('idle');
       setUsernameSuggestions([]);
       return;
     }
-    
+
     setUsernameStatus('checking');
     const t = setTimeout(async () => {
       try {
         const fullName = `${form.firstName} ${form.lastName}`.trim();
-        const res = await usersApi.checkUsername(form.username, fullName);
+        const res = await usersApi.checkUsername(username, fullName);
         if (res.data.available) {
           setUsernameStatus('available');
           setUsernameSuggestions([]);
@@ -220,6 +221,9 @@ export default function EmployeesPage() {
   const userRole = useMemo(() =>
     typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') ?? '{}')?.role as string : ''
   , []);
+
+  // Determine if current user belongs to a tenant (school admin)
+  const isTenantUser = !!user?.tenantId;
 
   const goToPage = (p: number) => setPage(Math.max(1, Math.min(totalPages, p)));
   const startItem = total === 0 ? 0 : (page - 1) * LIMIT + 1;
@@ -585,7 +589,7 @@ export default function EmployeesPage() {
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="hireDate">Date Hired</label>
+                  <label htmlFor="hireDate">Date Registered</label>
                   <input
                     id="hireDate"
                     className="form-input"
@@ -593,6 +597,8 @@ export default function EmployeesPage() {
                     value={form.hireDate}
                     max={format(new Date(), 'yyyy-MM-dd')}
                     onChange={(e) => setForm({ ...form, hireDate: e.target.value })}
+                    disabled={isTenantUser}
+                    title={isTenantUser ? 'Hire date cannot be modified by school admins' : undefined}
                   />
                 </div>
 

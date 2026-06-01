@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { authApi } from '@/lib/api';
+import { useState, useEffect, useRef } from 'react';
+import { authApi, usersApi } from '@/lib/api';
 import { useAuthStore, type AuthUser } from '@/lib/store';
 
 import { Pencil, X } from 'lucide-react';
@@ -24,6 +24,11 @@ export default function ProfilePage() {
     confirmPassword: '',
   });
 
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const usernameCheckTimer = useRef<number | null>(null);
+
 
 
   useEffect(() => {
@@ -37,6 +42,52 @@ export default function ProfilePage() {
       });
     }
   }, [user]);
+
+  // Debounced live username availability check when editing username in profile
+  useEffect(() => {
+    if (!editingUsername) {
+      setUsernameAvailable(null);
+      setUsernameSuggestions([]);
+      setCheckingUsername(false);
+      if (usernameCheckTimer.current) window.clearTimeout(usernameCheckTimer.current);
+      return;
+    }
+
+    const username = form.username?.trim();
+    if (!username) {
+      setUsernameAvailable(null);
+      setUsernameSuggestions([]);
+      setCheckingUsername(false);
+      return;
+    }
+
+    setCheckingUsername(true);
+    setUsernameAvailable(null);
+    if (usernameCheckTimer.current) window.clearTimeout(usernameCheckTimer.current);
+    usernameCheckTimer.current = window.setTimeout(async () => {
+      try {
+        const res = await usersApi.checkUsername(username, form.fullName?.trim());
+        // If the username equals current user's username, treat as available
+        if (username === user?.username) {
+          setUsernameAvailable(true);
+          setUsernameSuggestions([]);
+        } else {
+          setUsernameAvailable(!!res.data?.available);
+          setUsernameSuggestions(res.data?.suggestions || []);
+        }
+      } catch (err) {
+        console.warn('Profile username check failed', err);
+        setUsernameAvailable(null);
+        setUsernameSuggestions([]);
+      } finally {
+        setCheckingUsername(false);
+      }
+    }, 350);
+
+    return () => {
+      if (usernameCheckTimer.current) window.clearTimeout(usernameCheckTimer.current);
+    };
+  }, [form.username, form.fullName, editingUsername, user]);
 
 
 
@@ -173,6 +224,36 @@ export default function ProfilePage() {
                 required={editingUsername}
                 style={{ backgroundColor: !editingUsername ? 'var(--bg-card-alt)' : undefined, opacity: !editingUsername ? 0.7 : 1 }}
               />
+              <div style={{ marginTop: 8 }}>
+                {checkingUsername && <div style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Checking availability…</div>}
+                {usernameAvailable === true && <div style={{ color: 'var(--success)', fontSize: 13 }}>Username is available ✓</div>}
+                {usernameAvailable === false && (
+                  <div style={{ fontSize: 13 }}>
+                    <div style={{ color: 'var(--danger)', marginBottom: 6 }}>Username is taken.</div>
+                    {usernameSuggestions.length > 0 && (
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {usernameSuggestions.map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setForm({ ...form, username: s })}
+                            style={{
+                              background: 'var(--bg-input)',
+                              border: '1px dashed var(--border)',
+                              padding: '6px 10px',
+                              borderRadius: 8,
+                              cursor: 'pointer',
+                              fontSize: 13,
+                            }}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>

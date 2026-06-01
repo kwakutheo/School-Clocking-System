@@ -1,6 +1,6 @@
 
 My domain
-www.tkclocking.online 
+tkclocking.online 
 https://hpanel.hostinger.com
 
 supabase password
@@ -12,6 +12,7 @@ https://miokputfdhvyarnkdpaj.supabase.co  (for database)
 https://github.com/kwakutheo/School-Clocking-System.git
 
 https://dashboard.render.com/project/prj-d8bicu57vvec738r64eg  (for backend)
+https://school-clocking-system.onrender.com/api/v1 (for backend)
 
 vercel (for frontend)
 

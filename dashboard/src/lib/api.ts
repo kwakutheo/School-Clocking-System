@@ -75,7 +75,11 @@ api.interceptors.response.use(
 // ── Auth ───────────────────────────────────────────────────────────────────
 export const authApi = {
   login: (identifier: string, password: string) =>
-    api.post("/auth/login", { identifier, password }),
+    api.post("/auth/login", {
+      identifier,
+      password,
+      context: "central_dashboard",
+    }),
   me: () => api.get("/auth/me"),
   updateProfile: (data: {
     fullName?: string;
@@ -271,9 +275,27 @@ export const auditApi = {
 
 export const usersApi = {
   checkUsername: (username: string, fullName?: string) =>
-    api.get<{ available: boolean; suggestions?: string[] }>('/users/check-username', {
-      params: { username, fullName },
-    }),
+    // In-memory cache to reduce repeated identical checks while typing.
+    ((): Promise<{ data: { available: boolean; suggestions?: string[] } }> => {
+      const key = (username || '').toString().trim().toLowerCase();
+      const TTL = 30 * 1000; // 30 seconds
+      // Simple cache stored on the module scope
+      if (!(usersApi as any)._cache) (usersApi as any)._cache = new Map<string, { ts: number; data: any }>();
+      const cache: Map<string, { ts: number; data: any }> = (usersApi as any)._cache;
+      if (!key) return Promise.resolve({ data: { available: false } });
+      const cached = cache.get(key);
+      if (cached && Date.now() - cached.ts < TTL) {
+        return Promise.resolve({ data: cached.data });
+      }
+      return api
+        .get<{ available: boolean; suggestions?: string[] }>('/users/check-username', {
+          params: { username: key, fullName },
+        })
+        .then((res) => {
+          try { cache.set(key, { ts: Date.now(), data: res.data }); } catch (e) { /* ignore caching failures */ }
+          return res;
+        });
+    })(),
 };
 
 // ── Settings ───────────────────────────────────────────────────────────────
@@ -297,6 +319,10 @@ export const saasAdminApi = {
     adminUsername: string;
     adminPasswordHash: string;
   }) => api.post("/saas-admin/tenants", data),
+  // Check uniqueness of slug and initials. Server endpoint should return an object like:
+  // { slugTaken?: boolean, initialsTaken?: boolean, initialsConflictWithSlug?: boolean, slugConflictWithInitials?: boolean }
+  checkTenantUnique: (params: { slug?: string; initials?: string; excludeId?: string }) =>
+    api.get('/saas-admin/tenants/check-unique', { params }),
   toggleStatus: (id: string, isActive: boolean) =>
     api.put(`/saas-admin/tenants/${id}/status`, { isActive }),
   updateBranding: (
@@ -343,4 +369,31 @@ export const saasAdminApi = {
     search?: string;
     school?: string;
   }) => api.get("/saas-admin/rankings/employees", { params }),
+
+  // Central Admin Accounts
+  listAdminUsers: (showArchived?: boolean) => api.get("/saas-admin/admin-users", { params: { showArchived } }),
+  createAdminUser: (data: {
+    fullName: string;
+    username: string;
+    password: string;
+    role: "super_admin" | "hr_admin" | "supervisor";
+    email?: string;
+    phone?: string;
+  }) => api.post("/saas-admin/admin-users", data),
+  updateAdminUser: (
+    id: string,
+    data: {
+      fullName?: string;
+      username?: string;
+      email?: string | null;
+      phone?: string | null;
+      role?: "super_admin" | "hr_admin" | "supervisor";
+      isActive?: boolean;
+      password?: string;
+    },
+  ) => api.put(`/saas-admin/admin-users/${id}`, data),
+  deleteAdminUser: (id: string) => api.delete(`/saas-admin/admin-users/${id}`),
+  restoreAdminUser: (id: string) => api.post(`/saas-admin/admin-users/${id}/restore`),
+  sendAdminResetLink: (id: string) =>
+    api.post(`/saas-admin/admin-users/${id}/reset-password`),
 };

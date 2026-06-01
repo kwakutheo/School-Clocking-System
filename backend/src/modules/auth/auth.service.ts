@@ -123,6 +123,8 @@ export class AuthService {
       (publicUser as any).employeeId = employee.id;
     }
 
+    await this.users.update(user.id, { lastLoginAt: new Date() } as any);
+
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
@@ -250,7 +252,7 @@ export class AuthService {
       try {
         await transporter.sendMail({
           from: `"TK Clocking" <${process.env.SMTP_USER}>`,
-          to: user.email,
+          to: dto.email,
           subject: 'Password Reset Request',
           html: `
             <h3>Password Reset</h3>

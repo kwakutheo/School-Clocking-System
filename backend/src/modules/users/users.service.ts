@@ -31,7 +31,14 @@ export class UsersService {
   }
 
   async findByUsername(username: string): Promise<User | null> {
-    return this.repo.findOne({ where: { username } });
+    if (!username) return null;
+    const clean = username.trim();
+    // Use a case-insensitive, trimmed comparison so stored values with accidental
+    // surrounding whitespace or case differences still match.
+    return this.repo
+      .createQueryBuilder('user')
+      .where('LOWER(TRIM(user.username)) = LOWER(TRIM(:username))', { username: clean })
+      .getOne();
   }
 
   async create(data: {
@@ -79,7 +86,15 @@ export class UsersService {
     username: string,
     fullName?: string,
   ): Promise<{ available: boolean; suggestions?: string[] }> {
-    const isTaken = await this.repo.findOne({ where: { username } });
+    const clean = username?.trim() || '';
+    // Defensive: if caller passed empty/blank username, report unavailable.
+    if (!clean) return { available: false };
+
+    // Case-insensitive + trimmed existence check
+    const isTaken = await this.repo
+      .createQueryBuilder('user')
+      .where('LOWER(TRIM(user.username)) = LOWER(TRIM(:username))', { username: clean })
+      .getOne();
     if (!isTaken) {
       return { available: true };
     }
@@ -104,9 +119,10 @@ export class UsersService {
           if (candidate === username.toLowerCase()) continue;
           if (suggestions.includes(candidate)) continue;
           
-          const candidateTaken = await this.repo.findOne({
-            where: { username: candidate },
-          });
+          const candidateTaken = await this.repo
+            .createQueryBuilder('user')
+            .where('LOWER(TRIM(user.username)) = LOWER(TRIM(:candidate))', { candidate })
+            .getOne();
           if (!candidateTaken && suggestions.length < 3) {
             suggestions.push(candidate);
           }
@@ -118,9 +134,10 @@ export class UsersService {
     // Fallback if no full name or could not generate enough from name
     while (suggestions.length < 3) {
       const randomCandidate = `${username}${Math.floor(10 + Math.random() * 90)}`;
-      const candidateTaken = await this.repo.findOne({
-        where: { username: randomCandidate },
-      });
+      const candidateTaken = await this.repo
+        .createQueryBuilder('user')
+        .where('LOWER(TRIM(user.username)) = LOWER(TRIM(:candidate))', { candidate: randomCandidate })
+        .getOne();
       if (!candidateTaken && !suggestions.includes(randomCandidate)) {
         suggestions.push(randomCandidate);
       }

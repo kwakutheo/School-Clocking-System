@@ -134,7 +134,7 @@ class LeavesView extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               '${dateFormat.format(leave.startDate)} - ${dateFormat.format(leave.endDate)}',
-              style: TextStyle(color: Colors.grey[700]),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             if (leave.reason != null && leave.reason!.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -144,9 +144,22 @@ class LeavesView extends StatelessWidget {
             if (leave.reviewNote != null && leave.reviewNote!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.all(8),
-                color: const Color.fromARGB(255, 0, 0, 0),
-                child: Text('Review Note: ${leave.reviewNote}'),
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                  ),
+                ),
+                child: Text(
+                  'Review Note: ${leave.reviewNote}',
+                  style: TextStyle(
+                    fontStyle: FontStyle.italic,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
               )
             ],
             if (leave.status == 'PENDING') ...[

@@ -44,10 +44,21 @@ export class AuthService {
 
     // Enforce tenant boundary: standard school users must match the login portal's tenant slug context
     const activeTenantId = tenantLocalStorage.getStore();
-    if (activeTenantId && user.tenantId !== activeTenantId) {
-      throw new UnauthorizedException(
-        'Access denied: You do not belong to this school dashboard.',
-      );
+
+    if (activeTenantId) {
+      // Subdomain login: User must belong to this specific tenant
+      if (user.tenantId !== activeTenantId) {
+        throw new UnauthorizedException(
+          'Access denied: You do not belong to this school dashboard.',
+        );
+      }
+    } else {
+      // Main domain login: Only global/SaaS admins (tenantId === null) are allowed
+      if (user.tenantId !== null) {
+        throw new UnauthorizedException(
+          'Access denied: Please log in through your specific school portal.',
+        );
+      }
     }
 
     // Check if school subscription is active (suspended check)

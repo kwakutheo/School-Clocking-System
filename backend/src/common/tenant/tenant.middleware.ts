@@ -81,9 +81,14 @@ export class TenantMiddleware implements NestMiddleware {
     }
 
     // 2.5 Bypass local dev default sandbox for global endpoints
+    // Allow specific global routes that do not require tenant resolution.
+    // Note: Allow unauthenticated password-reset endpoints so users can
+    // request and complete password resets without a tenant header or JWT.
     const isGlobalRoute =
       req.originalUrl.includes('/saas-admin') ||
       (req.originalUrl.includes('/auth/login') && !tenantId) ||
+      req.originalUrl.includes('/auth/request-password-reset') ||
+      req.originalUrl.includes('/auth/complete-password-reset') ||
       req.originalUrl.includes('/api/docs') ||
       req.originalUrl.includes('/health');
     if (isGlobalRoute) {

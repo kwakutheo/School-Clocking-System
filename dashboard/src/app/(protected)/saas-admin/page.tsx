@@ -1534,8 +1534,8 @@ export default function SaasOverviewPage() {
       {/* ── Row 2: Global Rate Ring + Cohort Bar + 6-Week Trend ──────────── */}
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          display: "flex",
+          flexWrap: "wrap",
           gap: "16px",
           marginBottom: "20px",
         }}
@@ -1544,6 +1544,7 @@ export default function SaasOverviewPage() {
         <div
           className="card"
           style={{
+            flex: "1 1 280px",
             padding: "28px 24px",
             display: "flex",
             flexDirection: "column",
@@ -1586,7 +1587,7 @@ export default function SaasOverviewPage() {
           <div
             style={{
               display: "flex",
-              flexWrap: "wrap",
+              flexDirection: "column",
               gap: "32px",
               alignItems: "center",
               justifyContent: "center",
@@ -1600,7 +1601,7 @@ export default function SaasOverviewPage() {
             {/* Cohort distribution bars */}
             <div
               style={{
-                flex: "1 1 200px",
+                width: "100%",
                 display: "flex",
                 flexDirection: "column",
                 gap: "16px",
@@ -1704,7 +1705,7 @@ export default function SaasOverviewPage() {
         </div>
 
         {/* Right: 6-Week global Trend Chart */}
-        <div className="card" style={{ padding: "28px 24px" }}>
+        <div className="card" style={{ flex: "2 1 500px", padding: "28px 24px", minWidth: 0 }}>
           <div
             style={{
               display: "flex",

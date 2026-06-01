@@ -210,14 +210,14 @@ function DeltaBadge({ value }: { value: number }) {
 // ── Attendance Rate Ring ─────────────────────────────────────────────────────
 function RateRing({ rate }: { rate: number }) {
   const color = rateColor(rate);
-  const r = 60;
+  const r = 75;
   const circ = 2 * Math.PI * r;
   const dash = (rate / 100) * circ;
   return (
     <svg
-      width="140"
-      height="140"
-      viewBox="0 0 140 140"
+      width="170"
+      height="170"
+      viewBox="0 0 170 170"
       style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.05))" }}
     >
       <defs>
@@ -233,45 +233,45 @@ function RateRing({ rate }: { rate: number }) {
         </filter>
       </defs>
       <circle
-        cx="70"
-        cy="70"
+        cx="85"
+        cy="85"
         r={r}
         fill="none"
         stroke="var(--border)"
-        strokeWidth="12"
+        strokeWidth="14"
       />
       {rate > 0 && (
         <circle
-          cx="70"
-          cy="70"
+          cx="85"
+          cy="85"
           r={r}
           fill="none"
           stroke={color}
-          strokeWidth="12"
+          strokeWidth="14"
           strokeDasharray={`${dash} ${circ - dash}`}
           strokeLinecap="round"
-          transform="rotate(-90 70 70)"
+          transform="rotate(-90 85 85)"
           filter={`url(#glow-${rate})`}
           style={{ transition: "stroke-dasharray 1.2s ease, stroke 0.3s ease" }}
         />
       )}
       <text
-        x="70"
-        y="65"
+        x="85"
+        y="80"
         textAnchor="middle"
         fill={color}
-        fontSize="26"
+        fontSize="30"
         fontWeight="900"
         fontFamily="inherit"
       >
         {formatPct(rate)}%
       </text>
       <text
-        x="70"
-        y="85"
+        x="85"
+        y="102"
         textAnchor="middle"
         fill="var(--text-secondary)"
-        fontSize="12"
+        fontSize="13"
         fontWeight="600"
         fontFamily="inherit"
         letterSpacing="0.05em"
@@ -1551,38 +1551,7 @@ export default function SaasOverviewPage() {
             gap: "32px",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <div
-              style={{
-                padding: "4px 10px",
-                borderRadius: "20px",
-                background: "rgba(34,197,94,0.1)",
-                color: "#22c55e",
-                fontSize: "11px",
-                fontWeight: 700,
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
-            >
-              <span
-                style={{
-                  width: "6px",
-                  height: "6px",
-                  borderRadius: "50%",
-                  background: "#22c55e",
-                  animation: "pulse-dot 2s infinite",
-                }}
-              />
-              Live
-            </div>
-          </div>
+
 
           <div
             style={{

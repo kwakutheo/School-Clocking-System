@@ -218,54 +218,62 @@ export class AuthService {
     // Generate 6-digit PIN
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Update user in database
-    await this.users.update(user.id, {
-      resetPin: pin,
-      requiresPasswordChange: true,
-    });
+    // Update user in database and send email inside the user's tenant context so
+    // any tenant-aware side-effects (audit logs, triggers) are properly
+    // associated with the correct tenant.
+    await new Promise<void>((resolve, reject) => {
+      tenantLocalStorage.run(user.tenantId, async () => {
+        try {
+          await this.users.update(user.id, {
+            resetPin: pin,
+            requiresPasswordChange: true,
+          });
 
-    // Send email
-    const hasSmtpConfig = !!(process.env.SMTP_USER && process.env.SMTP_PASS);
+          // Send email
+          const hasSmtpConfig = !!(process.env.SMTP_USER && process.env.SMTP_PASS);
 
-    if (!hasSmtpConfig) {
-      // For local development or when SMTP is not configured, log the PIN
-      console.warn(
-        '\n========================================================',
-      );
-      console.warn(`⚠️ SMTP credentials not configured in .env file!`);
-      console.warn(`Email would have been sent to: ${user.email}`);
-      console.warn(`Password Reset PIN is: ${pin}`);
-      console.warn(
-        '========================================================\n',
-      );
-    } else {
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT || '587', 10),
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        },
+          if (!hasSmtpConfig) {
+            // For local development or when SMTP is not configured, log the PIN
+            console.warn('\n========================================================');
+            console.warn(`\u26A0\uFE0F SMTP credentials not configured in .env file!`);
+            console.warn(`Email would have been sent to: ${user.email}`);
+            console.warn(`Password Reset PIN is: ${pin}`);
+            console.warn('========================================================\n');
+          } else {
+            const transporter = nodemailer.createTransport({
+              host: process.env.SMTP_HOST || 'smtp.gmail.com',
+              port: parseInt(process.env.SMTP_PORT || '587', 10),
+              secure: process.env.SMTP_SECURE === 'true',
+              auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS,
+              },
+            });
+
+            try {
+              await transporter.sendMail({
+                from: `"TK Clocking" <${process.env.SMTP_USER}>`,
+                to: dto.email,
+                subject: 'Password Reset Request',
+                html: `
+                  <h3>Password Reset</h3>
+                  <p>Hello ${user.fullName},</p>
+                  <p>You requested a password reset. Your reset PIN is:</p>
+                  <h2 style="color: #4F46E5; letter-spacing: 2px;">${pin}</h2>
+                  <p>If you did not request this, please ignore this email.</p>
+                `,
+              });
+            } catch (error) {
+              console.error('Failed to send email:', error);
+            }
+          }
+
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
       });
-
-      try {
-        await transporter.sendMail({
-          from: `"TK Clocking" <${process.env.SMTP_USER}>`,
-          to: dto.email,
-          subject: 'Password Reset Request',
-          html: `
-            <h3>Password Reset</h3>
-            <p>Hello ${user.fullName},</p>
-            <p>You requested a password reset. Your reset PIN is:</p>
-            <h2 style="color: #4F46E5; letter-spacing: 2px;">${pin}</h2>
-            <p>If you did not request this, please ignore this email.</p>
-          `,
-        });
-      } catch (error) {
-        console.error('Failed to send email:', error);
-      }
-    }
+    });
 
     return {
       message: 'If that email is registered, a reset link has been sent.',
@@ -280,25 +288,37 @@ export class AuthService {
         'Username not found. Please check your username and try again.',
       );
 
-    if (!user.requiresPasswordChange || user.resetPin !== dto.pin) {
-      throw new UnauthorizedException('Invalid PIN or no reset requested.');
-    }
+    // Execute password update inside the user's tenant context so the change
+    // and audit log are associated with the correct tenant and do not affect
+    // other tenants.
+    return await new Promise<any>((resolve, reject) => {
+      tenantLocalStorage.run(user.tenantId, async () => {
+        try {
+          if (!user.requiresPasswordChange || user.resetPin !== dto.pin) {
+            reject(new UnauthorizedException('Invalid PIN or no reset requested.'));
+            return;
+          }
 
-    const passwordHash = await bcrypt.hash(dto.newPassword, SALT_ROUNDS);
-    await this.users.update(user.id, {
-      passwordHash,
-      resetPin: null,
-      requiresPasswordChange: false,
+          const passwordHash = await bcrypt.hash(dto.newPassword, SALT_ROUNDS);
+          await this.users.update(user.id, {
+            passwordHash,
+            resetPin: null,
+            requiresPasswordChange: false,
+          });
+
+          await this.auditService.log({
+            user: user,
+            action: 'COMPLETE_PASSWORD_RESET',
+            module: 'AUTH',
+            targetId: user.id,
+          });
+
+          resolve({ message: 'Password has been reset successfully.' });
+        } catch (err) {
+          reject(err);
+        }
+      });
     });
-
-    await this.auditService.log({
-      user: user,
-      action: 'COMPLETE_PASSWORD_RESET',
-      module: 'AUTH',
-      targetId: user.id,
-    });
-
-    return { message: 'Password has been reset successfully.' };
   }
 
   async updateFcmToken(userId: string, token: string | null): Promise<void> {

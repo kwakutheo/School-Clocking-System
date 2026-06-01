@@ -50,7 +50,8 @@ class _QrScanPageState extends State<QrScanPage> {
       // Show a brief warning and ignore non-branch QR codes.
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Invalid QR code. Please scan a branch QR code.'),
+          content: Text(
+              'Invalid QR code. Please scan a branch QR code in your school.'),
           backgroundColor: Colors.deepOrange,
           behavior: SnackBarBehavior.floating,
           duration: Duration(seconds: 2),

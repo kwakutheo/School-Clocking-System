@@ -19,6 +19,9 @@ import { AuditService } from '../audit/audit.service';
 import { tenantLocalStorage } from '../../common/tenant/tenant.context';
 import { getCurrentTenantId } from '../../common/tenant/tenant-filter.helper';
 import { Tenant } from '../tenants/tenant.entity';
+import { Branch } from '../branches/branch.entity';
+import { Shift } from '../shifts/shift.entity';
+import { Department } from '../departments/department.entity';
 
 @Injectable()
 export class EmployeesService implements OnModuleInit {
@@ -341,6 +344,37 @@ export class EmployeesService implements OnModuleInit {
     },
     adminUser?: User,
   ): Promise<Employee> {
+    const tenantId = tenantLocalStorage.getStore();
+
+    if (tenantId) {
+      if (payload.branchId) {
+        const branchExists = await this.dataSource.getRepository(Branch).findOne({
+          where: { id: payload.branchId, tenantId },
+        });
+        if (!branchExists) {
+          throw new BadRequestException('The selected branch does not exist or does not belong to your school.');
+        }
+      }
+
+      if (payload.shiftId) {
+        const shiftExists = await this.dataSource.getRepository(Shift).findOne({
+          where: { id: payload.shiftId, tenantId },
+        });
+        if (!shiftExists) {
+          throw new BadRequestException('The selected shift does not exist or does not belong to your school.');
+        }
+      }
+
+      if (payload.departmentId) {
+        const deptExists = await this.dataSource.getRepository(Department).findOne({
+          where: { id: payload.departmentId, tenantId },
+        });
+        if (!deptExists) {
+          throw new BadRequestException('The selected department does not exist or does not belong to your school.');
+        }
+      }
+    }
+
     const employeeCode =
       payload.employeeCode ?? (await this._generateEmployeeCode());
 
@@ -356,6 +390,15 @@ export class EmployeesService implements OnModuleInit {
     const existingUser = await this.users.findByUsername(payload.username);
     if (existingUser) {
       throw new ConflictException('Username already in use.');
+    }
+
+    if (payload.phone) {
+      const existingPhone = await this.userRepo.findOne({
+        where: { phone: payload.phone },
+      });
+      if (existingPhone) {
+        throw new ConflictException('Phone number already in use.');
+      }
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -471,6 +514,15 @@ export class EmployeesService implements OnModuleInit {
       const existing = await this.users.findByUsername(data.username);
       if (existing && existing.id !== emp.user.id) {
         throw new ConflictException('Username already in use.');
+      }
+    }
+
+    if (data.phone && data.phone !== emp.user.phone) {
+      const existing = await this.userRepo.findOne({
+        where: { phone: data.phone },
+      });
+      if (existing && existing.id !== emp.user.id) {
+        throw new ConflictException('Phone number already in use.');
       }
     }
 
@@ -609,6 +661,15 @@ export class EmployeesService implements OnModuleInit {
       const existing = await this.users.findByUsername(data.username);
       if (existing && existing.id !== employee.user.id) {
         throw new ConflictException('Username already in use.');
+      }
+    }
+
+    if (data.phone && data.phone !== employee.user.phone) {
+      const existing = await this.userRepo.findOne({
+        where: { phone: data.phone },
+      });
+      if (existing && existing.id !== employee.user.id) {
+        throw new ConflictException('Phone number already in use.');
       }
     }
 

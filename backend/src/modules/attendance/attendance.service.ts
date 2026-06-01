@@ -671,7 +671,7 @@ export class AttendanceService {
         }
         if (!this._isWithinShiftHours(now, employee.shift)) {
           throw new BadRequestException(
-            `Action denied: Clock-in can only be recorded within your assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
+            `Clock-in denied. Please wait. You may only clock in up to two hours before your shift or during your scheduled working hours of (${employee.shift.startTime} - ${employee.shift.endTime}).`,
           );
         }
         break;

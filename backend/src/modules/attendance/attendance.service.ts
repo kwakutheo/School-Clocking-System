@@ -633,11 +633,11 @@ export class AttendanceService {
     }
 
     const branch = await this.branches.findByQrCode(dto.qrCode);
-    if (!branch) throw new BadRequestException('Invalid QR Code: This QR code does not belong to your school.');
+    if (!branch) throw new BadRequestException('This QR code does not belong to your school. Please check and try again.');
 
     if (employee.branch?.id !== branch.id) {
       throw new BadRequestException(
-        'This QR code does not belong to your assigned branch in your school.',
+        'This QR code does not belong to your assigned branch in your school. Please check and try again.',
       );
     }
 

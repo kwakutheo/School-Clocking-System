@@ -1559,16 +1559,6 @@ export default function SaasOverviewPage() {
           >
             <div
               style={{
-                fontSize: "14px",
-                fontWeight: 800,
-                color: "var(--text)",
-                letterSpacing: "0.02em",
-              }}
-            >
-              Platform Health
-            </div>
-            <div
-              style={{
                 padding: "4px 10px",
                 borderRadius: "20px",
                 background: "rgba(34,197,94,0.1)",

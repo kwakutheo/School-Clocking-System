@@ -71,7 +71,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _onUsernameChanged() {
     if (_usernameDebounce?.isActive ?? false) _usernameDebounce!.cancel();
-    
+
     final username = _usernameController.text.trim();
     if (username.isEmpty || username == _currentUser?.username) {
       setState(() {
@@ -101,7 +101,8 @@ class _ProfilePageState extends State<ProfilePage> {
               _usernameSuggestions = [];
             } else {
               _usernameStatus = 'taken';
-              _usernameSuggestions = List<String>.from(data['suggestions'] ?? []);
+              _usernameSuggestions =
+                  List<String>.from(data['suggestions'] ?? []);
             }
           });
         }
@@ -226,8 +227,8 @@ class _ProfilePageState extends State<ProfilePage> {
     return MultiBlocProvider(
       providers: [
         BlocProvider<ProfileBloc>(
-          create: (context) => sl<ProfileBloc>()
-            ..add(const LoadWorkHistoryEvent()),
+          create: (context) =>
+              sl<ProfileBloc>()..add(const LoadWorkHistoryEvent()),
         ),
       ],
       child: BlocListener<AuthBloc, AuthState>(
@@ -244,428 +245,467 @@ class _ProfilePageState extends State<ProfilePage> {
                 onVisibilityChanged: (info) {
                   if (info.visibleFraction > 0.5 && !_isEditing) {
                     context.read<AuthBloc>().add(const AuthSyncProfileEvent());
-                    context.read<ProfileBloc>().add(const LoadWorkHistoryEvent());
+                    context
+                        .read<ProfileBloc>()
+                        .add(const LoadWorkHistoryEvent());
                   }
                 },
                 child: RefreshIndicator(
                   onRefresh: () async {
                     context.read<AuthBloc>().add(const AuthSyncProfileEvent());
-                    context.read<ProfileBloc>().add(const LoadWorkHistoryEvent());
+                    context
+                        .read<ProfileBloc>()
+                        .add(const LoadWorkHistoryEvent());
                     await Future.delayed(const Duration(seconds: 1));
                   },
-              child: CustomScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverAppBar(
-                    expandedHeight: 240,
-                    pinned: true,
-                    stretch: true,
-                    elevation: 4,
-                    scrolledUnderElevation: 4,
-                    backgroundColor: const Color(0xFFF602E2),
-                    title: const Text(
-                      'Profile',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    centerTitle: false,
-                    actions: const [],
-                    flexibleSpace: FlexibleSpaceBar(
-                      stretchModes: const [StretchMode.zoomBackground],
-                      background: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          _AnimatedMeshBackground(colorScheme: cs),
-                          if (user != null)
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.black.withValues(alpha: 0.2),
-                                    Colors.transparent,
-                                    Colors.black.withValues(alpha: 0.3),
-                                  ],
-                                ),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const SizedBox(height: 30),
-                                  // ── Avatar ──────────────────────────────────
-                                  Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color:
-                                            Colors.white.withValues(alpha: 0.3),
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: Hero(
-                                      tag: 'profile-avatar',
-                                      child: CircleAvatar(
-                                        radius: 42,
-                                        backgroundColor:
-                                            Colors.white.withValues(alpha: 0.2),
-                                        child: Text(
-                                          user.initials,
-                                          style: theme.textTheme.headlineLarge
-                                              ?.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w900,
-                                            letterSpacing: -1,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  // ── Name ────────────────────────────────────
-                                  Text(
-                                    user.fullName,
-                                    style:
-                                        theme.textTheme.headlineSmall?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: -0.5,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.black
-                                              .withValues(alpha: 0.3),
-                                          blurRadius: 15,
-                                          offset: const Offset(0, 4),
-                                        )
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverAppBar(
+                        expandedHeight: 240,
+                        pinned: true,
+                        stretch: true,
+                        elevation: 4,
+                        scrolledUnderElevation: 4,
+                        backgroundColor:
+                            const ui.Color.fromARGB(211, 108, 1, 101),
+                        title: const Text(
+                          'Profile',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        centerTitle: false,
+                        actions: const [],
+                        flexibleSpace: FlexibleSpaceBar(
+                          stretchModes: const [StretchMode.zoomBackground],
+                          background: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              _AnimatedMeshBackground(colorScheme: cs),
+                              if (user != null)
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.black.withValues(alpha: 0.2),
+                                        Colors.transparent,
+                                        Colors.black.withValues(alpha: 0.3),
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
-                                  // ── Role Badge ──────────────────────────────
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: BackdropFilter(
-                                      filter: ui.ImageFilter.blur(
-                                          sigmaX: 10, sigmaY: 10),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 14, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white
-                                              .withValues(alpha: 0.15),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          border: Border.all(
-                                              color: Colors.white
-                                                  .withValues(alpha: 0.2)),
-                                        ),
-                                        child: Text(
-                                          _roleLabel(user.role).toUpperCase(),
-                                          style: theme.textTheme.labelSmall
-                                              ?.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w900,
-                                            letterSpacing: 1.2,
-                                            fontSize: 10,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: SafeArea(
-                      top: false,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 16),
-                        child: Column(
-                          children: [
-                            if (user != null) ...[
-                              if (_isEditing) ...[
-                                Form(
-                                  key: _formKey,
-                                  child: _EditSection(
-                                    title: 'Edit Profile',
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      AppTextField(
-                                        controller: _usernameController,
-                                        label: 'Username',
-                                        prefixIcon:
-                                            Icons.alternate_email_outlined,
-                                        suffixIcon: IconButton(
-                                          icon: const Icon(Icons.close_rounded),
-                                          onPressed: () => setState(() {
-                                            _isEditing = false;
-                                            _isChangingPassword = false;
-                                            _usernameController.text = _currentUser?.username ?? '';
-                                            _usernameStatus = 'idle';
-                                          }),
-                                        ),
-                                        validator: (v) => v == null || v.isEmpty
-                                            ? 'Username is required'
-                                            : null,
-                                      ),
-                                      if (_usernameStatus == 'checking')
-                                        const Padding(
-                                          padding: EdgeInsets.only(top: 4, left: 16),
-                                          child: Text('Checking availability...', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                        ),
-                                      if (_usernameStatus == 'available')
-                                        const Padding(
-                                          padding: EdgeInsets.only(top: 4, left: 16),
-                                          child: Text('✓ Username is available', style: TextStyle(color: Colors.green, fontSize: 12)),
-                                        ),
-                                      if (_usernameStatus == 'taken')
-                                        Padding(
-                                          padding: const EdgeInsets.only(top: 4, left: 16),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              const Text('✗ Username already taken', style: TextStyle(color: Colors.red, fontSize: 12)),
-                                              if (_usernameSuggestions.isNotEmpty) ...[
-                                                const SizedBox(height: 8),
-                                                const Text('Suggestions:', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                                const SizedBox(height: 4),
-                                                Wrap(
-                                                  spacing: 8,
-                                                  children: _usernameSuggestions.map((sug) {
-                                                    return ActionChip(
-                                                      label: Text(sug),
-                                                      onPressed: () {
-                                                        _usernameController.text = sug;
-                                                        // Move cursor to end
-                                                        _usernameController.selection = TextSelection.fromPosition(TextPosition(offset: sug.length));
-                                                      },
-                                                    );
-                                                  }).toList(),
-                                                ),
-                                              ]
-                                            ],
+                                      const SizedBox(height: 30),
+                                      // ── Avatar ──────────────────────────────────
+                                      Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.3),
+                                            width: 2,
                                           ),
                                         ),
-                                      const SizedBox(height: 12),
-                                      if (!_isChangingPassword)
-                                        Center(
-                                          child: TextButton.icon(
-                                            onPressed: () => setState(() =>
-                                                _isChangingPassword = true),
-                                            icon: const Icon(
-                                                Icons.lock_open_rounded),
-                                            label:
-                                                const Text('Change Password'),
-                                          ),
-                                        )
-                                      else ...[
-                                        Row(
-                                          children: [
-                                            const Expanded(
-                                                child: Text('Update Password',
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold))),
-                                            TextButton(
-                                              onPressed: () => setState(() =>
-                                                  _isChangingPassword = false),
-                                              child: const Text('Cancel'),
+                                        child: Hero(
+                                          tag: 'profile-avatar',
+                                          child: CircleAvatar(
+                                            radius: 42,
+                                            backgroundColor: Colors.white
+                                                .withValues(alpha: 0.2),
+                                            child: Text(
+                                              user.initials,
+                                              style: theme
+                                                  .textTheme.headlineLarge
+                                                  ?.copyWith(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w900,
+                                                letterSpacing: -1,
+                                              ),
                                             ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      // ── Name ────────────────────────────────────
+                                      Text(
+                                        user.fullName,
+                                        style: theme.textTheme.headlineSmall
+                                            ?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: -0.5,
+                                          shadows: [
+                                            Shadow(
+                                              color: Colors.black
+                                                  .withValues(alpha: 0.3),
+                                              blurRadius: 15,
+                                              offset: const Offset(0, 4),
+                                            )
                                           ],
                                         ),
-                                        AppTextField(
-                                          controller: _passwordController,
-                                          label: 'New Password',
-                                          prefixIcon: Icons.lock_outline,
-                                          obscureText: true,
-                                          validator: (v) =>
-                                              v == null || v.isEmpty
-                                                  ? 'Password is required'
-                                                  : null,
-                                        ),
-                                        const SizedBox(height: 12),
-                                        AppTextField(
-                                          controller:
-                                              _confirmPasswordController,
-                                          label: 'Confirm New Password',
-                                          prefixIcon: Icons.lock_reset_outlined,
-                                          obscureText: true,
-                                          validator: (v) {
-                                            if (v == null || v.isEmpty) {
-                                              return 'Please confirm your password';
-                                            }
-                                            if (v != _passwordController.text) {
-                                              return 'Passwords do not match';
-                                            }
-                                            return null;
-                                          },
-                                        ),
-                                      ],
-                                      const SizedBox(height: 16),
-                                      PrimaryButton(
-                                        label: 'Save Changes',
-                                        isLoading: _isSaving,
-                                        onPressed: _saveProfile,
                                       ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                              ] else ...[
-                                _InfoSection(
-                                  title: 'Account Details',
-                                  items: [
-                                    _InfoItem(
-                                      icon: Icons.alternate_email_outlined,
-                                      label: 'Username',
-                                      value: user.username.isNotEmpty
-                                          ? user.username
-                                          : '—',
-                                      trailing: IconButton(
-                                        icon: Icon(Icons.edit_outlined,
-                                            size: 20, color: cs.primary),
-                                        onPressed: () => _confirmEdit(context),
-                                      ),
-                                    ),
-                                    if (user.employeeCode != null)
-                                      _InfoItem(
-                                        icon: Icons.numbers_outlined,
-                                        label: 'Employee Code',
-                                        value: user.employeeCode!,
-                                      ),
-                                    if (user.schoolName != null)
-                                      _InfoItem(
-                                        icon: Icons.school_outlined,
-                                        label: 'School',
-                                        value: user.schoolName!,
-                                      ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                // ── Work & Employment ──────────────────────
-                                if (user.branchName != null ||
-                                    user.departmentName != null ||
-                                    user.position != null ||
-                                    user.hireDate != null)
-                                  _InfoSection(
-                                    title: 'Work & Employment',
-                                    items: [
-                                      if (user.branchName != null)
-                                        _InfoItem(
-                                          icon: Icons.business_outlined,
-                                          label: 'Designated Branch',
-                                          value: user.branchName!,
-                                        ),
-                                      if (user.departmentName != null ||
-                                          user.position != null)
-                                        _InfoItem(
-                                          icon: Icons.work_outline_rounded,
-                                          label: 'Role & Department',
-                                          value: [
-                                            if (user.position != null)
-                                              user.position!,
-                                            if (user.departmentName != null)
-                                              user.departmentName!,
-                                          ].join(' • '),
-                                        ),
-                                      if (user.hireDate != null)
-                                        _InfoItem(
-                                          icon: Icons.calendar_month_outlined,
-                                          label: 'Member Since',
-                                          value:
-                                              _formatHireDate(user.hireDate!),
-                                        ),
-                                    ],
-                                  ),
-                                const SizedBox(height: 16),
-                                // ── Work History Preview (latest 3) ───────
-                                _InfoSection(
-                                  title: 'Work History',
-                                  items: [],
-                                  customBody:
-                                      BlocBuilder<ProfileBloc, ProfileState>(
-                                    builder: (context, state) {
-                                      if (state is ProfileLoading ||
-                                          state is ProfileInitial) {
-                                        return const Padding(
-                                          padding: EdgeInsets.all(16.0),
-                                          child: Center(
-                                              child:
-                                                  CircularProgressIndicator()),
-                                        );
-                                      } else if (state is ProfileError) {
-                                        return Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Center(
-                                              child: Text(state.message,
-                                                  style: TextStyle(
-                                                      color: cs.error))),
-                                        );
-                                      } else if (state
-                                          is ProfileHistoryLoaded) {
-                                        final history = state.history;
-                                        if (history.isEmpty) {
-                                          return const Padding(
-                                            padding: EdgeInsets.all(16.0),
-                                            child: Center(
-                                                child: Text(
-                                                    'No work history found.')),
-                                          );
-                                        }
-
-                                        // Show only the 3 most recent entries
-                                        final preview = history.take(3).toList();
-                                        final hasMore = history.length > 3;
-
-                                        return Column(
-                                          children: [
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 8.0,
-                                                      horizontal: 16.0),
-                                              child: Column(
-                                                children: List.generate(
-                                                    preview.length, (index) {
-                                                  final log = preview[index];
-                                                  final isLast = index ==
-                                                          preview.length - 1 &&
-                                                      !hasMore;
-                                                  return _TimelineTile(
-                                                    status: log.status,
-                                                    startDate: log.startDate,
-                                                    endDate: log.endDate,
-                                                    isLast: isLast,
-                                                  );
-                                                }),
+                                      const SizedBox(height: 6),
+                                      // ── Role Badge ──────────────────────────────
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: BackdropFilter(
+                                          filter: ui.ImageFilter.blur(
+                                              sigmaX: 10, sigmaY: 10),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 14, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white
+                                                  .withValues(alpha: 0.15),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.2)),
+                                            ),
+                                            child: Text(
+                                              _roleLabel(user.role)
+                                                  .toUpperCase(),
+                                              style: theme.textTheme.labelSmall
+                                                  ?.copyWith(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w900,
+                                                letterSpacing: 1.2,
+                                                fontSize: 10,
                                               ),
                                             ),
-                                            // ── View Full History button ──
-                                            InkWell(
-                                              onTap: () => context.go(
-                                                  '/home/work-history'),
-                                              borderRadius:
-                                                  const BorderRadius.only(
-                                                bottomLeft: Radius.circular(14),
-                                                bottomRight:
-                                                    Radius.circular(14),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: SafeArea(
+                          top: false,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 16),
+                            child: Column(
+                              children: [
+                                if (user != null) ...[
+                                  if (_isEditing) ...[
+                                    Form(
+                                      key: _formKey,
+                                      child: _EditSection(
+                                        title: 'Edit Profile',
+                                        children: [
+                                          AppTextField(
+                                            controller: _usernameController,
+                                            label: 'Username',
+                                            prefixIcon:
+                                                Icons.alternate_email_outlined,
+                                            suffixIcon: IconButton(
+                                              icon: const Icon(
+                                                  Icons.close_rounded),
+                                              onPressed: () => setState(() {
+                                                _isEditing = false;
+                                                _isChangingPassword = false;
+                                                _usernameController.text =
+                                                    _currentUser?.username ??
+                                                        '';
+                                                _usernameStatus = 'idle';
+                                              }),
+                                            ),
+                                            validator: (v) =>
+                                                v == null || v.isEmpty
+                                                    ? 'Username is required'
+                                                    : null,
+                                          ),
+                                          if (_usernameStatus == 'checking')
+                                            const Padding(
+                                              padding: EdgeInsets.only(
+                                                  top: 4, left: 16),
+                                              child: Text(
+                                                  'Checking availability...',
+                                                  style: TextStyle(
+                                                      color: Colors.grey,
+                                                      fontSize: 12)),
+                                            ),
+                                          if (_usernameStatus == 'available')
+                                            const Padding(
+                                              padding: EdgeInsets.only(
+                                                  top: 4, left: 16),
+                                              child: Text(
+                                                  '✓ Username is available',
+                                                  style: TextStyle(
+                                                      color: Colors.green,
+                                                      fontSize: 12)),
+                                            ),
+                                          if (_usernameStatus == 'taken')
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  top: 4, left: 16),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  const Text(
+                                                      '✗ Username already taken',
+                                                      style: TextStyle(
+                                                          color: Colors.red,
+                                                          fontSize: 12)),
+                                                  if (_usernameSuggestions
+                                                      .isNotEmpty) ...[
+                                                    const SizedBox(height: 8),
+                                                    const Text('Suggestions:',
+                                                        style: TextStyle(
+                                                            color: Colors.grey,
+                                                            fontSize: 12)),
+                                                    const SizedBox(height: 4),
+                                                    Wrap(
+                                                      spacing: 8,
+                                                      children:
+                                                          _usernameSuggestions
+                                                              .map((sug) {
+                                                        return ActionChip(
+                                                          label: Text(sug),
+                                                          onPressed: () {
+                                                            _usernameController
+                                                                .text = sug;
+                                                            // Move cursor to end
+                                                            _usernameController
+                                                                    .selection =
+                                                                TextSelection.fromPosition(
+                                                                    TextPosition(
+                                                                        offset:
+                                                                            sug.length));
+                                                          },
+                                                        );
+                                                      }).toList(),
+                                                    ),
+                                                  ]
+                                                ],
                                               ),
-                                              child: Container(
-                                                width: double.infinity,
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        vertical: 14),
-                                                decoration: BoxDecoration(
-                                                  color: cs.primaryContainer
-                                                      .withValues(alpha: 0.4),
+                                            ),
+                                          const SizedBox(height: 12),
+                                          if (!_isChangingPassword)
+                                            Center(
+                                              child: TextButton.icon(
+                                                onPressed: () => setState(() =>
+                                                    _isChangingPassword = true),
+                                                icon: const Icon(
+                                                    Icons.lock_open_rounded),
+                                                label: const Text(
+                                                    'Change Password'),
+                                              ),
+                                            )
+                                          else ...[
+                                            Row(
+                                              children: [
+                                                const Expanded(
+                                                    child: Text(
+                                                        'Update Password',
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold))),
+                                                TextButton(
+                                                  onPressed: () => setState(
+                                                      () =>
+                                                          _isChangingPassword =
+                                                              false),
+                                                  child: const Text('Cancel'),
+                                                ),
+                                              ],
+                                            ),
+                                            AppTextField(
+                                              controller: _passwordController,
+                                              label: 'New Password',
+                                              prefixIcon: Icons.lock_outline,
+                                              obscureText: true,
+                                              validator: (v) =>
+                                                  v == null || v.isEmpty
+                                                      ? 'Password is required'
+                                                      : null,
+                                            ),
+                                            const SizedBox(height: 12),
+                                            AppTextField(
+                                              controller:
+                                                  _confirmPasswordController,
+                                              label: 'Confirm New Password',
+                                              prefixIcon:
+                                                  Icons.lock_reset_outlined,
+                                              obscureText: true,
+                                              validator: (v) {
+                                                if (v == null || v.isEmpty) {
+                                                  return 'Please confirm your password';
+                                                }
+                                                if (v !=
+                                                    _passwordController.text) {
+                                                  return 'Passwords do not match';
+                                                }
+                                                return null;
+                                              },
+                                            ),
+                                          ],
+                                          const SizedBox(height: 16),
+                                          PrimaryButton(
+                                            label: 'Save Changes',
+                                            isLoading: _isSaving,
+                                            onPressed: _saveProfile,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                  ] else ...[
+                                    _InfoSection(
+                                      title: 'Account Details',
+                                      items: [
+                                        _InfoItem(
+                                          icon: Icons.alternate_email_outlined,
+                                          label: 'Username',
+                                          value: user.username.isNotEmpty
+                                              ? user.username
+                                              : '—',
+                                          trailing: IconButton(
+                                            icon: Icon(Icons.edit_outlined,
+                                                size: 20, color: cs.primary),
+                                            onPressed: () =>
+                                                _confirmEdit(context),
+                                          ),
+                                        ),
+                                        if (user.employeeCode != null)
+                                          _InfoItem(
+                                            icon: Icons.numbers_outlined,
+                                            label: 'Employee Code',
+                                            value: user.employeeCode!,
+                                          ),
+                                        if (user.schoolName != null)
+                                          _InfoItem(
+                                            icon: Icons.school_outlined,
+                                            label: 'School',
+                                            value: user.schoolName!,
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    // ── Work & Employment ──────────────────────
+                                    if (user.branchName != null ||
+                                        user.departmentName != null ||
+                                        user.position != null ||
+                                        user.hireDate != null)
+                                      _InfoSection(
+                                        title: 'Work & Employment',
+                                        items: [
+                                          if (user.branchName != null)
+                                            _InfoItem(
+                                              icon: Icons.business_outlined,
+                                              label: 'Designated Branch',
+                                              value: user.branchName!,
+                                            ),
+                                          if (user.departmentName != null ||
+                                              user.position != null)
+                                            _InfoItem(
+                                              icon: Icons.work_outline_rounded,
+                                              label: 'Role & Department',
+                                              value: [
+                                                if (user.position != null)
+                                                  user.position!,
+                                                if (user.departmentName != null)
+                                                  user.departmentName!,
+                                              ].join(' • '),
+                                            ),
+                                          if (user.hireDate != null)
+                                            _InfoItem(
+                                              icon:
+                                                  Icons.calendar_month_outlined,
+                                              label: 'Member Since',
+                                              value: _formatHireDate(
+                                                  user.hireDate!),
+                                            ),
+                                        ],
+                                      ),
+                                    const SizedBox(height: 16),
+                                    // ── Work History Preview (latest 3) ───────
+                                    _InfoSection(
+                                      title: 'Work History',
+                                      items: [],
+                                      customBody: BlocBuilder<ProfileBloc,
+                                          ProfileState>(
+                                        builder: (context, state) {
+                                          if (state is ProfileLoading ||
+                                              state is ProfileInitial) {
+                                            return const Padding(
+                                              padding: EdgeInsets.all(16.0),
+                                              child: Center(
+                                                  child:
+                                                      CircularProgressIndicator()),
+                                            );
+                                          } else if (state is ProfileError) {
+                                            return Padding(
+                                              padding:
+                                                  const EdgeInsets.all(16.0),
+                                              child: Center(
+                                                  child: Text(state.message,
+                                                      style: TextStyle(
+                                                          color: cs.error))),
+                                            );
+                                          } else if (state
+                                              is ProfileHistoryLoaded) {
+                                            final history = state.history;
+                                            if (history.isEmpty) {
+                                              return const Padding(
+                                                padding: EdgeInsets.all(16.0),
+                                                child: Center(
+                                                    child: Text(
+                                                        'No work history found.')),
+                                              );
+                                            }
+
+                                            // Show only the 3 most recent entries
+                                            final preview =
+                                                history.take(3).toList();
+                                            final hasMore = history.length > 3;
+
+                                            return Column(
+                                              children: [
+                                                Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      vertical: 8.0,
+                                                      horizontal: 16.0),
+                                                  child: Column(
+                                                    children: List.generate(
+                                                        preview.length,
+                                                        (index) {
+                                                      final log =
+                                                          preview[index];
+                                                      final isLast = index ==
+                                                              preview.length -
+                                                                  1 &&
+                                                          !hasMore;
+                                                      return _TimelineTile(
+                                                        status: log.status,
+                                                        startDate:
+                                                            log.startDate,
+                                                        endDate: log.endDate,
+                                                        isLast: isLast,
+                                                      );
+                                                    }),
+                                                  ),
+                                                ),
+                                                // ── View Full History button ──
+                                                InkWell(
+                                                  onTap: () => context
+                                                      .go('/home/work-history'),
                                                   borderRadius:
                                                       const BorderRadius.only(
                                                     bottomLeft:
@@ -673,137 +713,160 @@ class _ProfilePageState extends State<ProfilePage> {
                                                     bottomRight:
                                                         Radius.circular(14),
                                                   ),
-                                                  border: Border(
-                                                    top: BorderSide(
-                                                        color: cs.outline
-                                                            .withValues(
-                                                                alpha: 0.1)),
-                                                  ),
-                                                ),
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: [
-                                                    Icon(
-                                                      Icons.history_rounded,
-                                                      size: 16,
-                                                      color: cs.primary,
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Text(
-                                                      hasMore
-                                                          ? 'View Full History (${history.length} entries)'
-                                                          : 'View Full History',
-                                                      style: theme.textTheme
-                                                          .labelLarge
-                                                          ?.copyWith(
-                                                        color: cs.primary,
-                                                        fontWeight:
-                                                            FontWeight.w700,
+                                                  child: Container(
+                                                    width: double.infinity,
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        vertical: 14),
+                                                    decoration: BoxDecoration(
+                                                      color: cs.primaryContainer
+                                                          .withValues(
+                                                              alpha: 0.4),
+                                                      borderRadius:
+                                                          const BorderRadius
+                                                              .only(
+                                                        bottomLeft:
+                                                            Radius.circular(14),
+                                                        bottomRight:
+                                                            Radius.circular(14),
+                                                      ),
+                                                      border: Border(
+                                                        top: BorderSide(
+                                                            color: cs.outline
+                                                                .withValues(
+                                                                    alpha:
+                                                                        0.1)),
                                                       ),
                                                     ),
-                                                    const SizedBox(width: 4),
-                                                    Icon(
-                                                      Icons
-                                                          .chevron_right_rounded,
-                                                      size: 18,
-                                                      color: cs.primary,
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Icon(
+                                                          Icons.history_rounded,
+                                                          size: 16,
+                                                          color: cs.primary,
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 8),
+                                                        Text(
+                                                          hasMore
+                                                              ? 'View Full History (${history.length} entries)'
+                                                              : 'View Full History',
+                                                          style: theme.textTheme
+                                                              .labelLarge
+                                                              ?.copyWith(
+                                                            color: cs.primary,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 4),
+                                                        Icon(
+                                                          Icons
+                                                              .chevron_right_rounded,
+                                                          size: 18,
+                                                          color: cs.primary,
+                                                        ),
+                                                      ],
                                                     ),
-                                                  ],
+                                                  ),
                                                 ),
-                                              ),
-                                            ),
-                                          ],
-                                        );
-                                      }
-                                      return const SizedBox.shrink();
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                              ],
-                            ],
-                            _InfoSection(
-                              title: 'App Settings',
-                              items: [
-                                _InfoItem(
-                                  icon: Icons.fingerprint_rounded,
-                                  label: 'Require Biometrics',
-                                  value: ' Required for clocking',
-                                  trailing: const Icon(
-                                      Icons.check_circle_rounded,
-                                      color: Colors.green,
-                                      size: 20),
-                                ),
-                                _InfoItem(
-                                  icon: Icons.gps_fixed_outlined,
-                                  label: 'Location Services',
-                                  value: 'Required for clocking',
-                                  trailing: const Icon(
-                                      Icons.check_circle_rounded,
-                                      color: Colors.green,
-                                      size: 20),
-                                ),
-                                _InfoItem(
-                                  icon: Icons.notifications_outlined,
-                                  label: 'In-app notifications',
-                                  value: 'Enabled',
-                                  trailing: const Icon(
-                                      Icons.check_circle_rounded,
-                                      color: Colors.green,
-                                      size: 20),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 32),
-                            SizedBox(
-                              width: double.infinity,
-                              child: InkWell(
-                                onTap: () => _confirmSignOut(context),
-                                borderRadius: BorderRadius.circular(16),
-                                child: Ink(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 16),
-                                  decoration: BoxDecoration(
-                                    color: cs.error.withValues(alpha: 0.1),
-                                    border: Border.all(
-                                        color: cs.error.withValues(alpha: 0.3)),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.logout_rounded,
-                                          color: cs.error),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Sign Out',
-                                        style: TextStyle(
-                                          color: cs.error,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 16,
-                                        ),
+                                              ],
+                                            );
+                                          }
+                                          return const SizedBox.shrink();
+                                        },
                                       ),
-                                    ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                  ],
+                                ],
+                                _InfoSection(
+                                  title: 'App Settings',
+                                  items: [
+                                    _InfoItem(
+                                      icon: Icons.fingerprint_rounded,
+                                      label: 'Require Biometrics',
+                                      value: ' Required for clocking',
+                                      trailing: const Icon(
+                                          Icons.check_circle_rounded,
+                                          color: Colors.green,
+                                          size: 20),
+                                    ),
+                                    _InfoItem(
+                                      icon: Icons.gps_fixed_outlined,
+                                      label: 'Location Services',
+                                      value: 'Required for clocking',
+                                      trailing: const Icon(
+                                          Icons.check_circle_rounded,
+                                          color: Colors.green,
+                                          size: 20),
+                                    ),
+                                    _InfoItem(
+                                      icon: Icons.notifications_outlined,
+                                      label: 'In-app notifications',
+                                      value: 'Enabled',
+                                      trailing: const Icon(
+                                          Icons.check_circle_rounded,
+                                          color: Colors.green,
+                                          size: 20),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 32),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: InkWell(
+                                    onTap: () => _confirmSignOut(context),
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Ink(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16),
+                                      decoration: BoxDecoration(
+                                        color: cs.error.withValues(alpha: 0.1),
+                                        border: Border.all(
+                                            color: cs.error
+                                                .withValues(alpha: 0.3)),
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.logout_rounded,
+                                              color: cs.error),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'Sign Out',
+                                            style: TextStyle(
+                                              color: cs.error,
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
+                                const SizedBox(height: 48),
+                              ],
                             ),
-                            const SizedBox(height: 48),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-        );
-      },
-    ),
-  ),
-);
+            );
+          },
+        ),
+      ),
+    );
   }
 
   String _roleLabel(UserRole role) {

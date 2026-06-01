@@ -49,11 +49,14 @@ class LeavesView extends StatelessWidget {
         listener: (context, state) {
           if (state is LeaveSubmissionFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+              SnackBar(
+                  content: Text(state.message), backgroundColor: Colors.red),
             );
           } else if (state is LeaveSubmissionSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Leave request submitted!'), backgroundColor: Colors.green),
+              const SnackBar(
+                  content: Text('Leave request submitted!'),
+                  backgroundColor: Colors.green),
             );
           }
         },
@@ -107,10 +110,12 @@ class LeavesView extends StatelessWidget {
               children: [
                 Text(
                   leave.leaveType,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 18),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -118,7 +123,10 @@ class LeavesView extends StatelessWidget {
                   ),
                   child: Text(
                     leave.status,
-                    style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
+                    style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12),
                   ),
                 ),
               ],
@@ -130,14 +138,15 @@ class LeavesView extends StatelessWidget {
             ),
             if (leave.reason != null && leave.reason!.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text('Reason: ${leave.reason}', style: const TextStyle(fontStyle: FontStyle.italic)),
+              Text('Reason: ${leave.reason}',
+                  style: const TextStyle(fontStyle: FontStyle.italic)),
             ],
             if (leave.reviewNote != null && leave.reviewNote!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(8),
-                color: Colors.grey[100],
-                child: Text('Note: ${leave.reviewNote}'),
+                color: const Color.fromARGB(255, 0, 0, 0),
+                child: Text('Review Note: ${leave.reviewNote}'),
               )
             ],
             if (leave.status == 'PENDING') ...[
@@ -146,9 +155,12 @@ class LeavesView extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {
-                    context.read<LeavesBloc>().add(CancelLeaveRequest(leave.id));
+                    context
+                        .read<LeavesBloc>()
+                        .add(CancelLeaveRequest(leave.id));
                   },
-                  child: const Text('Cancel Request', style: TextStyle(color: Colors.red)),
+                  child: const Text('Cancel Request',
+                      style: TextStyle(color: Colors.red)),
                 ),
               ),
             ]

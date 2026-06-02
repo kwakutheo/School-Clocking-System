@@ -1,6 +1,5 @@
 import {
   IsString,
-  IsNotEmpty,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -13,12 +12,7 @@ import { AttendanceType } from '../../../common/enums';
 export class RecordAttendanceDto {
   @ApiProperty({ enum: AttendanceType })
   @IsEnum(AttendanceType)
-  type: AttendanceType;
-
-  @ApiPropertyOptional({ description: 'Optional explicit employee ID for syncing' })
-  @IsString()
-  @IsOptional()
-  employeeId?: string;
+  type!: AttendanceType;
 
   @ApiPropertyOptional({ description: 'ISO8601 timestamp (for offline sync)' })
   @IsDateString()

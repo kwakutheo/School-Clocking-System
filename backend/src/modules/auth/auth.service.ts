@@ -35,6 +35,7 @@ export class AuthService {
   async validateUser(
     identifier: string,
     password: string,
+    context?: string,
   ): Promise<User | null> {
     const user = await this.users.findByIdentifier(identifier);
     if (!user) return null;
@@ -42,22 +43,27 @@ export class AuthService {
     const matches = await bcrypt.compare(password, user.passwordHash);
     if (!matches) return null;
 
-    // Enforce tenant boundary: standard school users must match the login portal's tenant slug context
+    // Enforce tenant boundary only for web dashboard logins.
+    // Mobile app logins do not send a context, so they bypass this check —
+    // allowing employees AND school admins to clock in via the mobile app.
+    const isWebDashboardLogin = context === 'central_dashboard';
     const activeTenantId = tenantLocalStorage.getStore();
 
-    if (activeTenantId) {
-      // Subdomain login: User must belong to this specific tenant
-      if (user.tenantId !== activeTenantId) {
-        throw new UnauthorizedException(
-          'Access denied: You do not belong to this school dashboard.',
-        );
-      }
-    } else {
-      // Main domain login: Only global/SaaS admins (tenantId === null) are allowed
-      if (user.tenantId !== null) {
-        throw new UnauthorizedException(
-          'Access denied: Please log in through your specific school portal.',
-        );
+    if (isWebDashboardLogin) {
+      if (activeTenantId) {
+        // Subdomain dashboard login: user must belong to this specific tenant
+        if (user.tenantId !== activeTenantId) {
+          throw new UnauthorizedException(
+            'Access denied: You do not belong to this school dashboard.',
+          );
+        }
+      } else {
+        // Main domain dashboard login: only global/SaaS admins (tenantId === null) allowed
+        if (user.tenantId !== null) {
+          throw new UnauthorizedException(
+            'Access denied: Please log in through your specific school portal.',
+          );
+        }
       }
     }
 

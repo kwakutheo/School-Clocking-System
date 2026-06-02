@@ -15,6 +15,11 @@ export class RecordAttendanceDto {
   @IsEnum(AttendanceType)
   type: AttendanceType;
 
+  @ApiPropertyOptional({ description: 'Optional explicit employee ID for syncing' })
+  @IsString()
+  @IsOptional()
+  employeeId?: string;
+
   @ApiPropertyOptional({ description: 'ISO8601 timestamp (for offline sync)' })
   @IsDateString()
   @IsOptional()

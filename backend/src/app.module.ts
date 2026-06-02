@@ -3,8 +3,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
-import { BullModule } from '@nestjs/bull';
-import { CacheModule } from '@nestjs/cache-manager';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { EmployeesModule } from './modules/employees/employees.module';
@@ -64,35 +62,6 @@ import { TenantMiddleware } from './common/tenant/tenant.middleware';
             config.get<string>('DB_SSL', 'false') === 'true'
               ? { rejectUnauthorized: false }
               : false,
-        };
-      },
-    }),
-
-    // ── Redis Cache & Queue ───────────────────────────────────────────────────
-    BullModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
-        const redisUrl = config.get<string>('REDIS_URL');
-        if (!redisUrl) {
-          console.warn('REDIS_URL is not set. Bull Queue may fail to connect.');
-          return { redis: { host: 'localhost', port: 6379 } };
-        }
-        return { redis: redisUrl };
-      },
-    }),
-    CacheModule.registerAsync({
-      isGlobal: true,
-      inject: [ConfigService],
-      useFactory: async (config: ConfigService) => {
-        const redisUrl = config.get<string>('REDIS_URL');
-        if (!redisUrl) {
-          console.warn('REDIS_URL is not set. CacheManager falling back to in-memory.');
-          return { ttl: 60 };
-        }
-        const { redisStore } = await import('cache-manager-redis-yet');
-        return {
-          store: await redisStore({ url: redisUrl }),
-          ttl: 60000, // default 60s
         };
       },
     }),

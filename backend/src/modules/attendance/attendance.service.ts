@@ -20,8 +20,6 @@ import { AuditService } from '../audit/audit.service';
 import { LeavesService } from '../leaves/leaves.service';
 import { User } from '../users/user.entity';
 import { getCurrentTenantId } from '../../common/tenant/tenant-filter.helper';
-import { InjectQueue } from '@nestjs/bull';
-import type { Queue } from 'bull';
 
 @Injectable()
 export class AttendanceService {
@@ -34,7 +32,6 @@ export class AttendanceService {
     private readonly academicCalendar: AcademicCalendarService,
     private readonly auditService: AuditService,
     private readonly leavesService: LeavesService,
-    @InjectQueue('attendance_queue') private readonly attendanceQueue: Queue,
   ) {}
 
   // ── Record single event ───────────────────────────────────────────────────
@@ -328,26 +325,32 @@ export class AttendanceService {
       );
     }
 
-    await this.attendanceQueue.add('process-clockin', {
-      employeeId: employee.id,
-      branchId: branch?.id,
+    let isLate = false;
+    if (dto.type === AttendanceType.CLOCK_IN && employee.shift) {
+      const [sHours, sMins] = employee.shift.startTime.split(':').map(Number);
+      const shiftStart = new Date(now);
+      shiftStart.setHours(
+        sHours,
+        sMins + (employee.shift.graceMinutes || 0),
+        0,
+        0,
+      );
+      isLate = now > shiftStart;
+    }
+
+    const log = this.repo.create({
+      employee,
+      branch,
       type: dto.type,
-      timestamp: now.toISOString(),
+      timestamp: now,
       latitude: dto.latitude,
       longitude: dto.longitude,
       deviceId: dto.deviceId,
       isOfflineSync: dto.isOfflineSync ?? false,
+      isLate,
     });
 
-    return {
-      id: `queued-${Date.now()}`,
-      employee: { id: employee.id },
-      type: dto.type,
-      timestamp: now,
-      status: 'queued',
-      latitude: dto.latitude,
-      longitude: dto.longitude,
-    } as any;
+    return this.repo.save(log);
   }
 
   // ── Batch offline sync ────────────────────────────────────────────────────
@@ -838,37 +841,31 @@ export class AttendanceService {
       );
     }
 
-    const jobId = `qr-clockin-${employee.id}-${now.getTime()}`;
-    const logData = {
-      employeeId: employee.id,
-      branchId: branch?.id,
-      type: dto.type,
-      timestamp: now.toISOString(),
-      latitude: dto.latitude,
-      longitude: dto.longitude,
-      isOfflineSync: false,
-    };
+    let isLate = false;
+    if (dto.type === AttendanceType.CLOCK_IN && employee.shift) {
+      const [sHours, sMins] = employee.shift.startTime.split(':').map(Number);
+      const shiftStart = new Date(now);
+      shiftStart.setHours(
+        sHours,
+        sMins + (employee.shift.graceMinutes || 0),
+        0,
+        0,
+      );
+      isLate = now > shiftStart;
+    }
 
-    await this.attendanceQueue.add('process-clockin', logData, {
-      jobId,
-      removeOnComplete: true,
-      attempts: 3,
-      backoff: { type: 'exponential', delay: 1000 },
-    });
-
-    const queuedLog = {
-      id: `queued-${jobId}`,
-      employee: { id: employee.id },
-      branch: branch ?? undefined,
+    const log = this.repo.create({
+      employee,
+      branch,
       type: dto.type,
       timestamp: now,
       latitude: dto.latitude,
       longitude: dto.longitude,
       isOfflineSync: false,
-      status: 'queued',
-    } as any;
+      isLate,
+    });
 
-    return queuedLog;
+    return this.repo.save(log);
   }
 
   // ── History ───────────────────────────────────────────────────────────────

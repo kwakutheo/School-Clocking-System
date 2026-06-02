@@ -988,6 +988,17 @@ export default function SaasOverviewPage() {
 
   useEffect(() => {
     fetchStats(timeframe);
+
+    let intervalId: ReturnType<typeof setInterval>;
+    if (timeframe === "today") {
+      intervalId = setInterval(() => {
+        fetchStats(timeframe, false);
+      }, 30000);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [timeframe, fetchStats]);
 
   const handleViewPortal = (school: SchoolMetric) => {

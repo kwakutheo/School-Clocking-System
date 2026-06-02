@@ -67,7 +67,13 @@ export default function LoginPage() {
       }
 
       setAuth(user, access_token);
-      router.push('/dashboard');
+      // Global/SaaS admins have no tenantId — send them directly to the
+      // central management dashboard to avoid a flash of the tenant dashboard.
+      if (user.tenantId === null) {
+        router.push('/saas-admin');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       if (err?.response?.status !== 401) {
         console.error('Login error:', err);

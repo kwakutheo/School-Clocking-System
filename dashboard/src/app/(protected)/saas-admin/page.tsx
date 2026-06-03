@@ -1281,15 +1281,17 @@ export default function SaasOverviewPage() {
             position: "relative",
             overflow: "hidden",
             cursor: "pointer",
-            transition: "transform 0.18s ease, box-shadow 0.18s ease",
+            transition: "all 0.18s ease",
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = "translateY(-3px)";
             e.currentTarget.style.boxShadow = "0 8px 28px rgba(139,92,246,0.18)";
+            e.currentTarget.style.borderColor = "rgba(139,92,246,0.6)";
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = "translateY(0)";
             e.currentTarget.style.boxShadow = "";
+            e.currentTarget.style.borderColor = "var(--border)";
           }}
         >
           <div
@@ -1382,15 +1384,17 @@ export default function SaasOverviewPage() {
             position: "relative",
             overflow: "hidden",
             cursor: "pointer",
-            transition: "transform 0.18s ease, box-shadow 0.18s ease",
+            transition: "all 0.18s ease",
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = "translateY(-3px)";
             e.currentTarget.style.boxShadow = "0 8px 28px rgba(59,130,246,0.18)";
+            e.currentTarget.style.borderColor = "rgba(59,130,246,0.6)";
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = "translateY(0)";
             e.currentTarget.style.boxShadow = "";
+            e.currentTarget.style.borderColor = "var(--border)";
           }}
         >
           <div
@@ -1475,16 +1479,18 @@ export default function SaasOverviewPage() {
             position: "relative",
             overflow: "hidden",
             cursor: "pointer",
-            transition: "transform 0.18s ease, box-shadow 0.18s ease",
+            transition: "all 0.18s ease",
           }}
           onMouseEnter={(e) => {
             const color = rateColor(stats?.overview.presenceRate ?? 0);
             e.currentTarget.style.transform = "translateY(-3px)";
             e.currentTarget.style.boxShadow = `0 8px 28px ${color}30`;
+            e.currentTarget.style.borderColor = color;
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = "translateY(0)";
             e.currentTarget.style.boxShadow = "";
+            e.currentTarget.style.borderColor = "var(--border)";
           }}
         >
           <div
@@ -1576,7 +1582,7 @@ export default function SaasOverviewPage() {
             position: "relative",
             overflow: "hidden",
             cursor: "pointer",
-            transition: "transform 0.18s ease, box-shadow 0.18s ease",
+            transition: "all 0.18s ease",
             border:
               criticalSchools.length > 0
                 ? "1px solid rgba(239,68,68,0.3)"
@@ -1585,10 +1591,12 @@ export default function SaasOverviewPage() {
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = "translateY(-3px)";
             e.currentTarget.style.boxShadow = "0 8px 28px rgba(239,68,68,0.18)";
+            e.currentTarget.style.borderColor = "rgba(239,68,68,0.6)";
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = "translateY(0)";
             e.currentTarget.style.boxShadow = "";
+            e.currentTarget.style.borderColor = criticalSchools.length > 0 ? "rgba(239,68,68,0.3)" : "var(--border)";
           }}
         >
           <div

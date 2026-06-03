@@ -266,6 +266,35 @@ export class AuthService {
             console.warn(`Email would have been sent to: ${user.email}`);
             console.warn(`Password Reset PIN is: ${pin}`);
             console.warn('========================================================\n');
+          } else if (process.env.SMTP_HOST === 'smtp.resend.com') {
+            // Use Resend HTTP API directly to bypass cloud outbound SMTP port restrictions
+            try {
+              const response = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${process.env.SMTP_PASS}`,
+                },
+                body: JSON.stringify({
+                  from: 'TK Clocking <noreply@tkclocking.online>',
+                  to: [dto.email],
+                  subject: 'Password Reset Request',
+                  html: `
+                    <h3>Password Reset</h3>
+                    <p>Hello ${user.fullName},</p>
+                    <p>You requested a password reset. Your reset PIN is:</p>
+                    <h2 style="color: #4F46E5; letter-spacing: 2px;">${pin}</h2>
+                    <p>If you did not request this, please ignore this email.</p>
+                  `,
+                }),
+              });
+              if (!response.ok) {
+                const errText = await response.text();
+                console.error('Failed to send email via Resend API:', errText);
+              }
+            } catch (error) {
+              console.error('Failed to send email via Resend API:', error);
+            }
           } else {
             const transporter = nodemailer.createTransport({
               host: process.env.SMTP_HOST || 'smtp.gmail.com',

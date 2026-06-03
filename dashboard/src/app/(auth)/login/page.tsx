@@ -43,6 +43,7 @@ export default function LoginPage() {
   const [resetUsername, setResetUsername] = useState('');
   const [pin, setPin] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Global UI State
   const [error, setError] = useState('');
@@ -112,6 +113,12 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setSuccess('');
+    
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match. Please try again.');
+      return;
+    }
+
     setLoading(true);
     try {
       await authApi.completePasswordReset({ username: resetUsername.trim(), pin: pin.trim(), newPassword });
@@ -369,6 +376,22 @@ export default function LoginPage() {
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Confirm New Password</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    className="form-input"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    style={{ paddingRight: '44px' }}
+                  />
                 </div>
               </div>
 

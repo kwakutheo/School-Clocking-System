@@ -720,6 +720,14 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 .btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
 
+.btn-accent {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 4px 14px rgba(245,158,11,0.35);
+}
+
+.btn-accent:hover { background: #d97706; transform: translateY(-1px); }
+
 .btn-secondary {
   background: var(--bg-card);
   border: 1px solid var(--border);

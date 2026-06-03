@@ -221,9 +221,9 @@ export function AdminManualClockModal({ onClose, onSuccess }: Props) {
                     flex: 1, padding: '10px 12px',
                     borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    border: type === t ? '2px solid var(--primary)' : '1px solid var(--border)',
-                    background: type === t ? 'rgba(59,130,246,0.1)' : 'var(--bg-card)',
-                    color: type === t ? 'var(--primary)' : 'var(--text-secondary)',
+                    border: type === t ? (t === 'clock_out' ? '2px solid var(--accent)' : '2px solid var(--primary)') : '1px solid var(--border)',
+                    background: type === t ? (t === 'clock_out' ? 'var(--accent-dim)' : 'rgba(59,130,246,0.1)') : 'var(--bg-card)',
+                    color: type === t ? (t === 'clock_out' ? 'var(--accent)' : 'var(--primary)') : 'var(--text-secondary)',
                     transition: 'all 0.15s',
                   }}
                 >
@@ -383,7 +383,7 @@ export function AdminManualClockModal({ onClose, onSuccess }: Props) {
             <button
               type="submit"
               id="manual-clock-submit"
-              className="btn btn-primary"
+              className={`btn ${type === 'clock_out' ? 'btn-accent' : 'btn-primary'}`}
               disabled={loading}
             >
               {loading ? 'Saving…' : `Confirm ${type === 'clock_in' ? 'Clock In' : 'Clock Out'}`}

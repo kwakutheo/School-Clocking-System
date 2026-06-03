@@ -504,18 +504,18 @@ export class AttendanceService {
     // ── State-machine validation (same rules as regular record) ─────────────
     if (dto.type === AttendanceType.CLOCK_IN && hasClockedInToday) {
       throw new BadRequestException(
-        'The employee has already clocked in today. Cannot add a duplicate clock-in.',
+        'Employee already clocked in. Cannot add a duplicate clock-in.',
       );
     }
     if (dto.type === AttendanceType.CLOCK_OUT) {
       if (!hasClockedInToday) {
         throw new BadRequestException(
-          'The employee has not clocked in today. Cannot clock out without a prior clock-in.',
+          'Employee has not clocked in. Cannot clock out without a prior clock-in.',
         );
       }
       if (hasClockOutToday) {
         throw new BadRequestException(
-          'The employee has already clocked out today.',
+          'Employee already clocked out. Cannot add a duplicate clock-out.',
         );
       }
       // Rule: Cannot clock out before the shift has officially started (mirrors mobile app rule).
@@ -1700,5 +1700,35 @@ export class AttendanceService {
     windowStart.setHours(windowStart.getHours() - 2);
 
     return date >= windowStart && date <= shiftEnd;
+  }
+
+  // ── Strict Shift Hour Checker (no grace period before shift) ──────────────
+  private _isStrictlyWithinShiftHours(date: Date, shift: any): boolean {
+    if (!shift) return true;
+
+    const [sHours, sMins] = shift.startTime.split(':').map(Number);
+    const [eHours, eMins] = shift.endTime.split(':').map(Number);
+
+    const shiftStart = new Date(date);
+    shiftStart.setHours(sHours, sMins, 0, 0);
+
+    const shiftEnd = new Date(date);
+    shiftEnd.setHours(eHours, eMins, 0, 0);
+
+    // Handle overnight shifts (e.g., 22:00 to 06:00)
+    if (shiftEnd < shiftStart) {
+      if (
+        date.getHours() < eHours ||
+        (date.getHours() === eHours && date.getMinutes() < eMins)
+      ) {
+        // We are in the post-midnight part of the shift; shift started yesterday.
+        shiftStart.setDate(shiftStart.getDate() - 1);
+      } else {
+        // We are in the pre-midnight part of the shift; shift ends tomorrow.
+        shiftEnd.setDate(shiftEnd.getDate() + 1);
+      }
+    }
+
+    return date >= shiftStart && date <= shiftEnd;
   }
 }

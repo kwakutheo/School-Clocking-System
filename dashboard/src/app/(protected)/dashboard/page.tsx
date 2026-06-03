@@ -483,18 +483,35 @@ export default function DashboardPage() {
               {isToday && <span className="live-dot" style={{ marginRight: 8 }} />}
               {isToday ? 'Live Attendance Feed' : 'Attendance Log'}
             </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              {isToday && isAdmin && !dashboardStats.dayStatus?.isNonWorking && (
-                <button
-                  id="manual-clock-open-btn"
-                  className="btn btn-primary"
-                  style={{ fontSize: 13, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6 }}
-                  onClick={() => setShowManualClock(true)}
-                >
-                  <UserCheck size={15} />
-                  Manual Clock
-                </button>
-              )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {(() => {
+                // Show Manual Clock button for any Mon–Fri within the current week up to today
+                const sel = parseLocalDate(selectedDate);
+                const todayDate = parseLocalDate(format(new Date(), 'yyyy-MM-dd'))!;
+                const dayOfWeek = sel?.getDay(); // 0=Sun, 6=Sat
+                const getMonday = (d: Date) => {
+                  const copy = new Date(d);
+                  const day = copy.getDay();
+                  copy.setDate(copy.getDate() - (day === 0 ? 6 : day - 1));
+                  copy.setHours(0, 0, 0, 0);
+                  return copy;
+                };
+                const monday = getMonday(todayDate);
+                const isWeekday = dayOfWeek !== 0 && dayOfWeek !== 6;
+                const isWithinCurrentWeek = sel && sel >= monday && sel <= todayDate;
+                const showManualClockBtn = isAdmin && isWeekday && isWithinCurrentWeek && !dashboardStats.dayStatus?.isNonWorking;
+                return showManualClockBtn ? (
+                  <button
+                    id="manual-clock-open-btn"
+                    className="btn btn-primary"
+                    style={{ fontSize: 13, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6 }}
+                    onClick={() => setShowManualClock(true)}
+                  >
+                    <UserCheck size={15} />
+                    Manual Clock
+                  </button>
+                ) : null;
+              })()}
               {isToday && (
                 <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   Auto-syncing

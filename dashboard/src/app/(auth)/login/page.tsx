@@ -106,7 +106,7 @@ export default function LoginPage() {
     try {
       const res = await authApi.requestPasswordReset(resetUsername.trim(), email.trim());
       setSuccess(res.data.message || 'If that email is registered, a reset link has been sent.');
-      setResendCountdown(60);
+      setResendCountdown(120);
       setTimeout(() => {
         setStep('forgot-reset');
         setSuccess('');

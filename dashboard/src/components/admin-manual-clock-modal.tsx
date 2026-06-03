@@ -23,14 +23,37 @@ interface Props {
 
 const clockableFetcher = () => attendanceApi.clockableEmployees().then((r) => r.data);
 
+const REASON_CATEGORIES = [
+  'Forgot to clock in/out',
+  'Device / Phone battery died',
+  'App sync error / offline',
+  'Biometric / QR scan failed',
+  'Other'
+];
+
 export function AdminManualClockModal({ onClose, onSuccess }: Props) {
   const { data: employees } = useSWR('clockable-employees', clockableFetcher);
   const currentTime = useCurrentTime(); // "HH:mm" — used as max cap on the time input
 
+  const today = new Date();
+  const todayDateString = format(today, 'yyyy-MM-dd');
+  
+  // Calculate Monday of the current week
+  const getMonday = (d: Date) => {
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(date.setDate(diff));
+  };
+  const mondayDate = getMonday(today);
+  const mondayDateString = format(mondayDate, 'yyyy-MM-dd');
+
   const [employeeId, setEmployeeId] = useState('');
   const [type, setType] = useState<'clock_in' | 'clock_out'>('clock_in');
   const [useCustomTime, setUseCustomTime] = useState(false);
+  const [customDate, setCustomDate] = useState(todayDateString);
   const [customTime, setCustomTime] = useState(''); // stores "HH:mm" only
+  const [reasonCategory, setReasonCategory] = useState('');
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -45,25 +68,42 @@ export function AdminManualClockModal({ onClose, onSuccess }: Props) {
     setSuccess('');
 
     if (!employeeId) { setError('Please select an employee.'); return; }
-    if (!note.trim()) { setError('A reason/note is required for the audit trail.'); return; }
-    if (useCustomTime && !customTime) { setError('Please enter a valid time.'); return; }
+    if (!reasonCategory) { setError('Please select a reason category.'); return; }
+    if (reasonCategory === 'Other' && !note.trim()) { setError('A detailed note is required when "Other" is selected.'); return; }
+    if (useCustomTime && (!customTime || !customDate)) { setError('Please enter both a valid date and time (leave unchecked to use current date and time).'); return; }
 
-    // Build ISO timestamp: combine today\'s local date with the chosen HH:mm time.
-    // This guarantees the entry is always anchored to the current working day.
     let timestamp: string | undefined;
-    if (useCustomTime && customTime) {
+    if (useCustomTime && customTime && customDate) {
+      const [year, month, day] = customDate.split('-').map(Number);
       const [hours, minutes] = customTime.split(':').map(Number);
-      const today = new Date();
-      today.setHours(hours, minutes, 0, 0);
-      if (isNaN(today.getTime())) { setError('Invalid time entered.'); return; }
-      // Reject times that are in the future (belt-and-suspenders guard alongside the input max)
-      if (today > new Date()) { setError('The selected time cannot be in the future.'); return; }
-      timestamp = today.toISOString();
+      const selectedDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
+
+      if (isNaN(selectedDateTime.getTime())) { setError('Invalid date or time entered.'); return; }
+      if (selectedDateTime > new Date()) { setError('The selected date and time cannot be in the future.'); return; }
+
+      const targetDateZero = new Date(year, month - 1, day);
+      const targetDayOfWeek = targetDateZero.getDay();
+      
+      if (targetDayOfWeek === 0 || targetDayOfWeek === 6) {
+        setError('Manual clocking is not allowed on weekends.');
+        return;
+      }
+
+      const minAllowed = getMonday(new Date());
+      minAllowed.setHours(0, 0, 0, 0);
+      if (targetDateZero < minAllowed) {
+        setError('The selected date must be within the current week (Monday onwards).');
+        return;
+      }
+
+      timestamp = selectedDateTime.toISOString();
     }
+
+    const fullNote = `[${reasonCategory}] ${note.trim()}`;
 
     setLoading(true);
     try {
-      await attendanceApi.adminManualClock({ employeeId, type, timestamp, note: note.trim() });
+      await attendanceApi.adminManualClock({ employeeId, type, timestamp, note: fullNote });
       setSuccess(
         `Successfully recorded ${type === 'clock_in' ? 'Clock In' : 'Clock Out'} for ${selectedEmp?.user?.fullName}.`,
       );
@@ -75,6 +115,8 @@ export function AdminManualClockModal({ onClose, onSuccess }: Props) {
       setLoading(false);
     }
   };
+
+  const isTodaySelected = customDate === todayDateString;
 
   return (
     <>
@@ -93,6 +135,7 @@ export function AdminManualClockModal({ onClose, onSuccess }: Props) {
           position: 'fixed', top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)',
           width: '100%', maxWidth: 520,
+          maxHeight: '90vh', overflowY: 'auto',
           background: 'var(--bg-card)',
           border: '1px solid var(--border)',
           borderRadius: 16,
@@ -201,49 +244,106 @@ export function AdminManualClockModal({ onClose, onSuccess }: Props) {
                 onChange={(e) => setUseCustomTime(e.target.checked)}
               />
               <Clock size={14} />
-              Set a specific time (leave unchecked to use current time)
+              Set a specific date & time (leave unchecked to use current time)
             </label>
             {useCustomTime && (
-              <div style={{ marginTop: 8 }}>
-                <input
-                  id="manual-clock-custom-time"
-                  type="time"
-                  className="form-input"
-                  aria-label="Manual clock time (today only)"
-                  title="Select a time on today's working day"
-                  value={customTime}
-                  max={currentTime}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    // Extra guard: reject times beyond the current minute
-                    if (val && val > currentTime) return;
-                    setCustomTime(val);
-                  }}
-                />
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                  Time is applied to <strong>today</strong> ({format(new Date(), 'EEE, MMM d yyyy')}).
-                  Cannot be set in the future or on a different day.
+              <div style={{ marginTop: 10, display: 'flex', gap: 12, flexDirection: 'column' }}>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <label htmlFor="manual-clock-custom-date" style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
+                      Date
+                    </label>
+                    <input
+                      id="manual-clock-custom-date"
+                      type="date"
+                      className="form-input"
+                      value={customDate}
+                      min={mondayDateString}
+                      max={todayDateString}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val) {
+                          const [y, m, d] = val.split('-').map(Number);
+                          const testDate = new Date(y, m - 1, d);
+                          if (testDate.getDay() === 0 || testDate.getDay() === 6) {
+                            setError('Weekends are not allowed for manual clocking.');
+                            return;
+                          } else {
+                            setError('');
+                          }
+                        }
+                        setCustomDate(val);
+                        if (val === todayDateString && customTime && customTime > currentTime) {
+                          setCustomTime(currentTime);
+                        }
+                      }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label htmlFor="manual-clock-custom-time" style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>
+                      Time
+                    </label>
+                    <input
+                      id="manual-clock-custom-time"
+                      type="time"
+                      className="form-input"
+                      value={customTime}
+                      max={isTodaySelected ? currentTime : undefined}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (isTodaySelected && val && val > currentTime) return;
+                        setCustomTime(val);
+                      }}
+                    />
+                  </div>
+                </div>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 0 }}>
+                  Entry is restricted to the current week (Monday onwards). Future dates/times and weekends are not permitted.
                 </p>
+                {customDate !== todayDateString && selectedEmp?.shift && (
+                  <div style={{ fontSize: 12, color: 'var(--primary)', marginTop: 4, background: 'rgba(59,130,246,0.1)', padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(59,130,246,0.2)' }}>
+                    <strong>Shift Constraint:</strong> Time must be within {selectedEmp.shift.startTime} - {selectedEmp.shift.endTime}
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          {/* Note */}
-          <div className="form-group" style={{ marginBottom: 20 }}>
-            <label htmlFor="manual-clock-note" style={{ fontSize: 13, fontWeight: 600 }}>
-              Reason / Note <span style={{ color: 'var(--danger)' }}>*</span>
+          {/* Reason Category */}
+          <div className="form-group" style={{ marginBottom: 16 }}>
+            <label htmlFor="manual-clock-reason" style={{ fontSize: 13, fontWeight: 600 }}>
+              Select reason <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
-            <textarea
-              id="manual-clock-note"
+            <select
+              id="manual-clock-reason"
               className="form-input"
-              rows={3}
-              placeholder="e.g. Employee's phone was dead. Confirmed arrival at 08:05."
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              style={{ resize: 'vertical', minHeight: 72 }}
+              value={reasonCategory}
+              onChange={(e) => setReasonCategory(e.target.value)}
               required
-            />
+            >
+              <option value="">— Select Reason —</option>
+              {REASON_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
+
+          {/* Note */}
+          {reasonCategory === 'Other' && (
+            <div className="form-group" style={{ marginBottom: 20 }}>
+              <label htmlFor="manual-clock-note" style={{ fontSize: 13, fontWeight: 600 }}>
+                Detailed Note <span style={{ color: 'var(--danger)' }}>*</span>
+              </label>
+              <textarea
+                id="manual-clock-note"
+                className="form-input"
+                rows={2}
+                placeholder="Please provide details for the audit trail..."
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                style={{ resize: 'vertical', minHeight: 60 }}
+                required
+              />
+            </div>
+          )}
 
           {/* Error / Success */}
           {error && (
@@ -284,7 +384,7 @@ export function AdminManualClockModal({ onClose, onSuccess }: Props) {
               type="submit"
               id="manual-clock-submit"
               className="btn btn-primary"
-              disabled={loading || !employeeId || !note.trim()}
+              disabled={loading}
             >
               {loading ? 'Saving…' : `Confirm ${type === 'clock_in' ? 'Clock In' : 'Clock Out'}`}
             </button>

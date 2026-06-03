@@ -1072,6 +1072,16 @@ export default function SaasOverviewPage() {
       )
     : sortedFullList;
 
+  // KPI Schools modal — sorted alphabetically by name
+  const kpiSchoolsAlpha = [...fullSchoolsList].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+  const kpiSchoolsFiltered = modalSearch.trim()
+    ? kpiSchoolsAlpha.filter((s) =>
+        s.name.toLowerCase().includes(modalSearch.trim().toLowerCase()),
+      )
+    : kpiSchoolsAlpha;
+
   const empModalStart =
     empModalTotal === 0 ? 0 : (empModalPage - 1) * EMP_MODAL_LIMIT + 1;
   const empModalEnd = Math.min(empModalPage * EMP_MODAL_LIMIT, empModalTotal);
@@ -3540,16 +3550,29 @@ export default function SaasOverviewPage() {
                   marginBottom: "14px",
                 }}
               >
-                <h2
-                  style={{
-                    fontSize: "18px",
-                    fontWeight: 800,
-                    margin: 0,
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  Total Schools
-                </h2>
+                <div>
+                  <h2
+                    style={{
+                      fontSize: "18px",
+                      fontWeight: 800,
+                      margin: 0,
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    Total Schools
+                  </h2>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: "var(--text-secondary)",
+                      marginTop: "2px",
+                      display: "block",
+                    }}
+                  >
+                    {kpiSchoolsFiltered.length} school{kpiSchoolsFiltered.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
                 <button
                   onClick={() => setShowKpiSchoolsModal(false)}
                   aria-label="Close modal"
@@ -3617,49 +3640,49 @@ export default function SaasOverviewPage() {
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {modalFiltered.length === 0 ? (
-                    <div style={{ padding: "40px", textAlign: "center", color: "var(--text-secondary)", fontSize: "14px" }}>
+                  {kpiSchoolsFiltered.length === 0 ? (
+                    <div style={{ padding: "40px", textAlign: "center", color: "var(--text-secondary)", fontSize: "13px" }}>
                       No schools found.
                     </div>
                   ) : (
-                    modalFiltered.map((school) => (
+                    kpiSchoolsFiltered.map((school) => (
                     <div
                       key={school.id}
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        padding: "16px",
+                        padding: "10px 14px",
                         background: "var(--bg-card-hover)",
                         border: "1px solid var(--border)",
-                        borderRadius: "12px",
+                        borderRadius: "10px",
                       }}
                     >
-                      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "12px" }}>
+                      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "10px" }}>
                         <div
                           style={{
-                            width: "12px",
-                            height: "12px",
+                            width: "9px",
+                            height: "9px",
                             borderRadius: "50%",
                             backgroundColor: school.primaryColor,
                             flexShrink: 0,
                           }}
                         />
-                        <span style={{ fontWeight: 700, fontSize: "15px", color: "var(--text-primary)" }}>
+                        <span style={{ fontWeight: 700, fontSize: "13px", color: "var(--text-primary)" }}>
                           {school.name}
                         </span>
                       </div>
-                      <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
-                        <span style={{ color: "var(--text-secondary)", fontSize: "14px", fontWeight: 600 }}>
+                      <div style={{ display: "flex", justifyContent: "center", minWidth: "110px" }}>
+                        <span style={{ color: "var(--text-secondary)", fontSize: "12px", fontWeight: 600 }}>
                           {school.metrics.employees} Employees
                         </span>
                       </div>
-                      <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+                      <div style={{ display: "flex", justifyContent: "flex-end", minWidth: "70px" }}>
                         <button
                           onClick={() => handleViewPortal(school)}
                           style={{
-                            padding: "8px 16px",
-                            borderRadius: "8px",
-                            fontSize: "13px",
+                            padding: "5px 12px",
+                            borderRadius: "7px",
+                            fontSize: "12px",
                             fontWeight: 600,
                             background: "rgba(139,92,246,0.1)",
                             color: "#8b5cf6",
@@ -3667,10 +3690,10 @@ export default function SaasOverviewPage() {
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
-                            gap: "6px",
+                            gap: "5px",
                           }}
                         >
-                          <Eye size={14} /> View
+                          <Eye size={12} /> View
                         </button>
                       </div>
                     </div>
@@ -3734,16 +3757,29 @@ export default function SaasOverviewPage() {
                   marginBottom: "14px",
                 }}
               >
-                <h2
-                  style={{
-                    fontSize: "18px",
-                    fontWeight: 800,
-                    margin: 0,
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  Active Employees
-                </h2>
+                <div>
+                  <h2
+                    style={{
+                      fontSize: "18px",
+                      fontWeight: 800,
+                      margin: 0,
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    Active Employees
+                  </h2>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: "var(--text-secondary)",
+                      marginTop: "2px",
+                      display: "block",
+                    }}
+                  >
+                    {empModalTotal} employee{empModalTotal !== 1 ? "s" : ""}
+                  </span>
+                </div>
                 <button
                   onClick={() => setShowKpiEmpModal(false)}
                   aria-label="Close modal"
@@ -3858,7 +3894,7 @@ export default function SaasOverviewPage() {
                       No employees match your filters.
                     </div>
                   ) : (
-                    fullEmpList.map((emp) => {
+                    [...fullEmpList].sort((a, b) => a.name.localeCompare(b.name)).map((emp) => {
                     const initials = emp.name
                       .split(" ")
                       .slice(0, 2)
@@ -3872,7 +3908,7 @@ export default function SaasOverviewPage() {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "space-between",
-                          padding: "16px",
+                          padding: "10px 14px",
                           background: "var(--bg-card-hover)",
                           border: "1px solid var(--border)",
                           borderRadius: "12px",
@@ -3905,7 +3941,7 @@ export default function SaasOverviewPage() {
                               initials
                             )}
                           </div>
-                          <span style={{ fontWeight: 700, fontSize: "15px", color: "var(--text-primary)" }}>
+                          <span style={{ fontWeight: 700, fontSize: "13px", color: "var(--text-primary)" }}>
                             {emp.name}
                           </span>
                         </div>
@@ -3918,7 +3954,7 @@ export default function SaasOverviewPage() {
                               backgroundColor: emp.school.primaryColor,
                             }}
                           />
-                          <span style={{ color: "var(--text-secondary)", fontSize: "14px", fontWeight: 600 }}>
+                          <span style={{ color: "var(--text-secondary)", fontSize: "12px", fontWeight: 600 }}>
                             {emp.school.name}
                           </span>
                         </div>

@@ -339,6 +339,7 @@ export class EmployeesService implements OnModuleInit {
       shiftId?: string;
       position?: string;
       hireDate?: string;
+      email?: string;
       phone?: string;
       role?: UserRole;
     },
@@ -401,6 +402,15 @@ export class EmployeesService implements OnModuleInit {
       }
     }
 
+    if (payload.email) {
+      const existingEmail = await this.userRepo.findOne({
+        where: { email: payload.email },
+      });
+      if (existingEmail) {
+        throw new ConflictException('Email already in use.');
+      }
+    }
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -410,6 +420,7 @@ export class EmployeesService implements OnModuleInit {
       const user = queryRunner.manager.create(User, {
         fullName: payload.fullName,
         username: payload.username,
+        email: payload.email,
         phone: payload.phone,
         passwordHash,
         role: payload.role ?? UserRole.EMPLOYEE,
@@ -523,6 +534,15 @@ export class EmployeesService implements OnModuleInit {
       });
       if (existing && existing.id !== emp.user.id) {
         throw new ConflictException('Phone number already in use.');
+      }
+    }
+
+    if (data.email && data.email !== emp.user.email) {
+      const existing = await this.userRepo.findOne({
+        where: { email: data.email },
+      });
+      if (existing && existing.id !== emp.user.id) {
+        throw new ConflictException('Email already in use.');
       }
     }
 

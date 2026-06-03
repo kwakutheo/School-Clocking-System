@@ -92,7 +92,7 @@ export default function LoginPage() {
     setSuccess('');
     setLoading(true);
     try {
-      const res = await authApi.requestPasswordReset(email);
+      const res = await authApi.requestPasswordReset(resetUsername.trim(), email.trim());
       setSuccess(res.data.message || 'If that email is registered, a reset link has been sent.');
       setTimeout(() => {
         setStep('forgot-reset');
@@ -247,11 +247,24 @@ export default function LoginPage() {
         {step === 'forgot-request' && (
           <>
             <h1 className="login-title">Reset Password</h1>
-            <p className="login-sub">Enter your email to receive a reset PIN</p>
+            <p className="login-sub">Enter your username and email to receive a reset PIN</p>
 
             <form className="login-form" onSubmit={handleForgotRequestSubmit}>
               {error && <div className="login-error">{error}</div>}
               {success && <div className="login-success" style={{ color: 'var(--success)', marginBottom: 12, fontSize: 14 }}>{success}</div>}
+
+              <div className="form-group">
+                <label className="form-label">Username</label>
+                <input
+                  className="form-input"
+                  type="text"
+                  placeholder="admin.user"
+                  value={resetUsername}
+                  onChange={(e) => setResetUsername(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
 
               <div className="form-group">
                 <label className="form-label">Email Address</label>
@@ -262,7 +275,6 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  autoFocus
                 />
               </div>
 

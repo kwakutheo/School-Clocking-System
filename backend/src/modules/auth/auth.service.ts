@@ -217,18 +217,21 @@ export class AuthService {
 
   // ── Request Password Reset ──────────────────────────────────────────────────
   async requestPasswordReset(dto: RequestPasswordResetDto) {
-    const user = await this.users.findByIdentifier(dto.email);
+    const user = await this.users.findByUsername(dto.username);
 
-    // We only allow this for dashboard users.
+    // We only allow this for dashboard users and the email must match exactly
+    // the email associated with the user account.
     if (
       !user ||
+      !user.email ||
+      user.email.toLowerCase() !== dto.email.toLowerCase() ||
       ![UserRole.SUPER_ADMIN, UserRole.HR_ADMIN, UserRole.SUPERVISOR].includes(
         user.role,
       )
     ) {
-      // Return a successful response anyway to prevent email enumeration.
+      // Return a successful response anyway to prevent enumeration attacks.
       return {
-        message: 'If that email is registered, a reset link has been sent.',
+        message: 'If the credentials are valid, a reset link has been sent.',
       };
     }
 
@@ -276,7 +279,7 @@ export class AuthService {
 
             try {
               await transporter.sendMail({
-                from: `"TK Clocking" <${process.env.SMTP_USER}>`,
+                from: `"TK Clocking" <noreply@tkclocking.online>`,
                 to: dto.email,
                 subject: 'Password Reset Request',
                 html: `
@@ -300,7 +303,7 @@ export class AuthService {
     });
 
     return {
-      message: 'If that email is registered, a reset link has been sent.',
+      message: 'If the credentials are valid, a reset link has been sent.',
     };
   }
 

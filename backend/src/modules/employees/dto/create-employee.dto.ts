@@ -7,6 +7,7 @@ import {
   IsEnum,
   IsISO8601,
   IsNumber,
+  IsEmail,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '../../../common/enums';
@@ -21,6 +22,11 @@ export class CreateEmployeeDto {
   @IsString()
   @IsNotEmpty()
   username: string;
+
+  @ApiPropertyOptional({ example: 'kofi@example.com' })
+  @IsEmail()
+  @IsOptional()
+  email?: string;
 
   @ApiProperty({ minLength: 6 })
   @IsString()

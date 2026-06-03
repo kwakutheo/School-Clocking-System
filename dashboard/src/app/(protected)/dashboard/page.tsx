@@ -580,6 +580,7 @@ export default function DashboardPage() {
       {showManualClock && (
         <AdminManualClockModal
           onClose={() => setShowManualClock(false)}
+          selectedDate={selectedDate}
           onSuccess={() => {
             mutate(['live', selectedDate]);
             mutate(['attendance-stats', selectedDate]);

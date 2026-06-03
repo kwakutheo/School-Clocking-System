@@ -94,8 +94,8 @@ export const authApi = {
     logoUrl?: string;
     initials?: string;
   }) => api.put("/tenants/branding", data),
-  requestPasswordReset: (email: string) =>
-    api.post("/auth/request-password-reset", { email }),
+  requestPasswordReset: (username: string, email: string) =>
+    api.post("/auth/request-password-reset", { username, email }),
   completePasswordReset: (data: {
     username: string;
     pin: string;
@@ -201,6 +201,7 @@ export const employeesApi = {
     fullName: string;
     username: string;
     password: string;
+    email?: string;
     employeeCode?: string;
     departmentId?: string;
     branchId?: string;

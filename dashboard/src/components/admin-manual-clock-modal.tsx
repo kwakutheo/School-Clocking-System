@@ -19,6 +19,8 @@ function useCurrentTime() {
 interface Props {
   onClose: () => void;
   onSuccess: () => void;
+  /** Pre-fills the date picker and enables custom time when viewing a historical date. */
+  selectedDate?: string; // 'yyyy-MM-dd'
 }
 
 const clockableFetcher = () => attendanceApi.clockableEmployees().then((r) => r.data);
@@ -31,13 +33,13 @@ const REASON_CATEGORIES = [
   'Other'
 ];
 
-export function AdminManualClockModal({ onClose, onSuccess }: Props) {
+export function AdminManualClockModal({ onClose, onSuccess, selectedDate }: Props) {
   const { data: employees } = useSWR('clockable-employees', clockableFetcher);
   const currentTime = useCurrentTime(); // "HH:mm" — used as max cap on the time input
 
   const today = new Date();
   const todayDateString = format(today, 'yyyy-MM-dd');
-  
+
   // Calculate Monday of the current week
   const getMonday = (d: Date) => {
     const date = new Date(d);
@@ -48,10 +50,14 @@ export function AdminManualClockModal({ onClose, onSuccess }: Props) {
   const mondayDate = getMonday(today);
   const mondayDateString = format(mondayDate, 'yyyy-MM-dd');
 
+  // If the caller passes a historical date, pre-fill it and auto-enable custom time.
+  const isHistoricalDate = !!selectedDate && selectedDate !== todayDateString;
+  const initialDate = selectedDate ?? todayDateString;
+
   const [employeeId, setEmployeeId] = useState('');
   const [type, setType] = useState<'clock_in' | 'clock_out'>('clock_in');
-  const [useCustomTime, setUseCustomTime] = useState(false);
-  const [customDate, setCustomDate] = useState(todayDateString);
+  const [useCustomTime, setUseCustomTime] = useState(isHistoricalDate);
+  const [customDate, setCustomDate] = useState(initialDate);
   const [customTime, setCustomTime] = useState(''); // stores "HH:mm" only
   const [reasonCategory, setReasonCategory] = useState('');
   const [note, setNote] = useState('');

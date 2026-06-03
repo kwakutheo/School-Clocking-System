@@ -44,7 +44,7 @@ export default function EmployeesPage() {
   const [resetPasswordConfirm, setResetPasswordConfirm] = useState<string | null>(null);
   const [adminPasswordValue, setAdminPasswordValue] = useState('');
   const [form, setForm] = useState({
-    firstName: '', lastName: '', username: '', password: '',
+    firstName: '', lastName: '', username: '', email: '', password: '',
     departmentId: '', branchId: '', shiftId: '', position: '',
     phone: '', hireDate: '', role: 'employee', status: 'active',
   });
@@ -131,7 +131,7 @@ export default function EmployeesPage() {
 
   // ── Form helpers ───────────────────────────────────────────────────────────
   const resetForm = useCallback(() => {
-    setForm({ firstName: '', lastName: '', username: '', password: '', departmentId: '',
+    setForm({ firstName: '', lastName: '', username: '', email: '', password: '', departmentId: '',
       branchId: '', shiftId: '', position: '', phone: '',
       hireDate: format(new Date(), 'yyyy-MM-dd'), role: 'employee', status: 'active' });
     setEditingId(null); setError('');
@@ -144,7 +144,7 @@ export default function EmployeesPage() {
     const nameParts = (emp.user?.fullName ?? '').split(' ');
     setForm({
       firstName: nameParts[0] ?? '', lastName: nameParts.slice(1).join(' ') ?? '',
-      username: emp.user?.username ?? '', password: '',
+      username: emp.user?.username ?? '', email: emp.user?.email ?? '', password: '',
       departmentId: emp.department?.id ?? '', branchId: emp.branch?.id ?? '',
       shiftId: emp.shift?.id ?? '', position: emp.position ?? '',
       phone: emp.user?.phone ?? '', hireDate: emp.hireDate ? emp.hireDate.slice(0, 10) : '',
@@ -159,7 +159,7 @@ export default function EmployeesPage() {
     try {
       if (editingId) {
         const res = await employeesApi.update(editingId, {
-          fullName, departmentId: form.departmentId || undefined,
+          fullName, email: form.email || undefined, departmentId: form.departmentId || undefined,
           branchId: form.branchId || undefined, shiftId: form.shiftId || undefined,
           position: form.position || undefined, phone: form.phone || undefined,
           hireDate: form.hireDate || undefined, role: form.role, status: form.status,
@@ -175,7 +175,7 @@ export default function EmployeesPage() {
           return;
         }
         await employeesApi.register({
-          fullName, username: form.username, password: form.password,
+          fullName, username: form.username, email: form.email || undefined, password: form.password,
           departmentId: form.departmentId || undefined, branchId: form.branchId || undefined,
           shiftId: form.shiftId || undefined, position: form.position || undefined,
           phone: form.phone || undefined, hireDate: form.hireDate || undefined, role: form.role,
@@ -535,6 +535,17 @@ export default function EmployeesPage() {
                     </div>
                   </>
                 )}
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label htmlFor="email">Email Address</label>
+                  <input
+                    id="email"
+                    className="form-input"
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    placeholder="john.doe@example.com"
+                  />
+                </div>
                 <div className="form-group">
                   <label htmlFor="departmentId">Department</label>
                   <select

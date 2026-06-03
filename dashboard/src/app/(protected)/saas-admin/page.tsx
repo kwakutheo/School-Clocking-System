@@ -849,6 +849,10 @@ export default function SaasOverviewPage() {
   const [explainEmpModal, setExplainEmpModal] =
     useState<EmployeeRanking | null>(null);
 
+  // KPI Click Modals state
+  const [showKpiSchoolsModal, setShowKpiSchoolsModal] = useState(false);
+  const [showKpiEmpModal, setShowKpiEmpModal] = useState(false);
+
   const loadedTimeframe = useRef<Timeframe | null>(null);
 
   const fetchAllSchools = useCallback(() => {
@@ -876,6 +880,12 @@ export default function SaasOverviewPage() {
 
   const handleOpenAllSchoolsModal = () => {
     setShowAllSchoolsModal(true);
+    setModalSearch("");
+    fetchAllSchools();
+  };
+
+  const handleOpenKpiSchoolsModal = () => {
+    setShowKpiSchoolsModal(true);
     setModalSearch("");
     fetchAllSchools();
   };
@@ -914,6 +924,18 @@ export default function SaasOverviewPage() {
     setFullEmpList([]);
   };
 
+  const handleOpenKpiEmpModal = () => {
+    setShowKpiEmpModal(true);
+    setEmpModalSearch("");
+    setEmpModalSchool("");
+    setDebouncedEmpModalSearch("");
+    setDebouncedEmpModalSchool("");
+    setEmpModalPage(1);
+    setEmpModalTotal(0);
+    setEmpModalTotalPages(1);
+    setFullEmpList([]);
+  };
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setDebouncedEmpModalSearch(empModalSearch.trim());
@@ -925,7 +947,7 @@ export default function SaasOverviewPage() {
   }, [empModalSearch, empModalSchool]);
 
   useEffect(() => {
-    if (!showEmpModal) return;
+    if (!showEmpModal && !showKpiEmpModal) return;
 
     let cancelled = false;
     setEmpModalLoading(true);
@@ -958,6 +980,7 @@ export default function SaasOverviewPage() {
     };
   }, [
     showEmpModal,
+    showKpiEmpModal,
     timeframe,
     empSort,
     empModalPage,
@@ -978,7 +1001,7 @@ export default function SaasOverviewPage() {
       })
       .catch((err) => {
         console.error(err);
-        setError("Failed to load platform statistics. Please try again.");
+        setError("No internet connection. Please check your internet connection.");
       })
       .finally(() => {
         setLoading(false);
@@ -1224,7 +1247,7 @@ export default function SaasOverviewPage() {
         {/* Total Schools */}
         <div
           className="card"
-          onClick={handleOpenAllSchoolsModal}
+          onClick={handleOpenKpiSchoolsModal}
           title="Click to view all schools"
           style={{
             padding: "24px",
@@ -1325,7 +1348,7 @@ export default function SaasOverviewPage() {
         {/* Total Employees */}
         <div
           className="card"
-          onClick={handleOpenEmpModal}
+          onClick={handleOpenKpiEmpModal}
           title="Click to view all employees"
           style={{
             padding: "24px",
@@ -3460,6 +3483,507 @@ export default function SaasOverviewPage() {
                 style={{ fontSize: "24px", fontWeight: 900, color: "#0011ffff" }}
               >
                 {formatPct(explainEmpModal.metrics.score)}%
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── KPI Total Schools Modal ────────────────────────────────────────── */}
+      {showKpiSchoolsModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.4)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "20px",
+            animation: "fadeIn 0.2s ease-out",
+          }}
+          onClick={() => setShowKpiSchoolsModal(false)}
+        >
+          <div
+            style={{
+              background: "var(--bg-card)",
+              border: "1px solid var(--border)",
+              borderRadius: "16px",
+              width: "100%",
+              maxWidth: "600px",
+              maxHeight: "85vh",
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "0 24px 50px rgba(0,0,0,0.3)",
+              overflow: "hidden",
+              animation: "slideUp 0.3s ease-out",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                padding: "20px 24px",
+                borderBottom: "1px solid var(--border)",
+                background: "var(--bg-card)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  marginBottom: "14px",
+                }}
+              >
+                <h2
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: 800,
+                    margin: 0,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  Total Schools
+                </h2>
+                <button
+                  onClick={() => setShowKpiSchoolsModal(false)}
+                  aria-label="Close modal"
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "8px",
+                    background: "var(--bg-card-hover)",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "var(--text-secondary)",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                <div style={{ position: "relative", flex: 1, minWidth: "140px" }}>
+                  <Search
+                    size={14}
+                    style={{
+                      position: "absolute",
+                      left: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      color: "var(--text-secondary)",
+                      pointerEvents: "none",
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search by school name…"
+                    value={modalSearch}
+                    onChange={(e) => setModalSearch(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px 9px 34px",
+                      borderRadius: "9px",
+                      border: "1px solid var(--border)",
+                      background: "var(--bg-card-hover)",
+                      color: "var(--text-primary)",
+                      fontSize: "13px",
+                      outline: "none",
+                      boxSizing: "border-box",
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "#8b5cf6";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "var(--border)";
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ overflowY: "auto", padding: "12px 24px" }}>
+              {allSchoolsLoading ? (
+                <div style={{ padding: "40px", textAlign: "center" }}>
+                  <div className="spinner" />
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {modalFiltered.length === 0 ? (
+                    <div style={{ padding: "40px", textAlign: "center", color: "var(--text-secondary)", fontSize: "14px" }}>
+                      No schools found.
+                    </div>
+                  ) : (
+                    modalFiltered.map((school) => (
+                    <div
+                      key={school.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        padding: "16px",
+                        background: "var(--bg-card-hover)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "12px",
+                      }}
+                    >
+                      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "12px" }}>
+                        <div
+                          style={{
+                            width: "12px",
+                            height: "12px",
+                            borderRadius: "50%",
+                            backgroundColor: school.primaryColor,
+                            flexShrink: 0,
+                          }}
+                        />
+                        <span style={{ fontWeight: 700, fontSize: "15px", color: "var(--text-primary)" }}>
+                          {school.name}
+                        </span>
+                      </div>
+                      <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+                        <span style={{ color: "var(--text-secondary)", fontSize: "14px", fontWeight: 600 }}>
+                          {school.metrics.employees} Employees
+                        </span>
+                      </div>
+                      <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+                        <button
+                          onClick={() => handleViewPortal(school)}
+                          style={{
+                            padding: "8px 16px",
+                            borderRadius: "8px",
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            background: "rgba(139,92,246,0.1)",
+                            color: "#8b5cf6",
+                            border: "1px solid rgba(139,92,246,0.2)",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <Eye size={14} /> View
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── KPI Active Employees Modal ────────────────────────────────────── */}
+      {showKpiEmpModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.4)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "20px",
+            animation: "fadeIn 0.2s ease-out",
+          }}
+          onClick={() => setShowKpiEmpModal(false)}
+        >
+          <div
+            style={{
+              background: "var(--bg-card)",
+              border: "1px solid var(--border)",
+              borderRadius: "16px",
+              width: "100%",
+              maxWidth: "600px",
+              maxHeight: "85vh",
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "0 24px 50px rgba(0,0,0,0.3)",
+              overflow: "hidden",
+              animation: "slideUp 0.3s ease-out",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                padding: "20px 24px",
+                borderBottom: "1px solid var(--border)",
+                background: "var(--bg-card)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  marginBottom: "14px",
+                }}
+              >
+                <h2
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: 800,
+                    margin: 0,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  Active Employees
+                </h2>
+                <button
+                  onClick={() => setShowKpiEmpModal(false)}
+                  aria-label="Close modal"
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "8px",
+                    background: "var(--bg-card-hover)",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "var(--text-secondary)",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                <div style={{ position: "relative", flex: 1, minWidth: "140px" }}>
+                  <Search
+                    size={14}
+                    style={{
+                      position: "absolute",
+                      left: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      color: "var(--text-secondary)",
+                      pointerEvents: "none",
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search by employee name…"
+                    value={empModalSearch}
+                    onChange={(e) => {
+                      setEmpModalSearch(e.target.value);
+                      setEmpModalPage(1);
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px 9px 34px",
+                      borderRadius: "9px",
+                      border: "1px solid var(--border)",
+                      background: "var(--bg-card-hover)",
+                      color: "var(--text-primary)",
+                      fontSize: "13px",
+                      outline: "none",
+                      boxSizing: "border-box",
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "#8b5cf6";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "var(--border)";
+                    }}
+                  />
+                </div>
+                <div style={{ position: "relative", flex: 1, minWidth: "140px" }}>
+                  <Building2
+                    size={14}
+                    style={{
+                      position: "absolute",
+                      left: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      color: "var(--text-secondary)",
+                      pointerEvents: "none",
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Filter by school…"
+                    value={empModalSchool}
+                    onChange={(e) => {
+                      setEmpModalSchool(e.target.value);
+                      setEmpModalPage(1);
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px 9px 34px",
+                      borderRadius: "9px",
+                      border: "1px solid var(--border)",
+                      background: "var(--bg-card-hover)",
+                      color: "var(--text-primary)",
+                      fontSize: "13px",
+                      outline: "none",
+                      boxSizing: "border-box",
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "#8b5cf6";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "var(--border)";
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ overflowY: "auto", padding: "12px 24px" }}>
+              {empModalLoading && fullEmpList.length === 0 ? (
+                <div style={{ padding: "40px", textAlign: "center" }}>
+                  <div className="spinner" />
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {fullEmpList.length === 0 ? (
+                    <div style={{ padding: "40px", textAlign: "center", color: "var(--text-secondary)", fontSize: "14px" }}>
+                      No employees match your filters.
+                    </div>
+                  ) : (
+                    fullEmpList.map((emp) => {
+                    const initials = emp.name
+                      .split(" ")
+                      .slice(0, 2)
+                      .map((w) => w[0]?.toUpperCase() ?? "")
+                      .join("");
+
+                    return (
+                      <div
+                        key={emp.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "16px",
+                          background: "var(--bg-card-hover)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "12px",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                          <div
+                            style={{
+                              width: "36px",
+                              height: "36px",
+                              borderRadius: "50%",
+                              background: emp.school.primaryColor + "33",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "13px",
+                              fontWeight: 800,
+                              color: emp.school.primaryColor,
+                              border: `2px solid ${emp.school.primaryColor}55`,
+                              overflow: "hidden"
+                            }}
+                          >
+                            {emp.photoUrl ? (
+                              <img
+                                src={emp.photoUrl}
+                                alt={emp.name}
+                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                              />
+                            ) : (
+                              initials
+                            )}
+                          </div>
+                          <span style={{ fontWeight: 700, fontSize: "15px", color: "var(--text-primary)" }}>
+                            {emp.name}
+                          </span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <div
+                            style={{
+                              width: "8px",
+                              height: "8px",
+                              borderRadius: "50%",
+                              backgroundColor: emp.school.primaryColor,
+                            }}
+                          />
+                          <span style={{ color: "var(--text-secondary)", fontSize: "14px", fontWeight: 600 }}>
+                            {emp.school.name}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                  )}
+                </div>
+              )}
+            </div>
+            {/* Pagination for Employees */}
+            <div
+              style={{
+                padding: "14px 24px",
+                borderTop: "1px solid var(--border)",
+                background: "var(--bg-card)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "var(--text-secondary)",
+                  fontWeight: 600,
+                }}
+              >
+                Page {empModalPage} of {empModalTotalPages}
+              </div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  onClick={() => setEmpModalPage((p) => Math.max(1, p - 1))}
+                  disabled={empModalLoading || empModalPage <= 1}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--border)",
+                    background: "transparent",
+                    color: "var(--text-primary)",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor: empModalLoading || empModalPage <= 1 ? "not-allowed" : "pointer",
+                    opacity: empModalLoading || empModalPage <= 1 ? 0.5 : 1,
+                  }}
+                >
+                  Prev
+                </button>
+                <button
+                  onClick={() => setEmpModalPage((p) => Math.min(empModalTotalPages, p + 1))}
+                  disabled={empModalLoading || empModalPage >= empModalTotalPages}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--border)",
+                    background: "transparent",
+                    color: "var(--text-primary)",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor: empModalLoading || empModalPage >= empModalTotalPages ? "not-allowed" : "pointer",
+                    opacity: empModalLoading || empModalPage >= empModalTotalPages ? 0.5 : 1,
+                  }}
+                >
+                  Next
+                </button>
               </div>
             </div>
           </div>

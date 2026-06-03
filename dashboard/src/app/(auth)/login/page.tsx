@@ -44,6 +44,17 @@ export default function LoginPage() {
   const [pin, setPin] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [resendCountdown, setResendCountdown] = useState(0);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (resendCountdown > 0) {
+      timer = setInterval(() => {
+        setResendCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendCountdown]);
 
   // Global UI State
   const [error, setError] = useState('');
@@ -95,6 +106,7 @@ export default function LoginPage() {
     try {
       const res = await authApi.requestPasswordReset(resetUsername.trim(), email.trim());
       setSuccess(res.data.message || 'If that email is registered, a reset link has been sent.');
+      setResendCountdown(60);
       setTimeout(() => {
         setStep('forgot-reset');
         setSuccess('');
@@ -140,6 +152,8 @@ export default function LoginPage() {
   }
 
   async function handleResendPin() {
+    if (resendCountdown > 0) return;
+    
     if (!resetUsername || !email) {
       setStep('forgot-request');
       setError('Please enter your username and email to request a new PIN.');
@@ -152,6 +166,7 @@ export default function LoginPage() {
     try {
       await authApi.requestPasswordReset(resetUsername.trim(), email.trim());
       setSuccess('A new reset PIN has been sent to your email.');
+      setResendCountdown(60);
     } catch (err: any) {
       const rawMsg = err?.response?.data?.message || err?.message || 'Failed to resend PIN.';
       const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : rawMsg;
@@ -436,10 +451,20 @@ export default function LoginPage() {
               </button>
 
               <p 
-                style={{ marginTop: 16, fontSize: 12, color: 'var(--primary)', cursor: 'pointer', textAlign: 'center', fontWeight: 500 }}
-                onClick={handleResendPin}
+                style={{ 
+                  marginTop: 16, 
+                  fontSize: 12, 
+                  color: resendCountdown > 0 ? 'var(--text-muted)' : 'var(--primary)', 
+                  cursor: resendCountdown > 0 ? 'not-allowed' : 'pointer', 
+                  textAlign: 'center', 
+                  fontWeight: 500,
+                  opacity: resendCountdown > 0 ? 0.7 : 1
+                }}
+                onClick={resendCountdown > 0 ? undefined : handleResendPin}
               >
-                Didn't receive a PIN? Resend
+                {resendCountdown > 0 
+                  ? `Resend PIN in ${resendCountdown}s` 
+                  : "Didn't receive a PIN? Resend"}
               </p>
             </form>
           </>

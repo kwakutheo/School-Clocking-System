@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AttendanceReportService } from './attendance-report.service';
+import { TenantsService } from '../tenants/tenants.service';
+import { tenantLocalStorage } from '../../common/tenant/tenant.context';
 const pdfmake = require('pdfmake');
 const fs = require('fs');
 const path = require('path');
@@ -23,7 +25,10 @@ function resolveLogoPath(): string | null {
 
 @Injectable()
 export class AttendanceExportService {
-  constructor(private readonly reportService: AttendanceReportService) {
+  constructor(
+    private readonly reportService: AttendanceReportService,
+    private readonly tenantsService: TenantsService,
+  ) {
     // Use standard PDF fonts so we don't need TTF files
     const fonts = {
       Helvetica: {
@@ -36,6 +41,25 @@ export class AttendanceExportService {
     pdfmake.setFonts(fonts);
   }
 
+  private async getTenantBrandInfo(): Promise<{ name: string; logoUrl: string | null }> {
+    const tenantId = tenantLocalStorage.getStore();
+    if (!tenantId) return { name: 'TK Clocking System', logoUrl: resolveLogoPath() };
+    
+    try {
+      const tenant = await this.tenantsService.findById(tenantId);
+      let finalLogo = resolveLogoPath();
+      if (tenant.logoUrl && tenant.logoUrl.startsWith('data:image/')) {
+        finalLogo = tenant.logoUrl;
+      }
+      return {
+        name: tenant.name || 'TK Clocking System',
+        logoUrl: finalLogo,
+      };
+    } catch (e) {
+      return { name: 'TK Clocking System', logoUrl: resolveLogoPath() };
+    }
+  }
+
   async exportMonthlyPdf(
     employeeId: string,
     month: number,
@@ -46,14 +70,16 @@ export class AttendanceExportService {
       month,
       year,
     );
-    const docDefinition = this.buildMonthlyDocDefinition(report, month, year);
+    const brand = await this.getTenantBrandInfo();
+    const docDefinition = this.buildMonthlyDocDefinition(report, month, year, brand.name, brand.logoUrl);
     const pdfDoc = pdfmake.createPdf(docDefinition);
     return await pdfDoc.getBuffer();
   }
 
   async exportTermPdf(employeeId: string, termId: string): Promise<Buffer> {
     const report = await this.reportService.getTermReport(employeeId, termId);
-    const docDefinition = this.buildTermDocDefinition(report);
+    const brand = await this.getTenantBrandInfo();
+    const docDefinition = this.buildTermDocDefinition(report, brand.name, brand.logoUrl);
     const pdfDoc = pdfmake.createPdf(docDefinition);
     return await pdfDoc.getBuffer();
   }
@@ -88,10 +114,13 @@ export class AttendanceExportService {
     const title = `Bulk Attendance Summary - ${monthName} ${year}`;
     const subtitle = branchId ? `Branch: ${branchName}` : 'All Branches';
 
+    const brand = await this.getTenantBrandInfo();
     const docDefinition = this.buildBulkSummaryDocDefinition(
       reports,
       title,
       subtitle,
+      brand.name,
+      brand.logoUrl,
     );
     const pdfDoc = pdfmake.createPdf(docDefinition);
     return await pdfDoc.getBuffer();
@@ -111,10 +140,13 @@ export class AttendanceExportService {
     const title = `Bulk Attendance Summary - ${termName || 'Term'}`;
     const subtitle = branchId ? `Branch: ${branchName}` : 'All Branches';
 
+    const brand = await this.getTenantBrandInfo();
     const docDefinition = this.buildBulkSummaryDocDefinition(
       reports,
       title,
       subtitle,
+      brand.name,
+      brand.logoUrl,
     );
     const pdfDoc = pdfmake.createPdf(docDefinition);
     return await pdfDoc.getBuffer();
@@ -124,6 +156,8 @@ export class AttendanceExportService {
     reports: any[],
     title: string,
     subtitle: string,
+    tenantName: string,
+    logoPath: string | null,
   ): any {
     const now = new Date();
     const dd = String(now.getDate()).padStart(2, '0');
@@ -131,7 +165,6 @@ export class AttendanceExportService {
     const yyyy = now.getFullYear();
     const generatedStr = `${dd}/${mm}/${yyyy} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-    const logoPath = resolveLogoPath();
     const footerFn = function (currentPage: number, pageCount: number) {
       const logoColumns: any[] = logoPath
         ? [
@@ -141,7 +174,7 @@ export class AttendanceExportService {
               margin: [0, -2, 5, 0],
             },
             {
-              text: 'TK Clocking System',
+              text: tenantName,
               alignment: 'left',
               margin: [0, 2, 0, 0],
               color: '#6b7280',
@@ -150,7 +183,7 @@ export class AttendanceExportService {
           ]
         : [
             {
-              text: 'TK Clocking System',
+              text: tenantName,
               alignment: 'left',
               margin: [0, 2, 0, 0],
               color: '#6b7280',
@@ -209,16 +242,36 @@ export class AttendanceExportService {
       defaultStyle: { font: 'Helvetica', fontSize: 10 },
       content: [
         {
-          text: title,
-          style: 'coverTitle',
-          alignment: 'center',
-          margin: [0, 10, 0, 5],
-        },
-        {
-          text: subtitle,
-          style: 'coverSub',
-          alignment: 'center',
-          margin: [0, 0, 0, 15],
+          columns: [
+            {
+              width: '*',
+              stack: [
+                {
+                  text: title,
+                  style: 'coverTitle',
+                  alignment: 'left',
+                  margin: [0, 0, 0, 5],
+                },
+                {
+                  text: `School: ${tenantName} | ${subtitle}`,
+                  style: 'coverSub',
+                  alignment: 'left',
+                  margin: [0, 0, 0, 15],
+                },
+              ],
+            },
+            ...(logoPath
+              ? [
+                  {
+                    width: 'auto',
+                    image: logoPath,
+                    fit: [50, 50],
+                    alignment: 'right',
+                    margin: [0, 0, 0, 15],
+                  },
+                ]
+              : []),
+          ],
         },
         {
           canvas: [
@@ -279,6 +332,8 @@ export class AttendanceExportService {
     report: any,
     month: number,
     year: number,
+    tenantName: string,
+    logoPath: string | null,
   ): any {
     const monthNames = [
       'January',
@@ -302,7 +357,6 @@ export class AttendanceExportService {
     const yyyy = now.getFullYear();
     const generatedStr = `${dd}/${mm}/${yyyy} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-    const logoPath = resolveLogoPath();
     const footerFn = function (currentPage: number, pageCount: number) {
       const logoColumns: any[] = logoPath
         ? [
@@ -312,7 +366,7 @@ export class AttendanceExportService {
               margin: [0, -2, 5, 0],
             },
             {
-              text: 'TK Clocking System',
+              text: tenantName,
               alignment: 'left',
               margin: [0, 2, 0, 0],
               color: '#6b7280',
@@ -321,7 +375,7 @@ export class AttendanceExportService {
           ]
         : [
             {
-              text: 'TK Clocking System',
+              text: tenantName,
               alignment: 'left',
               margin: [0, 2, 0, 0],
               color: '#6b7280',
@@ -356,7 +410,18 @@ export class AttendanceExportService {
       footer: footerFn,
       defaultStyle: { font: 'Helvetica', fontSize: 10 },
       content: [
-        { text: 'Monthly Attendance Report', style: 'header' },
+        ...(logoPath
+          ? [
+              {
+                image: logoPath,
+                fit: [60, 60],
+                alignment: 'center',
+                margin: [0, 0, 0, 10],
+              },
+            ]
+          : []),
+        { text: 'Monthly Attendance Report', style: 'header', alignment: 'center' },
+        { text: tenantName, style: 'subheader', alignment: 'center', margin: [0, 0, 0, 15] },
         { text: `Employee: ${report.employee.fullName}`, style: 'subheader' },
         {
           text: `Period: ${monthName} ${year}`,
@@ -376,13 +441,29 @@ export class AttendanceExportService {
     };
   }
 
-  private buildTermDocDefinition(report: any): any {
+  private buildTermDocDefinition(report: any, tenantName: string, logoPath: string | null): any {
     const content: any[] = [
+      ...(logoPath
+        ? [
+            {
+              image: logoPath,
+              fit: [70, 70],
+              alignment: 'center',
+              margin: [0, 40, 0, 10],
+            },
+          ]
+        : []),
+      {
+        text: tenantName,
+        style: 'coverSchoolName',
+        alignment: 'center',
+        margin: [0, logoPath ? 0 : 40, 0, 10],
+      },
       {
         text: 'Academic Term Attendance Report',
         style: 'coverTitle',
         alignment: 'center',
-        margin: [0, 60, 0, 10],
+        margin: [0, 0, 0, 10],
       },
       {
         canvas: [
@@ -446,7 +527,6 @@ export class AttendanceExportService {
     const yyyy = now.getFullYear();
     const generatedStr = `${dd}/${mm}/${yyyy} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-    const logoPath = resolveLogoPath();
     const footerFn = function (currentPage: number, pageCount: number) {
       const logoColumns: any[] = logoPath
         ? [
@@ -456,7 +536,7 @@ export class AttendanceExportService {
               margin: [0, -2, 5, 0],
             },
             {
-              text: 'TK Clocking System',
+              text: tenantName,
               alignment: 'left',
               margin: [0, 2, 0, 0],
               color: '#6b7280',
@@ -465,7 +545,7 @@ export class AttendanceExportService {
           ]
         : [
             {
-              text: 'TK Clocking System',
+              text: tenantName,
               alignment: 'left',
               margin: [0, 2, 0, 0],
               color: '#6b7280',
@@ -501,6 +581,7 @@ export class AttendanceExportService {
       defaultStyle: { font: 'Helvetica', fontSize: 10 },
       content,
       styles: {
+        coverSchoolName: { fontSize: 18, bold: true, color: '#4b5563' },
         coverTitle: { fontSize: 24, bold: true, color: '#111827' },
         coverName: { fontSize: 20, bold: true, color: '#2563eb' },
         coverSub: { fontSize: 14, color: '#4b5563' },

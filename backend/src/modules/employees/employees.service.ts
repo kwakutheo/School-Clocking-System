@@ -416,12 +416,12 @@ export class EmployeesService implements OnModuleInit {
     await queryRunner.startTransaction();
 
     try {
-      const passwordHash = await bcrypt.hash(payload.password, 12);
+      const passwordHash = await bcrypt.hash(payload.password.trim(), 12);
       const user = queryRunner.manager.create(User, {
-        fullName: payload.fullName,
-        username: payload.username,
-        email: payload.email,
-        phone: payload.phone,
+        fullName: payload.fullName?.trim(),
+        username: payload.username?.trim(),
+        email: payload.email?.trim(),
+        phone: payload.phone?.trim(),
         passwordHash,
         role: payload.role ?? UserRole.EMPLOYEE,
         isActive: true,

@@ -38,10 +38,10 @@ export class AuthService {
     password: string,
     context?: string,
   ): Promise<User | null> {
-    const user = await this.users.findByIdentifier(identifier);
+    const user = await this.users.findByIdentifier(identifier?.trim());
     if (!user) return null;
 
-    const matches = await bcrypt.compare(password, user.passwordHash);
+    const matches = await bcrypt.compare(password?.trim(), user.passwordHash);
     if (!matches) return null;
 
     // Enforce tenant boundary only for web dashboard logins.
@@ -191,7 +191,7 @@ export class AuthService {
       if (existing) throw new ConflictException('Phone number already in use.');
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS);
+    const passwordHash = await bcrypt.hash(dto.password.trim(), SALT_ROUNDS);
     const user = await this.users.create({
       fullName: dto.fullName,
       username: dto.username,

@@ -21,23 +21,28 @@ export class UsersService {
   }
 
   async findByIdentifier(identifier: string): Promise<User | null> {
+    if (!identifier) return null;
+    const clean = identifier.trim();
     return this.repo
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.tenant', 'tenant')
-      .where('user.username = :id OR user.email = :id OR user.phone = :id', {
-        id: identifier,
-      })
+      .where(
+        'TRIM(user.username) = :id OR TRIM(user.email) = :id OR TRIM(user.phone) = :id',
+        {
+          id: clean,
+        },
+      )
       .getOne();
   }
 
   async findByUsername(username: string): Promise<User | null> {
     if (!username) return null;
     const clean = username.trim();
-    // Use a case-insensitive, trimmed comparison so stored values with accidental
-    // surrounding whitespace or case differences still match.
+    // Use a trimmed comparison so stored values with accidental
+    // surrounding whitespace still match.
     return this.repo
       .createQueryBuilder('user')
-      .where('LOWER(TRIM(user.username)) = LOWER(TRIM(:username))', { username: clean })
+      .where('TRIM(user.username) = :username', { username: clean })
       .getOne();
   }
 
@@ -50,10 +55,10 @@ export class UsersService {
     role?: UserRole;
   }): Promise<User> {
     const user = this.repo.create({
-      fullName: data.fullName,
-      username: data.username,
-      email: data.email,
-      phone: data.phone,
+      fullName: data.fullName ? data.fullName.trim() : '',
+      username: data.username ? data.username.trim() : undefined,
+      email: data.email ? data.email.trim() : undefined,
+      phone: data.phone ? data.phone.trim() : undefined,
       passwordHash: data.passwordHash,
       role: data.role ?? UserRole.EMPLOYEE,
     });
@@ -90,10 +95,10 @@ export class UsersService {
     // Defensive: if caller passed empty/blank username, report unavailable.
     if (!clean) return { available: false };
 
-    // Case-insensitive + trimmed existence check
+    // Trimmed existence check
     const isTaken = await this.repo
       .createQueryBuilder('user')
-      .where('LOWER(TRIM(user.username)) = LOWER(TRIM(:username))', { username: clean })
+      .where('TRIM(user.username) = :username', { username: clean })
       .getOne();
     if (!isTaken) {
       return { available: true };
@@ -121,7 +126,7 @@ export class UsersService {
           
           const candidateTaken = await this.repo
             .createQueryBuilder('user')
-            .where('LOWER(TRIM(user.username)) = LOWER(TRIM(:candidate))', { candidate })
+            .where('TRIM(user.username) = :candidate', { candidate })
             .getOne();
           if (!candidateTaken && suggestions.length < 3) {
             suggestions.push(candidate);
@@ -136,7 +141,7 @@ export class UsersService {
       const randomCandidate = `${username}${Math.floor(10 + Math.random() * 90)}`;
       const candidateTaken = await this.repo
         .createQueryBuilder('user')
-        .where('LOWER(TRIM(user.username)) = LOWER(TRIM(:candidate))', { candidate: randomCandidate })
+        .where('TRIM(user.username) = :candidate', { candidate: randomCandidate })
         .getOne();
       if (!candidateTaken && !suggestions.includes(randomCandidate)) {
         suggestions.push(randomCandidate);

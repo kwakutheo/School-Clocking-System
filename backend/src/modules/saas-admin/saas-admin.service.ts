@@ -963,10 +963,10 @@ export class SaasAdminService implements OnModuleInit {
       const savedTenant = await queryRunner.manager.save(Tenant, tenant);
 
       // Create Admin User bound to that Tenant
-      const hashedPassword = await bcrypt.hash(data.adminPasswordHash, 12);
+      const hashedPassword = await bcrypt.hash(data.adminPasswordHash.trim(), 12);
       const adminUser = queryRunner.manager.create(User, {
-        fullName: `${data.name} Admin`,
-        username: data.adminUsername,
+        fullName: `${data.name?.trim()} Admin`,
+        username: data.adminUsername?.trim(),
         passwordHash: hashedPassword,
         role: UserRole.SUPER_ADMIN,
         isActive: true,

@@ -1645,16 +1645,21 @@ export class SaasAdminService implements OnModuleInit {
               const cin = inMap.get(dateKey)!;
               const cout = outMap.get(dateKey);
               if (cout) {
-                // If the employee clocked in BEFORE their shift start, do not credit
-                // the pre-shift minutes — start counting from the shift start time.
-                // If they clocked in LATE, count from the actual (late) clock-in time.
+                // effectiveStart: if employee clocked in early, start counting only
+                // from shift start. If they clocked in late, count from actual clock-in.
                 const shiftStart = new Date(cin.ts);
                 shiftStart.setHours(sh, sm, 0, 0);
                 const effectiveStart =
                   cin.ts < shiftStart ? shiftStart : cin.ts;
 
+                // effectiveEnd: if employee clocked out after shift end, stop counting
+                // at shift end (no overtime credit). If they left early, use actual clock-out.
+                const shiftEnd = new Date(cout);
+                shiftEnd.setHours(eh, em, 0, 0);
+                const effectiveEnd = cout > shiftEnd ? shiftEnd : cout;
+
                 const actualMins =
-                  (cout.getTime() - effectiveStart.getTime()) / 60000;
+                  (effectiveEnd.getTime() - effectiveStart.getTime()) / 60000;
                 totalActualMinutes += Math.max(0, actualMins);
               }
             }
@@ -1662,7 +1667,7 @@ export class SaasAdminService implements OnModuleInit {
         }
         const hoursCompletionRate =
           totalExpectedMinutes > 0
-            ? Math.min(110, (totalActualMinutes / totalExpectedMinutes) * 100) // Allow up to 110% for overtime
+            ? Math.min(100, (totalActualMinutes / totalExpectedMinutes) * 100) // Strictly capped at 100% — no overtime
             : daysPresent > 0
               ? 100
               : 0;

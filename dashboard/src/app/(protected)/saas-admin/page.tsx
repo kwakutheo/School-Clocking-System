@@ -1224,7 +1224,23 @@ export default function SaasOverviewPage() {
         {/* Total Schools */}
         <div
           className="card"
-          style={{ padding: "24px", position: "relative", overflow: "hidden" }}
+          onClick={handleOpenAllSchoolsModal}
+          title="Click to view all schools"
+          style={{
+            padding: "24px",
+            position: "relative",
+            overflow: "hidden",
+            cursor: "pointer",
+            transition: "transform 0.18s ease, box-shadow 0.18s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-3px)";
+            e.currentTarget.style.boxShadow = "0 8px 28px rgba(139,92,246,0.18)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "";
+          }}
         >
           <div
             style={{
@@ -1309,7 +1325,23 @@ export default function SaasOverviewPage() {
         {/* Total Employees */}
         <div
           className="card"
-          style={{ padding: "24px", position: "relative", overflow: "hidden" }}
+          onClick={handleOpenEmpModal}
+          title="Click to view all employees"
+          style={{
+            padding: "24px",
+            position: "relative",
+            overflow: "hidden",
+            cursor: "pointer",
+            transition: "transform 0.18s ease, box-shadow 0.18s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-3px)";
+            e.currentTarget.style.boxShadow = "0 8px 28px rgba(59,130,246,0.18)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "";
+          }}
         >
           <div
             style={{
@@ -1382,7 +1414,28 @@ export default function SaasOverviewPage() {
         {/* Global Attendance Rate */}
         <div
           className="card"
-          style={{ padding: "24px", position: "relative", overflow: "hidden" }}
+          onClick={() =>
+            document
+              .getElementById("attendance-trend-section")
+              ?.scrollIntoView({ behavior: "smooth", block: "start" })
+          }
+          title="Click to view attendance trend chart"
+          style={{
+            padding: "24px",
+            position: "relative",
+            overflow: "hidden",
+            cursor: "pointer",
+            transition: "transform 0.18s ease, box-shadow 0.18s ease",
+          }}
+          onMouseEnter={(e) => {
+            const color = rateColor(stats?.overview.presenceRate ?? 0);
+            e.currentTarget.style.transform = "translateY(-3px)";
+            e.currentTarget.style.boxShadow = `0 8px 28px ${color}30`;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "";
+          }}
         >
           <div
             style={{
@@ -1463,14 +1516,29 @@ export default function SaasOverviewPage() {
         {/* Critical Schools */}
         <div
           className="card"
+          onClick={() => {
+            setRankSort("worst");
+            handleOpenAllSchoolsModal();
+          }}
+          title="Click to see schools that need attention"
           style={{
             padding: "24px",
             position: "relative",
             overflow: "hidden",
+            cursor: "pointer",
+            transition: "transform 0.18s ease, box-shadow 0.18s ease",
             border:
               criticalSchools.length > 0
                 ? "1px solid rgba(239,68,68,0.3)"
                 : "1px solid var(--border)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-3px)";
+            e.currentTarget.style.boxShadow = "0 8px 28px rgba(239,68,68,0.18)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "";
           }}
         >
           <div
@@ -1544,11 +1612,13 @@ export default function SaasOverviewPage() {
 
       {/* ── Row 2: Global Rate Ring + Cohort Bar + 6-Week Trend ──────────── */}
       <div
+        id="attendance-trend-section"
         style={{
           display: "flex",
           flexWrap: "wrap",
           gap: "16px",
           marginBottom: "20px",
+          scrollMarginTop: "80px",
         }}
       >
         {/* Left: Global Rate + Cohort Distribution */}

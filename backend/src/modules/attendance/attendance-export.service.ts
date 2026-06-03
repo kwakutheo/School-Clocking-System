@@ -1,6 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { AttendanceReportService } from './attendance-report.service';
 const pdfmake = require('pdfmake');
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * Resolves the logo path for use in PDF footers.
+ * In production/Docker, the dashboard folder may not exist inside the backend
+ * container, so we check existence before including the image in pdfmake.
+ */
+function resolveLogoPath(): string | null {
+  const candidates = [
+    path.join(process.cwd(), '..', 'dashboard', 'public', 'logo.png'),
+    path.join(process.cwd(), 'public', 'logo.png'),
+    path.join(__dirname, '..', '..', '..', '..', 'dashboard', 'public', 'logo.png'),
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return null;
+}
 
 @Injectable()
 export class AttendanceExportService {
@@ -112,32 +131,35 @@ export class AttendanceExportService {
     const yyyy = now.getFullYear();
     const generatedStr = `${dd}/${mm}/${yyyy} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
+    const logoPath = resolveLogoPath();
     const footerFn = function (currentPage: number, pageCount: number) {
+      const logoColumns: any[] = logoPath
+        ? [
+            {
+              image: logoPath,
+              width: 20,
+              margin: [0, -2, 5, 0],
+            },
+            {
+              text: 'TK Clocking System',
+              alignment: 'left',
+              margin: [0, 2, 0, 0],
+              color: '#6b7280',
+              fontSize: 9,
+            },
+          ]
+        : [
+            {
+              text: 'TK Clocking System',
+              alignment: 'left',
+              margin: [0, 2, 0, 0],
+              color: '#6b7280',
+              fontSize: 9,
+            },
+          ];
       return {
         columns: [
-          {
-            width: '*',
-            columns: [
-              {
-                image: require('path').join(
-                  process.cwd(),
-                  '..',
-                  'dashboard',
-                  'public',
-                  'logo.png',
-                ),
-                width: 20,
-                margin: [0, -2, 5, 0],
-              },
-              {
-                text: 'TK Clocking System',
-                alignment: 'left',
-                margin: [0, 2, 0, 0],
-                color: '#6b7280',
-                fontSize: 9,
-              },
-            ],
-          },
+          { width: '*', columns: logoColumns },
           {
             text: `Report generated on ${generatedStr}`,
             alignment: 'center',
@@ -280,32 +302,35 @@ export class AttendanceExportService {
     const yyyy = now.getFullYear();
     const generatedStr = `${dd}/${mm}/${yyyy} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
+    const logoPath = resolveLogoPath();
     const footerFn = function (currentPage: number, pageCount: number) {
+      const logoColumns: any[] = logoPath
+        ? [
+            {
+              image: logoPath,
+              width: 20,
+              margin: [0, -2, 5, 0],
+            },
+            {
+              text: 'TK Clocking System',
+              alignment: 'left',
+              margin: [0, 2, 0, 0],
+              color: '#6b7280',
+              fontSize: 9,
+            },
+          ]
+        : [
+            {
+              text: 'TK Clocking System',
+              alignment: 'left',
+              margin: [0, 2, 0, 0],
+              color: '#6b7280',
+              fontSize: 9,
+            },
+          ];
       return {
         columns: [
-          {
-            width: '*',
-            columns: [
-              {
-                image: require('path').join(
-                  process.cwd(),
-                  '..',
-                  'dashboard',
-                  'public',
-                  'logo.png',
-                ),
-                width: 20,
-                margin: [0, -2, 5, 0],
-              },
-              {
-                text: 'TK Clocking System',
-                alignment: 'left',
-                margin: [0, 2, 0, 0],
-                color: '#6b7280',
-                fontSize: 9,
-              },
-            ],
-          },
+          { width: '*', columns: logoColumns },
           {
             text: `Report generated on ${generatedStr}`,
             alignment: 'center',
@@ -421,32 +446,35 @@ export class AttendanceExportService {
     const yyyy = now.getFullYear();
     const generatedStr = `${dd}/${mm}/${yyyy} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
+    const logoPath = resolveLogoPath();
     const footerFn = function (currentPage: number, pageCount: number) {
+      const logoColumns: any[] = logoPath
+        ? [
+            {
+              image: logoPath,
+              width: 20,
+              margin: [0, -2, 5, 0],
+            },
+            {
+              text: 'TK Clocking System',
+              alignment: 'left',
+              margin: [0, 2, 0, 0],
+              color: '#6b7280',
+              fontSize: 9,
+            },
+          ]
+        : [
+            {
+              text: 'TK Clocking System',
+              alignment: 'left',
+              margin: [0, 2, 0, 0],
+              color: '#6b7280',
+              fontSize: 9,
+            },
+          ];
       return {
         columns: [
-          {
-            width: '*',
-            columns: [
-              {
-                image: require('path').join(
-                  process.cwd(),
-                  '..',
-                  'dashboard',
-                  'public',
-                  'logo.png',
-                ),
-                width: 20,
-                margin: [0, -2, 5, 0],
-              },
-              {
-                text: 'TK Clocking System',
-                alignment: 'left',
-                margin: [0, 2, 0, 0],
-                color: '#6b7280',
-                fontSize: 9,
-              },
-            ],
-          },
+          { width: '*', columns: logoColumns },
           {
             text: `Report generated on ${generatedStr}`,
             alignment: 'center',

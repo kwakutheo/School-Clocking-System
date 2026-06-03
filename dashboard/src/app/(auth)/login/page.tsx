@@ -166,7 +166,7 @@ export default function LoginPage() {
     try {
       await authApi.requestPasswordReset(resetUsername.trim(), email.trim());
       setSuccess('A new reset PIN has been sent to your email.');
-      setResendCountdown(60);
+      setResendCountdown(120);
     } catch (err: any) {
       const rawMsg = err?.response?.data?.message || err?.message || 'Failed to resend PIN.';
       const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : rawMsg;
@@ -339,13 +339,6 @@ export default function LoginPage() {
               >
                 Back to Login
               </button>
-              
-              <p 
-                style={{ marginTop: 16, fontSize: 12, color: 'var(--primary)', cursor: 'pointer', textAlign: 'center', fontWeight: 500 }}
-                onClick={() => { setStep('forgot-reset'); setError(''); setSuccess(''); }}
-              >
-                Already have a PIN?
-              </p>
             </form>
           </>
         )}

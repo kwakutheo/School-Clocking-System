@@ -14,6 +14,7 @@ import { HolidaysModule } from '../holidays/holidays.module';
 import { AcademicCalendarModule } from '../academic-calendar/academic-calendar.module';
 import { AuditModule } from '../audit/audit.module';
 import { LeavesModule } from '../leaves/leaves.module';
+import { SaasAdminModule } from '../saas-admin/saas-admin.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { LeavesModule } from '../leaves/leaves.module';
     AcademicCalendarModule,
     AuditModule,
     LeavesModule,
+    SaasAdminModule,
   ],
   controllers: [AttendanceController],
   providers: [

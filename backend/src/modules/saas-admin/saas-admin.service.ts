@@ -52,6 +52,16 @@ export class SaasAdminService implements OnModuleInit {
   private employeeRankingsInFlight = new Map<string, Promise<any[]>>();
   private readonly CACHE_TTL = 1000 * 60 * 5; // 5 minutes
 
+  /**
+   * Clears the employee rankings in-memory cache.
+   * Called by AttendanceService after every successful clocking so the rankings
+   * widget reflects the new data on the next poll instead of waiting up to 5 min.
+   */
+  clearEmployeeRankingsCache(): void {
+    this.employeeRankingsCache.clear();
+    this.employeeRankingsInFlight.clear();
+  }
+
   private toPublicAdmin(user: User) {
     const { passwordHash: _, resetPin: __, fcmToken: ___, ...safe } = user;
     return {

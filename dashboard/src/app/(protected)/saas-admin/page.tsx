@@ -890,27 +890,44 @@ export default function SaasOverviewPage() {
     fetchAllSchools();
   };
 
-  // Fetch employee rankings only when the staff tab is opened.
+  // ── Employee rankings fetch (initial + on param change) ───────────────────
+  const fetchEmpRankings = useCallback(
+    (showSpinner = true) => {
+      if (rankTab !== "employees") return;
+      if (showSpinner) setEmpLoading(true);
+      saasAdminApi
+        .getEmployeeRankings({ timeframe, sort: empSort, page: 1, limit: 5 })
+        .then((res) => {
+          const pageData = res.data as EmployeeRankingPage;
+          const list: EmployeeRanking[] = Array.isArray(pageData?.data)
+            ? pageData.data
+            : Array.isArray(res.data)
+              ? res.data
+              : [];
+          setEmpRankings(list);
+          loadedEmpKey.current = `${timeframe}-${empSort}`;
+        })
+        .catch((err) => console.error("Employee rankings error:", err))
+        .finally(() => { if (showSpinner) setEmpLoading(false); });
+    },
+    [timeframe, empSort, rankTab],
+  );
+
+  // Trigger a full (spinner) fetch whenever tab, timeframe, or sort changes.
   useEffect(() => {
-    if (rankTab !== "employees") return;
     const key = `${timeframe}-${empSort}`;
+    if (rankTab !== "employees") return;
+    // If we already have fresh data for this exact combination, skip the spinner fetch.
     if (loadedEmpKey.current === key && empRankings.length > 0) return;
-    setEmpLoading(true);
-    saasAdminApi
-      .getEmployeeRankings({ timeframe, sort: empSort, page: 1, limit: 5 })
-      .then((res) => {
-        const pageData = res.data as EmployeeRankingPage;
-        const list: EmployeeRanking[] = Array.isArray(pageData?.data)
-          ? pageData.data
-          : Array.isArray(res.data)
-            ? res.data
-            : [];
-        setEmpRankings(list);
-        loadedEmpKey.current = key;
-      })
-      .catch((err) => console.error("Employee rankings error:", err))
-      .finally(() => setEmpLoading(false));
-  }, [timeframe, empSort, rankTab, empRankings.length]);
+    fetchEmpRankings(true);
+  }, [timeframe, empSort, rankTab, fetchEmpRankings, empRankings.length]);
+
+  // Silent background poll: every 30 s when on "today" + "employees" tab.
+  useEffect(() => {
+    if (timeframe !== "today" || rankTab !== "employees") return;
+    const pollId = setInterval(() => fetchEmpRankings(false), 30_000);
+    return () => clearInterval(pollId);
+  }, [timeframe, rankTab, fetchEmpRankings]);
 
   const handleOpenEmpModal = () => {
     setShowEmpModal(true);

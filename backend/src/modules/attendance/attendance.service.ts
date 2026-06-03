@@ -20,6 +20,7 @@ import { AuditService } from '../audit/audit.service';
 import { LeavesService } from '../leaves/leaves.service';
 import { User } from '../users/user.entity';
 import { getCurrentTenantId } from '../../common/tenant/tenant-filter.helper';
+import { SaasAdminService } from '../saas-admin/saas-admin.service';
 
 @Injectable()
 export class AttendanceService {
@@ -32,6 +33,7 @@ export class AttendanceService {
     private readonly academicCalendar: AcademicCalendarService,
     private readonly auditService: AuditService,
     private readonly leavesService: LeavesService,
+    private readonly saasAdminService: SaasAdminService,
   ) {}
 
   // ── Record single event ───────────────────────────────────────────────────
@@ -350,7 +352,10 @@ export class AttendanceService {
       isLate,
     });
 
-    return this.repo.save(log);
+    const saved = await this.repo.save(log);
+    // Bust the rankings cache so the dashboard reflects the new clocking immediately.
+    this.saasAdminService.clearEmployeeRankingsCache();
+    return saved;
   }
 
   // ── Batch offline sync ────────────────────────────────────────────────────
@@ -571,6 +576,8 @@ export class AttendanceService {
     });
 
     const savedLog = await this.repo.save(log);
+    // Bust the rankings cache so the dashboard reflects the admin override immediately.
+    this.saasAdminService.clearEmployeeRankingsCache();
 
     const actingUser = { id: actingUserId, role: actingUserRole } as User;
     await this.auditService.log({
@@ -865,7 +872,10 @@ export class AttendanceService {
       isLate,
     });
 
-    return this.repo.save(log);
+    const saved = await this.repo.save(log);
+    // Bust the rankings cache so the dashboard reflects QR clockings immediately.
+    this.saasAdminService.clearEmployeeRankingsCache();
+    return saved;
   }
 
   // ── History ───────────────────────────────────────────────────────────────

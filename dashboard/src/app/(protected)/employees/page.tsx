@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { employeesApi, branchesApi, departmentsApi, shiftsApi, usersApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import { can } from '@/lib/permissions';
+import { Eye, EyeOff } from 'lucide-react';
 
 const LIMIT = 50;
 
@@ -48,6 +49,9 @@ export default function EmployeesPage() {
     departmentId: '', branchId: '', shiftId: '', position: '',
     phone: '', hireDate: '', role: 'employee', status: 'active',
   });
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
   const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
 
@@ -136,6 +140,7 @@ export default function EmployeesPage() {
       hireDate: format(new Date(), 'yyyy-MM-dd'), role: 'employee', status: 'active' });
     setEditingId(null); setError('');
     setUsernameStatus('idle'); setUsernameSuggestions([]);
+    setConfirmPassword(''); setShowPassword(false); setShowConfirmPassword(false);
   }, []);
 
   const openCreate = useCallback(() => { resetForm(); setShowModal(true); }, [resetForm]);
@@ -171,6 +176,11 @@ export default function EmployeesPage() {
       } else {
         if (usernameStatus === 'taken') {
           setError('Please choose an available username.');
+          setIsSubmitting(false);
+          return;
+        }
+        if (form.password !== confirmPassword) {
+          setError('Passwords do not match.');
           setIsSubmitting(false);
           return;
         }
@@ -482,61 +492,122 @@ export default function EmployeesPage() {
                   />
                 </div>
                 {!editingId && (
-                  <>
-                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                      <label htmlFor="username">Username <span style={{ color: 'var(--danger)' }}>*</span></label>
-                      <input
-                        id="username"
-                        className="form-input"
-                        value={form.username}
-                        onChange={(e) => setForm({ ...form, username: e.target.value })}
-                        required
-                        style={{ 
-                          borderColor: usernameStatus === 'taken' ? 'var(--danger)' : usernameStatus === 'available' ? 'var(--success)' : undefined
-                        }}
-                      />
-                      {usernameStatus === 'checking' && <small style={{ color: 'var(--text-secondary)' }}>Checking availability...</small>}
-                      {usernameStatus === 'available' && <small style={{ color: 'var(--success)' }}>✓ Username is available</small>}
-                      {usernameStatus === 'taken' && (
-                        <div style={{ marginTop: 4 }}>
-                          <small style={{ color: 'var(--danger)' }}>✗ Username already taken</small>
-                          {usernameSuggestions.length > 0 && (
-                            <div style={{ marginTop: 8 }}>
-                              <small style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Suggestions:</small>
-                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                {usernameSuggestions.map(sug => (
-                                  <button 
-                                    key={sug} 
-                                    type="button" 
-                                    onClick={() => setForm({ ...form, username: sug })}
-                                    className="badge badge-blue" 
-                                    style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', fontSize: 13 }}
-                                  >
-                                    {sug}
-                                  </button>
-                                ))}
-                              </div>
+                  <div className="form-group">
+                    <label htmlFor="username">Username <span style={{ color: 'var(--danger)' }}>*</span></label>
+                    <input
+                      id="username"
+                      className="form-input"
+                      value={form.username}
+                      onChange={(e) => setForm({ ...form, username: e.target.value })}
+                      required
+                      style={{ 
+                        borderColor: usernameStatus === 'taken' ? 'var(--danger)' : usernameStatus === 'available' ? 'var(--success)' : undefined
+                      }}
+                    />
+                    {usernameStatus === 'checking' && <small style={{ color: 'var(--text-secondary)' }}>Checking availability...</small>}
+                    {usernameStatus === 'available' && <small style={{ color: 'var(--success)' }}>✓ Username is available</small>}
+                    {usernameStatus === 'taken' && (
+                      <div style={{ marginTop: 4 }}>
+                        <small style={{ color: 'var(--danger)' }}>✗ Username already taken</small>
+                        {usernameSuggestions.length > 0 && (
+                          <div style={{ marginTop: 8 }}>
+                            <small style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Suggestions:</small>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              {usernameSuggestions.map(sug => (
+                                <button 
+                                  key={sug} 
+                                  type="button" 
+                                  onClick={() => setForm({ ...form, username: sug })}
+                                  className="badge badge-blue" 
+                                  style={{ border: 'none', cursor: 'pointer', padding: '4px 10px', fontSize: 13 }}
+                                >
+                                  {sug}
+                                </button>
+                              ))}
                             </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="form-group" style={{ gridColumn: editingId ? '1 / -1' : undefined }}>
+                  <label htmlFor="role">Role</label>
+                  <select
+                    id="role"
+                    className="form-input"
+                    value={form.role}
+                    onChange={(e) => setForm({ ...form, role: e.target.value })}
+                  >
+                    <option value="employee">Employee</option>
+                    <option value="supervisor">Supervisor</option>
+                    <option value="hr_admin">HR Admin</option>
+                    <option value="super_admin">Super Admin</option>
+                  </select>
+                </div>
+
+                {!editingId && (
+                  <>
+                    <div className="form-group">
                       <label htmlFor="password">Password <span style={{ color: 'var(--danger)' }}>*</span></label>
-                      <input
-                        id="password"
-                        className="form-input"
-                        type="password"
-                        value={form.password}
-                        onChange={(e) => setForm({ ...form, password: e.target.value })}
-                        required
-                        minLength={6}
-                      />
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          id="password"
+                          className="form-input"
+                          type={showPassword ? "text" : "password"}
+                          value={form.password}
+                          onChange={(e) => setForm({ ...form, password: e.target.value })}
+                          required
+                          minLength={6}
+                          style={{ paddingRight: '44px' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          style={{
+                            position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                            color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer'
+                          }}
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="confirmPassword">Confirm Password <span style={{ color: 'var(--danger)' }}>*</span></label>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          id="confirmPassword"
+                          className="form-input"
+                          type={showConfirmPassword ? "text" : "password"}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                          minLength={6}
+                          style={{ paddingRight: '44px' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          style={{
+                            position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                            color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer'
+                          }}
+                        >
+                          {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
                     </div>
                   </>
                 )}
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                  <label htmlFor="email">Email Address</label>
+                  <label htmlFor="email">
+                    Email Address
+                    {['super_admin', 'hr_admin', 'supervisor'].includes(form.role) && (
+                      <span style={{ color: 'var(--danger)' }}> *</span>
+                    )}
+                  </label>
                   <input
                     id="email"
                     className="form-input"
@@ -544,6 +615,7 @@ export default function EmployeesPage() {
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     placeholder="john.doe@example.com"
+                    required={['super_admin', 'hr_admin', 'supervisor'].includes(form.role)}
                   />
                 </div>
                 <div className="form-group">
@@ -624,20 +696,7 @@ export default function EmployeesPage() {
                   />
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="role">Role</label>
-                  <select
-                    id="role"
-                    className="form-input"
-                    value={form.role}
-                    onChange={(e) => setForm({ ...form, role: e.target.value })}
-                  >
-                    <option value="employee">Employee</option>
-                    <option value="supervisor">Supervisor</option>
-                    <option value="hr_admin">HR Admin</option>
-                    <option value="super_admin">Super Admin</option>
-                  </select>
-                </div>
+
                 {editingId && can(userRole, 'employees.toggle_status') && (
                   <div className="form-group">
                     <label htmlFor="status">Status</label>

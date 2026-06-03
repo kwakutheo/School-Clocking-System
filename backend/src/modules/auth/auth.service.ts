@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -219,20 +220,29 @@ export class AuthService {
   async requestPasswordReset(dto: RequestPasswordResetDto) {
     const user = await this.users.findByUsername(dto.username);
 
-    // We only allow this for dashboard users and the email must match exactly
-    // the email associated with the user account.
+    // Username not found
+    if (!user) {
+      throw new BadRequestException(
+        'No account found with that username. Please check and try again.',
+      );
+    }
+
+    // Email does not match
+    if (!user.email || user.email.toLowerCase() !== dto.email.toLowerCase()) {
+      throw new BadRequestException(
+        'The email address does not match the one associated with this account.',
+      );
+    }
+
+    // Role not allowed (employees cannot use dashboard password reset)
     if (
-      !user ||
-      !user.email ||
-      user.email.toLowerCase() !== dto.email.toLowerCase() ||
       ![UserRole.SUPER_ADMIN, UserRole.HR_ADMIN, UserRole.SUPERVISOR].includes(
         user.role,
       )
     ) {
-      // Return a successful response anyway to prevent enumeration attacks.
-      return {
-        message: 'If the credentials are valid, a reset link has been sent.',
-      };
+      throw new BadRequestException(
+        'Password reset is only available for admin and supervisor accounts.',
+      );
     }
 
     // Generate 6-digit PIN

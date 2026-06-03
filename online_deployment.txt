@@ -21,3 +21,6 @@ optimeRobot
 upstash.com (for queue) 
 school-clocking-redis
 
+email service
+https://resend.com
+

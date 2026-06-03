@@ -139,6 +139,28 @@ export default function LoginPage() {
     }
   }
 
+  async function handleResendPin() {
+    if (!resetUsername || !email) {
+      setStep('forgot-request');
+      setError('Please enter your username and email to request a new PIN.');
+      setSuccess('');
+      return;
+    }
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    try {
+      await authApi.requestPasswordReset(resetUsername.trim(), email.trim());
+      setSuccess('A new reset PIN has been sent to your email.');
+    } catch (err: any) {
+      const rawMsg = err?.response?.data?.message || err?.message || 'Failed to resend PIN.';
+      const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : rawMsg;
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="login-page">
       <button 
@@ -412,6 +434,13 @@ export default function LoginPage() {
               >
                 Back to Login
               </button>
+
+              <p 
+                style={{ marginTop: 16, fontSize: 12, color: 'var(--primary)', cursor: 'pointer', textAlign: 'center', fontWeight: 500 }}
+                onClick={handleResendPin}
+              >
+                Didn't receive a PIN? Resend
+              </p>
             </form>
           </>
         )}

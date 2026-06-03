@@ -37,6 +37,7 @@ export default function EmployeesPage() {
 
   // ── Modal state ────────────────────────────────────────────────────────────
   const [showModal, setShowModal] = useState(false);
+  const [showSetupWarning, setShowSetupWarning] = useState<{ missingBranch: boolean; missingShift: boolean } | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -143,7 +144,16 @@ export default function EmployeesPage() {
     setConfirmPassword(''); setShowPassword(false); setShowConfirmPassword(false);
   }, []);
 
-  const openCreate = useCallback(() => { resetForm(); setShowModal(true); }, [resetForm]);
+  const openCreate = useCallback(() => {
+    const missingBranch = branches.length === 0;
+    const missingShift = shifts.length === 0;
+    if (missingBranch || missingShift) {
+      setShowSetupWarning({ missingBranch, missingShift });
+      return;
+    }
+    resetForm();
+    setShowModal(true);
+  }, [resetForm, branches, shifts]);
 
   const openEdit = useCallback((emp: any) => {
     const nameParts = (emp.user?.fullName ?? '').split(' ');
@@ -767,6 +777,70 @@ export default function EmployeesPage() {
           </div>
         );
       })()}
+
+      {/* Setup Required Warning Modal */}
+      {showSetupWarning && (
+        <div className="modal-overlay" onClick={() => setShowSetupWarning(null)}>
+          <div className="modal-content" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 22 }}>⚠️</span> Setup Required
+              </h3>
+              <button className="modal-close" onClick={() => setShowSetupWarning(null)} aria-label="Close">✕</button>
+            </div>
+            <div style={{ padding: '8px 4px 20px' }}>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.6 }}>
+                Before registering an employee, your school must have at least one
+                {showSetupWarning.missingBranch && showSetupWarning.missingShift
+                  ? ' branch and one shift'
+                  : showSetupWarning.missingBranch
+                  ? ' branch'
+                  : ' shift'}{' '}
+                configured in the system.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {showSetupWarning.missingBranch && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    padding: '14px 16px', borderRadius: 10,
+                    background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+                  }}>
+                    <span style={{ fontSize: 24 }}>🏢</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>No Branches Found</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Create at least one branch/location for your school.</div>
+                    </div>
+                    <a href="/branches" className="btn btn-sm btn-primary" style={{ whiteSpace: 'nowrap', textDecoration: 'none' }}
+                      onClick={() => setShowSetupWarning(null)}>
+                      Go to Branches
+                    </a>
+                  </div>
+                )}
+                {showSetupWarning.missingShift && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    padding: '14px 16px', borderRadius: 10,
+                    background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)',
+                  }}>
+                    <span style={{ fontSize: 24 }}>🕐</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>No Shifts Found</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Create at least one work shift for your school.</div>
+                    </div>
+                    <a href="/shifts" className="btn btn-sm btn-primary" style={{ whiteSpace: 'nowrap', textDecoration: 'none' }}
+                      onClick={() => setShowSetupWarning(null)}>
+                      Go to Shifts
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn" onClick={() => setShowSetupWarning(null)}>Dismiss</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Reset Password Modal */}
       {resetPasswordConfirm && (

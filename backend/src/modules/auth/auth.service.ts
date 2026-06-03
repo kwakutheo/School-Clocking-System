@@ -343,6 +343,7 @@ export class AuthService {
 
     return {
       message: 'If the credentials are valid, a reset link has been sent.',
+      minPasswordLength: user.tenantId === null ? 8 : 6,
     };
   }
 
@@ -398,6 +399,17 @@ export class AuthService {
               resetPinAttempts: user.resetPinAttempts + 1,
             });
             reject(new UnauthorizedException(genericErrorMessage));
+            return;
+          }
+
+          // Enforce role-based minimum password length
+          const minLength = user.tenantId === null ? 8 : 6;
+          if (!dto.newPassword || dto.newPassword.length < minLength) {
+            reject(
+              new BadRequestException(
+                `Password must be at least ${minLength} characters.`,
+              ),
+            );
             return;
           }
 

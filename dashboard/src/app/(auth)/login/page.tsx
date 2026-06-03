@@ -44,6 +44,7 @@ export default function LoginPage() {
   const [pin, setPin] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [minPasswordLength, setMinPasswordLength] = useState(6);
   const [resendCountdown, setResendCountdown] = useState(0);
 
   useEffect(() => {
@@ -106,6 +107,7 @@ export default function LoginPage() {
     try {
       const res = await authApi.requestPasswordReset(resetUsername.trim(), email.trim());
       setSuccess(res.data.message || 'If that email is registered, a reset link has been sent.');
+      setMinPasswordLength(res.data.minPasswordLength ?? 6);
       setResendCountdown(120);
       setTimeout(() => {
         setStep('forgot-reset');
@@ -128,6 +130,11 @@ export default function LoginPage() {
     
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match. Please try again.');
+      return;
+    }
+
+    if (newPassword.length < minPasswordLength) {
+      setError(`Password must be at least ${minPasswordLength} characters.`);
       return;
     }
 
@@ -378,7 +385,12 @@ export default function LoginPage() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">New Password</label>
+                <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  New Password
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>
+                    Min. {minPasswordLength} characters
+                  </span>
+                </label>
                 <div style={{ position: 'relative' }}>
                   <input
                     className="form-input"
@@ -387,7 +399,7 @@ export default function LoginPage() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={minPasswordLength}
                     style={{ paddingRight: '44px' }}
                   />
                   <button
@@ -419,7 +431,7 @@ export default function LoginPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={minPasswordLength}
                     style={{ paddingRight: '44px' }}
                   />
                 </div>

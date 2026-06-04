@@ -308,10 +308,10 @@ export const settingsApi = {
 
 // ── SaaS Admin ─────────────────────────────────────────────────────────────
 export const saasAdminApi = {
-  getStats: (timeframe?: string) =>
-    api.get("/saas-admin/stats", { params: { timeframe } }),
-  listTenants: (timeframe?: string, params?: Record<string, any>) =>
-    api.get("/saas-admin/tenants", { params: { timeframe, ...params } }),
+  getStats: (timeframe?: string, academicYear?: string, termName?: string) =>
+    api.get("/saas-admin/stats", { params: { timeframe, academicYear, termName } }),
+  listTenants: (timeframe?: string, academicYear?: string, termName?: string, params?: Record<string, any>) =>
+    api.get("/saas-admin/tenants", { params: { timeframe, academicYear, termName, ...params } }),
   onboardTenant: (data: {
     name: string;
     slug: string;
@@ -369,6 +369,8 @@ export const saasAdminApi = {
     limit?: number;
     search?: string;
     school?: string;
+    academicYear?: string;
+    termName?: string;
   }) => api.get("/saas-admin/rankings/employees", { params }),
 
   // Central Admin Accounts

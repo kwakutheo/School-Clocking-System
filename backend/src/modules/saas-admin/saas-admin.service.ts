@@ -415,6 +415,8 @@ export class SaasAdminService implements OnModuleInit {
   private async getTenantRanges(
     tenants: Tenant[],
     timeframe: string,
+    academicYear?: string,
+    termName?: string,
   ): Promise<Map<string, { start: Date; end: Date; weekdays: number }>> {
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
@@ -447,51 +449,80 @@ export class SaasAdminService implements OnModuleInit {
         });
       }
     } else {
-      const activeTerms = await this.connection
-        .getRepository(AcademicTerm)
-        .find({
-          where: { isActive: true },
-        });
+      let activeTerms: AcademicTerm[] = [];
+      const termRepo = this.connection.getRepository(AcademicTerm);
+      
+      if (academicYear) {
+        const whereClause: any = { academicYear };
+        if (termName && termName !== 'all') {
+          whereClause.name = termName;
+        }
+        activeTerms = await termRepo.find({ where: whereClause });
+      } else {
+        activeTerms = await termRepo.find();
+      }
+
+      const tenantTermsMap = new Map<string, AcademicTerm[]>();
+      for (const term of activeTerms) {
+        if (term.tenantId) {
+          const list = tenantTermsMap.get(term.tenantId) || [];
+          list.push(term);
+          tenantTermsMap.set(term.tenantId, list);
+        }
+      }
 
       const now = new Date();
-      activeTerms.sort((a, b) => {
-        const aStart = new Date(a.startDate);
-        const bStart = new Date(b.startDate);
-        const aEnd = new Date(a.endDate);
-        const bEnd = new Date(b.endDate);
-        aEnd.setHours(23, 59, 59, 999);
-        bEnd.setHours(23, 59, 59, 999);
-
-        // Currently-active terms go FIRST (return -1 keeps 'a' before 'b')
-        const aCurrent = aStart <= now && aEnd >= now;
-        const bCurrent = bStart <= now && bEnd >= now;
-        if (aCurrent && !bCurrent) return -1;
-        if (!aCurrent && bCurrent) return 1;
-
-        // Among past terms, most-recently-started goes first
-        const aPast = aStart <= now;
-        const bPast = bStart <= now;
-        if (aPast && !bPast) return -1;
-        if (!aPast && bPast) return 1;
-
-        if (aPast && bPast) return bStart.getTime() - aStart.getTime(); // most recent first
-        return aStart.getTime() - bStart.getTime(); // future: earliest start first
-      });
-
-      const activeTermsMap = new Map(activeTerms.map((t) => [t.tenantId, t]));
-
       for (const tenant of tenants) {
-        const term = activeTermsMap.get(tenant.id);
-        if (term) {
-          const tStart = new Date(term.startDate);
+        let tenantTerms = tenantTermsMap.get(tenant.id) || [];
+        
+        let tStart: Date;
+        let tEnd: Date;
+        
+        if (tenantTerms.length > 0) {
+          if (!academicYear) {
+            tenantTerms.sort((a, b) => {
+              const aStart = new Date(a.startDate);
+              const bStart = new Date(b.startDate);
+              const aEnd = new Date(a.endDate);
+              const bEnd = new Date(b.endDate);
+              aEnd.setHours(23, 59, 59, 999);
+              bEnd.setHours(23, 59, 59, 999);
+
+              const aCurrent = aStart <= now && aEnd >= now;
+              const bCurrent = bStart <= now && bEnd >= now;
+              if (aCurrent && !bCurrent) return -1;
+              if (!aCurrent && bCurrent) return 1;
+
+              const aPast = aStart <= now;
+              const bPast = bStart <= now;
+              if (aPast && !bPast) return -1;
+              if (!aPast && bPast) return 1;
+
+              if (aPast && bPast) return bStart.getTime() - aStart.getTime();
+              return aStart.getTime() - bStart.getTime();
+            });
+            tenantTerms = [tenantTerms[0]];
+          }
+          
+          let minStart = new Date(tenantTerms[0].startDate);
+          let maxEnd = new Date(tenantTerms[0].endDate);
+          
+          for (const term of tenantTerms) {
+            const s = new Date(term.startDate);
+            const e = new Date(term.endDate);
+            if (s < minStart) minStart = s;
+            if (e > maxEnd) maxEnd = e;
+          }
+          
+          tStart = minStart;
           tStart.setHours(0, 0, 0, 0);
-
-          let tEnd = new Date(term.endDate);
+          tEnd = maxEnd;
           tEnd.setHours(23, 59, 59, 999);
-
+          
           if (tEnd > endOfToday) {
             tEnd = new Date(endOfToday);
           }
+          
           if (tStart > endOfToday) {
             tenantRangesMap.set(tenant.id, {
               start: endOfToday,
@@ -528,6 +559,8 @@ export class SaasAdminService implements OnModuleInit {
     offset?: number,
     sort?: string,
     cohort?: string,
+    academicYear?: string,
+    termName?: string,
   ): Promise<{ results: any[]; total: number }> {
     let tenants: Tenant[];
     if (search && search.trim() !== '') {
@@ -580,7 +613,7 @@ export class SaasAdminService implements OnModuleInit {
       .getRawMany();
 
     // Get tenant timeframe ranges
-    const tenantRangesMap = await this.getTenantRanges(tenants, timeframe);
+    const tenantRangesMap = await this.getTenantRanges(tenants, timeframe, academicYear, termName);
 
     // Fetch check-ins count based on selected timeframe
     const endOfToday = new Date();
@@ -1026,7 +1059,21 @@ export class SaasAdminService implements OnModuleInit {
   }
 
   /** Get platform-wide business and usage stats for the system owner. */
-  async getSystemStats(timeframe: string = 'today'): Promise<any> {
+  async getSystemStats(
+    timeframe: string = 'today',
+    academicYear?: string,
+    termName?: string,
+  ): Promise<any> {
+    const { results: schools } = await this.findAllTenants(
+      timeframe,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      academicYear,
+      termName,
+    );
     const totalTenants = await this.tenantRepo.count();
     const activeTenants = await this.tenantRepo.count({
       where: { isActive: true },
@@ -1037,9 +1084,6 @@ export class SaasAdminService implements OnModuleInit {
       where: { status: Not(EmployeeStatus.INACTIVE) },
     });
 
-    // Call findAllTenants to get precise tenant-specific aggregates
-    const { results: schools } = await this.findAllTenants(timeframe);
-
     // Sum active checked-in staff count over this timeframe (use presentInTimeframe when available)
     const uniquePresentInTimeframe = schools.reduce(
       (acc, s) =>
@@ -1049,7 +1093,7 @@ export class SaasAdminService implements OnModuleInit {
 
     // Sum active expected check-ins count over this timeframe. Prefer expectedEmployeeDays when present
     const tenants = await this.tenantRepo.find();
-    const tenantRangesMap = await this.getTenantRanges(tenants, timeframe);
+    const tenantRangesMap = await this.getTenantRanges(tenants, timeframe, academicYear, termName);
 
     let totalExpected = 0;
     for (const s of schools) {
@@ -1412,6 +1456,8 @@ export class SaasAdminService implements OnModuleInit {
     limit: number = 50,
     search?: string,
     school?: string,
+    academicYear?: string,
+    termName?: string,
   ): Promise<{
     data: any[];
     total: number;
@@ -1419,7 +1465,7 @@ export class SaasAdminService implements OnModuleInit {
     limit: number;
     totalPages: number;
   }> {
-    const allResults = await this.getEmployeeRankingRows(timeframe);
+    const allResults = await this.getEmployeeRankingRows(timeframe, academicYear, termName);
 
     const searchTerm = search?.trim().toLowerCase();
     const schoolTerm = school?.trim().toLowerCase();
@@ -1461,8 +1507,12 @@ export class SaasAdminService implements OnModuleInit {
     };
   }
 
-  private async getEmployeeRankingRows(timeframe: string): Promise<any[]> {
-    const cacheKey = timeframe;
+  private async getEmployeeRankingRows(
+    timeframe: string,
+    academicYear?: string,
+    termName?: string,
+  ): Promise<any[]> {
+    const cacheKey = `${timeframe}_${academicYear || 'any'}_${termName || 'any'}`;
     const cached = this.employeeRankingsCache.get(cacheKey);
 
     if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
@@ -1477,14 +1527,15 @@ export class SaasAdminService implements OnModuleInit {
       const endOfToday = new Date(now);
       endOfToday.setHours(23, 59, 59, 999);
 
+      // Resolve the global query start date for non-term timeframes.
+      // For 'term', we cannot know the range until we load tenants + their
+      // academic terms, so we compute queryStart after that lookup below.
       const startDate = new Date();
       startDate.setHours(0, 0, 0, 0);
       if (timeframe === '7d') {
         startDate.setDate(startDate.getDate() - 6);
       } else if (timeframe === '30d') {
         startDate.setDate(startDate.getDate() - 29);
-      } else if (timeframe === 'term') {
-        startDate.setDate(startDate.getDate() - 89);
       } // 'today' keeps startDate as start-of-today
 
       const employees = await this.employeeRepo
@@ -1519,8 +1570,35 @@ export class SaasAdminService implements OnModuleInit {
         .getMany();
       const tenantMap = new Map(tenants.map((t) => [t.id, t]));
 
+      // ── Resolve per-tenant term windows when timeframe === 'term' ────────────
+      // Each tenant may have its own academic calendar.  We look up the
+      // "current" term for every tenant (currently-running → most-recently-
+      // started past term → 90-day fallback) and store per-tenant boundaries.
+      // The SQL query then uses the broadest bounding window; per-employee
+      // filtering narrows the logs to the tenant's exact term window.
+      const tenantTermStartMap = new Map<string, Date>();
+      const tenantTermEndMap   = new Map<string, Date>();
+      let queryStart = startDate; // overridden below for 'term'
+
+      if (timeframe === 'term') {
+        const ranges = await this.getTenantRanges(tenants, timeframe, academicYear, termName);
+        const fallbackStart = new Date();
+        fallbackStart.setDate(fallbackStart.getDate() - 89);
+        fallbackStart.setHours(0, 0, 0, 0);
+        queryStart = new Date(endOfToday); 
+        
+        for (const [tenantId, range] of ranges.entries()) {
+          tenantTermStartMap.set(tenantId, range.start);
+          tenantTermEndMap.set(tenantId, range.end);
+          if (range.start < queryStart) queryStart = range.start;
+        }
+        
+        if (fallbackStart < queryStart) queryStart = fallbackStart;
+      }
+
       const employeeIds = employees.map((e) => e.id);
 
+      // Use queryStart (= startDate for non-term, broadest term boundary for 'term')
       const clockInLogs = await this.connection.query(
         `SELECT DISTINCT ON (employee_id, DATE_TRUNC('day', timestamp)::date)
           employee_id,
@@ -1532,7 +1610,7 @@ export class SaasAdminService implements OnModuleInit {
            AND timestamp BETWEEN $2 AND $3
            AND type = $4
          ORDER BY employee_id, DATE_TRUNC('day', timestamp)::date, timestamp ASC`,
-        [employeeIds, startDate, endOfToday, AttendanceType.CLOCK_IN],
+        [employeeIds, queryStart, endOfToday, AttendanceType.CLOCK_IN],
       );
 
       const clockOutLogs = await this.connection.query(
@@ -1545,7 +1623,7 @@ export class SaasAdminService implements OnModuleInit {
            AND timestamp BETWEEN $2 AND $3
            AND type = $4
          GROUP BY employee_id, DATE_TRUNC('day', timestamp)::date`,
-        [employeeIds, startDate, endOfToday, AttendanceType.CLOCK_OUT],
+        [employeeIds, queryStart, endOfToday, AttendanceType.CLOCK_OUT],
       );
 
       const clockInsByEmp = new Map<
@@ -1577,20 +1655,62 @@ export class SaasAdminService implements OnModuleInit {
         const tenant = tenantMap.get(emp.tenantId);
         if (!tenant) continue;
 
+        // Determine this employee's effective date range.
+        // For 'term': use their tenant's resolved term window (or 90d fallback).
+        // For all other timeframes: use the global startDate / endOfToday.
+        let empStart: Date;
+        let empEnd: Date;
+        if (timeframe === 'term') {
+          const termStart = tenantTermStartMap.get(emp.tenantId);
+          const termEnd   = tenantTermEndMap.get(emp.tenantId);
+          if (termStart && termEnd) {
+            empStart = termStart;
+            empEnd   = termEnd;
+          } else {
+            // Fallback: no active term configured for this school → 90 days
+            empStart = new Date();
+            empStart.setDate(empStart.getDate() - 89);
+            empStart.setHours(0, 0, 0, 0);
+            empEnd = endOfToday;
+          }
+        } else {
+          empStart = startDate;
+          empEnd   = endOfToday;
+        }
+
+        // Convert boundaries to date strings for log filtering.
+        const empStartStr = empStart.toISOString().split('T')[0];
+        const empEndStr   = empEnd.toISOString().split('T')[0];
+
         const workingDays: number[] = shift?.workingDays ?? [1, 2, 3, 4, 5];
         let expectedDays = 0;
-        const cursor = new Date(startDate);
-        while (cursor <= endOfToday) {
+        const cursor = new Date(empStart);
+        while (cursor <= empEnd) {
           const dow = cursor.getDay();
           if (workingDays.includes(dow === 0 ? 7 : dow)) expectedDays++;
           cursor.setDate(cursor.getDate() + 1);
         }
         if (expectedDays === 0) expectedDays = 1;
 
-        const inMap =
-          clockInsByEmp.get(emp.id)?.dates ??
-          new Map<string, { isLate: boolean; ts: Date }>();
-        const outMap = clockOutsByEmp.get(emp.id) ?? new Map<string, Date>();
+        // For 'term', narrow the pre-fetched logs to this employee's exact
+        // term window.  For other timeframes the SQL already scoped correctly.
+        let inMap: Map<string, { isLate: boolean; ts: Date }>;
+        let outMap: Map<string, Date>;
+        if (timeframe === 'term') {
+          const rawIn = clockInsByEmp.get(emp.id)?.dates ?? new Map<string, { isLate: boolean; ts: Date }>();
+          inMap = new Map();
+          for (const [d, v] of rawIn) {
+            if (d >= empStartStr && d <= empEndStr) inMap.set(d, v);
+          }
+          const rawOut = clockOutsByEmp.get(emp.id) ?? new Map<string, Date>();
+          outMap = new Map();
+          for (const [d, v] of rawOut) {
+            if (d >= empStartStr && d <= empEndStr) outMap.set(d, v);
+          }
+        } else {
+          inMap  = clockInsByEmp.get(emp.id)?.dates ?? new Map<string, { isLate: boolean; ts: Date }>();
+          outMap = clockOutsByEmp.get(emp.id) ?? new Map<string, Date>();
+        }
 
         const presentDates = Array.from(inMap.keys());
         const daysPresent = presentDates.length;

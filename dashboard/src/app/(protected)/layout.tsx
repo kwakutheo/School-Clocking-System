@@ -25,7 +25,8 @@ import {
   Megaphone,
   Settings,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  BarChart2
 } from 'lucide-react';
 
 interface NavItem {
@@ -59,6 +60,7 @@ const DEVELOPER_NAV: NavItem[] = [
   { href: '/saas-admin/calendar', icon: Calendar,         label: 'Academic Calendar' },
   { href: '/saas-admin/holidays', icon: Calendar,         label: 'Holidays' },
   { href: '/saas-admin/bulletins', icon: Megaphone,      label: 'Announcements', globalRoles: ['super_admin', 'hr_admin'] },
+  { href: '/saas-admin/reports',  icon: BarChart2,        label: 'Reports & Export' },
 ];
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {

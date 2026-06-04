@@ -108,11 +108,12 @@ export class AcademicCalendarService {
     let targetYear: string | null = spanningTerm?.academicYear ?? null;
 
     if (!targetYear) {
-      // Priority 2: most-recently-started active term before or on today
+      // Priority 2: most-recently-started term before or on today.
+      // Does NOT filter by isActive — terms are detected purely by date so that
+      // manually-created and centrally-imported terms are recognised the same way.
       const recentTerm = await this.termRepo
         .createQueryBuilder('term')
         .where('term.startDate <= :today', { today: todayStr })
-        .andWhere('term.isActive = true')
         .andWhere('term.tenantId = :tenantId', { tenantId })
         .orderBy('term.startDate', 'DESC')
         .getOne();

@@ -134,6 +134,8 @@ export class SaasAdminController {
     @Query('offset') offset?: number,
     @Query('sort') sort?: string,
     @Query('cohort') cohort?: string,
+    @Query('academicYear') academicYear?: string,
+    @Query('termName') termName?: string,
   ) {
     this.verifyGlobalAdmin(req);
     const { results, total } = await this.adminService.findAllTenants(
@@ -143,6 +145,8 @@ export class SaasAdminController {
       offset,
       sort,
       cohort,
+      academicYear,
+      termName,
     );
     res.setHeader('x-total-count', total.toString());
     res.setHeader('Access-Control-Expose-Headers', 'x-total-count');
@@ -232,9 +236,14 @@ export class SaasAdminController {
   @ApiOperation({
     summary: 'Fetch system-wide billing, MRR and health statistics',
   })
-  async getStats(@Req() req: any, @Query('timeframe') timeframe?: string) {
+  async getStats(
+    @Req() req: any, 
+    @Query('timeframe') timeframe?: string,
+    @Query('academicYear') academicYear?: string,
+    @Query('termName') termName?: string,
+  ) {
     this.verifyGlobalAdmin(req);
-    return this.adminService.getSystemStats(timeframe);
+    return this.adminService.getSystemStats(timeframe, academicYear, termName);
   }
 
   @Get('rankings/employees')
@@ -250,6 +259,8 @@ export class SaasAdminController {
     @Query('limit') limit?: string,
     @Query('search') search?: string,
     @Query('school') school?: string,
+    @Query('academicYear') academicYear?: string,
+    @Query('termName') termName?: string,
   ) {
     this.verifyGlobalAdmin(req);
     return this.adminService.getEmployeeRankings(
@@ -259,6 +270,8 @@ export class SaasAdminController {
       limit ? parseInt(limit, 10) : 50,
       search,
       school,
+      academicYear,
+      termName,
     );
   }
 

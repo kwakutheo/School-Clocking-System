@@ -1989,6 +1989,7 @@ export default function SaasOverviewPage() {
               justifyContent: "space-between",
               alignItems: "flex-start",
               gap: "10px",
+              flexWrap: "wrap",
             }}
           >
             {/* Sub-tab toggle: Institutions / Staff */}
@@ -2019,6 +2020,7 @@ export default function SaasOverviewPage() {
                   display: "flex",
                   alignItems: "center",
                   gap: "5px",
+                  whiteSpace: "nowrap",
                 }}
               >
                 <Building2 size={11} /> Institutions
@@ -2040,6 +2042,7 @@ export default function SaasOverviewPage() {
                   display: "flex",
                   alignItems: "center",
                   gap: "5px",
+                  whiteSpace: "nowrap",
                 }}
               >
                 <UserCircle2 size={11} /> Staff Performance

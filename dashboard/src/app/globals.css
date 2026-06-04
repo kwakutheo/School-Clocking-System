@@ -1521,3 +1521,18 @@ input::-webkit-credentials-auto-fill-button {
   background-color: var(--bg-card-alt) !important;
 }
 
+/* ── Responsive Dashboard Rankings ────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .rank-row-bar {
+    display: none !important;
+  }
+  .rank-row-status {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .rank-row-tooltip {
+    display: none !important;
+  }
+}

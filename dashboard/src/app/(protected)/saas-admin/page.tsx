@@ -398,7 +398,7 @@ function SchoolRankRow({
       </div>
 
       {/* Rate bar */}
-      <div style={{ width: "90px", flexShrink: 0 }}>
+      <div className="rank-row-bar" style={{ width: "90px", flexShrink: 0 }}>
         <div
           style={{
             height: "4px",
@@ -432,6 +432,7 @@ function SchoolRankRow({
 
       {/* Status pill */}
       <div
+        className="rank-row-status"
         style={{
           padding: "3px 9px",
           borderRadius: "20px",
@@ -510,7 +511,9 @@ function EmployeeRankRow({
         borderBottom: "1px solid var(--border)",
         transition: "background 0.15s",
         position: "relative",
+        cursor: onExplain ? "pointer" : "default",
       }}
+      onClick={() => onExplain && onExplain(emp)}
       onMouseEnter={(e) => {
         e.currentTarget.style.background = "var(--bg-card-hover)";
         setHovered(true);
@@ -654,6 +657,7 @@ function EmployeeRankRow({
       {/* Hover: metric breakdown tooltip */}
       {hovered && (
         <div
+          className="rank-row-tooltip"
           style={{
             position: "absolute",
             right: "16px",
@@ -2210,10 +2214,13 @@ export default function SaasOverviewPage() {
               {/* Score legend */}
               <div
                 style={{
-                  padding: "10px 20px 0",
+                  padding: "10px 20px 8px",
                   display: "flex",
                   gap: "16px",
-                  flexWrap: "wrap",
+                  flexWrap: "nowrap",
+                  overflowX: "auto",
+                  msOverflowStyle: "none",
+                  scrollbarWidth: "none",
                 }}
               >
                 {[

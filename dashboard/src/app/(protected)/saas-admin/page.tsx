@@ -788,7 +788,7 @@ function EmployeeRankRow({
                   fontSize: "11px",
                   fontWeight: 700,
                   background: "rgba(139,92,246,0.1)",
-                  color: "#8b5cf6",
+                  color: "#ffffffff",
                   border: "1px solid rgba(139,92,246,0.2)",
                   cursor: "pointer",
                   display: "flex",

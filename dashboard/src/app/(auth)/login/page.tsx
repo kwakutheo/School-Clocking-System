@@ -344,7 +344,7 @@ export default function LoginPage() {
                 style={{ justifyContent: 'center', marginTop: 8, width: '100%' }}
                 onClick={() => { setStep('login'); setError(''); setSuccess(''); }}
               >
-                Back to Login
+                Back to Login Page
               </button>
             </form>
           </>
@@ -452,7 +452,7 @@ export default function LoginPage() {
                 style={{ justifyContent: 'center', marginTop: 8, width: '100%' }}
                 onClick={() => { setStep('login'); setError(''); setSuccess(''); }}
               >
-                Back to Login
+                Back to Login Page
               </button>
 
               <p 

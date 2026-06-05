@@ -782,18 +782,19 @@ function EmployeeRankRow({
                   e.stopPropagation();
                   onExplain(emp);
                 }}
+                className="btn btn-primary"
                 style={{
-                  padding: "6px 12px",
-                  borderRadius: "6px",
+                  padding: "6px 12px", //
+                  borderRadius: "6px", //
                   fontSize: "11px",
-                  fontWeight: 700,
+                  fontWeight: 700, //
                   background: "var(--primary)",
                   color: "#fff",
                   border: "1px solid var(--primary)",
                   cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
+                  display: "flex", //
+                  alignItems: "center", //
+                  gap: "4px", //
                   whiteSpace: "nowrap",
                   transition: "all 0.2s",
                 }}

@@ -224,7 +224,7 @@ export default function LoginPage() {
         
         {step === 'login' && (
           <>
-            <h1 className="login-title">TK Clocking</h1>
+            <h1 className="login-title">TK Clocking System</h1>
             <p className="login-sub">HR & Admin Dashboard — Sign in to continue</p>
 
             <form className="login-form" onSubmit={handleLoginSubmit}>

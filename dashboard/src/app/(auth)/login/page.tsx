@@ -298,7 +298,7 @@ export default function LoginPage() {
         {step === 'forgot-request' && (
           <>
             <h1 className="login-title">Reset Password</h1>
-            <p className="login-sub">Enter your username and email to receive a reset PIN</p>
+            <p className="login-sub">Enter your username and email address to receive a reset PIN</p>
 
             <form className="login-form" onSubmit={handleForgotRequestSubmit}>
               {error && <div className="login-error">{error}</div>}

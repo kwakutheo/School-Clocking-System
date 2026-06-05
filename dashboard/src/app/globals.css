@@ -909,8 +909,8 @@ pre, code {
   box-shadow: 0 8px 20px rgba(59,130,246,0.4);
 }
 
-.login-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
-.login-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 28px; }
+.login-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; display: flex; justify-content: center; align-items: center;}
+.login-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 28px; display: flex; justify-content: center; align-items: center; }
 .login-form { display: flex; flex-direction: column; gap: 16px; }
 .login-error { font-size: 13px; color: var(--danger); text-align: center; padding: 10px; background: var(--danger-dim); border-radius: var(--radius); }
 

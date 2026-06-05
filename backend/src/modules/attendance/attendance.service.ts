@@ -126,7 +126,7 @@ export class AttendanceService {
         // Rule: Must clock in within assigned working hours.
         if (!this._isWithinShiftHours(now, employee.shift)) {
           throw new BadRequestException(
-            `Action denied: Clock-in can only be recorded within your assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
+            `Action denied: Please try again when it is two hours prior to your assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
           );
         }
         break;
@@ -403,7 +403,7 @@ export class AttendanceService {
     const allTerms = await this.academicCalendar.findAllTerms();
     if (!allTerms || allTerms.length === 0) {
       throw new BadRequestException(
-        'Action denied: Your school has no academic calendar terms configured. Please configure your academic terms in the settings panel first.',
+        'Action denied: Your school has no academic calendar terms configured. Please configure your academic terms first.',
       );
     }
 
@@ -464,7 +464,6 @@ export class AttendanceService {
       );
     }
 
-    // ── Current Day Guard (Same Day Enforcement) [REMOVED] ──────────────────
     // Relaxed to allow admins to manually clock employees for past dates, enabling
     // them to fix forgotten clock-outs from previous days without restriction.
 
@@ -687,7 +686,7 @@ export class AttendanceService {
         }
         if (!this._isWithinShiftHours(now, employee.shift)) {
           throw new BadRequestException(
-            `Clock-in denied. Please wait. You may only clock in up to two hours before your shift or during your scheduled working hours of (${employee.shift.startTime} - ${employee.shift.endTime}).`,
+            `Action denied: Please try again when it is two hours prior to your assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
           );
         }
         break;

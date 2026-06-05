@@ -782,15 +782,20 @@ function EmployeeRankRow({
                   e.stopPropagation();
                   onExplain(emp);
                 }}
-                className="btn btn-primary"
                 style={{
-                  padding: "6px 12px", //
-                  borderRadius: "6px", //
-                  fontWeight: 700, //
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  background: "rgba(139,92,246,0.1)",
+                  color: "#8b5cf6",
+                  border: "1px solid rgba(139,92,246,0.2)",
                   cursor: "pointer",
-                  display: "flex", //
-                  alignItems: "center", //
-                  gap: "4px", //
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  whiteSpace: "nowrap",
+                  transition: "all 0.2s",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = "rgba(139,92,246,0.2)";

@@ -219,7 +219,14 @@ export default function BulletinsManagerPage() {
         <button
           onClick={handleOpenModal}
           className="btn btn-primary"
-          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', fontWeight: 600 }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            borderRadius: '10px',
+            fontWeight: 600
+          }}
         >
           <Plus size={18} /> Compose Message
         </button>

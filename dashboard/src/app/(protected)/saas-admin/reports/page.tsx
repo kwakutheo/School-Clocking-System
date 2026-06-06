@@ -171,7 +171,7 @@ const PDF_HEADER_TITLE_Y = 30;
 const PDF_HEADER_META_Y = 43;
 const PDF_HEADER_DIVIDER_Y = 66;
 const PDF_SUMMARY_BAR_Y = 80;
-const PDF_SUMMARY_CARD_H = 44;
+const PDF_SUMMARY_CARD_H = 52;
 const PDF_SUMMARY_CARD_GAP = 10;
 const PDF_TABLE_MARGIN_TOP = 80;
 const PDF_TABLE_MARGIN_BOTTOM = 58;
@@ -200,6 +200,37 @@ function getPdfSummaryLayout(doc: any, count: number) {
 
 function getPdfFirstPageTableY(doc: any, count: number) {
   return PDF_SUMMARY_BAR_Y + getPdfSummaryLayout(doc, count).height + 18;
+}
+
+function pdfFitCardText(
+  doc: any,
+  text: string,
+  maxWidth: number,
+  preferredSize: number,
+  minSize: number,
+  maxLines: number,
+) {
+  let fontSize = preferredSize;
+  let lines = [text];
+
+  while (fontSize >= minSize) {
+    doc.setFontSize(fontSize);
+    lines = doc.splitTextToSize(text, maxWidth);
+    if (lines.length <= maxLines) break;
+    fontSize -= 0.5;
+  }
+
+  if (lines.length > maxLines) {
+    lines = lines.slice(0, maxLines);
+    const last = lines[maxLines - 1] ?? '';
+    let trimmed = last;
+    while (trimmed.length > 1 && doc.getTextWidth(`${trimmed}...`) > maxWidth) {
+      trimmed = trimmed.slice(0, -1);
+    }
+    lines[maxLines - 1] = `${trimmed}...`;
+  }
+
+  return { fontSize, lines };
 }
 
 function pdfDrawCardIcon(
@@ -314,14 +345,23 @@ function pdfDrawSummaryBar(doc: any, stats: PdfStatCard[], y: number) {
     doc.roundedRect(x + 10, cardY + 12, 20, 20, 4, 4, 'F');
     pdfDrawCardIcon(doc, x + 10, cardY + 12, stat.icon);
 
+    const textX = x + 38;
+    const textMaxWidth = cardWidth - 48;
+    const labelFit = pdfFitCardText(doc, stat.label.toUpperCase(), textMaxWidth, 7, 6.5, 1);
+    const valueFit = pdfFitCardText(doc, stat.value, textMaxWidth, 12, 8, 2);
+
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
+    doc.setFontSize(labelFit.fontSize);
     doc.setTextColor(100, 116, 139);
-    doc.text(stat.label.toUpperCase(), x + 38, cardY + 17);
+    doc.text(labelFit.lines[0] ?? '', textX, cardY + 17);
+
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
+    doc.setFontSize(valueFit.fontSize);
     doc.setTextColor(15, 23, 42);
-    doc.text(stat.value, x + 38, cardY + 30);
+    const valueStartY = cardY + (valueFit.lines.length > 1 ? 28 : 33);
+    valueFit.lines.forEach((line: string, lineIndex: number) => {
+      doc.text(line, textX, valueStartY + lineIndex * (valueFit.fontSize + 1));
+    });
   });
 }
 

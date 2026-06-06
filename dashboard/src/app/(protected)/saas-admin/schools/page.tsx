@@ -559,7 +559,6 @@ export default function SchoolsRegistryPage() {
                 <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', minWidth: '320px' }}>School Name</th>
                 <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>School Portal Links</th>
                 <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Active Employees</th>
-                <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Workforce Status</th>
                 <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Portal Status</th>
                 <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
               </tr>
@@ -567,7 +566,7 @@ export default function SchoolsRegistryPage() {
             <tbody>
               {currentSchools.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
                     {searchQuery || statusFilter !== 'all' 
                       ? 'No supervised institutions match your active filters.' 
                       : 'No schools onboarded yet. Click "Onboard School" to add your first institution!'}
@@ -642,11 +641,6 @@ export default function SchoolsRegistryPage() {
                           <Users size={16} style={{ color: 'var(--text-secondary)' }} />
                           {school.metrics.employees} 
                         </div>
-                      </td>
-
-                      {/* Shifts and branches */}
-                      <td style={{ padding: '20px 24px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                        {school.metrics.branches} branches • {school.metrics.shifts} active shifts
                       </td>
 
                       {/* Status state */}

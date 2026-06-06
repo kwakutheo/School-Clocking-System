@@ -237,8 +237,7 @@ export default function HolidaysPage() {
     <>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Holidays & Non-Working Days</h1>
-          <p className="page-subtitle">Manage public holidays to ensure accurate absence tracking</p>
+          <h1 className="page-title">Public Holidays</h1>
         </div>
         {can(userRole, 'holidays.manage') && (
           <div style={{ display: 'flex', gap: 12 }}>

@@ -234,7 +234,7 @@ export default function GlobalHolidaysPage() {
     <>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Global Platform Holidays</h1>
+          <h1 className="page-title">Public Holidays</h1>
           <p className="page-subtitle">Manage system-wide public holidays that apply to ALL schools on the platform</p>
         </div>
         {isSuperAdmin && (

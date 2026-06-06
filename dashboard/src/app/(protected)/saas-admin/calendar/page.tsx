@@ -347,7 +347,7 @@ export default function GlobalCalendarTemplatesPage() {
                       Academic Year Template: <span style={{ color: 'var(--primary)' }}>{year}</span>
                     </h2>
                     {year === currentAcademicYear && (
-                      <span className="badge badge-green" style={{ marginLeft: 8, fontSize: 11, padding: '3px 8px' }}>Current Year / Active Standard</span>
+                      <span className="badge badge-green" style={{ marginLeft: 8, fontSize: 11, padding: '3px 8px' }}>Current Academic Year</span>
                     )}
                     <span className="badge badge-gray" style={{ marginLeft: 8 }}>{yearTerms.length} terms</span>
                   </div>

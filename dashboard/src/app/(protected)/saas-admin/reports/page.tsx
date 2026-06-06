@@ -166,6 +166,18 @@ function rateLabel(r: number, hasData: boolean = true) {
 }
 
 // ── PDF helpers ───────────────────────────────────────────────────────────────
+const PDF_MARGIN = 36; // 1.27cm
+const PDF_HEADER_TITLE_Y = 36;
+const PDF_HEADER_META_Y = 49;
+const PDF_HEADER_DIVIDER_Y = 60;
+const PDF_SUMMARY_BAR_Y = 72;
+const PDF_SUMMARY_BAR_H = 32;
+const PDF_FIRST_PAGE_TABLE_Y = 118;
+const PDF_TABLE_MARGIN_TOP = 74;
+const PDF_TABLE_MARGIN_BOTTOM = 66;
+const PDF_FOOTER_LINE_Y_OFFSET = 52;
+const PDF_FOOTER_TEXT_Y_OFFSET = 39;
+
 function pdfDrawHeader(doc: any, reportTitle: string, timestamp: string) {
   const pw = doc.internal.pageSize.getWidth();
 
@@ -173,48 +185,64 @@ function pdfDrawHeader(doc: any, reportTitle: string, timestamp: string) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
   doc.setTextColor(15, 23, 42);
-  doc.text('TK CLOCKING', 14, 22);
+  doc.text('TK CLOCKING', PDF_MARGIN, PDF_HEADER_TITLE_Y);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text('Central Management Dashboard', 14, 34);
+  doc.text('Executive Attendance Reporting Suite', PDF_MARGIN, PDF_HEADER_META_Y);
 
   // Report title – right
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
   doc.setTextColor(15, 23, 42);
-  doc.text(reportTitle, pw - 14, 22, { align: 'right' });
+  doc.text(reportTitle, pw - PDF_MARGIN, PDF_HEADER_TITLE_Y, { align: 'right' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Generated: ${timestamp}`, pw - 14, 34, { align: 'right' });
+  doc.text(`Generated: ${timestamp}`, pw - PDF_MARGIN, PDF_HEADER_META_Y, { align: 'right' });
 
-  // Subtle bottom border instead of heavy dark rect
+  // A restrained divider reads better in print than a full-width banner.
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(1);
-  doc.line(14, 44, pw - 14, 44);
+  doc.line(PDF_MARGIN, PDF_HEADER_DIVIDER_Y, pw - PDF_MARGIN, PDF_HEADER_DIVIDER_Y);
 }
 
 function pdfDrawSummaryBar(doc: any, stats: { label: string; value: string }[], y: number) {
   const pw = doc.internal.pageSize.getWidth();
-  const barH = 28;
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.5);
-  doc.roundedRect(14, y, pw - 28, barH, 4, 4, 'FD');
+  doc.roundedRect(PDF_MARGIN, y, pw - PDF_MARGIN * 2, PDF_SUMMARY_BAR_H, 5, 5, 'FD');
 
-  const colW = (pw - 28) / stats.length;
+  const colW = (pw - PDF_MARGIN * 2) / stats.length;
   stats.forEach((stat, i) => {
-    const x = 14 + colW * i + colW / 2;
+    const x = PDF_MARGIN + colW * i + colW / 2;
+    if (i > 0) {
+      const dividerX = PDF_MARGIN + colW * i;
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.35);
+      doc.line(dividerX, y + 6, dividerX, y + PDF_SUMMARY_BAR_H - 6);
+    }
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7);
     doc.setTextColor(100, 116, 139);
     doc.text(stat.label.toUpperCase(), x, y + 11, { align: 'center' });
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
+    doc.setFontSize(11.5);
     doc.setTextColor(15, 23, 42);
     doc.text(stat.value, x, y + 22, { align: 'center' });
   });
+}
+
+function pdfDrawSectionTitle(doc: any, label: string, y: number) {
+  const pw = doc.internal.pageSize.getWidth();
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(71, 85, 105);
+  doc.text(label, PDF_MARGIN, y);
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.5);
+  doc.line(PDF_MARGIN, y + 4, pw - PDF_MARGIN, y + 4);
 }
 
 function pdfDrawFooter(
@@ -227,13 +255,23 @@ function pdfDrawFooter(
   const ph = doc.internal.pageSize.getHeight();
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.4);
-  doc.line(14, ph - 15, pw - 14, ph - 15);
+  doc.line(
+    PDF_MARGIN,
+    ph - PDF_FOOTER_LINE_Y_OFFSET,
+    pw - PDF_MARGIN,
+    ph - PDF_FOOTER_LINE_Y_OFFSET,
+  );
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(100, 116, 139);
-  doc.text('Confidential · TK Clocking Platform Report', 14, ph - 8);
-  doc.text(subtitle, pw / 2, ph - 8, { align: 'center' });
-  doc.text(`Page ${pageNum} of ${totalPages}`, pw - 14, ph - 8, { align: 'right' });
+  doc.text('Confidential Internal Report', PDF_MARGIN, ph - PDF_FOOTER_TEXT_Y_OFFSET);
+  doc.text(subtitle, pw / 2, ph - PDF_FOOTER_TEXT_Y_OFFSET, { align: 'center' });
+  doc.text(
+    `Page ${pageNum} of ${totalPages}`,
+    pw - PDF_MARGIN,
+    ph - PDF_FOOTER_TEXT_Y_OFFSET,
+    { align: 'right' },
+  );
 }
 
 // ── Schools PDF ───────────────────────────────────────────────────────────────
@@ -302,17 +340,18 @@ async function generateSchoolsPdf(
 
   // Table — margin.top reserves space for header on all pages
   autoTable(doc, {
-    startY: 68,
+    startY: PDF_FIRST_PAGE_TABLE_Y,
     head: [['#', 'School Name', 'Employees', 'Attendance Rate', 'Performance', 'Portal']],
     body: tableBody,
     theme: 'grid',
     styles: {
-      fontSize: 8.5,
-      cellPadding: { top: 5, right: 8, bottom: 5, left: 8 },
+      fontSize: 8.4,
+      textColor: [30, 41, 59],
+      cellPadding: { top: 6, right: 8, bottom: 6, left: 8 },
       overflow: 'linebreak',
       font: 'helvetica',
       lineColor: [226, 232, 240],
-      lineWidth: 0.4,
+      lineWidth: 0.35,
     },
     headStyles: {
       fillColor: [241, 245, 249],
@@ -331,7 +370,12 @@ async function generateSchoolsPdf(
       4: { cellWidth: 78, halign: 'center' },
       5: { cellWidth: 60, halign: 'center' },
     },
-    margin: { top: 52, left: 14, right: 14, bottom: 30 },
+    margin: {
+      top: PDF_TABLE_MARGIN_TOP,
+      left: PDF_MARGIN,
+      right: PDF_MARGIN,
+      bottom: PDF_TABLE_MARGIN_BOTTOM,
+    },
   });
 
   // Post-process: draw header + footer on every page
@@ -339,7 +383,7 @@ async function generateSchoolsPdf(
   for (let p = 1; p <= totalPages; p++) {
     (doc as any).setPage(p);
     pdfDrawHeader(doc, reportTitle, timestamp);
-    if (p === 1) pdfDrawSummaryBar(doc, summaryStats, 39);
+    if (p === 1) pdfDrawSummaryBar(doc, summaryStats, PDF_SUMMARY_BAR_Y);
     pdfDrawFooter(doc, subtitle, p, totalPages);
   }
 
@@ -406,17 +450,18 @@ async function generateEmployeesPdf(
   });
 
   autoTable(doc, {
-    startY: 68,
+    startY: PDF_FIRST_PAGE_TABLE_Y,
     head: [['#', 'Employee Name', 'Code', 'School', 'Presence', 'Punctuality', 'Hours', 'Score']],
     body: tableBody,
     theme: 'grid',
     styles: {
       fontSize: 8,
-      cellPadding: { top: 5, right: 6, bottom: 5, left: 6 },
+      textColor: [30, 41, 59],
+      cellPadding: { top: 6, right: 6, bottom: 6, left: 6 },
       overflow: 'linebreak',
       font: 'helvetica',
       lineColor: [226, 232, 240],
-      lineWidth: 0.4,
+      lineWidth: 0.35,
     },
     headStyles: {
       fillColor: [241, 245, 249],
@@ -437,14 +482,19 @@ async function generateEmployeesPdf(
       6: { cellWidth: 48, halign: 'center' },
       7: { cellWidth: 48, halign: 'center' },
     },
-    margin: { top: 52, left: 14, right: 14, bottom: 30 },
+    margin: {
+      top: PDF_TABLE_MARGIN_TOP,
+      left: PDF_MARGIN,
+      right: PDF_MARGIN,
+      bottom: PDF_TABLE_MARGIN_BOTTOM,
+    },
   });
 
   const totalPages = (doc as any).internal.getNumberOfPages();
   for (let p = 1; p <= totalPages; p++) {
     (doc as any).setPage(p);
     pdfDrawHeader(doc, reportTitle, timestamp);
-    if (p === 1) pdfDrawSummaryBar(doc, summaryStats, 39);
+    if (p === 1) pdfDrawSummaryBar(doc, summaryStats, PDF_SUMMARY_BAR_Y);
     pdfDrawFooter(doc, subtitle, p, totalPages);
   }
 
@@ -497,16 +547,17 @@ async function generateSummaryPdf(
   ];
 
   autoTable(doc, {
-    startY: 68,
+    startY: PDF_FIRST_PAGE_TABLE_Y,
     head: [['Metric', 'Value']],
     body: metricsBody,
     theme: 'grid',
     styles: {
       fontSize: 9,
+      textColor: [30, 41, 59],
       cellPadding: { top: 6, right: 12, bottom: 6, left: 12 },
       font: 'helvetica',
       lineColor: [226, 232, 240],
-      lineWidth: 0.4,
+      lineWidth: 0.35,
     },
     headStyles: {
       fillColor: [241, 245, 249],
@@ -519,21 +570,19 @@ async function generateSummaryPdf(
       0: { fontStyle: 'bold', textColor: [51, 65, 85], cellWidth: 200 },
       1: { cellWidth: 'auto' as any },
     },
-    margin: { top: 52, left: 14, right: 14, bottom: 30 },
+    margin: {
+      top: PDF_TABLE_MARGIN_TOP,
+      left: PDF_MARGIN,
+      right: PDF_MARGIN,
+      bottom: PDF_TABLE_MARGIN_BOTTOM,
+    },
   });
 
   let nextY = (doc as any).lastAutoTable.finalY + 18;
 
   // ── Top 5 Schools table ──
   if (stats.topFive && stats.topFive.length > 0) {
-    // Section label
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(100, 116, 139);
-    doc.text('TOP 5 PERFORMING SCHOOLS', 14, nextY);
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.5);
-    doc.line(14, nextY + 4, pw - 14, nextY + 4);
+    pdfDrawSectionTitle(doc, 'TOP 5 PERFORMING SCHOOLS', nextY);
     nextY += 12;
 
     autoTable(doc, {
@@ -551,7 +600,14 @@ async function generateSummaryPdf(
         ];
       }),
       theme: 'grid',
-      styles: { fontSize: 8.5, font: 'helvetica', lineColor: [226, 232, 240], lineWidth: 0.4, cellPadding: 5 },
+      styles: {
+        fontSize: 8.5,
+        font: 'helvetica',
+        textColor: [30, 41, 59],
+        lineColor: [226, 232, 240],
+        lineWidth: 0.35,
+        cellPadding: 5.5,
+      },
       headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold', fontSize: 8, halign: 'center' },
       columnStyles: {
         0: { cellWidth: 38, halign: 'center' },
@@ -560,7 +616,7 @@ async function generateSummaryPdf(
         3: { cellWidth: 75, halign: 'center' },
         4: { cellWidth: 75, halign: 'center' },
       },
-      margin: { left: 14, right: 14, bottom: 30 },
+      margin: { left: PDF_MARGIN, right: PDF_MARGIN, bottom: PDF_TABLE_MARGIN_BOTTOM },
     });
 
     nextY = (doc as any).lastAutoTable.finalY + 16;
@@ -568,13 +624,7 @@ async function generateSummaryPdf(
 
   // ── Bottom 5 Schools table ──
   if (stats.bottomFive && stats.bottomFive.length > 0) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(100, 116, 139);
-    doc.text('LOWEST 5 PERFORMING SCHOOLS', 14, nextY);
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.5);
-    doc.line(14, nextY + 4, pw - 14, nextY + 4);
+    pdfDrawSectionTitle(doc, 'LOWEST 5 PERFORMING SCHOOLS', nextY);
     nextY += 12;
 
     autoTable(doc, {
@@ -592,7 +642,14 @@ async function generateSummaryPdf(
         ];
       }),
       theme: 'grid',
-      styles: { fontSize: 8.5, font: 'helvetica', lineColor: [226, 232, 240], lineWidth: 0.4, cellPadding: 5 },
+      styles: {
+        fontSize: 8.5,
+        font: 'helvetica',
+        textColor: [30, 41, 59],
+        lineColor: [226, 232, 240],
+        lineWidth: 0.35,
+        cellPadding: 5.5,
+      },
       headStyles: {
         fillColor: [254, 242, 242],
         textColor: [153, 27, 27],
@@ -607,7 +664,7 @@ async function generateSummaryPdf(
         3: { cellWidth: 75, halign: 'center' },
         4: { cellWidth: 75, halign: 'center' },
       },
-      margin: { left: 14, right: 14, bottom: 30 },
+      margin: { left: PDF_MARGIN, right: PDF_MARGIN, bottom: PDF_TABLE_MARGIN_BOTTOM },
     });
   }
 
@@ -616,7 +673,7 @@ async function generateSummaryPdf(
   for (let p = 1; p <= totalPages; p++) {
     (doc as any).setPage(p);
     pdfDrawHeader(doc, reportTitle, timestamp);
-    if (p === 1) pdfDrawSummaryBar(doc, summaryStats, 39);
+    if (p === 1) pdfDrawSummaryBar(doc, summaryStats, PDF_SUMMARY_BAR_Y);
     pdfDrawFooter(doc, subtitle, p, totalPages);
   }
 

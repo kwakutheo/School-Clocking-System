@@ -84,7 +84,7 @@ const TIMEFRAME_LABELS: Record<Timeframe, string> = {
   today: 'Today',
   '7d': 'Last 7 Days',
   '30d': 'Last 30 Days',
-  term: 'By Term',
+  term: 'Current Term',
 };
 
 const REPORT_TYPES: {
@@ -220,7 +220,6 @@ function pdfDrawFooter(
 async function generateSchoolsPdf(
   schools: SchoolMetric[],
   timeframe: Timeframe,
-  timeframeLabel: string,
   sortOrder: SortOrder,
   timestamp: string,
 ) {
@@ -229,7 +228,7 @@ async function generateSchoolsPdf(
 
   const doc = new jsPDF({ orientation: 'landscape', format: 'a4', unit: 'pt' });
   const reportTitle = 'Schools Performance Report';
-  const subtitle = `${timeframeLabel} · ${sortOrder === 'best' ? 'Best → Worst' : 'Worst → Best'}`;
+  const subtitle = `${TIMEFRAME_LABELS[timeframe]} · ${sortOrder === 'best' ? 'Best → Worst' : 'Worst → Best'}`;
 
   const avgRate =
     schools.length > 0
@@ -238,7 +237,7 @@ async function generateSchoolsPdf(
 
   const summaryStats = [
     { label: 'Total Schools', value: String(schools.length) },
-    { label: 'Timeframe', value: timeframeLabel },
+    { label: 'Timeframe', value: TIMEFRAME_LABELS[timeframe] },
     { label: 'Sort Order', value: sortOrder === 'best' ? 'Best → Worst' : 'Worst → Best' },
     { label: 'Avg. Presence Rate', value: `${avgRate}%` },
   ];
@@ -331,7 +330,6 @@ async function generateSchoolsPdf(
 async function generateEmployeesPdf(
   employees: EmployeeRanking[],
   timeframe: Timeframe,
-  timeframeLabel: string,
   sortOrder: SortOrder,
   timestamp: string,
 ) {
@@ -340,7 +338,7 @@ async function generateEmployeesPdf(
 
   const doc = new jsPDF({ orientation: 'landscape', format: 'a4', unit: 'pt' });
   const reportTitle = 'Employee Rankings Report';
-  const subtitle = `${timeframeLabel} · ${sortOrder === 'best' ? 'Best Performers' : 'Needs Attention'}`;
+  const subtitle = `${TIMEFRAME_LABELS[timeframe]} · ${sortOrder === 'best' ? 'Best Performers' : 'Needs Attention'}`;
 
   const avgScore =
     employees.length > 0
@@ -349,7 +347,7 @@ async function generateEmployeesPdf(
 
   const summaryStats = [
     { label: 'Total Employees', value: String(employees.length) },
-    { label: 'Timeframe', value: timeframeLabel },
+    { label: 'Timeframe', value: TIMEFRAME_LABELS[timeframe] },
     { label: 'Ranking', value: sortOrder === 'best' ? 'Best → Worst' : 'Worst → Best' },
     { label: 'Avg. Score', value: `${avgScore}%` },
   ];
@@ -438,7 +436,6 @@ async function generateEmployeesPdf(
 async function generateSummaryPdf(
   stats: PlatformStats,
   timeframe: Timeframe,
-  timeframeLabel: string,
   timestamp: string,
 ) {
   const { jsPDF } = await import('jspdf');
@@ -448,7 +445,7 @@ async function generateSummaryPdf(
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
   const reportTitle = 'Platform Summary Report';
-  const subtitle = timeframeLabel;
+  const subtitle = TIMEFRAME_LABELS[timeframe];
 
   const summaryStats = [
     { label: 'Total Schools', value: String(stats.overview.totalSchools) },
@@ -966,14 +963,12 @@ export default function ReportsPage() {
       const timestamp = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) +
         ' at ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-      const timeLabel = timeframe === 'term' && academicYear ? `${academicYear} (${termName === 'all' ? 'Entire Year' : termName})` : TIMEFRAME_LABELS[timeframe];
-
       if (reportType === 'schools') {
-        await generateSchoolsPdf(filteredSchools, timeframe, timeLabel, sortOrder, timestamp);
+        await generateSchoolsPdf(filteredSchools, timeframe, sortOrder, timestamp);
       } else if (reportType === 'employees') {
-        await generateEmployeesPdf(filteredEmployees, timeframe, timeLabel, sortOrder, timestamp);
+        await generateEmployeesPdf(filteredEmployees, timeframe, sortOrder, timestamp);
       } else if (stats) {
-        await generateSummaryPdf(stats, timeframe, timeLabel, timestamp);
+        await generateSummaryPdf(stats, timeframe, timestamp);
       }
     } catch (err) {
       console.error('PDF generation error:', err);
@@ -1236,7 +1231,7 @@ export default function ReportsPage() {
           </span>
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>—</span>
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-            {REPORT_TYPES.find((r) => r.type === reportType)?.label} · {timeframe === 'term' && academicYear ? `${academicYear} (${termName === 'all' ? 'Entire Year' : termName})` : TIMEFRAME_LABELS[timeframe]}
+            {REPORT_TYPES.find((r) => r.type === reportType)?.label} · {TIMEFRAME_LABELS[timeframe]}
           </span>
           {loading && (
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>

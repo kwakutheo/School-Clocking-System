@@ -99,7 +99,7 @@ const REPORT_TYPES: {
 }[] = [
   {
     type: 'schools',
-    label: 'Schools Performance',
+    label: 'Schools Performance Ranking',
     desc: 'Attendance rates, employee counts and performance cohort for every institution.',
     icon: Building2,
     color: '#8b5cf6',

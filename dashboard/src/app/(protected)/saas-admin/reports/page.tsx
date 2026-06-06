@@ -158,6 +158,12 @@ function rateBg(r: number, hasData: boolean = true) {
   if (r >= 75) return 'rgba(245,158,11,0.1)';
   return 'rgba(239,68,68,0.1)';
 }
+function rateFillRgb(r: number, hasData: boolean = true): [number, number, number] {
+  if (!hasData) return [241, 245, 249];
+  if (r >= 90) return [220, 252, 231];
+  if (r >= 75) return [254, 243, 199];
+  return [254, 226, 226];
+}
 function rateLabel(r: number, hasData: boolean = true) {
   if (!hasData) return '—';
   if (r >= 90) return 'Excellent';
@@ -166,71 +172,105 @@ function rateLabel(r: number, hasData: boolean = true) {
 }
 
 // ── PDF helpers ───────────────────────────────────────────────────────────────
-const PDF_MARGIN = 36; // 1.27cm
-const PDF_HEADER_TITLE_Y = 36;
-const PDF_HEADER_META_Y = 49;
-const PDF_HEADER_DIVIDER_Y = 60;
-const PDF_SUMMARY_BAR_Y = 72;
-const PDF_SUMMARY_BAR_H = 32;
-const PDF_FIRST_PAGE_TABLE_Y = 118;
-const PDF_TABLE_MARGIN_TOP = 74;
-const PDF_TABLE_MARGIN_BOTTOM = 66;
-const PDF_FOOTER_LINE_Y_OFFSET = 52;
-const PDF_FOOTER_TEXT_Y_OFFSET = 39;
+const PDF_MARGIN = 36; // 0.5in
+const PDF_HEADER_TITLE_Y = 30;
+const PDF_HEADER_META_Y = 43;
+const PDF_HEADER_DIVIDER_Y = 66;
+const PDF_SUMMARY_BAR_Y = 80;
+const PDF_SUMMARY_CARD_H = 44;
+const PDF_SUMMARY_CARD_GAP = 10;
+const PDF_TABLE_MARGIN_TOP = 80;
+const PDF_TABLE_MARGIN_BOTTOM = 58;
+const PDF_FOOTER_LINE_Y_OFFSET = 42;
+const PDF_FOOTER_TEXT_Y_OFFSET = 28;
+
+type PdfStatCard = {
+  label: string;
+  value: string;
+  accent: [number, number, number];
+};
+
+function getPdfSummaryLayout(doc: any, count: number) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const cardsPerRow = pageWidth >= 780 ? 4 : 2;
+  const usableWidth = pageWidth - PDF_MARGIN * 2;
+  const cardWidth =
+    (usableWidth - PDF_SUMMARY_CARD_GAP * (cardsPerRow - 1)) / cardsPerRow;
+  const rows = Math.max(1, Math.ceil(count / cardsPerRow));
+  const height =
+    rows * PDF_SUMMARY_CARD_H + (rows - 1) * PDF_SUMMARY_CARD_GAP;
+
+  return { cardsPerRow, cardWidth, height };
+}
+
+function getPdfFirstPageTableY(doc: any, count: number) {
+  return PDF_SUMMARY_BAR_Y + getPdfSummaryLayout(doc, count).height + 18;
+}
 
 function pdfDrawHeader(doc: any, reportTitle: string, timestamp: string) {
   const pw = doc.internal.pageSize.getWidth();
 
-  // Brand – left
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(PDF_MARGIN, 18, pw - PDF_MARGIN * 2, 42, 10, 10, 'F');
+
+  // Brand - left
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(15, 23, 42);
-  doc.text('TK CLOCKING', PDF_MARGIN, PDF_HEADER_TITLE_Y);
+  doc.setFontSize(15);
+  doc.setTextColor(51, 65, 85);
+  doc.text('TK CLOCKING', PDF_MARGIN + 12, PDF_HEADER_TITLE_Y);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text('Executive Attendance Reporting Suite', PDF_MARGIN, PDF_HEADER_META_Y);
+  doc.text(
+    'Executive Attendance Reporting Suite',
+    PDF_MARGIN + 12,
+    PDF_HEADER_META_Y,
+  );
 
-  // Report title – right
+  // Report title - right
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
+  doc.setFontSize(12.5);
   doc.setTextColor(15, 23, 42);
-  doc.text(reportTitle, pw - PDF_MARGIN, PDF_HEADER_TITLE_Y, { align: 'right' });
+  doc.text(reportTitle, pw - PDF_MARGIN - 12, PDF_HEADER_TITLE_Y, {
+    align: 'right',
+  });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Generated: ${timestamp}`, pw - PDF_MARGIN, PDF_HEADER_META_Y, { align: 'right' });
+  doc.text(`Generated: ${timestamp}`, pw - PDF_MARGIN - 12, PDF_HEADER_META_Y, {
+    align: 'right',
+  });
 
-  // A restrained divider reads better in print than a full-width banner.
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(1);
   doc.line(PDF_MARGIN, PDF_HEADER_DIVIDER_Y, pw - PDF_MARGIN, PDF_HEADER_DIVIDER_Y);
 }
 
-function pdfDrawSummaryBar(doc: any, stats: { label: string; value: string }[], y: number) {
-  const pw = doc.internal.pageSize.getWidth();
-  doc.setFillColor(248, 250, 252);
-  doc.setDrawColor(226, 232, 240);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(PDF_MARGIN, y, pw - PDF_MARGIN * 2, PDF_SUMMARY_BAR_H, 5, 5, 'FD');
+function pdfDrawSummaryBar(doc: any, stats: PdfStatCard[], y: number) {
+  const { cardsPerRow, cardWidth } = getPdfSummaryLayout(doc, stats.length);
 
-  const colW = (pw - PDF_MARGIN * 2) / stats.length;
   stats.forEach((stat, i) => {
-    const x = PDF_MARGIN + colW * i + colW / 2;
-    if (i > 0) {
-      const dividerX = PDF_MARGIN + colW * i;
-      doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.35);
-      doc.line(dividerX, y + 6, dividerX, y + PDF_SUMMARY_BAR_H - 6);
-    }
+    const row = Math.floor(i / cardsPerRow);
+    const col = i % cardsPerRow;
+    const x = PDF_MARGIN + col * (cardWidth + PDF_SUMMARY_CARD_GAP);
+    const cardY = y + row * (PDF_SUMMARY_CARD_H + PDF_SUMMARY_CARD_GAP);
+
+    doc.setFillColor(250, 250, 250);
+    doc.setDrawColor(214, 220, 229);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(x, cardY, cardWidth, PDF_SUMMARY_CARD_H, 6, 6, 'FD');
+
+    doc.setFillColor(...stat.accent);
+    doc.roundedRect(x + 10, cardY + 12, 20, 20, 4, 4, 'F');
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7);
     doc.setTextColor(100, 116, 139);
-    doc.text(stat.label.toUpperCase(), x, y + 11, { align: 'center' });
+    doc.text(stat.label.toUpperCase(), x + 38, cardY + 17);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11.5);
+    doc.setFontSize(12);
     doc.setTextColor(15, 23, 42);
-    doc.text(stat.value, x, y + 22, { align: 'center' });
+    doc.text(stat.value, x + 38, cardY + 30);
   });
 }
 
@@ -301,12 +341,21 @@ async function generateSchoolsPdf(
         )
       : 0;
 
-  const summaryStats = [
-    { label: 'Total Schools', value: String(schools.length) },
-    { label: 'Period', value: periodLabel },
-    { label: 'Sort Order', value: sortOrder === 'best' ? 'Best → Worst' : 'Worst → Best' },
-    { label: 'Avg. Attendance Rate', value: schoolsWithAttendance.length > 0 ? `${avgRate}%` : '—' },
+  const summaryStats: PdfStatCard[] = [
+    { label: 'Total Schools', value: String(schools.length), accent: [51, 65, 85] },
+    { label: 'Period', value: periodLabel, accent: [71, 85, 105] },
+    {
+      label: 'Sort Order',
+      value: sortOrder === 'best' ? 'Best to Worst' : 'Worst to Best',
+      accent: sortOrder === 'best' ? [34, 197, 94] : [239, 68, 68],
+    },
+    {
+      label: 'Avg. Attendance Rate',
+      value: schoolsWithAttendance.length > 0 ? `${avgRate}%` : '—',
+      accent: rateColorRgb(avgRate, schoolsWithAttendance.length > 0),
+    },
   ];
+  const firstPageTableY = getPdfFirstPageTableY(doc, summaryStats.length);
 
   const tableBody = schools.map((school, i) => {
     const rate = school.metrics.presenceRate ?? 0;
@@ -321,18 +370,35 @@ async function generateSchoolsPdf(
       { content: String(school.metrics.employees), styles: { halign: 'center' as const } },
       {
         content: formatRateValue(rate, school.metrics.expectedEmployeeDays),
-        styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateRgb as any },
+        styles: {
+          halign: 'center' as const,
+          fontStyle: 'bold' as const,
+          textColor: rateRgb as any,
+          fillColor: rateFillRgb(rate, hasRateData) as any,
+        },
       },
       {
         content: rateLabel(rate, hasRateData),
-        styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateRgb as any },
+        styles: {
+          halign: 'center' as const,
+          fontStyle: 'bold' as const,
+          textColor: rateRgb as any,
+          fillColor: rateFillRgb(rate, hasRateData) as any,
+        },
       },
       {
         content: school.isActive !== false ? 'Active' : 'Suspended',
         styles: {
           halign: 'center' as const,
           fontStyle: 'bold' as const,
-          textColor: school.isActive !== false ? ([34, 197, 94] as any) : ([239, 68, 68] as any),
+          textColor:
+            school.isActive !== false
+              ? ([22, 163, 74] as any)
+              : ([185, 28, 28] as any),
+          fillColor:
+            school.isActive !== false
+              ? ([220, 252, 231] as any)
+              : ([254, 226, 226] as any),
         },
       },
     ];
@@ -340,35 +406,35 @@ async function generateSchoolsPdf(
 
   // Table — margin.top reserves space for header on all pages
   autoTable(doc, {
-    startY: PDF_FIRST_PAGE_TABLE_Y,
+    startY: firstPageTableY,
     head: [['#', 'School Name', 'Employees', 'Attendance Rate', 'Performance', 'Portal']],
     body: tableBody,
     theme: 'grid',
     styles: {
-      fontSize: 8.4,
+      fontSize: 8.5,
       textColor: [30, 41, 59],
-      cellPadding: { top: 6, right: 8, bottom: 6, left: 8 },
+      cellPadding: { top: 7, right: 8, bottom: 7, left: 8 },
       overflow: 'linebreak',
       font: 'helvetica',
       lineColor: [226, 232, 240],
-      lineWidth: 0.35,
+      lineWidth: 0.3,
     },
     headStyles: {
-      fillColor: [241, 245, 249],
-      textColor: [15, 23, 42],
+      fillColor: [55, 65, 81],
+      textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 8,
       halign: 'center',
       cellPadding: { top: 6, right: 8, bottom: 6, left: 8 },
     },
-    alternateRowStyles: { fillColor: [250, 252, 253] },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
       0: { cellWidth: 28, halign: 'center' },
-      1: { cellWidth: 'auto' as any, minCellWidth: 140 },
+      1: { cellWidth: 'auto' as any, minCellWidth: 150 },
       2: { cellWidth: 60, halign: 'center' },
-      3: { cellWidth: 82, halign: 'center' },
-      4: { cellWidth: 78, halign: 'center' },
-      5: { cellWidth: 60, halign: 'center' },
+      3: { cellWidth: 92, halign: 'center' },
+      4: { cellWidth: 84, halign: 'center' },
+      5: { cellWidth: 66, halign: 'center' },
     },
     margin: {
       top: PDF_TABLE_MARGIN_TOP,
@@ -409,12 +475,21 @@ async function generateEmployeesPdf(
       ? fmt(employees.reduce((s, e) => s + (e.metrics.score ?? 0), 0) / employees.length)
       : 0;
 
-  const summaryStats = [
-    { label: 'Total Employees', value: String(employees.length) },
-    { label: 'Period', value: periodLabel },
-    { label: 'Ranking', value: sortOrder === 'best' ? 'Best → Worst' : 'Worst → Best' },
-    { label: 'Avg. Score', value: `${avgScore}%` },
+  const summaryStats: PdfStatCard[] = [
+    { label: 'Total Employees', value: String(employees.length), accent: [51, 65, 85] },
+    { label: 'Period', value: periodLabel, accent: [71, 85, 105] },
+    {
+      label: 'Ranking Scope',
+      value: sortOrder === 'best' ? 'Best to Worst' : 'Worst to Best',
+      accent: sortOrder === 'best' ? [245, 158, 11] : [239, 68, 68],
+    },
+    {
+      label: 'Avg. Score',
+      value: `${avgScore}%`,
+      accent: rateColorRgb(avgScore, employees.length > 0),
+    },
   ];
+  const firstPageTableY = getPdfFirstPageTableY(doc, summaryStats.length);
 
   const tableBody = employees.map((emp, i) => {
     const score = emp.metrics.score ?? 0;
@@ -432,55 +507,75 @@ async function generateEmployeesPdf(
       emp.school.name,
       {
         content: formatRateValue(presence, emp.metrics.expectedDays),
-        styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(presence, hasRateData) as any },
+        styles: {
+          halign: 'center' as const,
+          fontStyle: 'bold' as const,
+          textColor: rateColorRgb(presence, hasRateData) as any,
+          fillColor: rateFillRgb(presence, hasRateData) as any,
+        },
       },
       {
         content: formatRateValue(punct, emp.metrics.expectedDays),
-        styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(punct, hasRateData) as any },
+        styles: {
+          halign: 'center' as const,
+          fontStyle: 'bold' as const,
+          textColor: rateColorRgb(punct, hasRateData) as any,
+          fillColor: rateFillRgb(punct, hasRateData) as any,
+        },
       },
       {
         content: formatRateValue(hours, emp.metrics.expectedDays),
-        styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(hours, hasRateData) as any },
+        styles: {
+          halign: 'center' as const,
+          fontStyle: 'bold' as const,
+          textColor: rateColorRgb(hours, hasRateData) as any,
+          fillColor: rateFillRgb(hours, hasRateData) as any,
+        },
       },
       {
         content: formatRateValue(score, emp.metrics.expectedDays),
-        styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(score, hasRateData) as any },
+        styles: {
+          halign: 'center' as const,
+          fontStyle: 'bold' as const,
+          textColor: rateColorRgb(score, hasRateData) as any,
+          fillColor: rateFillRgb(score, hasRateData) as any,
+        },
       },
     ];
   });
 
   autoTable(doc, {
-    startY: PDF_FIRST_PAGE_TABLE_Y,
+    startY: firstPageTableY,
     head: [['#', 'Employee Name', 'Code', 'School', 'Presence', 'Punctuality', 'Hours', 'Score']],
     body: tableBody,
     theme: 'grid',
     styles: {
       fontSize: 8,
       textColor: [30, 41, 59],
-      cellPadding: { top: 6, right: 6, bottom: 6, left: 6 },
+      cellPadding: { top: 7, right: 6, bottom: 7, left: 6 },
       overflow: 'linebreak',
       font: 'helvetica',
       lineColor: [226, 232, 240],
-      lineWidth: 0.35,
+      lineWidth: 0.3,
     },
     headStyles: {
-      fillColor: [241, 245, 249],
-      textColor: [15, 23, 42],
+      fillColor: [55, 65, 81],
+      textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 8,
       halign: 'center',
       cellPadding: { top: 6, right: 6, bottom: 6, left: 6 },
     },
-    alternateRowStyles: { fillColor: [250, 252, 253] },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
       0: { cellWidth: 25, halign: 'center' },
-      1: { cellWidth: 'auto' as any, minCellWidth: 96 },
-      2: { cellWidth: 42, halign: 'center' },
-      3: { cellWidth: 100 },
-      4: { cellWidth: 56, halign: 'center' },
-      5: { cellWidth: 60, halign: 'center' },
-      6: { cellWidth: 48, halign: 'center' },
-      7: { cellWidth: 48, halign: 'center' },
+      1: { cellWidth: 'auto' as any, minCellWidth: 104 },
+      2: { cellWidth: 52, halign: 'center' },
+      3: { cellWidth: 118 },
+      4: { cellWidth: 60, halign: 'center' },
+      5: { cellWidth: 68, halign: 'center' },
+      6: { cellWidth: 54, halign: 'center' },
+      7: { cellWidth: 56, halign: 'center' },
     },
     margin: {
       top: PDF_TABLE_MARGIN_TOP,
@@ -511,17 +606,28 @@ async function generateSummaryPdf(
   const { default: autoTable } = await import('jspdf-autotable');
 
   const doc = new jsPDF({ orientation: 'portrait', format: 'a4', unit: 'pt' });
-  const pw = doc.internal.pageSize.getWidth();
   const reportTitle = 'Platform Summary Report';
   const subtitle = periodLabel;
   const hasOverviewData = hasMetricData(stats.overview.expectedEmployeeDays);
 
-  const summaryStats = [
-    { label: 'Total Schools', value: String(stats.overview.totalSchools) },
-    { label: 'Active', value: String(stats.overview.activeSchools) },
-    { label: 'Employees', value: stats.overview.trackedEmployees.toLocaleString() },
-    { label: 'Global Rate', value: formatRateValue(stats.overview.presenceRate, stats.overview.expectedEmployeeDays) },
+  const summaryStats: PdfStatCard[] = [
+    { label: 'Total Schools', value: String(stats.overview.totalSchools), accent: [51, 65, 85] },
+    { label: 'Active', value: String(stats.overview.activeSchools), accent: [34, 197, 94] },
+    {
+      label: 'Employees',
+      value: stats.overview.trackedEmployees.toLocaleString(),
+      accent: [59, 130, 246],
+    },
+    {
+      label: 'Global Rate',
+      value: formatRateValue(
+        stats.overview.presenceRate,
+        stats.overview.expectedEmployeeDays,
+      ),
+      accent: rateColorRgb(stats.overview.presenceRate, hasOverviewData),
+    },
   ];
+  const firstPageTableY = getPdfFirstPageTableY(doc, summaryStats.length);
 
   // ── Key metrics table ──
   const metricsBody: any[][] = [
@@ -532,7 +638,11 @@ async function generateSummaryPdf(
     ['Present in Timeframe', { content: stats.overview.presentInTimeframe.toLocaleString(), styles: { fontStyle: 'bold', textColor: [34, 197, 94] } }],
     ['Global Attendance Rate', {
       content: formatRateValue(stats.overview.presenceRate, stats.overview.expectedEmployeeDays),
-      styles: { fontStyle: 'bold', textColor: rateColorRgb(stats.overview.presenceRate, hasOverviewData) },
+      styles: {
+        fontStyle: 'bold',
+        textColor: rateColorRgb(stats.overview.presenceRate, hasOverviewData),
+        fillColor: rateFillRgb(stats.overview.presenceRate, hasOverviewData),
+      },
     }],
     ['Month-over-Month Growth', {
       content: `${stats.overview.momGrowth >= 0 ? '+' : ''}${fmt(stats.overview.momGrowth)}%`,
@@ -547,25 +657,25 @@ async function generateSummaryPdf(
   ];
 
   autoTable(doc, {
-    startY: PDF_FIRST_PAGE_TABLE_Y,
+    startY: firstPageTableY,
     head: [['Metric', 'Value']],
     body: metricsBody,
     theme: 'grid',
     styles: {
       fontSize: 9,
       textColor: [30, 41, 59],
-      cellPadding: { top: 6, right: 12, bottom: 6, left: 12 },
+      cellPadding: { top: 7, right: 12, bottom: 7, left: 12 },
       font: 'helvetica',
       lineColor: [226, 232, 240],
-      lineWidth: 0.35,
+      lineWidth: 0.3,
     },
     headStyles: {
-      fillColor: [241, 245, 249],
-      textColor: [15, 23, 42],
+      fillColor: [55, 65, 81],
+      textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 8,
     },
-    alternateRowStyles: { fillColor: [250, 252, 253] },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
       0: { fontStyle: 'bold', textColor: [51, 65, 85], cellWidth: 200 },
       1: { cellWidth: 'auto' as any },
@@ -595,8 +705,24 @@ async function generateSummaryPdf(
           { content: `#${i + 1}`, styles: { halign: 'center' as const, fontStyle: 'bold' as const } },
           { content: s.name, styles: { fontStyle: 'bold' as const } },
           { content: String(s.metrics.employees), styles: { halign: 'center' as const } },
-          { content: formatRateValue(rate, s.metrics.expectedEmployeeDays), styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(rate, hasRateData) as any } },
-          { content: rateLabel(rate, hasRateData), styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(rate, hasRateData) as any } },
+          {
+            content: formatRateValue(rate, s.metrics.expectedEmployeeDays),
+            styles: {
+              halign: 'center' as const,
+              fontStyle: 'bold' as const,
+              textColor: rateColorRgb(rate, hasRateData) as any,
+              fillColor: rateFillRgb(rate, hasRateData) as any,
+            },
+          },
+          {
+            content: rateLabel(rate, hasRateData),
+            styles: {
+              halign: 'center' as const,
+              fontStyle: 'bold' as const,
+              textColor: rateColorRgb(rate, hasRateData) as any,
+              fillColor: rateFillRgb(rate, hasRateData) as any,
+            },
+          },
         ];
       }),
       theme: 'grid',
@@ -605,10 +731,16 @@ async function generateSummaryPdf(
         font: 'helvetica',
         textColor: [30, 41, 59],
         lineColor: [226, 232, 240],
-        lineWidth: 0.35,
+        lineWidth: 0.3,
         cellPadding: 5.5,
       },
-      headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold', fontSize: 8, halign: 'center' },
+      headStyles: {
+        fillColor: [55, 65, 81],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 8,
+        halign: 'center',
+      },
       columnStyles: {
         0: { cellWidth: 38, halign: 'center' },
         1: { cellWidth: 'auto' as any },
@@ -637,8 +769,24 @@ async function generateSummaryPdf(
           { content: `#${i + 1}`, styles: { halign: 'center' as const, fontStyle: 'bold' as const } },
           { content: s.name, styles: { fontStyle: 'bold' as const } },
           { content: String(s.metrics.employees), styles: { halign: 'center' as const } },
-          { content: formatRateValue(rate, s.metrics.expectedEmployeeDays), styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(rate, hasRateData) as any } },
-          { content: rateLabel(rate, hasRateData), styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(rate, hasRateData) as any } },
+          {
+            content: formatRateValue(rate, s.metrics.expectedEmployeeDays),
+            styles: {
+              halign: 'center' as const,
+              fontStyle: 'bold' as const,
+              textColor: rateColorRgb(rate, hasRateData) as any,
+              fillColor: rateFillRgb(rate, hasRateData) as any,
+            },
+          },
+          {
+            content: rateLabel(rate, hasRateData),
+            styles: {
+              halign: 'center' as const,
+              fontStyle: 'bold' as const,
+              textColor: rateColorRgb(rate, hasRateData) as any,
+              fillColor: rateFillRgb(rate, hasRateData) as any,
+            },
+          },
         ];
       }),
       theme: 'grid',
@@ -647,12 +795,12 @@ async function generateSummaryPdf(
         font: 'helvetica',
         textColor: [30, 41, 59],
         lineColor: [226, 232, 240],
-        lineWidth: 0.35,
+        lineWidth: 0.3,
         cellPadding: 5.5,
       },
       headStyles: {
-        fillColor: [254, 242, 242],
-        textColor: [153, 27, 27],
+        fillColor: [55, 65, 81],
+        textColor: [255, 255, 255],
         fontStyle: 'bold',
         fontSize: 8,
         halign: 'center',

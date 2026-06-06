@@ -1080,12 +1080,40 @@ export default function ReportsPage() {
         </div>
 
         {/* Academic Year / Term Selectors */}
-        {timeframe === 'term' && (
-          <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <select
+            aria-label="Select Academic Year"
+            value={academicYear}
+            onChange={(e) => {
+              setAcademicYear(e.target.value);
+              setTimeframe('term');
+            }}
+            style={{
+              padding: '5px 12px',
+              borderRadius: '7px',
+              fontSize: '12px',
+              fontWeight: 600,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-card)',
+              color: 'var(--text-primary)',
+              outline: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            <option value="" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>Current Year (Auto)</option>
+            {availableYears.map((y) => (
+              <option key={y} value={y} style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>{y}</option>
+            ))}
+          </select>
+
+          {academicYear && availableTerms.length > 0 && (
             <select
-              aria-label="Select Academic Year"
-              value={academicYear}
-              onChange={(e) => setAcademicYear(e.target.value)}
+              aria-label="Select Term"
+              value={termName}
+              onChange={(e) => {
+                setTermName(e.target.value);
+                setTimeframe('term');
+              }}
               style={{
                 padding: '5px 12px',
                 borderRadius: '7px',
@@ -1098,37 +1126,13 @@ export default function ReportsPage() {
                 cursor: 'pointer',
               }}
             >
-              <option value="" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>Current Year (Auto)</option>
-              {availableYears.map((y) => (
-                <option key={y} value={y} style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>{y}</option>
+              <option value="all" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>Entire Academic Year</option>
+              {availableTerms.map((t) => (
+                <option key={t} value={t} style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>{t}</option>
               ))}
             </select>
-
-            {academicYear && availableTerms.length > 0 && (
-              <select
-                aria-label="Select Term"
-                value={termName}
-                onChange={(e) => setTermName(e.target.value)}
-                style={{
-                  padding: '5px 12px',
-                  borderRadius: '7px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg-card)',
-                  color: 'var(--text-primary)',
-                  outline: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                <option value="all" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>Entire Academic Year</option>
-                {availableTerms.map((t) => (
-                  <option key={t} value={t} style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>{t}</option>
-                ))}
-              </select>
-            )}
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Sort toggle (schools + employees only) */}
         {reportType !== 'summary' && (

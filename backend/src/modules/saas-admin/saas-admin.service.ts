@@ -519,17 +519,19 @@ export class SaasAdminService implements OnModuleInit {
           tEnd = maxEnd;
           tEnd.setHours(23, 59, 59, 999);
           
-          if (tEnd > endOfToday) {
-            tEnd = new Date(endOfToday);
-          }
-          
           if (tStart > endOfToday) {
+            // Future term: do not cap, let it use the future dates so expected counts and checkins naturally resolve to 0
             tenantRangesMap.set(tenant.id, {
-              start: endOfToday,
-              end: endOfToday,
-              weekdays: 1,
+              start: tStart,
+              end: tEnd,
+              weekdays: this.countWeekdays(tStart, tEnd),
             });
           } else {
+            // Current or past term: cap end date to today if it extends into the future, 
+            // so we don't dilute the presence rate with future expected days.
+            if (tEnd > endOfToday) {
+              tEnd = new Date(endOfToday);
+            }
             tenantRangesMap.set(tenant.id, {
               start: tStart,
               end: tEnd,
@@ -537,14 +539,25 @@ export class SaasAdminService implements OnModuleInit {
             });
           }
         } else {
-          const fallbackStart = new Date();
-          fallbackStart.setDate(fallbackStart.getDate() - 89);
-          fallbackStart.setHours(0, 0, 0, 0);
-          tenantRangesMap.set(tenant.id, {
-            start: fallbackStart,
-            end: defaultEnd,
-            weekdays: this.countWeekdays(fallbackStart, defaultEnd),
-          });
+          // No terms found for this tenant
+          if (timeframe === 'term' && (academicYear || (termName && termName !== 'all'))) {
+            // If explicit academicYear/term was requested but tenant has no matching terms,
+            // return a zero-day range so metrics naturally evaluate to 0
+            tenantRangesMap.set(tenant.id, {
+              start: new Date(0),
+              end: new Date(0),
+              weekdays: 0,
+            });
+          } else {
+            const fallbackStart = new Date();
+            fallbackStart.setDate(fallbackStart.getDate() - 89);
+            fallbackStart.setHours(0, 0, 0, 0);
+            tenantRangesMap.set(tenant.id, {
+              start: fallbackStart,
+              end: defaultEnd,
+              weekdays: this.countWeekdays(fallbackStart, defaultEnd),
+            });
+          }
         }
       }
     }

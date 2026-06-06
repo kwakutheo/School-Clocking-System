@@ -168,52 +168,52 @@ function rateLabel(r: number, hasData: boolean = true) {
 // ── PDF helpers ───────────────────────────────────────────────────────────────
 function pdfDrawHeader(doc: any, reportTitle: string, timestamp: string) {
   const pw = doc.internal.pageSize.getWidth();
-  doc.setFillColor(15, 23, 42);
-  doc.rect(0, 0, pw, 38, 'F');
 
   // Brand – left
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.setTextColor(255, 255, 255);
-  doc.text('TK CLOCKING', 14, 15);
+  doc.setTextColor(15, 23, 42);
+  doc.text('TK CLOCKING', 14, 22);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text('Central Management Dashboard', 14, 25);
+  doc.text('Central Management Dashboard', 14, 34);
 
   // Report title – right
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.setTextColor(255, 255, 255);
-  doc.text(reportTitle, pw - 14, 15, { align: 'right' });
+  doc.setTextColor(15, 23, 42);
+  doc.text(reportTitle, pw - 14, 22, { align: 'right' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Generated: ${timestamp}`, pw - 14, 25, { align: 'right' });
+  doc.text(`Generated: ${timestamp}`, pw - 14, 34, { align: 'right' });
 
-  // Pink accent line
-  doc.setDrawColor(236, 72, 153);
-  doc.setLineWidth(1.5);
-  doc.line(0, 38, pw, 38);
+  // Subtle bottom border instead of heavy dark rect
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(1);
+  doc.line(14, 44, pw - 14, 44);
 }
 
 function pdfDrawSummaryBar(doc: any, stats: { label: string; value: string }[], y: number) {
   const pw = doc.internal.pageSize.getWidth();
-  const barH = 24;
-  doc.setFillColor(30, 41, 59);
-  doc.rect(0, y, pw, barH, 'F');
+  const barH = 28;
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(14, y, pw - 28, barH, 4, 4, 'FD');
 
   const colW = (pw - 28) / stats.length;
   stats.forEach((stat, i) => {
     const x = 14 + colW * i + colW / 2;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.5);
-    doc.setTextColor(71, 85, 105);
-    doc.text(stat.label.toUpperCase(), x, y + 8, { align: 'center' });
+    doc.setFontSize(7);
+    doc.setTextColor(100, 116, 139);
+    doc.text(stat.label.toUpperCase(), x, y + 11, { align: 'center' });
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.setTextColor(255, 255, 255);
-    doc.text(stat.value, x, y + 18, { align: 'center' });
+    doc.setTextColor(15, 23, 42);
+    doc.text(stat.value, x, y + 22, { align: 'center' });
   });
 }
 
@@ -315,14 +315,14 @@ async function generateSchoolsPdf(
       lineWidth: 0.4,
     },
     headStyles: {
-      fillColor: [30, 41, 59],
-      textColor: [148, 163, 184],
+      fillColor: [241, 245, 249],
+      textColor: [15, 23, 42],
       fontStyle: 'bold',
-      fontSize: 7.5,
+      fontSize: 8,
       halign: 'center',
       cellPadding: { top: 6, right: 8, bottom: 6, left: 8 },
     },
-    alternateRowStyles: { fillColor: [248, 250, 252] },
+    alternateRowStyles: { fillColor: [250, 252, 253] },
     columnStyles: {
       0: { cellWidth: 28, halign: 'center' },
       1: { cellWidth: 'auto' as any, minCellWidth: 140 },
@@ -419,14 +419,14 @@ async function generateEmployeesPdf(
       lineWidth: 0.4,
     },
     headStyles: {
-      fillColor: [30, 41, 59],
-      textColor: [148, 163, 184],
+      fillColor: [241, 245, 249],
+      textColor: [15, 23, 42],
       fontStyle: 'bold',
-      fontSize: 7.5,
+      fontSize: 8,
       halign: 'center',
       cellPadding: { top: 6, right: 6, bottom: 6, left: 6 },
     },
-    alternateRowStyles: { fillColor: [248, 250, 252] },
+    alternateRowStyles: { fillColor: [250, 252, 253] },
     columnStyles: {
       0: { cellWidth: 25, halign: 'center' },
       1: { cellWidth: 'auto' as any, minCellWidth: 96 },
@@ -509,12 +509,12 @@ async function generateSummaryPdf(
       lineWidth: 0.4,
     },
     headStyles: {
-      fillColor: [30, 41, 59],
-      textColor: [148, 163, 184],
+      fillColor: [241, 245, 249],
+      textColor: [15, 23, 42],
       fontStyle: 'bold',
       fontSize: 8,
     },
-    alternateRowStyles: { fillColor: [248, 250, 252] },
+    alternateRowStyles: { fillColor: [250, 252, 253] },
     columnStyles: {
       0: { fontStyle: 'bold', textColor: [51, 65, 85], cellWidth: 200 },
       1: { cellWidth: 'auto' as any },
@@ -552,7 +552,7 @@ async function generateSummaryPdf(
       }),
       theme: 'grid',
       styles: { fontSize: 8.5, font: 'helvetica', lineColor: [226, 232, 240], lineWidth: 0.4, cellPadding: 5 },
-      headStyles: { fillColor: [30, 41, 59], textColor: [148, 163, 184], fontStyle: 'bold', fontSize: 7.5, halign: 'center' },
+      headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold', fontSize: 8, halign: 'center' },
       columnStyles: {
         0: { cellWidth: 38, halign: 'center' },
         1: { cellWidth: 'auto' as any },
@@ -594,10 +594,10 @@ async function generateSummaryPdf(
       theme: 'grid',
       styles: { fontSize: 8.5, font: 'helvetica', lineColor: [226, 232, 240], lineWidth: 0.4, cellPadding: 5 },
       headStyles: {
-        fillColor: [80, 20, 20],
-        textColor: [252, 165, 165],
+        fillColor: [254, 242, 242],
+        textColor: [153, 27, 27],
         fontStyle: 'bold',
-        fontSize: 7.5,
+        fontSize: 8,
         halign: 'center',
       },
       columnStyles: {

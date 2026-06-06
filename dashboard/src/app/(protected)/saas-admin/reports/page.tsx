@@ -654,8 +654,8 @@ async function generateEmployeesPdf(
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
       0: { cellWidth: 25, halign: 'center' },
-      1: { cellWidth: 'auto' as any, minCellWidth: 104 },
-      2: { cellWidth: 52, halign: 'center' },
+      1: { cellWidth: 'auto' as any, minCellWidth: 94 },
+      2: { cellWidth: 68, halign: 'center' },
       3: { cellWidth: 118 },
       4: { cellWidth: 60, halign: 'center' },
       5: { cellWidth: 68, halign: 'center' },

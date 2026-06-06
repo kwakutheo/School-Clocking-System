@@ -1083,6 +1083,7 @@ export default function ReportsPage() {
         {timeframe === 'term' && (
           <div style={{ display: 'flex', gap: '8px' }}>
             <select
+              aria-label="Select Academic Year"
               value={academicYear}
               onChange={(e) => setAcademicYear(e.target.value)}
               style={{
@@ -1105,6 +1106,7 @@ export default function ReportsPage() {
 
             {academicYear && availableTerms.length > 0 && (
               <select
+                aria-label="Select Term"
                 value={termName}
                 onChange={(e) => setTermName(e.target.value)}
                 style={{

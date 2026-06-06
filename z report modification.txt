@@ -1,0 +1,82 @@
+I have enough context from my review of [page.tsx](file:///d:/source_codes/school_clocking_system/dashboard/src/app/(protected)/saas-admin/reports/page.tsx). Let me give you a clear explanation of what I understand, and flag a few important things.
+
+---
+
+## ✅ What I Understand
+
+### 1. Remove the Timeframe Tabs (Today / Last 7 Days / Last 30 Days / Current Term)
+The toolbar currently has those 4 toggle buttons. Since the Overview page already handles them, this Reports page will **only** operate based on the Academic Year + Term dropdowns. The `timeframe` state will effectively be locked to `'term'` at all times — no manual tab switching.
+
+The Academic Year and Term selectors will **always be visible** (not hidden behind a "Current Term" tab click). When the page loads, it should default to the **current academic year** with the term selector available immediately.
+
+---
+
+### 2. School Performance Table Changes
+| Before | After |
+|---|---|
+| # | # |
+| School Name | School Name |
+| Employees | Employees *(at that time frame)* |
+| Branches | ❌ Removed |
+| Presence Rate | **Attendance Rate** *(renamed)* |
+| 30D Sustained | ❌ Removed |
+| Performance | ✅ Kept |
+| Portal | ✅ Kept |
+
+- The **employee count** shown per school should reflect staff present/enrolled **during that specific term/year**, not the current headcount.
+
+---
+
+### 3. Employee Performance Table Changes
+| Before | After |
+|---|---|
+| # | # |
+| Employee | Employee |
+| Code | Code |
+| Position | ❌ Removed |
+| School | ✅ Kept |
+| Presence | ✅ Kept |
+| Punctuality | ✅ Kept |
+| Hours | ✅ Kept |
+| Score | ✅ Kept |
+
+- The list should only show employees who were **active/had attendance records** during the selected period.
+
+---
+
+### 4. Future Terms → Show Dash (`-`) Instead of `0%`
+If the selected year/term is still in the future (no working days have elapsed), all percentage figures — attendance rate, punctuality, hours, score — should display **`—`** instead of `0%`. This is cleaner and more honest than showing zero values for data that simply doesn't exist yet.
+
+---
+
+## ⚠️ Things I Think Are Important to Add / Clarify
+
+### A. Default State on Page Load
+Currently, when you land on the page, **no year is pre-selected** and the term dropdown is hidden. I'll change this so the **current academic year is auto-selected by default** and the term defaults to "Entire Academic Year" — so the page immediately shows relevant data without the user needing to interact with the dropdowns first.
+
+### B. "Employees at That Time" — Technical Note
+The backend currently counts employees based on **current active status** in the database. For past terms, if an employee left the school or was added after that period, the count would be wrong. For now, the most practical approach is to **count employees who had at least one attendance log during the selected date range** — this is a real, time-bound count. I will implement this accordingly in the backend query.
+
+### C. The PDF Export Should Match the Table
+The PDF download for Schools and Employees currently includes the removed columns (Branches, 30D Sustained, Position). These need to be updated to reflect the new table structure.
+
+### D. "Platform Summary" Tab
+The Platform Summary (`summary` report type) uses `timeframe` internally. Since we're removing the timeframe tabs, the summary should also default to showing data for the **selected academic year/term**, not a fixed rolling period.
+
+### E. Empty State Messages
+When no academic year is selected yet, the table should show a friendly prompt like *"Select an academic year to view the report"* instead of "No data available."
+
+---
+
+## Summary of What I'll Change
+
+1. **Remove** the 4 timeframe tab buttons entirely
+2. **Always show** the Year + Term dropdowns, defaulting to current year
+3. **School table**: Remove Branches, remove 30D Sustained, rename Presence Rate → Attendance Rate
+4. **Employee table**: Remove Position column, filter by active participants in the selected period
+5. **Future term detection**: Show `—` in place of `0%` when `expectedEmployeeDays === 0`
+6. **Update PDFs** to match the new column structure
+7. **Update empty state** messages
+8. **Update the backend query** to count school employees based on attendance logs during the selected date range (not current headcount)
+
+---

@@ -520,11 +520,12 @@ export class SaasAdminService implements OnModuleInit {
           tEnd.setHours(23, 59, 59, 999);
           
           if (tStart > endOfToday) {
-            // Future term: do not cap, let it use the future dates so expected counts and checkins naturally resolve to 0
+            // Future term: preserve the actual boundaries for querying, but
+            // expose 0 elapsed weekdays so downstream metrics render as no-data.
             tenantRangesMap.set(tenant.id, {
               start: tStart,
               end: tEnd,
-              weekdays: this.countWeekdays(tStart, tEnd),
+              weekdays: 0,
             });
           } else {
             // Current or past term: cap end date to today if it extends into the future, 
@@ -590,18 +591,7 @@ export class SaasAdminService implements OnModuleInit {
     }
     if (tenants.length === 0) return { results: [], total: 0 };
 
-    // 1. Fetch non-inactive employees count grouped by tenant.
-    //    INACTIVE employees have resigned/been fired and must not appear in
-    //    SaaS headcount metrics.  SUSPENDED employees are still on payroll.
-    const employeeStats = await this.employeeRepo
-      .createQueryBuilder('e')
-      .select('e.tenantId', 'tenantId')
-      .addSelect('COUNT(*)', 'count')
-      .where('e.status != :inactive', { inactive: EmployeeStatus.INACTIVE })
-      .groupBy('e.tenantId')
-      .getRawMany();
-
-    // 2. Fetch total branches count grouped by tenant in a single query
+    // 1. Fetch total branches count grouped by tenant in a single query
     const branchStats = await this.branchRepo
       .createQueryBuilder('b')
       .select('b.tenantId', 'tenantId')
@@ -609,7 +599,7 @@ export class SaasAdminService implements OnModuleInit {
       .groupBy('b.tenantId')
       .getRawMany();
 
-    // 3. Fetch total departments count grouped by tenant in a single query
+    // 2. Fetch total departments count grouped by tenant in a single query
     const departmentStats = await this.departmentRepo
       .createQueryBuilder('d')
       .select('d.tenantId', 'tenantId')
@@ -617,7 +607,7 @@ export class SaasAdminService implements OnModuleInit {
       .groupBy('d.tenantId')
       .getRawMany();
 
-    // 4. Fetch total shifts count grouped by tenant in a single query
+    // 3. Fetch total shifts count grouped by tenant in a single query
     const shiftStats = await this.shiftRepo
       .createQueryBuilder('s')
       .select('s.tenantId', 'tenantId')
@@ -627,6 +617,42 @@ export class SaasAdminService implements OnModuleInit {
 
     // Get tenant timeframe ranges
     const tenantRangesMap = await this.getTenantRanges(tenants, timeframe, academicYear, termName);
+
+    let employeeStats: Array<{ tenantId: string; count: number }> = [];
+    if (timeframe === 'term') {
+      const employeeCountPromises = tenants.map(async (tenant) => {
+        const range = tenantRangesMap.get(tenant.id);
+        if (!range) return { tenantId: tenant.id, count: 0 };
+
+        const result = await this.connection
+          .getRepository(AttendanceLog)
+          .createQueryBuilder('log')
+          .select('log.tenantId', 'tenantId')
+          .addSelect('COUNT(DISTINCT log.employee_id)', 'count')
+          .where('log.tenantId = :tenantId', { tenantId: tenant.id })
+          .andWhere('log.timestamp BETWEEN :start AND :end', {
+            start: range.start,
+            end: range.end,
+          })
+          .groupBy('log.tenantId')
+          .getRawOne();
+
+        return {
+          tenantId: tenant.id,
+          count: result ? Number(result.count) : 0,
+        };
+      });
+      employeeStats = await Promise.all(employeeCountPromises);
+    } else {
+      // Non-term views still use the current non-inactive workforce snapshot.
+      employeeStats = await this.employeeRepo
+        .createQueryBuilder('e')
+        .select('e.tenantId', 'tenantId')
+        .addSelect('COUNT(*)', 'count')
+        .where('e.status != :inactive', { inactive: EmployeeStatus.INACTIVE })
+        .groupBy('e.tenantId')
+        .getRawMany();
+    }
 
     // Fetch check-ins count based on selected timeframe
     const endOfToday = new Date();
@@ -1091,11 +1117,10 @@ export class SaasAdminService implements OnModuleInit {
     const activeTenants = await this.tenantRepo.count({
       where: { isActive: true },
     });
-    // Exclude INACTIVE (resigned/fired) employees from the global headcount.
-    // SUSPENDED employees are still considered active workforce members.
-    const totalEmployees = await this.employeeRepo.count({
-      where: { status: Not(EmployeeStatus.INACTIVE) },
-    });
+    const totalEmployees = schools.reduce(
+      (acc, school) => acc + Number(school.metrics.employees ?? 0),
+      0,
+    );
 
     // Sum active checked-in staff count over this timeframe (use presentInTimeframe when available)
     const uniquePresentInTimeframe = schools.reduce(
@@ -1208,7 +1233,7 @@ export class SaasAdminService implements OnModuleInit {
       const rate =
         expected > 0
           ? Number(Math.min(100, (checkins / expected) * 100).toFixed(2))
-          : 100.0;
+          : 0;
       history.push(rate);
     }
 
@@ -1555,7 +1580,6 @@ export class SaasAdminService implements OnModuleInit {
         .createQueryBuilder('emp')
         .leftJoin('emp.user', 'user')
         .leftJoin('emp.shift', 'shift')
-        .where('emp.status = :status', { status: EmployeeStatus.ACTIVE })
         .select([
           'emp.id',
           'emp.tenantId',
@@ -1697,13 +1721,15 @@ export class SaasAdminService implements OnModuleInit {
 
         const workingDays: number[] = shift?.workingDays ?? [1, 2, 3, 4, 5];
         let expectedDays = 0;
-        const cursor = new Date(empStart);
-        while (cursor <= empEnd) {
-          const dow = cursor.getDay();
-          if (workingDays.includes(dow === 0 ? 7 : dow)) expectedDays++;
-          cursor.setDate(cursor.getDate() + 1);
+        const expectedEnd = empEnd > endOfToday ? endOfToday : empEnd;
+        if (empStart <= expectedEnd) {
+          const cursor = new Date(empStart);
+          while (cursor <= expectedEnd) {
+            const dow = cursor.getDay();
+            if (workingDays.includes(dow === 0 ? 7 : dow)) expectedDays++;
+            cursor.setDate(cursor.getDate() + 1);
+          }
         }
-        if (expectedDays === 0) expectedDays = 1;
 
         // For 'term', narrow the pre-fetched logs to this employee's exact
         // term window.  For other timeframes the SQL already scoped correctly.
@@ -1728,7 +1754,14 @@ export class SaasAdminService implements OnModuleInit {
         const presentDates = Array.from(inMap.keys());
         const daysPresent = presentDates.length;
 
-        const presenceRate = Math.min(100, (daysPresent / expectedDays) * 100);
+        if (timeframe === 'term' && daysPresent === 0) {
+          continue;
+        }
+
+        const presenceRate =
+          expectedDays > 0
+            ? Math.min(100, (daysPresent / expectedDays) * 100)
+            : 0;
 
         let onTimeEvents = 0;
         let totalExpectedEvents = 0;

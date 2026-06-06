@@ -21,8 +21,17 @@ import {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type ReportType = 'schools' | 'employees' | 'summary';
-type Timeframe = 'today' | '7d' | '30d' | 'term';
+type Timeframe = 'term';
 type SortOrder = 'best' | 'worst';
+
+interface AcademicTerm {
+  id: string;
+  name: string;
+  academicYear: string;
+  startDate?: string;
+  endDate?: string;
+  isActive?: boolean;
+}
 
 interface SchoolMetric {
   id: string;
@@ -68,6 +77,7 @@ interface PlatformStats {
     suspendedSchools: number;
     trackedEmployees: number;
     presentInTimeframe: number;
+    expectedEmployeeDays: number;
     presenceRate: number;
     history: number[];
     momGrowth: number;
@@ -78,14 +88,6 @@ interface PlatformStats {
   topTenSustained: SchoolMetric[];
   health: { apiStatus: string; databaseUptime: string; latencyMs: number };
 }
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-const TIMEFRAME_LABELS: Record<Timeframe, string> = {
-  today: 'Today',
-  '7d': 'Last 7 Days',
-  '30d': 'Last 30 Days',
-  term: 'Current Term',
-};
 
 const REPORT_TYPES: {
   type: ReportType;
@@ -124,22 +126,40 @@ const REPORT_TYPES: {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmt = (v: number) => parseFloat((v || 0).toFixed(1));
 
-function rateColorRgb(r: number): [number, number, number] {
+function hasMetricData(expectedCount?: number) {
+  return Number(expectedCount ?? 0) > 0;
+}
+
+function formatRateValue(rate: number, expectedCount?: number) {
+  return hasMetricData(expectedCount) ? `${fmt(rate)}%` : '—';
+}
+
+function getPeriodLabel(academicYear: string, termName: string) {
+  if (!academicYear) return 'Select an academic year to view the report';
+  if (termName === 'all') return `${academicYear} · Entire Academic Year`;
+  return `${academicYear} · ${termName}`;
+}
+
+function rateColorRgb(r: number, hasData: boolean = true): [number, number, number] {
+  if (!hasData) return [100, 116, 139];
   if (r >= 90) return [34, 197, 94];
   if (r >= 75) return [245, 158, 11];
   return [239, 68, 68];
 }
-function rateColorHex(r: number) {
+function rateColorHex(r: number, hasData: boolean = true) {
+  if (!hasData) return '#64748b';
   if (r >= 90) return '#22c55e';
   if (r >= 75) return '#f59e0b';
   return '#ef4444';
 }
-function rateBg(r: number) {
+function rateBg(r: number, hasData: boolean = true) {
+  if (!hasData) return 'rgba(100,116,139,0.12)';
   if (r >= 90) return 'rgba(34,197,94,0.1)';
   if (r >= 75) return 'rgba(245,158,11,0.1)';
   return 'rgba(239,68,68,0.1)';
 }
-function rateLabel(r: number) {
+function rateLabel(r: number, hasData: boolean = true) {
+  if (!hasData) return '—';
   if (r >= 90) return 'Excellent';
   if (r >= 75) return 'Warning';
   return 'Critical';
@@ -219,7 +239,7 @@ function pdfDrawFooter(
 // ── Schools PDF ───────────────────────────────────────────────────────────────
 async function generateSchoolsPdf(
   schools: SchoolMetric[],
-  timeframe: Timeframe,
+  periodLabel: string,
   sortOrder: SortOrder,
   timestamp: string,
 ) {
@@ -228,25 +248,32 @@ async function generateSchoolsPdf(
 
   const doc = new jsPDF({ orientation: 'landscape', format: 'a4', unit: 'pt' });
   const reportTitle = 'Schools Performance Report';
-  const subtitle = `${TIMEFRAME_LABELS[timeframe]} · ${sortOrder === 'best' ? 'Best → Worst' : 'Worst → Best'}`;
+  const subtitle = `${periodLabel} · ${sortOrder === 'best' ? 'Best → Worst' : 'Worst → Best'}`;
+  const schoolsWithAttendance = schools.filter((school) =>
+    hasMetricData(school.metrics.expectedEmployeeDays),
+  );
 
   const avgRate =
-    schools.length > 0
-      ? fmt(schools.reduce((s, x) => s + (x.metrics.presenceRate ?? 0), 0) / schools.length)
+    schoolsWithAttendance.length > 0
+      ? fmt(
+          schoolsWithAttendance.reduce(
+            (sum, school) => sum + (school.metrics.presenceRate ?? 0),
+            0,
+          ) / schoolsWithAttendance.length,
+        )
       : 0;
 
   const summaryStats = [
     { label: 'Total Schools', value: String(schools.length) },
-    { label: 'Timeframe', value: TIMEFRAME_LABELS[timeframe] },
+    { label: 'Period', value: periodLabel },
     { label: 'Sort Order', value: sortOrder === 'best' ? 'Best → Worst' : 'Worst → Best' },
-    { label: 'Avg. Presence Rate', value: `${avgRate}%` },
+    { label: 'Avg. Attendance Rate', value: schoolsWithAttendance.length > 0 ? `${avgRate}%` : '—' },
   ];
 
   const tableBody = schools.map((school, i) => {
     const rate = school.metrics.presenceRate ?? 0;
-    const sustained = school.metrics.sustained30DayRate ?? 0;
-    const rateRgb = rateColorRgb(rate);
-    const susRgb = rateColorRgb(sustained);
+    const hasRateData = hasMetricData(school.metrics.expectedEmployeeDays);
+    const rateRgb = rateColorRgb(rate, hasRateData);
     return [
       {
         content: String(i + 1),
@@ -254,17 +281,12 @@ async function generateSchoolsPdf(
       },
       { content: school.name, styles: { fontStyle: 'bold' as const } },
       { content: String(school.metrics.employees), styles: { halign: 'center' as const } },
-      { content: String(school.metrics.branches), styles: { halign: 'center' as const } },
       {
-        content: `${fmt(rate)}%`,
+        content: formatRateValue(rate, school.metrics.expectedEmployeeDays),
         styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateRgb as any },
       },
       {
-        content: `${fmt(sustained)}%`,
-        styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: susRgb as any },
-      },
-      {
-        content: rateLabel(rate),
+        content: rateLabel(rate, hasRateData),
         styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateRgb as any },
       },
       {
@@ -281,7 +303,7 @@ async function generateSchoolsPdf(
   // Table — margin.top reserves space for header on all pages
   autoTable(doc, {
     startY: 68,
-    head: [['#', 'School Name', 'Employees', 'Branches', 'Presence Rate', '30D Sustained', 'Performance', 'Portal']],
+    head: [['#', 'School Name', 'Employees', 'Attendance Rate', 'Performance', 'Portal']],
     body: tableBody,
     theme: 'grid',
     styles: {
@@ -303,13 +325,11 @@ async function generateSchoolsPdf(
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
       0: { cellWidth: 28, halign: 'center' },
-      1: { cellWidth: 'auto' as any, minCellWidth: 110 },
+      1: { cellWidth: 'auto' as any, minCellWidth: 140 },
       2: { cellWidth: 60, halign: 'center' },
-      3: { cellWidth: 55, halign: 'center' },
-      4: { cellWidth: 72, halign: 'center' },
-      5: { cellWidth: 72, halign: 'center' },
-      6: { cellWidth: 70, halign: 'center' },
-      7: { cellWidth: 60, halign: 'center' },
+      3: { cellWidth: 82, halign: 'center' },
+      4: { cellWidth: 78, halign: 'center' },
+      5: { cellWidth: 60, halign: 'center' },
     },
     margin: { top: 52, left: 14, right: 14, bottom: 30 },
   });
@@ -323,13 +343,13 @@ async function generateSchoolsPdf(
     pdfDrawFooter(doc, subtitle, p, totalPages);
   }
 
-  doc.save(`schools-performance-${timeframe}-${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`schools-performance-term-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 // ── Employee Rankings PDF ─────────────────────────────────────────────────────
 async function generateEmployeesPdf(
   employees: EmployeeRanking[],
-  timeframe: Timeframe,
+  periodLabel: string,
   sortOrder: SortOrder,
   timestamp: string,
 ) {
@@ -338,7 +358,7 @@ async function generateEmployeesPdf(
 
   const doc = new jsPDF({ orientation: 'landscape', format: 'a4', unit: 'pt' });
   const reportTitle = 'Employee Rankings Report';
-  const subtitle = `${TIMEFRAME_LABELS[timeframe]} · ${sortOrder === 'best' ? 'Best Performers' : 'Needs Attention'}`;
+  const subtitle = `${periodLabel} · ${sortOrder === 'best' ? 'Best Performers' : 'Needs Attention'}`;
 
   const avgScore =
     employees.length > 0
@@ -347,7 +367,7 @@ async function generateEmployeesPdf(
 
   const summaryStats = [
     { label: 'Total Employees', value: String(employees.length) },
-    { label: 'Timeframe', value: TIMEFRAME_LABELS[timeframe] },
+    { label: 'Period', value: periodLabel },
     { label: 'Ranking', value: sortOrder === 'best' ? 'Best → Worst' : 'Worst → Best' },
     { label: 'Avg. Score', value: `${avgScore}%` },
   ];
@@ -357,6 +377,7 @@ async function generateEmployeesPdf(
     const presence = emp.metrics.presenceRate ?? 0;
     const punct = emp.metrics.punctualityRate ?? 0;
     const hours = emp.metrics.hoursCompletionRate ?? 0;
+    const hasRateData = hasMetricData(emp.metrics.expectedDays);
     return [
       {
         content: String(emp.rank ?? i + 1),
@@ -364,30 +385,29 @@ async function generateEmployeesPdf(
       },
       { content: emp.name, styles: { fontStyle: 'bold' as const } },
       { content: emp.employeeCode || '—', styles: { halign: 'center' as const, textColor: [71, 85, 105] as any } },
-      { content: emp.position || '—', styles: { textColor: [71, 85, 105] as any } },
       emp.school.name,
       {
-        content: `${fmt(presence)}%`,
-        styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(presence) as any },
+        content: formatRateValue(presence, emp.metrics.expectedDays),
+        styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(presence, hasRateData) as any },
       },
       {
-        content: `${fmt(punct)}%`,
-        styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(punct) as any },
+        content: formatRateValue(punct, emp.metrics.expectedDays),
+        styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(punct, hasRateData) as any },
       },
       {
-        content: `${fmt(hours)}%`,
-        styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(hours) as any },
+        content: formatRateValue(hours, emp.metrics.expectedDays),
+        styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(hours, hasRateData) as any },
       },
       {
-        content: `${fmt(score)}%`,
-        styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(score) as any },
+        content: formatRateValue(score, emp.metrics.expectedDays),
+        styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(score, hasRateData) as any },
       },
     ];
   });
 
   autoTable(doc, {
     startY: 68,
-    head: [['#', 'Employee Name', 'Code', 'Position', 'School', 'Presence', 'Punctuality', 'Hours', 'Score']],
+    head: [['#', 'Employee Name', 'Code', 'School', 'Presence', 'Punctuality', 'Hours', 'Score']],
     body: tableBody,
     theme: 'grid',
     styles: {
@@ -409,14 +429,13 @@ async function generateEmployeesPdf(
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
       0: { cellWidth: 25, halign: 'center' },
-      1: { cellWidth: 'auto' as any, minCellWidth: 80 },
+      1: { cellWidth: 'auto' as any, minCellWidth: 96 },
       2: { cellWidth: 42, halign: 'center' },
-      3: { cellWidth: 58 },
-      4: { cellWidth: 88 },
-      5: { cellWidth: 52, halign: 'center' },
-      6: { cellWidth: 56, halign: 'center' },
-      7: { cellWidth: 44, halign: 'center' },
-      8: { cellWidth: 44, halign: 'center' },
+      3: { cellWidth: 100 },
+      4: { cellWidth: 56, halign: 'center' },
+      5: { cellWidth: 60, halign: 'center' },
+      6: { cellWidth: 48, halign: 'center' },
+      7: { cellWidth: 48, halign: 'center' },
     },
     margin: { top: 52, left: 14, right: 14, bottom: 30 },
   });
@@ -429,13 +448,13 @@ async function generateEmployeesPdf(
     pdfDrawFooter(doc, subtitle, p, totalPages);
   }
 
-  doc.save(`employee-rankings-${timeframe}-${sortOrder}-${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`employee-rankings-term-${sortOrder}-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 // ── Platform Summary PDF ──────────────────────────────────────────────────────
 async function generateSummaryPdf(
   stats: PlatformStats,
-  timeframe: Timeframe,
+  periodLabel: string,
   timestamp: string,
 ) {
   const { jsPDF } = await import('jspdf');
@@ -443,15 +462,15 @@ async function generateSummaryPdf(
 
   const doc = new jsPDF({ orientation: 'portrait', format: 'a4', unit: 'pt' });
   const pw = doc.internal.pageSize.getWidth();
-  const ph = doc.internal.pageSize.getHeight();
   const reportTitle = 'Platform Summary Report';
-  const subtitle = TIMEFRAME_LABELS[timeframe];
+  const subtitle = periodLabel;
+  const hasOverviewData = hasMetricData(stats.overview.expectedEmployeeDays);
 
   const summaryStats = [
     { label: 'Total Schools', value: String(stats.overview.totalSchools) },
     { label: 'Active', value: String(stats.overview.activeSchools) },
     { label: 'Employees', value: stats.overview.trackedEmployees.toLocaleString() },
-    { label: 'Global Rate', value: `${fmt(stats.overview.presenceRate)}%` },
+    { label: 'Global Rate', value: formatRateValue(stats.overview.presenceRate, stats.overview.expectedEmployeeDays) },
   ];
 
   // ── Key metrics table ──
@@ -462,8 +481,8 @@ async function generateSummaryPdf(
     ['Total Tracked Employees', { content: stats.overview.trackedEmployees.toLocaleString(), styles: { fontStyle: 'bold', textColor: [59, 130, 246] } }],
     ['Present in Timeframe', { content: stats.overview.presentInTimeframe.toLocaleString(), styles: { fontStyle: 'bold', textColor: [34, 197, 94] } }],
     ['Global Attendance Rate', {
-      content: `${fmt(stats.overview.presenceRate)}%`,
-      styles: { fontStyle: 'bold', textColor: rateColorRgb(stats.overview.presenceRate) },
+      content: formatRateValue(stats.overview.presenceRate, stats.overview.expectedEmployeeDays),
+      styles: { fontStyle: 'bold', textColor: rateColorRgb(stats.overview.presenceRate, hasOverviewData) },
     }],
     ['Month-over-Month Growth', {
       content: `${stats.overview.momGrowth >= 0 ? '+' : ''}${fmt(stats.overview.momGrowth)}%`,
@@ -522,12 +541,13 @@ async function generateSummaryPdf(
       head: [['Rank', 'School Name', 'Employees', 'Presence Rate', 'Performance']],
       body: stats.topFive.map((s, i) => {
         const rate = s.metrics.presenceRate ?? 0;
+        const hasRateData = hasMetricData(s.metrics.expectedEmployeeDays);
         return [
           { content: `#${i + 1}`, styles: { halign: 'center' as const, fontStyle: 'bold' as const } },
           { content: s.name, styles: { fontStyle: 'bold' as const } },
           { content: String(s.metrics.employees), styles: { halign: 'center' as const } },
-          { content: `${fmt(rate)}%`, styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(rate) as any } },
-          { content: rateLabel(rate), styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(rate) as any } },
+          { content: formatRateValue(rate, s.metrics.expectedEmployeeDays), styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(rate, hasRateData) as any } },
+          { content: rateLabel(rate, hasRateData), styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(rate, hasRateData) as any } },
         ];
       }),
       theme: 'grid',
@@ -562,12 +582,13 @@ async function generateSummaryPdf(
       head: [['Rank', 'School Name', 'Employees', 'Presence Rate', 'Performance']],
       body: stats.bottomFive.map((s, i) => {
         const rate = s.metrics.presenceRate ?? 0;
+        const hasRateData = hasMetricData(s.metrics.expectedEmployeeDays);
         return [
           { content: `#${i + 1}`, styles: { halign: 'center' as const, fontStyle: 'bold' as const } },
           { content: s.name, styles: { fontStyle: 'bold' as const } },
           { content: String(s.metrics.employees), styles: { halign: 'center' as const } },
-          { content: `${fmt(rate)}%`, styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(rate) as any } },
-          { content: rateLabel(rate), styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(rate) as any } },
+          { content: formatRateValue(rate, s.metrics.expectedEmployeeDays), styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(rate, hasRateData) as any } },
+          { content: rateLabel(rate, hasRateData), styles: { halign: 'center' as const, fontStyle: 'bold' as const, textColor: rateColorRgb(rate, hasRateData) as any } },
         ];
       }),
       theme: 'grid',
@@ -599,15 +620,27 @@ async function generateSummaryPdf(
     pdfDrawFooter(doc, subtitle, p, totalPages);
   }
 
-  doc.save(`platform-summary-${timeframe}-${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`platform-summary-term-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 // ── Preview table components ───────────────────────────────────────────────────
-function SchoolsPreview({ schools }: { schools: SchoolMetric[] }) {
+function SchoolsPreview({
+  schools,
+  academicYear,
+}: {
+  schools: SchoolMetric[];
+  academicYear: string;
+}) {
+  if (!academicYear)
+    return (
+      <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
+        Select an academic year to view the report.
+      </div>
+    );
   if (schools.length === 0)
     return (
       <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
-        No schools data available for this timeframe.
+        No schools data available for the selected academic year and term.
       </div>
     );
   return (
@@ -615,7 +648,7 @@ function SchoolsPreview({ schools }: { schools: SchoolMetric[] }) {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--border)' }}>
-            {['#', 'School Name', 'Employees', 'Branches', 'Presence Rate', '30D Sustained', 'Performance', 'Portal'].map((h) => (
+            {['#', 'School Name', 'Employees', 'Attendance Rate', 'Performance', 'Portal'].map((h) => (
               <th
                 key={h}
                 style={{
@@ -626,7 +659,7 @@ function SchoolsPreview({ schools }: { schools: SchoolMetric[] }) {
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
                   whiteSpace: 'nowrap',
-                  textAlign: ['Employees', 'Branches', 'Presence Rate', '30D Sustained', 'Performance', 'Portal', '#'].includes(h) ? 'center' : 'left',
+                  textAlign: ['Employees', 'Attendance Rate', 'Performance', 'Portal', '#'].includes(h) ? 'center' : 'left',
                 }}
               >
                 {h}
@@ -637,7 +670,7 @@ function SchoolsPreview({ schools }: { schools: SchoolMetric[] }) {
         <tbody>
           {schools.map((school, i) => {
             const rate = school.metrics.presenceRate ?? 0;
-            const sustained = school.metrics.sustained30DayRate ?? 0;
+            const hasRateData = hasMetricData(school.metrics.expectedEmployeeDays);
             return (
               <tr
                 key={school.id}
@@ -648,12 +681,12 @@ function SchoolsPreview({ schools }: { schools: SchoolMetric[] }) {
                 <td style={{ padding: '10px 14px', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '12px' }}>{i + 1}</td>
                 <td style={{ padding: '10px 14px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>{school.name}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'center', color: 'var(--text-secondary)' }}>{school.metrics.employees}</td>
-                <td style={{ padding: '10px 14px', textAlign: 'center', color: 'var(--text-secondary)' }}>{school.metrics.branches}</td>
-                <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: rateColorHex(rate) }}>{fmt(rate)}%</td>
-                <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: rateColorHex(sustained) }}>{fmt(sustained)}%</td>
+                <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: rateColorHex(rate, hasRateData) }}>
+                  {formatRateValue(rate, school.metrics.expectedEmployeeDays)}
+                </td>
                 <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                  <span style={{ padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, background: rateBg(rate), color: rateColorHex(rate) }}>
-                    {rateLabel(rate)}
+                  <span style={{ padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, background: rateBg(rate, hasRateData), color: rateColorHex(rate, hasRateData) }}>
+                    {rateLabel(rate, hasRateData)}
                   </span>
                 </td>
                 <td style={{ padding: '10px 14px', textAlign: 'center' }}>
@@ -670,11 +703,23 @@ function SchoolsPreview({ schools }: { schools: SchoolMetric[] }) {
   );
 }
 
-function EmployeesPreview({ employees }: { employees: EmployeeRanking[] }) {
+function EmployeesPreview({
+  employees,
+  academicYear,
+}: {
+  employees: EmployeeRanking[];
+  academicYear: string;
+}) {
+  if (!academicYear)
+    return (
+      <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
+        Select an academic year to view the report.
+      </div>
+    );
   if (employees.length === 0)
     return (
       <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
-        No employee data available for this timeframe.
+        No employee data available for the selected academic year and term.
       </div>
     );
   return (
@@ -682,7 +727,7 @@ function EmployeesPreview({ employees }: { employees: EmployeeRanking[] }) {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--border)' }}>
-            {['#', 'Employee', 'Code', 'Position', 'School', 'Presence', 'Punctuality', 'Hours', 'Score'].map((h) => (
+            {['#', 'Employee', 'Code', 'School', 'Presence', 'Punctuality', 'Hours', 'Score'].map((h) => (
               <th
                 key={h}
                 style={{
@@ -707,6 +752,7 @@ function EmployeesPreview({ employees }: { employees: EmployeeRanking[] }) {
             const presence = emp.metrics.presenceRate ?? 0;
             const punct = emp.metrics.punctualityRate ?? 0;
             const hours = emp.metrics.hoursCompletionRate ?? 0;
+            const hasRateData = hasMetricData(emp.metrics.expectedDays);
             // generate initials
             const initials = emp.name.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
             return (
@@ -726,19 +772,18 @@ function EmployeesPreview({ employees }: { employees: EmployeeRanking[] }) {
                   </div>
                 </td>
                 <td style={{ padding: '10px 14px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '12px' }}>{emp.employeeCode || '—'}</td>
-                <td style={{ padding: '10px 14px', color: 'var(--text-secondary)', fontSize: '12px', whiteSpace: 'nowrap' }}>{emp.position || '—'}</td>
                 <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: emp.school.primaryColor }} />
                     <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{emp.school.name}</span>
                   </div>
                 </td>
-                <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: rateColorHex(presence) }}>{fmt(presence)}%</td>
-                <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: rateColorHex(punct) }}>{fmt(punct)}%</td>
-                <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: rateColorHex(hours) }}>{fmt(hours)}%</td>
+                <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: rateColorHex(presence, hasRateData) }}>{formatRateValue(presence, emp.metrics.expectedDays)}</td>
+                <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: rateColorHex(punct, hasRateData) }}>{formatRateValue(punct, emp.metrics.expectedDays)}</td>
+                <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: rateColorHex(hours, hasRateData) }}>{formatRateValue(hours, emp.metrics.expectedDays)}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                  <span style={{ padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, background: rateBg(score), color: rateColorHex(score) }}>
-                    {fmt(score)}%
+                  <span style={{ padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, background: rateBg(score, hasRateData), color: rateColorHex(score, hasRateData) }}>
+                    {formatRateValue(score, emp.metrics.expectedDays)}
                   </span>
                 </td>
               </tr>
@@ -750,11 +795,23 @@ function EmployeesPreview({ employees }: { employees: EmployeeRanking[] }) {
   );
 }
 
-function SummaryPreview({ stats, timeframe }: { stats: PlatformStats | null; timeframe: Timeframe }) {
-  if (!stats) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>No data available.</div>;
+function SummaryPreview({
+  stats,
+  academicYear,
+}: {
+  stats: PlatformStats | null;
+  academicYear: string;
+}) {
+  if (!academicYear) {
+    return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>Select an academic year to view the report.</div>;
+  }
+  if (!stats) {
+    return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>No summary data available for the selected academic year and term.</div>;
+  }
   const { overview } = stats;
   const cohorts = overview.cohorts ?? { excellent: 0, warning: 0, critical: 0 };
   const totalCohort = (cohorts.excellent + cohorts.warning + cohorts.critical) || 1;
+  const hasOverviewData = hasMetricData(overview.expectedEmployeeDays);
 
   const metricCards = [
     { label: 'Total Schools', value: String(overview.totalSchools), color: '#8b5cf6' },
@@ -762,7 +819,7 @@ function SummaryPreview({ stats, timeframe }: { stats: PlatformStats | null; tim
     { label: 'Suspended', value: String(overview.suspendedSchools), color: '#ef4444' },
     { label: 'Tracked Employees', value: overview.trackedEmployees.toLocaleString(), color: '#3b82f6' },
     { label: 'Present in Period', value: String(overview.presentInTimeframe), color: '#22c55e' },
-    { label: 'Global Attendance', value: `${fmt(overview.presenceRate)}%`, color: rateColorHex(overview.presenceRate) },
+    { label: 'Global Attendance', value: formatRateValue(overview.presenceRate, overview.expectedEmployeeDays), color: rateColorHex(overview.presenceRate, hasOverviewData) },
     { label: 'MoM Growth', value: `${overview.momGrowth >= 0 ? '+' : ''}${fmt(overview.momGrowth)}%`, color: overview.momGrowth >= 0 ? '#22c55e' : '#ef4444' },
     { label: 'Excellent Schools', value: String(cohorts.excellent), color: '#22c55e' },
     { label: 'Warning Schools', value: String(cohorts.warning), color: '#f59e0b' },
@@ -817,12 +874,13 @@ function SummaryPreview({ stats, timeframe }: { stats: PlatformStats | null; tim
             <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>{label}</div>
             {schools.slice(0, 5).map((s, i) => {
               const rate = s.metrics.presenceRate ?? 0;
+              const hasRateData = hasMetricData(s.metrics.expectedEmployeeDays);
               return (
                 <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
                   <div style={{ width: '20px', fontSize: '11px', fontWeight: 800, color: 'var(--text-secondary)', textAlign: 'center', flexShrink: 0 }}>#{i + 1}</div>
                   <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: s.primaryColor, flexShrink: 0 }} />
                   <div style={{ flex: 1, fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</div>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: rateColorHex(rate), flexShrink: 0 }}>{fmt(rate)}%</div>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: rateColorHex(rate, hasRateData), flexShrink: 0 }}>{formatRateValue(rate, s.metrics.expectedEmployeeDays)}</div>
                 </div>
               );
             })}
@@ -836,11 +894,11 @@ function SummaryPreview({ stats, timeframe }: { stats: PlatformStats | null; tim
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function ReportsPage() {
   const [reportType, setReportType] = useState<ReportType>('schools');
-  const [timeframe, setTimeframe] = useState<Timeframe>('30d');
   const [sortOrder, setSortOrder] = useState<SortOrder>('best');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const timeframe: Timeframe = 'term';
 
   const [schools, setSchools] = useState<SchoolMetric[]>([]);
   const [employees, setEmployees] = useState<EmployeeRanking[]>([]);
@@ -851,19 +909,31 @@ export default function ReportsPage() {
   const [termName, setTermName] = useState<string>('all');
   const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [availableTerms, setAvailableTerms] = useState<string[]>([]);
-  const [allTermsData, setAllTermsData] = useState<any[]>([]);
+  const [allTermsData, setAllTermsData] = useState<AcademicTerm[]>([]);
 
   // Fetch available academic years and terms globally on mount
   useEffect(() => {
     async function loadTerms() {
       try {
         const res = await calendarApi.listTerms();
-        const terms = Array.isArray(res.data) ? res.data : [];
+        const terms: AcademicTerm[] = Array.isArray(res.data) ? res.data : [];
         setAllTermsData(terms);
-        
-        const years = Array.from(new Set(terms.map((t: any) => t.academicYear).filter(Boolean))) as string[];
+
+        const years = Array.from(new Set(terms.map((t) => t.academicYear).filter(Boolean))) as string[];
         years.sort((a, b) => b.localeCompare(a));
         setAvailableYears(years);
+
+        const now = new Date();
+        const currentTerm = terms.find((term) => {
+          if (!term.startDate || !term.endDate) return false;
+          const start = new Date(term.startDate);
+          const end = new Date(term.endDate);
+          end.setHours(23, 59, 59, 999);
+          return now >= start && now <= end;
+        });
+        const activeTerm = terms.find((term) => term.isActive);
+        const defaultYear = currentTerm?.academicYear ?? activeTerm?.academicYear ?? years[0] ?? '';
+        setAcademicYear((current) => current || defaultYear);
       } catch (e) {
         console.error('Failed to load terms for filter:', e);
       }
@@ -874,8 +944,8 @@ export default function ReportsPage() {
   // Update available terms when the selected academic year changes
   useEffect(() => {
     if (academicYear) {
-      const termsForYear = allTermsData.filter(t => t.academicYear === academicYear);
-      const termNames = Array.from(new Set(termsForYear.map(t => t.name))) as string[];
+      const termsForYear = allTermsData.filter((term) => term.academicYear === academicYear);
+      const termNames = Array.from(new Set(termsForYear.map((term) => term.name))) as string[];
       setAvailableTerms(termNames);
       if (!termNames.includes(termName) && termName !== 'all') {
         setTermName('all');
@@ -887,12 +957,19 @@ export default function ReportsPage() {
   }, [academicYear, allTermsData, termName]);
 
   const fetchData = useCallback(async () => {
+    if (!academicYear) {
+      setSchools([]);
+      setEmployees([]);
+      setStats(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setSearch('');
-    
-    // Only pass academicYear/termName to the backend if the timeframe is 'term'
-    const aYear = timeframe === 'term' && academicYear ? academicYear : undefined;
-    const tName = timeframe === 'term' && termName && termName !== 'all' ? termName : undefined;
+
+    const aYear = academicYear;
+    const tName = termName && termName !== 'all' ? termName : undefined;
 
     try {
       if (reportType === 'schools') {
@@ -929,7 +1006,7 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [reportType, timeframe, sortOrder, academicYear, termName]);
+  }, [academicYear, reportType, sortOrder, termName, timeframe]);
 
   useEffect(() => {
     fetchData();
@@ -948,13 +1025,16 @@ export default function ReportsPage() {
     : employees;
 
   const previewCount =
-    reportType === 'schools'
+    !academicYear
+      ? 0
+      : reportType === 'schools'
       ? filteredSchools.length
       : reportType === 'employees'
       ? filteredEmployees.length
       : stats
       ? 10
       : 0;
+  const periodLabel = getPeriodLabel(academicYear, termName);
 
   const handleGeneratePdf = async () => {
     setGenerating(true);
@@ -964,11 +1044,11 @@ export default function ReportsPage() {
         ' at ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
       if (reportType === 'schools') {
-        await generateSchoolsPdf(filteredSchools, timeframe, sortOrder, timestamp);
+        await generateSchoolsPdf(filteredSchools, periodLabel, sortOrder, timestamp);
       } else if (reportType === 'employees') {
-        await generateEmployeesPdf(filteredEmployees, timeframe, sortOrder, timestamp);
+        await generateEmployeesPdf(filteredEmployees, periodLabel, sortOrder, timestamp);
       } else if (stats) {
-        await generateSummaryPdf(stats, timeframe, timestamp);
+        await generateSummaryPdf(stats, periodLabel, timestamp);
       }
     } catch (err) {
       console.error('PDF generation error:', err);
@@ -1056,38 +1136,12 @@ export default function ReportsPage() {
         className="card"
         style={{ padding: '14px 18px', marginBottom: '18px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}
       >
-        {/* Timeframe tabs */}
-        <div style={{ display: 'flex', background: 'var(--bg-card-hover)', border: '1px solid var(--border)', borderRadius: '9px', padding: '3px', gap: '2px' }}>
-          {(Object.keys(TIMEFRAME_LABELS) as Timeframe[]).map((tf) => (
-            <button
-              key={tf}
-              onClick={() => setTimeframe(tf)}
-              style={{
-                padding: '5px 13px',
-                borderRadius: '7px',
-                fontSize: '12px',
-                fontWeight: 600,
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                background: timeframe === tf ? 'var(--primary)' : 'transparent',
-                color: timeframe === tf ? '#fff' : 'var(--text-secondary)',
-              }}
-            >
-              {TIMEFRAME_LABELS[tf]}
-            </button>
-          ))}
-        </div>
-
         {/* Academic Year / Term Selectors */}
         <div style={{ display: 'flex', gap: '8px' }}>
           <select
             aria-label="Select Academic Year"
             value={academicYear}
-            onChange={(e) => {
-              setAcademicYear(e.target.value);
-              setTimeframe('term');
-            }}
+            onChange={(e) => setAcademicYear(e.target.value)}
             style={{
               padding: '5px 12px',
               borderRadius: '7px',
@@ -1100,38 +1154,35 @@ export default function ReportsPage() {
               cursor: 'pointer',
             }}
           >
-            <option value="" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>Current Year (Auto)</option>
+            <option value="" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>Select Academic Year</option>
             {availableYears.map((y) => (
               <option key={y} value={y} style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>{y}</option>
             ))}
           </select>
 
-          {academicYear && availableTerms.length > 0 && (
-            <select
-              aria-label="Select Term"
-              value={termName}
-              onChange={(e) => {
-                setTermName(e.target.value);
-                setTimeframe('term');
-              }}
-              style={{
-                padding: '5px 12px',
-                borderRadius: '7px',
-                fontSize: '12px',
-                fontWeight: 600,
-                border: '1px solid var(--border)',
-                background: 'var(--bg-card)',
-                color: 'var(--text-primary)',
-                outline: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <option value="all" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>Entire Academic Year</option>
-              {availableTerms.map((t) => (
-                <option key={t} value={t} style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>{t}</option>
-              ))}
-            </select>
-          )}
+          <select
+            aria-label="Select Term"
+            value={termName}
+            onChange={(e) => setTermName(e.target.value)}
+            disabled={!academicYear}
+            style={{
+              padding: '5px 12px',
+              borderRadius: '7px',
+              fontSize: '12px',
+              fontWeight: 600,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-card)',
+              color: 'var(--text-primary)',
+              outline: 'none',
+              cursor: academicYear ? 'pointer' : 'not-allowed',
+              opacity: academicYear ? 1 : 0.7,
+            }}
+          >
+            <option value="all" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>Entire Academic Year</option>
+            {availableTerms.map((t) => (
+              <option key={t} value={t} style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>{t}</option>
+            ))}
+          </select>
         </div>
 
         {/* Sort toggle (schools + employees only) */}
@@ -1231,7 +1282,7 @@ export default function ReportsPage() {
           </span>
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>—</span>
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-            {REPORT_TYPES.find((r) => r.type === reportType)?.label} · {TIMEFRAME_LABELS[timeframe]}
+            {REPORT_TYPES.find((r) => r.type === reportType)?.label} · {periodLabel}
           </span>
           {loading && (
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -1248,11 +1299,11 @@ export default function ReportsPage() {
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '16px' }}>Fetching report data…</p>
           </div>
         ) : reportType === 'schools' ? (
-          <SchoolsPreview schools={filteredSchools} />
+          <SchoolsPreview schools={filteredSchools} academicYear={academicYear} />
         ) : reportType === 'employees' ? (
-          <EmployeesPreview employees={filteredEmployees} />
+          <EmployeesPreview employees={filteredEmployees} academicYear={academicYear} />
         ) : (
-          <SummaryPreview stats={stats} timeframe={timeframe} />
+          <SummaryPreview stats={stats} academicYear={academicYear} />
         )}
       </div>
 

@@ -54,33 +54,42 @@ export default function GlobalCalendarTemplatesPage() {
   // Sort years descending
   const sortedYears = Object.keys(groupedTerms).sort((a, b) => b.localeCompare(a));
 
-  const currentAcademicYear = useMemo(() => {
-    if (!terms.length) return null;
+  const currentCalendarInfo = useMemo(() => {
+    if (!terms.length) return { year: null, termId: null };
     const now = new Date();
     let currentYear = null;
+    let currentTermId = null;
 
-    for (const term of terms) {
-      if (!term.startDate || !term.endDate) continue;
+    // Find if we are currently in a term
+    const activeTerm = terms.find(term => {
+      if (!term.startDate || !term.endDate) return false;
       const start = parseISO(term.startDate);
       const end = parseISO(term.endDate);
-      end.setHours(23, 59, 59, 999);
-      if (now >= start && now <= end) {
-        currentYear = term.academicYear;
-        break;
-      }
+      const adjustedEnd = new Date(end);
+      adjustedEnd.setHours(23, 59, 59, 999);
+      return now >= start && now <= adjustedEnd;
+    });
+
+    if (activeTerm) {
+      currentYear = activeTerm.academicYear;
+      currentTermId = activeTerm.id;
     }
 
+    // Fallbacks for year if no active term found
     if (!currentYear) {
-      const activeTerm = terms.find((t: any) => t.isActive);
-      currentYear = activeTerm?.academicYear;
+      const activeFlagTerm = terms.find((t: any) => t.isActive);
+      currentYear = activeFlagTerm?.academicYear;
     }
 
     if (!currentYear && sortedYears.length > 0) {
       currentYear = sortedYears[0];
     }
     
-    return currentYear;
+    return { year: currentYear, termId: currentTermId };
   }, [terms, sortedYears]);
+
+  const currentAcademicYear = currentCalendarInfo.year;
+  const currentTermId = currentCalendarInfo.termId;
 
   useEffect(() => {
     if (hasInitialized || !currentAcademicYear) return;
@@ -338,7 +347,7 @@ export default function GlobalCalendarTemplatesPage() {
                       Academic Year Template: <span style={{ color: 'var(--primary)' }}>{year}</span>
                     </h2>
                     {year === currentAcademicYear && (
-                      <span className="badge badge-green" style={{ marginLeft: 8, fontSize: 11, padding: '3px 8px' }}>Active Standard</span>
+                      <span className="badge badge-green" style={{ marginLeft: 8, fontSize: 11, padding: '3px 8px' }}>Current Year / Active Standard</span>
                     )}
                     <span className="badge badge-gray" style={{ marginLeft: 8 }}>{yearTerms.length} terms</span>
                   </div>
@@ -382,6 +391,9 @@ export default function GlobalCalendarTemplatesPage() {
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                                     <GraduationCap size={18} style={{ color: 'var(--primary)' }} />
                                     <h3 style={{ fontSize: 16, fontWeight: 700 }}>{term.name}</h3>
+                                    {term.id === currentTermId && (
+                                      <span className="badge badge-green" style={{ fontSize: 10, padding: '2px 6px' }}>Current</span>
+                                    )}
                                   </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: 4 }}>

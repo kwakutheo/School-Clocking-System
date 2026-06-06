@@ -108,7 +108,7 @@ const REPORT_TYPES: {
   {
     type: 'employees',
     label: 'Employee Rankings',
-    desc: 'Cross-tenant staff scores: presence, punctuality, hours and sign-out compliance.',
+    desc: 'Cross-school staff scores: presence, punctuality, hours and sign-out compliance.',
     icon: Users,
     color: '#3b82f6',
     bg: 'rgba(59,130,246,0.12)',
@@ -1099,20 +1099,26 @@ export default function ReportsPage() {
                 border: `1px solid ${isActive ? rt.color : 'var(--border)'}`,
                 background: isActive ? rt.bg : 'var(--bg-card)',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
+                transition: 'all 0.18s ease',
                 position: 'relative',
                 overflow: 'hidden',
               }}
               onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-3px)';
+                e.currentTarget.style.boxShadow = `0 8px 28px ${rt.color}30`;
+                e.currentTarget.style.borderColor = isActive ? rt.color : rt.color + '66';
                 if (!isActive) {
-                  e.currentTarget.style.borderColor = rt.color + '66';
                   e.currentTarget.style.background = rt.bg;
                 }
               }}
               onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '';
                 if (!isActive) {
                   e.currentTarget.style.borderColor = 'var(--border)';
                   e.currentTarget.style.background = 'var(--bg-card)';
+                } else {
+                  e.currentTarget.style.borderColor = rt.color;
                 }
               }}
             >

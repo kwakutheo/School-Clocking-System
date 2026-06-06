@@ -558,7 +558,7 @@ export default function SchoolsRegistryPage() {
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
                 <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', minWidth: '320px' }}>School Name</th>
                 <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>School Portal Links</th>
-                <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Active Seats</th>
+                <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Active Employees</th>
                 <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Workforce Status</th>
                 <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Portal Status</th>
                 <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
@@ -640,7 +640,7 @@ export default function SchoolsRegistryPage() {
                       <td style={{ padding: '20px 24px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)', fontWeight: 600 }}>
                           <Users size={16} style={{ color: 'var(--text-secondary)' }} />
-                          {school.metrics.employees} employees
+                          {school.metrics.employees} 
                         </div>
                       </td>
 

@@ -7,8 +7,13 @@ import { Employee } from '../employees/employee.entity';
 import { EmployeeStatusLog } from '../employees/employee-status-log.entity';
 import { Holiday } from '../holidays/holiday.entity';
 import { AttendanceLog } from '../attendance/attendance-log.entity';
+import { LeaveRequest } from '../leaves/leave-request.entity';
 import { Tenant } from '../tenants/tenant.entity';
-import { AttendanceType, EmployeeStatus } from '../../common/enums';
+import {
+  AttendanceType,
+  EmployeeStatus,
+  LeaveStatus,
+} from '../../common/enums';
 
 /**
  * AttendanceSummaryJob
@@ -35,6 +40,8 @@ import { AttendanceType, EmployeeStatus } from '../../common/enums';
  *  • Employees on a shift whose workingDays does not include the ISO day-of-week
  *    (1=Mon … 7=Sun) are excluded. Employees with no shift assigned default to
  *    Mon–Fri (ISO days 1-5).
+ *  • Employees on approved leave for a specific date are excluded from
+ *    expectedCount so schools are not penalized for legitimate absences.
  *  • Both global (tenantId IS NULL) and school-specific holidays are applied,
  *    setting expectedCount = 0 for that date.
  *  • The 90-day rolling backfill window corrects for backdated admin changes.
@@ -60,6 +67,8 @@ export class AttendanceSummaryJob {
     private readonly statusLogRepo: Repository<EmployeeStatusLog>,
     @InjectRepository(Holiday)
     private readonly holidayRepo: Repository<Holiday>,
+    @InjectRepository(LeaveRequest)
+    private readonly leaveRepo: Repository<LeaveRequest>,
     @InjectRepository(AttendanceLog)
     private readonly attendanceLogRepo: Repository<AttendanceLog>,
     private readonly dataSource: DataSource,
@@ -126,6 +135,16 @@ export class AttendanceSummaryJob {
       .andWhere('(sl.endDate IS NULL OR sl.endDate >= :startStr)', { startStr })
       .getMany();
 
+    // ── 4b. Load approved leaves that overlap [start, end] ──────────────────
+    const approvedLeaves = await this.leaveRepo
+      .createQueryBuilder('leave')
+      .leftJoinAndSelect('leave.employee', 'employee')
+      .where('leave.tenantId IN (:...tenantIds)', { tenantIds })
+      .andWhere('leave.status = :status', { status: LeaveStatus.APPROVED })
+      .andWhere('leave.start_date <= :endStr', { endStr })
+      .andWhere('leave.end_date >= :startStr', { startStr })
+      .getMany();
+
     // ── 5. Load CLOCK_IN counts grouped by (tenantId, date) ─────────────────
     const clockInRows: { tenantId: string; day: string; cnt: string }[] =
       await this.attendanceLogRepo
@@ -164,6 +183,17 @@ export class AttendanceSummaryJob {
       if (!empId) continue;
       if (!statusLogsByEmployee.has(empId)) statusLogsByEmployee.set(empId, []);
       statusLogsByEmployee.get(empId)!.push(sl);
+    }
+
+    // Index approved leaves by employeeId for fast lookup
+    const approvedLeavesByEmployee = new Map<string, LeaveRequest[]>();
+    for (const leave of approvedLeaves) {
+      const empId = leave.employee?.id;
+      if (!empId) continue;
+      if (!approvedLeavesByEmployee.has(empId)) {
+        approvedLeavesByEmployee.set(empId, []);
+      }
+      approvedLeavesByEmployee.get(empId)!.push(leave);
     }
 
     // ── 6. Build holiday exclusion sets per tenant ───────────────────────────
@@ -248,6 +278,13 @@ export class AttendanceSummaryJob {
             );
             if (empStatus !== EmployeeStatus.ACTIVE) continue;
 
+            // d) Approved leave should not count against school attendance
+            if (
+              this.isOnApprovedLeave(emp.id, dateStr, approvedLeavesByEmployee)
+            ) {
+              continue;
+            }
+
             expectedCount++;
           }
         }
@@ -318,6 +355,19 @@ export class AttendanceSummaryJob {
     }
 
     return currentStatus;
+  }
+
+  private isOnApprovedLeave(
+    employeeId: string,
+    dateStr: string,
+    approvedLeavesByEmployee: Map<string, LeaveRequest[]>,
+  ): boolean {
+    const leaves = approvedLeavesByEmployee.get(employeeId);
+    if (!leaves || leaves.length === 0) return false;
+
+    return leaves.some(
+      (leave) => leave.startDate <= dateStr && leave.endDate >= dateStr,
+    );
   }
 
   /**

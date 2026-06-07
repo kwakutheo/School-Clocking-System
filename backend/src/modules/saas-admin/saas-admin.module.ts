@@ -14,6 +14,7 @@ import { SystemBulletin } from './system-bulletin.entity';
 import { Holiday } from '../holidays/holiday.entity';
 import { AttendanceLog } from '../attendance/attendance-log.entity';
 import { AttendanceDailySummary } from '../attendance/attendance-daily-summary.entity';
+import { LeaveRequest } from '../leaves/leave-request.entity';
 import { AuditModule } from '../audit/audit.module';
 
 @Module({
@@ -29,6 +30,7 @@ import { AuditModule } from '../audit/audit.module';
       Shift,
       SystemBulletin,
       Holiday,
+      LeaveRequest,
       AttendanceLog,
       AttendanceDailySummary,
     ]),

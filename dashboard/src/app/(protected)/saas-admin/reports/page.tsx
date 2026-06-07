@@ -1432,13 +1432,30 @@ export default function ReportsPage() {
               {isActive && (
                 <div style={{ position: 'absolute', top: 0, right: 0, width: '4px', height: '100%', background: rt.color, borderRadius: '0 12px 12px 0' }} />
               )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: isActive ? rt.color + '22' : 'var(--bg-card-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Icon size={18} color={isActive ? rt.color : 'var(--text-secondary)'} />
-                </div>
-                <div style={{ fontWeight: 700, fontSize: '14px', color: isActive ? rt.color : 'var(--text-primary)' }}>{rt.label}</div>
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '20px',
+                  right: isActive ? '18px' : '20px',
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  background: isActive ? rt.color + '22' : 'var(--bg-card-hover)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  zIndex: 1,
+                }}
+              >
+                <Icon size={18} color={isActive ? rt.color : 'var(--text-secondary)'} />
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{rt.desc}</div>
+              <div style={{ paddingRight: '56px' }}>
+                <div style={{ marginBottom: '10px' }}>
+                  <div style={{ fontWeight: 700, fontSize: '14px', color: isActive ? rt.color : 'var(--text-primary)' }}>{rt.label}</div>
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{rt.desc}</div>
+              </div>
             </div>
           );
         })}

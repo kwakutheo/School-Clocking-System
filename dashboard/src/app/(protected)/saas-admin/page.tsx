@@ -643,8 +643,8 @@ function EmployeeRankRow({
         </div>
         <div
           style={{
-            fontSize: "12px",
-            fontWeight: 800,
+            fontSize: "13px",
+            fontWeight: 900,
             color: scoreColor,
             marginTop: "3px",
             textAlign: "right",
@@ -721,7 +721,7 @@ function EmployeeRankRow({
               >
                 {icon} {label}
               </span>
-              <span style={{ fontSize: "12px", fontWeight: 800, color }}>
+              <span style={{ fontSize: "12px", fontWeight: 400, color }}>
                 {formatPct(value)}%
               </span>
             </div>
@@ -2876,7 +2876,7 @@ export default function SaasOverviewPage() {
                           style={{
                             textAlign: "right",
                             fontSize: "12px",
-                            fontWeight: 700,
+                            fontWeight: 400,
                             color: rateColor(v),
                           }}
                         >
@@ -2887,7 +2887,7 @@ export default function SaasOverviewPage() {
                       <span
                         style={{
                           textAlign: "right",
-                          fontSize: "13px",
+                          fontSize: "14px",
                           fontWeight: 900,
                           color: scoreColor,
                         }}

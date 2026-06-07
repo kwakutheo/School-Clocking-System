@@ -41,7 +41,8 @@ import {
  *    (1=Mon … 7=Sun) are excluded. Employees with no shift assigned default to
  *    Mon–Fri (ISO days 1-5).
  *  • Employees on approved leave for a specific date are excluded from
- *    expectedCount so schools are not penalized for legitimate absences.
+ *    expectedCount so schools are not penalized for legitimate absences, and
+ *    are counted separately in leaveCount for reporting transparency.
  *  • Both global (tenantId IS NULL) and school-specific holidays are applied,
  *    setting expectedCount = 0 for that date.
  *  • The 90-day rolling backfill window corrects for backdated admin changes.
@@ -250,6 +251,7 @@ export class AttendanceSummaryJob {
       for (const dateStr of dates) {
         const isHoliday = holidaySet.has(dateStr);
         let expectedCount = 0;
+        let leaveCount = 0;
 
         if (!isHoliday) {
           const dateObj = new Date(dateStr);
@@ -282,6 +284,7 @@ export class AttendanceSummaryJob {
             if (
               this.isOnApprovedLeave(emp.id, dateStr, approvedLeavesByEmployee)
             ) {
+              leaveCount++;
               continue;
             }
 
@@ -296,6 +299,7 @@ export class AttendanceSummaryJob {
           date: dateStr,
           expectedCount,
           presentCount,
+          leaveCount,
           isHoliday,
         });
       }
@@ -312,7 +316,13 @@ export class AttendanceSummaryJob {
         .into(AttendanceDailySummary)
         .values(chunk)
         .orUpdate(
-          ['expected_count', 'present_count', 'is_holiday', 'computed_at'],
+          [
+            'expected_count',
+            'present_count',
+            'leave_count',
+            'is_holiday',
+            'computed_at',
+          ],
           ['tenant_id', 'date'],
         )
         .execute();

@@ -791,6 +791,7 @@ export class SaasAdminService implements OnModuleInit {
       .getMany();
 
     const expectedMap = new Map<string, number>();
+    const leaveMap = new Map<string, number>();
     for (const summary of dailySummaries) {
       const range = tenantRangesMap.get(summary.tenantId);
       if (!range) continue;
@@ -800,6 +801,8 @@ export class SaasAdminService implements OnModuleInit {
       ) {
         const current = expectedMap.get(summary.tenantId) || 0;
         expectedMap.set(summary.tenantId, current + summary.expectedCount);
+        const currentLeave = leaveMap.get(summary.tenantId) || 0;
+        leaveMap.set(summary.tenantId, currentLeave + (summary.leaveCount ?? 0));
       }
     }
 
@@ -836,6 +839,7 @@ export class SaasAdminService implements OnModuleInit {
       };
       const expectedInTimeframe =
         expectedMap.get(tenant.id) || employeeCount * rangeParams.weekdays;
+      const approvedLeaveDays = leaveMap.get(tenant.id) || 0;
 
       // Use two-decimal precision for rates; keep values numeric so frontend can format as needed
       const presenceRateRaw =
@@ -871,6 +875,7 @@ export class SaasAdminService implements OnModuleInit {
           presentToday: presentCount,
           presentInTimeframe: presentCount,
           expectedEmployeeDays: expectedInTimeframe,
+          approvedLeaveDays,
           presenceRate: presenceRate,
           sustained30DayRate: sustained30DayRate,
         },
@@ -1134,10 +1139,12 @@ export class SaasAdminService implements OnModuleInit {
     const tenantRangesMap = await this.getTenantRanges(tenants, timeframe, academicYear, termName);
 
     let totalExpected = 0;
+    let totalApprovedLeaveDays = 0;
     for (const s of schools) {
       totalExpected +=
         s.metrics.expectedEmployeeDays ??
         s.metrics.employees * (tenantRangesMap.get(s.id)?.weekdays ?? 1);
+      totalApprovedLeaveDays += s.metrics.approvedLeaveDays ?? 0;
     }
 
     const globalPresenceRate =
@@ -1281,6 +1288,7 @@ export class SaasAdminService implements OnModuleInit {
         // Keep presentToday for backwards compatibility (alias)
         presentToday: uniquePresentInTimeframe,
         expectedEmployeeDays: totalExpected,
+        approvedLeaveDays: totalApprovedLeaveDays,
         presenceRate: globalPresenceRate,
         history,
         momGrowth,

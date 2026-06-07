@@ -48,6 +48,7 @@ interface SchoolMetric {
     sustained30DayRate: number;
     presentInTimeframe: number;
     expectedEmployeeDays: number;
+    approvedLeaveDays: number;
   };
 }
 
@@ -78,6 +79,7 @@ interface PlatformStats {
     trackedEmployees: number;
     presentInTimeframe: number;
     expectedEmployeeDays: number;
+    approvedLeaveDays: number;
     presenceRate: number;
     history: number[];
     momGrowth: number;
@@ -447,6 +449,17 @@ async function generateSchoolsPdf(
       accent: rateColorRgb(avgRate, schoolsWithAttendance.length > 0),
       icon: 'rate',
     },
+    {
+      label: 'Approved Leave-Days',
+      value: String(
+        schools.reduce(
+          (sum, school) => sum + Number(school.metrics.approvedLeaveDays ?? 0),
+          0,
+        ),
+      ),
+      accent: [245, 158, 11],
+      icon: 'calendar',
+    },
   ];
   const firstPageTableY = getPdfFirstPageTableY(doc, summaryStats.length);
 
@@ -461,6 +474,10 @@ async function generateSchoolsPdf(
       },
       { content: school.name, styles: { fontStyle: 'bold' as const } },
       { content: String(school.metrics.employees), styles: { halign: 'center' as const } },
+      {
+        content: String(school.metrics.approvedLeaveDays ?? 0),
+        styles: { halign: 'center' as const },
+      },
       {
         content: formatRateValue(rate, school.metrics.expectedEmployeeDays),
         styles: {
@@ -494,7 +511,7 @@ async function generateSchoolsPdf(
   // Table — margin.top reserves space for header on all pages
   autoTable(doc, {
     startY: firstPageTableY,
-    head: [['#', 'School Name', 'Employees', 'Attendance Rate', 'Performance', 'Portal']],
+    head: [['#', 'School Name', 'Employees', 'Approved Leave-Days', 'Attendance Rate', 'Performance', 'Portal']],
     body: tableBody,
     theme: 'grid',
     styles: {
@@ -517,11 +534,12 @@ async function generateSchoolsPdf(
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
       0: { cellWidth: 28, halign: 'center' },
-      1: { cellWidth: 'auto' as any, minCellWidth: 150 },
-      2: { cellWidth: 60, halign: 'center' },
-      3: { cellWidth: 92, halign: 'center' },
+      1: { cellWidth: 'auto' as any, minCellWidth: 138 },
+      2: { cellWidth: 54, halign: 'center' },
+      3: { cellWidth: 82, halign: 'center' },
       4: { cellWidth: 84, halign: 'center' },
-      5: { cellWidth: 66, halign: 'center' },
+      5: { cellWidth: 76, halign: 'center' },
+      6: { cellWidth: 58, halign: 'center' },
     },
     margin: {
       top: PDF_TABLE_MARGIN_TOP,
@@ -946,7 +964,7 @@ function SchoolsPreview({
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--border)' }}>
-            {['#', 'School Name', 'Employees', 'Attendance Rate', 'Performance', 'Portal'].map((h) => (
+            {['#', 'School Name', 'Employees', 'Approved Leave-Days', 'Attendance Rate', 'Performance', 'Portal'].map((h) => (
               <th
                 key={h}
                 style={{
@@ -957,7 +975,7 @@ function SchoolsPreview({
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
                   whiteSpace: 'nowrap',
-                  textAlign: ['Employees', 'Attendance Rate', 'Performance', 'Portal', '#'].includes(h) ? 'center' : 'left',
+                  textAlign: ['Employees', 'Approved Leave-Days', 'Attendance Rate', 'Performance', 'Portal', '#'].includes(h) ? 'center' : 'left',
                 }}
               >
                 {h}
@@ -979,6 +997,9 @@ function SchoolsPreview({
                 <td style={{ padding: '10px 14px', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '12px' }}>{i + 1}</td>
                 <td style={{ padding: '10px 14px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>{school.name}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'center', color: 'var(--text-secondary)' }}>{school.metrics.employees}</td>
+                <td style={{ padding: '10px 14px', textAlign: 'center', color: (school.metrics.approvedLeaveDays ?? 0) > 0 ? '#f59e0b' : 'var(--text-secondary)', fontWeight: (school.metrics.approvedLeaveDays ?? 0) > 0 ? 700 : 500 }}>
+                  {school.metrics.approvedLeaveDays ?? 0}
+                </td>
                 <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: rateColorHex(rate, hasRateData) }}>
                   {formatRateValue(rate, school.metrics.expectedEmployeeDays)}
                 </td>
@@ -1119,6 +1140,7 @@ function SummaryPreview({
     { label: 'Suspended', value: String(overview.suspendedSchools), color: '#ef4444' },
     { label: 'Tracked Employees', value: overview.trackedEmployees.toLocaleString(), color: '#3b82f6' },
     { label: 'Present in Period', value: String(overview.presentInTimeframe), color: '#22c55e' },
+    { label: 'Approved Leave-Days', value: String(overview.approvedLeaveDays ?? 0), color: '#f59e0b' },
     { label: 'Global Attendance', value: formatRateValue(overview.presenceRate, overview.expectedEmployeeDays), color: rateColorHex(overview.presenceRate, hasOverviewData) },
     { label: 'MoM Growth', value: `${overview.momGrowth >= 0 ? '+' : ''}${fmt(overview.momGrowth)}%`, color: overview.momGrowth >= 0 ? '#22c55e' : '#ef4444' },
     { label: 'Excellent Schools', value: String(cohorts.excellent), color: '#22c55e' },

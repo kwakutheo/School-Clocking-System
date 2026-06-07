@@ -23,6 +23,7 @@ import {
  *  expectedCount   – Number of employee-working-day slots expected (respects status
  *                    history, hire date, shift working-days, and holidays)
  *  presentCount    – Distinct employees who clocked in on this date
+ *  leaveCount      – Distinct employees on approved leave for this date
  *  isHoliday       – True when this date was a global or school-specific holiday;
  *                    expectedCount will be 0 but the row is kept for auditability
  *  computedAt      – Last time this row was recomputed by the cron job
@@ -48,6 +49,10 @@ export class AttendanceDailySummary {
   /** How many distinct employees actually clocked in on this date */
   @Column({ name: 'present_count', type: 'int', default: 0 })
   presentCount: number;
+
+  /** How many distinct employees were on approved leave on this date */
+  @Column({ name: 'leave_count', type: 'int', default: 0 })
+  leaveCount: number;
 
   /** True when the date was a holiday (global or school-specific) */
   @Column({ name: 'is_holiday', default: false })

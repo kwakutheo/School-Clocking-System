@@ -68,6 +68,7 @@ interface SchoolMetric {
     sustained30DayRate: number;
     presentInTimeframe: number;
     expectedEmployeeDays: number;
+    approvedLeaveDays: number;
   };
 }
 
@@ -78,6 +79,7 @@ interface PlatformStats {
     suspendedSchools: number;
     trackedEmployees: number;
     presentInTimeframe: number;
+    approvedLeaveDays: number;
     presenceRate: number;
     history: number[];
     momGrowth: number;
@@ -324,6 +326,11 @@ function SchoolRankRow({
 }) {
   const rate = school.metrics.presenceRate ?? 0;
   const color = rateColor(rate);
+  const approvedLeaveDays = school.metrics.approvedLeaveDays ?? 0;
+  const leaveLabel =
+    timeframe === "today"
+      ? `${approvedLeaveDays} on approved leave`
+      : `${approvedLeaveDays} approved leave-days`;
 
   return (
     <div
@@ -394,6 +401,7 @@ function SchoolRankRow({
         >
           {school.metrics.employees} employees · {school.metrics.branches}{" "}
           {school.metrics.branches === 1 ? "branch" : "branches"}
+          {approvedLeaveDays > 0 ? ` · ${leaveLabel}` : ""}
         </div>
       </div>
 

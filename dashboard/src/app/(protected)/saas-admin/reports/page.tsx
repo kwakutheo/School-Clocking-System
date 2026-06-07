@@ -1414,36 +1414,21 @@ export default function ReportsPage() {
           return (
             <div
               key={rt.type}
+              className="stat-card"
               onClick={() => setReportType(rt.type)}
               style={{
+                ['--stat-color' as any]: rt.color,
+                ['--stat-color-dim' as any]: `${rt.color}22`,
                 padding: '20px',
                 borderRadius: '12px',
                 border: `1px solid ${isActive ? rt.color : 'var(--border)'}`,
                 background: isActive ? rt.bg : 'var(--bg-card)',
                 cursor: 'pointer',
-                transition: 'all 0.18s ease',
                 position: 'relative',
                 overflow: 'hidden',
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-3px)';
-                e.currentTarget.style.boxShadow = `0 8px 28px ${rt.color}30`;
-                e.currentTarget.style.borderColor = isActive ? rt.color : rt.color + '66';
-                if (!isActive) {
-                  e.currentTarget.style.background = rt.bg;
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '';
-                if (!isActive) {
-                  e.currentTarget.style.borderColor = 'var(--border)';
-                  e.currentTarget.style.background = 'var(--bg-card)';
-                } else {
-                  e.currentTarget.style.borderColor = rt.color;
-                }
-              }}
             >
+              <div className="stat-card-glow" />
               {isActive && (
                 <div style={{ position: 'absolute', top: 0, right: 0, width: '4px', height: '100%', background: rt.color, borderRadius: '0 12px 12px 0' }} />
               )}

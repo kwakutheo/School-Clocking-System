@@ -1285,38 +1285,19 @@ export default function SaasOverviewPage() {
       >
         {/* Total Schools */}
         <div
-          className="card"
+          className="stat-card"
           onClick={handleOpenKpiSchoolsModal}
           title="Click to view all schools"
           style={{
+            ["--stat-color" as any]: "#8b5cf6",
+            ["--stat-color-dim" as any]: "rgba(139,92,246,0.15)",
             padding: "24px",
             position: "relative",
             overflow: "hidden",
             cursor: "pointer",
-            transition: "all 0.18s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-3px)";
-            e.currentTarget.style.boxShadow = "0 8px 28px rgba(139,92,246,0.18)";
-            e.currentTarget.style.borderColor = "rgba(139,92,246,0.6)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "";
-            e.currentTarget.style.borderColor = "var(--border)";
           }}
         >
-          <div
-            style={{
-              position: "absolute",
-              top: "-20px",
-              right: "-20px",
-              width: "80px",
-              height: "80px",
-              borderRadius: "50%",
-              background: "rgba(139,92,246,0.1)",
-            }}
-          />
+          <div className="stat-card-glow" />
           <div
             style={{
               display: "flex",
@@ -1388,38 +1369,19 @@ export default function SaasOverviewPage() {
 
         {/* Total Employees */}
         <div
-          className="card"
+          className="stat-card"
           onClick={handleOpenKpiEmpModal}
           title="Click to view all employees"
           style={{
+            ["--stat-color" as any]: "#3b82f6",
+            ["--stat-color-dim" as any]: "rgba(59,130,246,0.15)",
             padding: "24px",
             position: "relative",
             overflow: "hidden",
             cursor: "pointer",
-            transition: "all 0.18s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-3px)";
-            e.currentTarget.style.boxShadow = "0 8px 28px rgba(59,130,246,0.18)";
-            e.currentTarget.style.borderColor = "rgba(59,130,246,0.6)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "";
-            e.currentTarget.style.borderColor = "var(--border)";
           }}
         >
-          <div
-            style={{
-              position: "absolute",
-              top: "-20px",
-              right: "-20px",
-              width: "80px",
-              height: "80px",
-              borderRadius: "50%",
-              background: "rgba(59,130,246,0.1)",
-            }}
-          />
+          <div className="stat-card-glow" />
           <div
             style={{
               display: "flex",
@@ -1479,7 +1441,7 @@ export default function SaasOverviewPage() {
 
         {/* Global Attendance Rate */}
         <div
-          className="card"
+          className="stat-card"
           onClick={() =>
             document
               .getElementById("attendance-trend-section")
@@ -1487,35 +1449,15 @@ export default function SaasOverviewPage() {
           }
           title="Click to view attendance trend chart"
           style={{
+            ["--stat-color" as any]: rateColor(stats?.overview.presenceRate ?? 0),
+            ["--stat-color-dim" as any]: `${rateColor(stats?.overview.presenceRate ?? 0)}18`,
             padding: "24px",
             position: "relative",
             overflow: "hidden",
             cursor: "pointer",
-            transition: "all 0.18s ease",
-          }}
-          onMouseEnter={(e) => {
-            const color = rateColor(stats?.overview.presenceRate ?? 0);
-            e.currentTarget.style.transform = "translateY(-3px)";
-            e.currentTarget.style.boxShadow = `0 8px 28px ${color}30`;
-            e.currentTarget.style.borderColor = color;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "";
-            e.currentTarget.style.borderColor = "var(--border)";
           }}
         >
-          <div
-            style={{
-              position: "absolute",
-              top: "-20px",
-              right: "-20px",
-              width: "80px",
-              height: "80px",
-              borderRadius: "50%",
-              background: `${rateColor(stats?.overview.presenceRate ?? 0)}18`,
-            }}
-          />
+          <div className="stat-card-glow" />
           <div
             style={{
               display: "flex",
@@ -1583,45 +1525,22 @@ export default function SaasOverviewPage() {
 
         {/* Critical Schools */}
         <div
-          className="card"
+          className="stat-card"
           onClick={() => {
             setRankSort("worst");
             handleOpenAllSchoolsModal();
           }}
           title="Click to see schools that need attention"
           style={{
+            ["--stat-color" as any]: "#ef4444",
+            ["--stat-color-dim" as any]: "rgba(239,68,68,0.15)",
             padding: "24px",
             position: "relative",
             overflow: "hidden",
             cursor: "pointer",
-            transition: "all 0.18s ease",
-            border:
-              criticalSchools.length > 0
-                ? "1px solid rgba(239,68,68,0.3)"
-                : "1px solid var(--border)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-3px)";
-            e.currentTarget.style.boxShadow = "0 8px 28px rgba(239,68,68,0.18)";
-            e.currentTarget.style.borderColor = "rgba(239,68,68,0.6)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "";
-            e.currentTarget.style.borderColor = criticalSchools.length > 0 ? "rgba(239,68,68,0.3)" : "var(--border)";
           }}
         >
-          <div
-            style={{
-              position: "absolute",
-              top: "-20px",
-              right: "-20px",
-              width: "80px",
-              height: "80px",
-              borderRadius: "50%",
-              background: "rgba(239,68,68,0.08)",
-            }}
-          />
+          <div className="stat-card-glow" />
           <div
             style={{
               display: "flex",

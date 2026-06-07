@@ -16,7 +16,7 @@ https://school-clocking-system.onrender.com/api/v1 (for backend)
 
 vercel (for frontend)
 
-optimeRobot
+uptimeRobot
 
 upstash.com (for queue) 
 school-clocking-redis

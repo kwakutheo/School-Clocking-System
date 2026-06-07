@@ -585,6 +585,7 @@ async function generateEmployeesPdf(
     const presence = emp.metrics.presenceRate ?? 0;
     const punct = emp.metrics.punctualityRate ?? 0;
     const hours = emp.metrics.hoursCompletionRate ?? 0;
+    const signouts = emp.metrics.forgotOutRate ?? 0;
     const hasRateData = hasMetricData(emp.metrics.expectedDays);
     return [
       {
@@ -619,6 +620,14 @@ async function generateEmployeesPdf(
         },
       },
       {
+        content: formatRateValue(signouts, emp.metrics.expectedDays),
+        styles: {
+          halign: 'center' as const,
+          fontStyle: 'bold' as const,
+          textColor: rateColorRgb(signouts, hasRateData) as any,
+        },
+      },
+      {
         content: formatRateValue(score, emp.metrics.expectedDays),
         styles: {
           halign: 'center' as const,
@@ -631,7 +640,7 @@ async function generateEmployeesPdf(
 
   autoTable(doc, {
     startY: firstPageTableY,
-    head: [['#', 'Employee Name', 'Code', 'School', 'Presence', 'Punctuality', 'Hours', 'Score']],
+    head: [['#', 'Employee Name', 'Code', 'School', 'Presence', 'Punctuality', 'Hours', 'Sign-outs', 'Score']],
     body: tableBody,
     theme: 'grid',
     styles: {
@@ -655,12 +664,13 @@ async function generateEmployeesPdf(
     columnStyles: {
       0: { cellWidth: 25, halign: 'center' },
       1: { cellWidth: 'auto' as any, minCellWidth: 55 },
-      2: { cellWidth: 70, halign: 'center' },
-      3: { cellWidth: 155 },
-      4: { cellWidth: 60, halign: 'center' },
-      5: { cellWidth: 68, halign: 'center' },
-      6: { cellWidth: 54, halign: 'center' },
-      7: { cellWidth: 56, halign: 'center' },
+      2: { cellWidth: 65, halign: 'center' },
+      3: { cellWidth: 140 },
+      4: { cellWidth: 50, halign: 'center' },
+      5: { cellWidth: 55, halign: 'center' },
+      6: { cellWidth: 45, halign: 'center' },
+      7: { cellWidth: 55, halign: 'center' },
+      8: { cellWidth: 45, halign: 'center' },
     },
     margin: {
       top: PDF_TABLE_MARGIN_TOP,
@@ -1014,7 +1024,7 @@ function EmployeesPreview({
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--border)' }}>
-            {['#', 'Employee', 'Code', 'School', 'Presence', 'Punctuality', 'Hours', 'Score'].map((h) => (
+            {['#', 'Employee', 'Code', 'School', 'Presence', 'Punctuality', 'Hours', 'Sign-outs', 'Score'].map((h) => (
               <th
                 key={h}
                 style={{
@@ -1025,7 +1035,7 @@ function EmployeesPreview({
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
                   whiteSpace: 'nowrap',
-                  textAlign: ['#', 'Code', 'Presence', 'Punctuality', 'Hours', 'Score'].includes(h) ? 'center' : 'left',
+                  textAlign: ['#', 'Code', 'Presence', 'Punctuality', 'Hours', 'Sign-outs', 'Score'].includes(h) ? 'center' : 'left',
                 }}
               >
                 {h}
@@ -1039,6 +1049,7 @@ function EmployeesPreview({
             const presence = emp.metrics.presenceRate ?? 0;
             const punct = emp.metrics.punctualityRate ?? 0;
             const hours = emp.metrics.hoursCompletionRate ?? 0;
+            const signouts = emp.metrics.forgotOutRate ?? 0;
             const hasRateData = hasMetricData(emp.metrics.expectedDays);
             // generate initials
             const initials = emp.name.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
@@ -1068,6 +1079,7 @@ function EmployeesPreview({
                 <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: rateColorHex(presence, hasRateData) }}>{formatRateValue(presence, emp.metrics.expectedDays)}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: rateColorHex(punct, hasRateData) }}>{formatRateValue(punct, emp.metrics.expectedDays)}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: rateColorHex(hours, hasRateData) }}>{formatRateValue(hours, emp.metrics.expectedDays)}</td>
+                <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: rateColorHex(signouts, hasRateData) }}>{formatRateValue(signouts, emp.metrics.expectedDays)}</td>
                 <td style={{ padding: '10px 14px', textAlign: 'center' }}>
                   <span style={{ padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, background: rateBg(score, hasRateData), color: rateColorHex(score, hasRateData) }}>
                     {formatRateValue(score, emp.metrics.expectedDays)}

@@ -1427,18 +1427,6 @@ export default function ReportsPage() {
                 position: 'relative',
                 overflow: 'hidden',
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = `0 12px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px -5px ${rt.color}33`;
-                e.currentTarget.style.borderColor = rt.color;
-                e.currentTarget.style.background = isActive ? rt.bg : 'var(--bg-card)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = '';
-                e.currentTarget.style.boxShadow = '';
-                e.currentTarget.style.borderColor = isActive ? rt.color : 'var(--border)';
-                e.currentTarget.style.background = isActive ? rt.bg : 'var(--bg-card)';
-              }}
             >
               <div className="stat-card-glow" />
               {isActive && (

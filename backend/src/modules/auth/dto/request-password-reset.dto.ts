@@ -8,7 +8,7 @@ export class RequestPasswordResetDto {
   username!: string;
 
   @ApiProperty({ example: 'admin@example.com' })
-  @IsEmail()
+  @IsEmail({}, { message: 'Please provide a valid email address.' })
   @IsNotEmpty()
   email!: string;
 }

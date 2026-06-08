@@ -24,7 +24,7 @@ export class CreateEmployeeDto {
   username: string;
 
   @ApiPropertyOptional({ example: 'kofi@example.com' })
-  @IsEmail()
+  @IsEmail({}, { message: 'Please provide a valid email address.' })
   @IsOptional()
   email?: string;
 

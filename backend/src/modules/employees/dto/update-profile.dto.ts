@@ -8,7 +8,7 @@ export class UpdateProfileDto {
   fullName?: string;
 
   @ApiPropertyOptional({ example: 'kofi@company.com' })
-  @IsEmail()
+  @IsEmail({}, { message: 'Please provide a valid email address.' })
   @IsOptional()
   email?: string;
 

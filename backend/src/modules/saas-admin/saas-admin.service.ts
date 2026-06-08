@@ -544,10 +544,29 @@ export class SaasAdminService implements OnModuleInit {
     defaultStart.setHours(0, 0, 0, 0);
     const defaultEnd = new Date(endOfToday);
 
+    const weekOffsetMap: Record<string, number> = {
+      '1w_ago': 1,
+      '2w_ago': 2,
+      '3w_ago': 3,
+      '4w_ago': 4,
+    };
+
     if (timeframe === '7d') {
-      // Calculate from the start of the current ISO week (Monday) instead of a rolling 7 days
+      // Calculate from the start of the current ISO week (Monday)
       const monday = this.startOfIsoWeek(defaultStart);
       defaultStart.setTime(monday.getTime());
+    } else if (weekOffsetMap[timeframe] !== undefined) {
+      // Calculate start and end for historical weeks
+      const weeksAgo = weekOffsetMap[timeframe];
+      const monday = this.startOfIsoWeek(defaultStart);
+      monday.setDate(monday.getDate() - weeksAgo * 7);
+      
+      const sunday = new Date(monday);
+      sunday.setDate(sunday.getDate() + 6);
+      sunday.setHours(23, 59, 59, 999);
+      
+      defaultStart.setTime(monday.getTime());
+      defaultEnd.setTime(sunday.getTime());
     } else if (timeframe === '30d') {
       defaultStart.setDate(defaultStart.getDate() - 29);
     } else if (timeframe === 'term') {
@@ -1711,9 +1730,28 @@ export class SaasAdminService implements OnModuleInit {
       // academic terms, so we compute queryStart after that lookup below.
       const startDate = new Date();
       startDate.setHours(0, 0, 0, 0);
+      
+      const weekOffsetMap: Record<string, number> = {
+        '1w_ago': 1,
+        '2w_ago': 2,
+        '3w_ago': 3,
+        '4w_ago': 4,
+      };
+
       if (timeframe === '7d') {
         const monday = this.startOfIsoWeek(startDate);
         startDate.setTime(monday.getTime());
+      } else if (weekOffsetMap[timeframe] !== undefined) {
+        const weeksAgo = weekOffsetMap[timeframe];
+        const monday = this.startOfIsoWeek(startDate);
+        monday.setDate(monday.getDate() - weeksAgo * 7);
+        startDate.setTime(monday.getTime());
+        
+        // Ensure endOfToday caps at Sunday of that specific historical week
+        const sunday = new Date(monday);
+        sunday.setDate(sunday.getDate() + 6);
+        sunday.setHours(23, 59, 59, 999);
+        endOfToday.setTime(sunday.getTime());
       } else if (timeframe === '30d') {
         startDate.setDate(startDate.getDate() - 29);
       } // 'today' keeps startDate as start-of-today

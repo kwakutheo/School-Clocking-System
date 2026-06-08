@@ -121,12 +121,15 @@ interface EmployeeRankingPage {
   totalPages: number;
 }
 
-type Timeframe = "today" | "7d" | "30d" | "term";
+type Timeframe = "today" | "7d" | "1w_ago" | "2w_ago" | "3w_ago" | "4w_ago" | "term";
 
 const TIMEFRAME_LABELS: Record<Timeframe, string> = {
   today: "Today",
   "7d": "This Week",
-  "30d": "Last 30 Days",
+  "1w_ago": "Last Week",
+  "2w_ago": "2 Weeks Ago",
+  "3w_ago": "3 Weeks Ago",
+  "4w_ago": "4 Weeks Ago",
   term: "Current Term",
 };
 

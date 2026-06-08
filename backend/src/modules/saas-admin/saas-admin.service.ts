@@ -1712,7 +1712,8 @@ export class SaasAdminService implements OnModuleInit {
       const startDate = new Date();
       startDate.setHours(0, 0, 0, 0);
       if (timeframe === '7d') {
-        startDate.setDate(startDate.getDate() - 6);
+        const monday = this.startOfIsoWeek(startDate);
+        startDate.setTime(monday.getTime());
       } else if (timeframe === '30d') {
         startDate.setDate(startDate.getDate() - 29);
       } // 'today' keeps startDate as start-of-today

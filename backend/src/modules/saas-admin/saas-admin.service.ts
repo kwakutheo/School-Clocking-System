@@ -545,7 +545,9 @@ export class SaasAdminService implements OnModuleInit {
     const defaultEnd = new Date(endOfToday);
 
     if (timeframe === '7d') {
-      defaultStart.setDate(defaultStart.getDate() - 6);
+      // Calculate from the start of the current ISO week (Monday) instead of a rolling 7 days
+      const monday = this.startOfIsoWeek(defaultStart);
+      defaultStart.setTime(monday.getTime());
     } else if (timeframe === '30d') {
       defaultStart.setDate(defaultStart.getDate() - 29);
     } else if (timeframe === 'term') {

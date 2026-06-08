@@ -125,7 +125,7 @@ type Timeframe = "today" | "7d" | "30d" | "term";
 
 const TIMEFRAME_LABELS: Record<Timeframe, string> = {
   today: "Today",
-  "7d": "Last 7 Days",
+  "7d": "This Week",
   "30d": "Last 30 Days",
   term: "Current Term",
 };

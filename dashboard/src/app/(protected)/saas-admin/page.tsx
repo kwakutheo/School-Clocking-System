@@ -136,8 +136,7 @@ const WEEK_LABELS = [
   "4W Ago",
   "3W Ago",
   "2W Ago",
-  "Last Wk",
-  "This Wk",
+  "Now",
 ];
 const EMP_MODAL_LIMIT = 50;
 
@@ -1067,7 +1066,7 @@ export default function SaasOverviewPage() {
 
   // Build chart data from 6-week history
   const trendData = (stats?.overview.history ?? []).map((rate, i) => ({
-    week: WEEK_LABELS[i],
+    week: WEEK_LABELS[i] ?? `W${i + 1}`,
     rate: Number(rate.toFixed(1)),
   }));
 
@@ -1501,7 +1500,6 @@ export default function SaasOverviewPage() {
                 >
                   {TIMEFRAME_LABELS[timeframe]}
                 </span>
-                <DeltaBadge value={stats?.overview.momGrowth ?? 0} />
               </div>
             </div>
             <div
@@ -1772,7 +1770,7 @@ export default function SaasOverviewPage() {
                   marginTop: "4px",
                 }}
               >
-                Weekly (last 7 days) attendance rate across all institutions
+                Rolling 7-day attendance rate across all institutions
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>

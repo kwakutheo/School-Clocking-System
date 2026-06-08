@@ -21,6 +21,7 @@ import { SystemBulletin, BulletinType } from './system-bulletin.entity';
 import { AttendanceLog } from '../attendance/attendance-log.entity';
 import { AttendanceDailySummary } from '../attendance/attendance-daily-summary.entity';
 import { AcademicTerm } from '../academic-calendar/term.entity';
+import { EmployeeStatusLog } from '../employees/employee-status-log.entity';
 import { AuditService } from '../audit/audit.service';
 
 @Injectable()
@@ -410,6 +411,110 @@ export class SaasAdminService implements OnModuleInit {
       cur.setDate(cur.getDate() + 1);
     }
     return count || 1; // Prevent division by zero
+  }
+
+  private getEmployeeStatusOnDate(
+    employeeId: string,
+    dateStr: string,
+    currentStatus: EmployeeStatus,
+    statusLogsByEmployee: Map<string, EmployeeStatusLog[]>,
+  ): EmployeeStatus {
+    const logs = statusLogsByEmployee.get(employeeId);
+    if (!logs || logs.length === 0) return currentStatus;
+
+    for (const log of logs) {
+      const logStart = this.toDateStr(new Date(log.startDate));
+      const logEnd = log.endDate ? this.toDateStr(new Date(log.endDate)) : null;
+      if (logStart <= dateStr && (logEnd === null || logEnd >= dateStr)) {
+        return log.status;
+      }
+    }
+
+    return currentStatus;
+  }
+
+  private async getHistoricalExpectedEmployeeDays(
+    start: Date,
+    end: Date,
+    tenantIds?: string[],
+  ): Promise<number> {
+    if (end < start) return 0;
+
+    const employeesQb = this.employeeRepo
+      .createQueryBuilder('emp')
+      .leftJoinAndSelect('emp.shift', 'shift')
+      .select([
+        'emp.id',
+        'emp.tenantId',
+        'emp.status',
+        'emp.hireDate',
+        'emp.createdAt',
+        'shift.id',
+        'shift.workingDays',
+      ]);
+
+    if (tenantIds && tenantIds.length > 0) {
+      employeesQb.where('emp.tenantId IN (:...tenantIds)', { tenantIds });
+    }
+
+    const employees = await employeesQb.getMany();
+    if (employees.length === 0) return 0;
+
+    const startStr = this.toDateStr(start);
+    const endStr = this.toDateStr(end);
+    const employeeIds = employees.map((employee) => employee.id);
+
+    const statusLogs = await this.connection
+      .getRepository(EmployeeStatusLog)
+      .createQueryBuilder('log')
+      .where('log.employee_id IN (:...employeeIds)', { employeeIds })
+      .andWhere('log.start_date <= :end', { end: endStr })
+      .andWhere('(log.end_date IS NULL OR log.end_date >= :start)', {
+        start: startStr,
+      })
+      .orderBy('log.startDate', 'ASC')
+      .getMany();
+
+    const statusLogsByEmployee = new Map<string, EmployeeStatusLog[]>();
+    for (const log of statusLogs) {
+      const list = statusLogsByEmployee.get(log.employeeId) || [];
+      list.push(log);
+      statusLogsByEmployee.set(log.employeeId, list);
+    }
+
+    let expected = 0;
+    const cursor = new Date(start);
+    cursor.setHours(0, 0, 0, 0);
+
+    while (cursor <= end) {
+      const dateStr = this.toDateStr(cursor);
+      const isoDow = cursor.getDay() === 0 ? 7 : cursor.getDay();
+
+      for (const employee of employees) {
+        const registrationDate = employee.hireDate
+          ? new Date(employee.hireDate)
+          : new Date(employee.createdAt);
+        registrationDate.setHours(0, 0, 0, 0);
+        if (registrationDate > cursor) continue;
+
+        const workingDays: number[] = employee.shift?.workingDays ?? [1, 2, 3, 4, 5];
+        if (!workingDays.includes(isoDow)) continue;
+
+        const status = this.getEmployeeStatusOnDate(
+          employee.id,
+          dateStr,
+          employee.status,
+          statusLogsByEmployee,
+        );
+        if (status !== EmployeeStatus.ACTIVE) continue;
+
+        expected++;
+      }
+
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return expected;
   }
 
   private async getTenantRanges(
@@ -1200,8 +1305,12 @@ export class SaasAdminService implements OnModuleInit {
       })
       .slice(0, 10);
 
-    // Calculate true chronological global presence rates for each of the last 6 weeks
+    // Calculate true chronological global presence rates for each of the last 6
+    // rolling 7-day buckets. When daily summaries are missing, reconstruct the
+    // denominator from historical employee lifecycle data instead of today's
+    // workforce snapshot.
     const history: number[] = [];
+    const tenantIds = schools.map((school) => school.id);
     for (let i = 5; i >= 0; i--) {
       const start = new Date();
       start.setDate(start.getDate() - (i + 1) * 7);
@@ -1234,9 +1343,14 @@ export class SaasAdminService implements OnModuleInit {
         .getRawOne();
 
       const checkins = Number(result?.count) || 0;
-      const expected =
-        Number(expectedRes?.expected) ||
-        totalEmployees * this.countWeekdays(start, end);
+      let expected = Number(expectedRes?.expected) || 0;
+      if (expected <= 0) {
+        expected = await this.getHistoricalExpectedEmployeeDays(
+          start,
+          end,
+          tenantIds,
+        );
+      }
       const rate =
         expected > 0
           ? Number(Math.min(100, (checkins / expected) * 100).toFixed(2))

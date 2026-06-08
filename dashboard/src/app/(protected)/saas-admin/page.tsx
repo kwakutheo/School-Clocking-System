@@ -131,12 +131,12 @@ const TIMEFRAME_LABELS: Record<Timeframe, string> = {
 };
 
 const WEEK_LABELS = [
-  "6W Ago",
   "5W Ago",
   "4W Ago",
   "3W Ago",
   "2W Ago",
-  "Now",
+  "1W Ago",
+  "This Week",
 ];
 const EMP_MODAL_LIMIT = 50;
 
@@ -1770,7 +1770,7 @@ export default function SaasOverviewPage() {
                   marginTop: "4px",
                 }}
               >
-                Rolling 7-day attendance rate across all institutions
+                Weekly attendance rate across all institutions
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1784,7 +1784,7 @@ export default function SaasOverviewPage() {
               <span
                 style={{ fontSize: "12px", color: "var(--text-secondary)" }}
               >
-                vs 6w ago
+                vs 5w ago
               </span>
             </div>
           </div>

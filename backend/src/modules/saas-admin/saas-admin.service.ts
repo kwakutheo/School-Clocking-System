@@ -392,6 +392,15 @@ export class SaasAdminService implements OnModuleInit {
     }
   }
 
+  private startOfIsoWeek(date: Date): Date {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
   private countWeekdays(
     start: Date,
     end: Date,
@@ -1306,19 +1315,27 @@ export class SaasAdminService implements OnModuleInit {
       .slice(0, 10);
 
     // Calculate true chronological global presence rates for each of the last 6
-    // rolling 7-day buckets. When daily summaries are missing, reconstruct the
+    // calendar weeks. When daily summaries are missing, reconstruct the
     // denominator from historical employee lifecycle data instead of today's
     // workforce snapshot.
     const history: number[] = [];
     const tenantIds = schools.map((school) => school.id);
-    for (let i = 5; i >= 0; i--) {
-      const start = new Date();
-      start.setDate(start.getDate() - (i + 1) * 7);
-      start.setHours(0, 0, 0, 0);
+    
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const currentWeekStart = this.startOfIsoWeek(today);
 
-      const end = new Date();
-      end.setDate(end.getDate() - i * 7);
+    for (let i = 5; i >= 0; i--) {
+      const start = new Date(currentWeekStart);
+      start.setDate(start.getDate() - i * 7);
+
+      const end = new Date(start);
+      end.setDate(end.getDate() + 6);
       end.setHours(23, 59, 59, 999);
+
+      // If the week is the current week, cap the end date to today
+      // to avoid including future expected days in the current week.
+      const actualEnd = end > today ? today : end;
 
       const result = await this.connection
         .getRepository(AttendanceLog)
@@ -1327,7 +1344,7 @@ export class SaasAdminService implements OnModuleInit {
           "COUNT(DISTINCT CONCAT(log.employee_id, '_', DATE_TRUNC('day', log.timestamp)))",
           'count',
         )
-        .where('log.timestamp BETWEEN :start AND :end', { start, end })
+        .where('log.timestamp BETWEEN :start AND :actualEnd', { start, actualEnd })
         .andWhere('log.type = :type', { type: AttendanceType.CLOCK_IN })
         .andWhere('EXTRACT(ISODOW FROM log.timestamp) IN (1, 2, 3, 4, 5)')
         .getRawOne();
@@ -1336,9 +1353,9 @@ export class SaasAdminService implements OnModuleInit {
         .getRepository(AttendanceDailySummary)
         .createQueryBuilder('s')
         .select('SUM(s.expectedCount)', 'expected')
-        .where('s.date >= :start AND s.date <= :end', {
+        .where('s.date >= :start AND s.date <= :actualEnd', {
           start: this.toDateStr(start),
-          end: this.toDateStr(end),
+          actualEnd: this.toDateStr(actualEnd),
         })
         .getRawOne();
 
@@ -1347,7 +1364,7 @@ export class SaasAdminService implements OnModuleInit {
       if (expected <= 0) {
         expected = await this.getHistoricalExpectedEmployeeDays(
           start,
-          end,
+          actualEnd,
           tenantIds,
         );
       }
@@ -1358,7 +1375,7 @@ export class SaasAdminService implements OnModuleInit {
       history.push(rate);
     }
 
-    // history[0] = 6 weeks ago (baseline), history[5] = current week
+    // history[0] = 5 weeks ago (baseline), history[5] = current week
     const momGrowth = Number((history[5] - history[0]).toFixed(2));
 
     // Real-time Health Checks

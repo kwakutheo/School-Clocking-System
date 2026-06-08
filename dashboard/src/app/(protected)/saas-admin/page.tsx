@@ -1073,6 +1073,21 @@ export default function SaasOverviewPage() {
     };
   }, [timeframe, fetchStats]);
 
+  // Inject a small style block for the dropdown hover since we can't use pseudo-classes directly in inline styles
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.innerHTML = `
+      .dropdown-item-hover:hover {
+        background-color: var(--bg-body) !important;
+        color: var(--primary) !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   const handleViewPortal = (school: SchoolMetric) => {
     setImpersonatedTenant({
       id: school.id,
@@ -1244,6 +1259,7 @@ export default function SaasOverviewPage() {
                   {(Object.keys(TIMEFRAME_LABELS) as Timeframe[]).map((tf) => (
                     <button
                       key={tf}
+                      className="dropdown-item-hover"
                       onClick={() => {
                         setTimeframe(tf);
                         setTimeframeDropdownOpen(false);
@@ -1258,7 +1274,7 @@ export default function SaasOverviewPage() {
                         fontWeight: timeframe === tf ? 600 : 500,
                         color: timeframe === tf ? "var(--primary)" : "var(--text-primary)",
                         cursor: "pointer",
-                        transition: "background 0.15s ease",
+                        transition: "background 0.15s ease, color 0.15s ease",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",

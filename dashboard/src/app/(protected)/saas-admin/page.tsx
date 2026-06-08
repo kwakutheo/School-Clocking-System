@@ -135,7 +135,7 @@ const WEEK_LABELS = [
   "4W Ago",
   "3W Ago",
   "2W Ago",
-  "1W Ago",
+  "Last Week",
   "This Week",
 ];
 const EMP_MODAL_LIMIT = 50;

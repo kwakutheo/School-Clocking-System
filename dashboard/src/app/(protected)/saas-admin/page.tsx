@@ -673,12 +673,12 @@ function EmployeeRankRow({
             right: "16px",
             top: "50%",
             transform: "translateY(-50%)",
-            background: "var(--bg-card)",
+            background: "var(--bg-surface)",
             border: "1px solid var(--border)",
             borderRadius: "10px",
             padding: "10px 14px",
             zIndex: 100,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
             display: "flex",
             gap: "16px",
             pointerEvents: "auto",
@@ -1245,10 +1245,10 @@ export default function SaasOverviewPage() {
                     top: "100%",
                     right: 0,
                     marginTop: "8px",
-                    background: "var(--bg-card)",
+                    background: "var(--bg-surface)",
                     border: "1px solid var(--border)",
                     borderRadius: "12px",
-                    boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+                    boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
                     width: "180px",
                     zIndex: 100,
                     overflow: "hidden",
@@ -1267,7 +1267,7 @@ export default function SaasOverviewPage() {
                       style={{
                         padding: "12px 16px",
                         textAlign: "left",
-                        background: timeframe === tf ? "var(--bg-body)" : "transparent",
+                        background: timeframe === tf ? "var(--bg-card-hover)" : "transparent",
                         border: "none",
                         borderBottom: "1px solid var(--border)",
                         fontSize: "14px",
@@ -1901,12 +1901,12 @@ export default function SaasOverviewPage() {
               />
               <Tooltip
                 contentStyle={{
-                  background: "var(--bg-card)",
+                  background: "var(--bg-surface)",
                   border: "1px solid var(--border)",
                   borderRadius: "10px",
                   fontSize: "13px",
                   color: "var(--text-primary)",
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
                 }}
                 formatter={(v: any) => [
                   `${formatPct(Number(v) || 0)}%`,
@@ -2509,7 +2509,7 @@ export default function SaasOverviewPage() {
         >
           <div
             style={{
-              background: "var(--bg-card)",
+              background: "var(--bg-surface)",
               border: "1px solid var(--border)",
               borderRadius: "16px",
               width: "100%",
@@ -2517,7 +2517,7 @@ export default function SaasOverviewPage() {
               maxHeight: "88vh",
               display: "flex",
               flexDirection: "column",
-              boxShadow: "0 24px 60px rgba(0,0,0,0.35)",
+              boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
               overflow: "hidden",
               animation: "slideUp 0.3s ease-out",
             }}
@@ -2528,7 +2528,7 @@ export default function SaasOverviewPage() {
               style={{
                 padding: "20px 24px",
                 borderBottom: "1px solid var(--border)",
-                background: "var(--bg-card)",
+                background: "var(--bg-surface)",
               }}
             >
               <div
@@ -2923,7 +2923,7 @@ export default function SaasOverviewPage() {
               style={{
                 padding: "14px 24px",
                 borderTop: "1px solid var(--border)",
-                background: "var(--bg-card)",
+                background: "var(--bg-surface)",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
@@ -3045,7 +3045,7 @@ export default function SaasOverviewPage() {
         >
           <div
             style={{
-              background: "var(--bg-card)",
+              background: "var(--bg-surface)",
               border: "1px solid var(--border)",
               borderRadius: "16px",
               width: "100%",
@@ -3053,7 +3053,7 @@ export default function SaasOverviewPage() {
               maxHeight: "85vh",
               display: "flex",
               flexDirection: "column",
-              boxShadow: "0 24px 50px rgba(0,0,0,0.3)",
+              boxShadow: "0 24px 50px rgba(0,0,0,0.5)",
               overflow: "hidden",
               animation: "slideUp 0.3s ease-out",
             }}
@@ -3064,7 +3064,7 @@ export default function SaasOverviewPage() {
               style={{
                 padding: "20px 24px",
                 borderBottom: "1px solid var(--border)",
-                background: "var(--bg-card)",
+                background: "var(--bg-surface)",
               }}
             >
               <div
@@ -3240,7 +3240,7 @@ export default function SaasOverviewPage() {
               style={{
                 padding: "16px 24px",
                 borderTop: "1px solid var(--border)",
-                background: "var(--bg-card)",
+                background: "var(--bg-surface)",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
@@ -3306,14 +3306,14 @@ export default function SaasOverviewPage() {
         >
           <div
             style={{
-              background: "var(--bg-card)",
+              background: "var(--bg-surface)",
               border: "1px solid var(--border)",
               borderRadius: "16px",
               width: "100%",
               maxWidth: "500px",
               display: "flex",
               flexDirection: "column",
-              boxShadow: "0 24px 50px rgba(0,0,0,0.3)",
+              boxShadow: "0 24px 50px rgba(0,0,0,0.5)",
               overflowY: "auto",
               maxHeight: "85vh",
               animation: "slideUp 0.3s ease-out",
@@ -3572,7 +3572,7 @@ export default function SaasOverviewPage() {
         >
           <div
             style={{
-              background: "var(--bg-card)",
+              background: "var(--bg-surface)",
               border: "1px solid var(--border)",
               borderRadius: "16px",
               width: "100%",
@@ -3580,7 +3580,7 @@ export default function SaasOverviewPage() {
               maxHeight: "85vh",
               display: "flex",
               flexDirection: "column",
-              boxShadow: "0 24px 50px rgba(0,0,0,0.3)",
+              boxShadow: "0 24px 50px rgba(0,0,0,0.5)",
               overflow: "hidden",
               animation: "slideUp 0.3s ease-out",
             }}
@@ -3590,7 +3590,7 @@ export default function SaasOverviewPage() {
               style={{
                 padding: "20px 24px",
                 borderBottom: "1px solid var(--border)",
-                background: "var(--bg-card)",
+                background: "var(--bg-surface)",
               }}
             >
               <div
@@ -3779,7 +3779,7 @@ export default function SaasOverviewPage() {
         >
           <div
             style={{
-              background: "var(--bg-card)",
+              background: "var(--bg-surface)",
               border: "1px solid var(--border)",
               borderRadius: "16px",
               width: "100%",
@@ -3787,7 +3787,7 @@ export default function SaasOverviewPage() {
               maxHeight: "85vh",
               display: "flex",
               flexDirection: "column",
-              boxShadow: "0 24px 50px rgba(0,0,0,0.3)",
+              boxShadow: "0 24px 50px rgba(0,0,0,0.5)",
               overflow: "hidden",
               animation: "slideUp 0.3s ease-out",
             }}
@@ -3797,7 +3797,7 @@ export default function SaasOverviewPage() {
               style={{
                 padding: "20px 24px",
                 borderBottom: "1px solid var(--border)",
-                background: "var(--bg-card)",
+                background: "var(--bg-surface)",
               }}
             >
               <div
@@ -4021,7 +4021,7 @@ export default function SaasOverviewPage() {
               style={{
                 padding: "14px 24px",
                 borderTop: "1px solid var(--border)",
-                background: "var(--bg-card)",
+                background: "var(--bg-surface)",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",

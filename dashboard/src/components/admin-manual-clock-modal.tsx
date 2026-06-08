@@ -193,7 +193,6 @@ export function AdminManualClockModal({ onClose, onSuccess, selectedDate }: Prop
           <AlertTriangle size={16} color="#f59e0b" style={{ flexShrink: 0, marginTop: 1 }} />
           <span style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
             You cannot clock yourself in/out. Use this only when an employee cannot access their phone.
-            All manual entries are permanently flagged in the audit trail.
           </span>
         </div>
 

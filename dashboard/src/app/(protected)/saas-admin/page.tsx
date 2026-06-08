@@ -858,6 +858,10 @@ export default function SaasOverviewPage() {
   const [empModalPage, setEmpModalPage] = useState(1);
   const [empModalTotal, setEmpModalTotal] = useState(0);
   const [empModalTotalPages, setEmpModalTotalPages] = useState(1);
+  const [timeframeDropdownOpen, setTimeframeDropdownOpen] = useState(false);
+  
+  // Create ref for timeframe dropdown
+  const timeframeDropdownRef = useRef<HTMLDivElement>(null);
   const loadedEmpKey = useRef<string | null>(null);
 
   const [explainEmpModal, setExplainEmpModal] =
@@ -897,6 +901,20 @@ export default function SaasOverviewPage() {
     setModalSearch("");
     fetchAllSchools();
   };
+
+  // Handle click outside for timeframe dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        timeframeDropdownRef.current &&
+        !timeframeDropdownRef.current.contains(event.target as Node)
+      ) {
+        setTimeframeDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleOpenKpiSchoolsModal = () => {
     setShowKpiSchoolsModal(true);
@@ -1176,37 +1194,95 @@ export default function SaasOverviewPage() {
               flexWrap: "wrap",
             }}
           >
-            {/* Timeframe Tabs */}
+            {/* Timeframe Dropdown */}
             <div
-              style={{
-                display: "flex",
-                background: "var(--bg-card)",
-                border: "1px solid var(--border)",
-                borderRadius: "10px",
-                padding: "4px",
-                gap: "2px",
-              }}
+              ref={timeframeDropdownRef}
+              style={{ position: "relative" }}
             >
-              {(Object.keys(TIMEFRAME_LABELS) as Timeframe[]).map((tf) => (
-                <button
-                  key={tf}
-                  onClick={() => setTimeframe(tf)}
+              <button
+                onClick={() => setTimeframeDropdownOpen(!timeframeDropdownOpen)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "8px 16px",
+                  background: "var(--primary)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                }}
+              >
+                {TIMEFRAME_LABELS[timeframe]}
+                <ChevronDown
+                  size={16}
                   style={{
-                    padding: "6px 14px",
-                    borderRadius: "7px",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    border: "none",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    background:
-                      timeframe === tf ? "var(--primary)" : "transparent",
-                    color: timeframe === tf ? "#fff" : "var(--text-secondary)",
+                    transform: timeframeDropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 0.2s ease",
+                  }}
+                />
+              </button>
+
+              {timeframeDropdownOpen && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    right: 0,
+                    marginTop: "8px",
+                    background: "var(--bg-card)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "12px",
+                    boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+                    width: "180px",
+                    zIndex: 100,
+                    overflow: "hidden",
+                    display: "flex",
+                    flexDirection: "column",
                   }}
                 >
-                  {TIMEFRAME_LABELS[tf]}
-                </button>
-              ))}
+                  {(Object.keys(TIMEFRAME_LABELS) as Timeframe[]).map((tf) => (
+                    <button
+                      key={tf}
+                      onClick={() => {
+                        setTimeframe(tf);
+                        setTimeframeDropdownOpen(false);
+                      }}
+                      style={{
+                        padding: "12px 16px",
+                        textAlign: "left",
+                        background: timeframe === tf ? "var(--bg-body)" : "transparent",
+                        border: "none",
+                        borderBottom: "1px solid var(--border)",
+                        fontSize: "14px",
+                        fontWeight: timeframe === tf ? 600 : 500,
+                        color: timeframe === tf ? "var(--primary)" : "var(--text-primary)",
+                        cursor: "pointer",
+                        transition: "background 0.15s ease",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      {TIMEFRAME_LABELS[tf]}
+                      {timeframe === tf && (
+                        <div
+                          style={{
+                            width: "6px",
+                            height: "6px",
+                            borderRadius: "50%",
+                            background: "var(--primary)",
+                          }}
+                        />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Refresh */}

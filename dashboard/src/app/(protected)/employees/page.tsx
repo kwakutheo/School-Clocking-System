@@ -621,7 +621,7 @@ export default function EmployeesPage() {
                   <input
                     id="email"
                     className="form-input"
-                    type="email"
+                    type="text"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     placeholder="john.doe@example.com"

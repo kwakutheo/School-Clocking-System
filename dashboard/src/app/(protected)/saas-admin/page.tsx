@@ -1200,21 +1200,17 @@ export default function SaasOverviewPage() {
               style={{ position: "relative" }}
             >
               <button
+                className="btn btn-primary"
                 onClick={() => setTimeframeDropdownOpen(!timeframeDropdownOpen)}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: "8px",
-                  padding: "8px 16px",
-                  background: "var(--primary)",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "10px",
-                  fontSize: "14px",
-                  fontWeight: 600,
+                  padding: "9px 18px",
+                  borderRadius: "9px",
+                  fontSize: "13px",
+                  fontWeight: 700,
                   cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 }}
               >
                 {TIMEFRAME_LABELS[timeframe]}

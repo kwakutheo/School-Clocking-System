@@ -958,64 +958,66 @@ export class SaasAdminService implements OnModuleInit {
     }
 
     // Map tenants using the aggregated maps
-    let results = tenants.map((tenant) => {
-      const employeeCount = employeeMap.get(tenant.id) || 0;
-      const branchCount = branchMap.get(tenant.id) || 0;
-      const departmentCount = departmentMap.get(tenant.id) || 0;
-      const shiftCount = shiftMap.get(tenant.id) || 0;
-      const presentCount = checkinMap.get(tenant.id) || 0;
-      const checkins30 = checkin30Map.get(tenant.id) || 0;
+    let results = tenants
+      .map((tenant) => {
+        const employeeCount = employeeMap.get(tenant.id) || 0;
+        const branchCount = branchMap.get(tenant.id) || 0;
+        const departmentCount = departmentMap.get(tenant.id) || 0;
+        const shiftCount = shiftMap.get(tenant.id) || 0;
+        const presentCount = checkinMap.get(tenant.id) || 0;
+        const checkins30 = checkin30Map.get(tenant.id) || 0;
 
-      // Use the accurate time-series expected count. If 0 (e.g. no summary run yet), fallback to generic math.
-      const rangeParams = tenantRangesMap.get(tenant.id) || {
-        start: boundingStart,
-        end: boundingEnd,
-        weekdays: 1,
-      };
-      const expectedInTimeframe =
-        expectedMap.get(tenant.id) || employeeCount * rangeParams.weekdays;
-      const approvedLeaveDays = leaveMap.get(tenant.id) || 0;
+        // Use the accurate time-series expected count. If 0 (e.g. no summary run yet), fallback to generic math.
+        const rangeParams = tenantRangesMap.get(tenant.id) || {
+          start: boundingStart,
+          end: boundingEnd,
+          weekdays: 1,
+        };
+        const expectedInTimeframe =
+          expectedMap.get(tenant.id) ?? employeeCount * rangeParams.weekdays;
+        const approvedLeaveDays = leaveMap.get(tenant.id) || 0;
 
-      // Use two-decimal precision for rates; keep values numeric so frontend can format as needed
-      const presenceRateRaw =
-        expectedInTimeframe > 0
-          ? (presentCount / expectedInTimeframe) * 100
-          : 0;
-      const presenceRate = Number(Math.min(100, presenceRateRaw).toFixed(2));
+        // Use two-decimal precision for rates; keep values numeric so frontend can format as needed
+        const presenceRateRaw =
+          expectedInTimeframe > 0
+            ? (presentCount / expectedInTimeframe) * 100
+            : 0;
+        const presenceRate = Number(Math.min(100, presenceRateRaw).toFixed(2));
 
-      const expected30 =
-        expected30Map.get(tenant.id) || employeeCount * weekdays30Count;
-      const sustained30Raw =
-        expected30 > 0 ? (checkins30 / expected30) * 100 : 0;
-      const sustained30DayRate = Number(
-        Math.min(100, sustained30Raw).toFixed(2),
-      );
+        const expected30 =
+          expected30Map.get(tenant.id) ?? employeeCount * weekdays30Count;
+        const sustained30Raw =
+          expected30 > 0 ? (checkins30 / expected30) * 100 : 0;
+        const sustained30DayRate = Number(
+          Math.min(100, sustained30Raw).toFixed(2),
+        );
 
-      return {
-        id: tenant.id,
-        name: tenant.name,
-        slug: tenant.slug,
-        initials: tenant.initials,
-        isActive: tenant.isActive,
-        primaryColor: tenant.primaryColor,
-        logoUrl: tenant.logoUrl,
-        customDomain: tenant.customDomain,
-        createdAt: tenant.createdAt,
-        metrics: {
-          employees: employeeCount,
-          branches: branchCount,
-          departments: departmentCount,
-          shifts: shiftCount,
-          // Preserve existing field for compatibility, and add more explicit fields
-          presentToday: presentCount,
-          presentInTimeframe: presentCount,
-          expectedEmployeeDays: expectedInTimeframe,
-          approvedLeaveDays,
-          presenceRate: presenceRate,
-          sustained30DayRate: sustained30DayRate,
-        },
-      };
-    });
+        return {
+          id: tenant.id,
+          name: tenant.name,
+          slug: tenant.slug,
+          initials: tenant.initials,
+          isActive: tenant.isActive,
+          primaryColor: tenant.primaryColor,
+          logoUrl: tenant.logoUrl,
+          customDomain: tenant.customDomain,
+          createdAt: tenant.createdAt,
+          metrics: {
+            employees: employeeCount,
+            branches: branchCount,
+            departments: departmentCount,
+            shifts: shiftCount,
+            // Preserve existing field for compatibility, and add more explicit fields
+            presentToday: presentCount,
+            presentInTimeframe: presentCount,
+            expectedEmployeeDays: expectedInTimeframe,
+            approvedLeaveDays,
+            presenceRate: presenceRate,
+            sustained30DayRate: sustained30DayRate,
+          },
+        };
+      })
+      .filter((school) => school.metrics.expectedEmployeeDays > 0);
 
     if (cohort) {
       if (cohort === 'excellent') {

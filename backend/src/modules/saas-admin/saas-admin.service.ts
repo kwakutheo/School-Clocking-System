@@ -2280,7 +2280,7 @@ export class SaasAdminService implements OnModuleInit {
       
       const bulletin = this.bulletinRepo.create({
         title: `System Admin Action: Staff Member ${action}`,
-        content: `Please be informed that the staff member **${empName}** (${emp.employeeCode}) has been **${action.toLowerCase()}** globally by the SaaS System Administrator.\n\nTheir access and permissions have been updated accordingly. Contact support if you require further details.`,
+        content: `Please be informed that the staff member **${empName}** (${emp.employeeCode}) has been **${action.toLowerCase()}** globally by the System Administrator.\n\nTheir access and permissions have been updated accordingly. Contact support if you require further details.`,
         type: bType,
         targetTenantIds: [emp.tenantId],
         isActive: true,

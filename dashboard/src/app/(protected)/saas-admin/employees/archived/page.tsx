@@ -271,11 +271,11 @@ export default function ArchivedEmployeesPage() {
                         onClick={() => openReactivateModal(emp)}
                         className="btn btn-secondary"
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '8px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#22c55e', cursor: 'pointer', transition: 'all 0.2s' }}
-                        title="Un-archive Employee"
-                        aria-label="Un-archive Employee"
+                        title="Re-activate Employee"
+                        aria-label="Re-activate Employee"
                       >
                         <UserCheck size={14} />
-                        Un-archive
+                        Re-activate
                       </button>
                     </td>
                   </tr>
@@ -336,10 +336,10 @@ export default function ArchivedEmployeesPage() {
             </div>
 
             <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '24px' }}>
-              Are you sure you want to un-archive{' '}
+              Are you sure you want to reactivate{' '}
               <strong style={{ color: 'var(--text-primary)' }}>{selectedEmp.user?.fullName}</strong>? 
-              They will be returned to their school dashboard as <strong style={{ color: 'var(--text-primary)' }}>Inactive</strong>. 
-              The school administrator must manually activate their account before they can log in again.
+              He/She will be returned to his/her school dashboard as <strong style={{ color: 'var(--text-primary)' }}>Inactive</strong>. 
+              The school administrator must manually activate his/her account before he/she can log in again.
             </p>
 
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -352,7 +352,7 @@ export default function ArchivedEmployeesPage() {
                 disabled={reactivateSubmitting}
                 style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: '#22c55e', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '14px', transition: 'all 0.2s' }}
               >
-                {reactivateSubmitting ? 'Processing...' : 'Yes, Un-archive'}
+                {reactivateSubmitting ? 'Processing...' : 'Yes, Reactivate Staff'}
               </button>
             </div>
           </div>

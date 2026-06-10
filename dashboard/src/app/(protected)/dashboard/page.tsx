@@ -935,13 +935,13 @@ export default function DashboardPage() {
 
       {/* ── All Announcements Modal ── */}
       {showAllBulletins && (
-        <div style={{ position: 'fixed', inset: 0, background: 'var(--background)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10001, padding: '16px', animation: 'fadeIn 0.2s ease-out' }}>
-          <div style={{ width: '100%', maxWidth: '540px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-page)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 40px 80px rgba(0,0,0,0.6)' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'var(--bg-surface)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10001, padding: '16px', animation: 'fadeIn 0.2s ease-out' }}>
+          <div style={{ width: '100%', maxWidth: '540px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 40px 80px rgba(0,0,0,0.6)' }}>
 
             {/* Modal Header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Bell size={16} color="var(--primary)" />
                 </div>
                 <div>
@@ -954,7 +954,7 @@ export default function DashboardPage() {
               <button
                 onClick={() => setShowAllBulletins(false)}
                 aria-label="Close"
-                style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-input, rgba(255,255,255,0.05))', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 <X size={14} />
               </button>

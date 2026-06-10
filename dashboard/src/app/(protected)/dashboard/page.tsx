@@ -8,7 +8,7 @@ import { AttendanceChart } from '@/components/attendance-chart';
 import { StatCardSkeleton, TableSkeleton } from '@/components/skeleton';
 import { AdminManualClockModal } from '@/components/admin-manual-clock-modal';
 import {
-  TrendingUp, TrendingDown, Users, FileText, Building2, Clock, Calendar, AlertTriangle, UserCheck, X, ChevronLeft, ChevronRight, Plane, Megaphone
+  TrendingUp, TrendingDown, Users, FileText, Building2, Clock, Calendar, AlertTriangle, UserCheck, X, ChevronLeft, ChevronRight, Plane, Megaphone, Bell, Trash2, CheckCircle
 } from 'lucide-react';
 
 const fetcher = (fn: () => Promise<unknown>) => () => fn().then((r: any) => r.data);
@@ -102,10 +102,27 @@ export default function DashboardPage() {
   const [modalDetails, setModalDetails] = useState<{ title: string; type: string; data: any[] } | null>(null);
   const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd');
 
-  // Bulletins announcement notifications
+  // ── Bulletins / Announcement System ─────────────────────────────────────────
   const [activeBulletins, setActiveBulletins] = useState<any[]>([]);
   const [currentBulletinIdx, setCurrentBulletinIdx] = useState(0);
   const [showBulletin, setShowBulletin] = useState(false);
+  const [showAllBulletins, setShowAllBulletins] = useState(false);
+  // Per-user localStorage keys to avoid cross-user bleed
+  const dismissedKey = user?.id ? `bulletin_dismissed_${user.id}` : null;
+  const readKey = user?.id ? `bulletin_read_${user.id}` : null;
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+
+  // Load persisted read/dismissed state on mount
+  useEffect(() => {
+    if (!user?.id) return;
+    try {
+      const d = JSON.parse(localStorage.getItem(`bulletin_dismissed_${user.id}`) || '[]');
+      setDismissedIds(new Set(d));
+      const r = JSON.parse(localStorage.getItem(`bulletin_read_${user.id}`) || '[]');
+      setReadIds(new Set(r));
+    } catch { /* ignore */ }
+  }, [user?.id]);
 
   useEffect(() => {
     if (user?.tenantId) {
@@ -113,12 +130,53 @@ export default function DashboardPage() {
         .then((res) => {
           if (res.data && res.data.length > 0) {
             setActiveBulletins(res.data);
-            setShowBulletin(true);
+            // Only auto-show the popup if there are non-dismissed bulletins
+            const nondismissed = res.data.filter((b: any) => {
+              try {
+                const d = JSON.parse(localStorage.getItem(`bulletin_dismissed_${user.id}`) || '[]');
+                return !d.includes(b.id);
+              } catch { return true; }
+            });
+            if (nondismissed.length > 0) setShowBulletin(true);
           }
         })
         .catch((err) => console.error('Failed to load active announcements:', err));
     }
   }, [user]);
+
+  // Bulletins visible in popup = active & not dismissed
+  const visibleBulletins = activeBulletins.filter(b => !dismissedIds.has(b.id));
+  const unreadCount = activeBulletins.filter(b => !readIds.has(b.id) && !dismissedIds.has(b.id)).length;
+
+  const markRead = (id: string) => {
+    if (readIds.has(id) || !readKey) return;
+    const next = new Set([...readIds, id]);
+    setReadIds(next);
+    try { localStorage.setItem(readKey, JSON.stringify([...next])); } catch { /* ignore */ }
+  };
+
+  const dismissBulletin = (id: string) => {
+    const next = new Set([...dismissedIds, id]);
+    setDismissedIds(next);
+    if (dismissedKey) {
+      try { localStorage.setItem(dismissedKey, JSON.stringify([...next])); } catch { /* ignore */ }
+    }
+    // Also mark as read when dismissed
+    markRead(id);
+    const remaining = visibleBulletins.filter(b => b.id !== id);
+    if (remaining.length === 0) {
+      setShowBulletin(false);
+    } else {
+      setCurrentBulletinIdx(prev => Math.min(prev, remaining.length - 1));
+    }
+  };
+
+  // When the popup shows a new bulletin, mark it as read
+  useEffect(() => {
+    if (showBulletin && visibleBulletins[currentBulletinIdx]) {
+      markRead(visibleBulletins[currentBulletinIdx].id);
+    }
+  }, [showBulletin, currentBulletinIdx, visibleBulletins.length]);
 
   const { data: live, isLoading: liveLoading } = useSWR(
     ['live', selectedDate], 
@@ -184,70 +242,90 @@ export default function DashboardPage() {
             )} Workforce Overview
           </p>
         </div>
-        <div className="dashboard-date-picker" style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-          <button
-            onClick={handlePrevDate}
-            style={{ transition: 'background 0.2s ease', background: 'transparent', border: 'none', padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', borderRight: '1px solid var(--border-color)' }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(128, 128, 128, 0.15)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-            title="Previous day"
-          >
-            <ChevronLeft size={18} />
-          </button>
-          
-          <input 
-            type="date" 
-            value={selectedDate} 
-            onChange={(e) => {
-              const val = e.target.value;
-              const parsed = parseLocalDate(val);
-              if (!parsed) return;
-              const today = parseLocalDate(format(new Date(), 'yyyy-MM-dd'))!;
-              // Clamp future dates to today
-              setSelectedDate(parsed > today ? format(new Date(), 'yyyy-MM-dd') : val);
-            }}
-            max={format(new Date(), 'yyyy-MM-dd')}
-            className="input-field"
-            aria-label="Select date for attendance history"
-            title="Select date for attendance history"
-            style={{ 
-              transition: 'background 0.2s ease',
-              width: 'auto', 
-              padding: '10px 16px', 
-              border: 'none', 
-              background: 'transparent', 
-              color: 'var(--text-primary)', 
-              fontFamily: 'inherit',
-              fontWeight: 500,
-              outline: 'none',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(128, 128, 128, 0.08)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-          />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* ── Announcements Bell ── */}
+          {activeBulletins.length > 0 && (
+            <button
+              id="announcements-btn"
+              onClick={() => setShowAllBulletins(true)}
+              title="View all announcements"
+              aria-label="View all announcements"
+              style={{ position: 'relative', width: '40px', height: '40px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-input, rgba(255,255,255,0.05))', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', flexShrink: 0 }}
+            >
+              <Bell size={18} />
+              {unreadCount > 0 && (
+                <span style={{ position: 'absolute', top: '-4px', right: '-4px', minWidth: '18px', height: '18px', borderRadius: '10px', background: '#ef4444', color: '#fff', fontSize: '10px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px', border: '2px solid var(--bg-page, #0f1117)' }}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+          )}
 
-          <button
-            onClick={handleNextDate}
-            disabled={isToday}
-            style={{ 
-              transition: 'background 0.2s ease',
-              background: 'transparent', 
-              border: 'none', 
-              padding: '10px 14px', 
-              cursor: isToday ? 'not-allowed' : 'pointer', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              color: isToday ? 'var(--text-muted)' : 'var(--text-secondary)', 
-              borderLeft: '1px solid var(--border-color)',
-              opacity: isToday ? 0.5 : 1
-            }}
-            onMouseEnter={(e) => { if(!isToday) e.currentTarget.style.background = 'rgba(128, 128, 128, 0.15)'}}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-            title="Next day"
-          >
-            <ChevronRight size={18} />
-          </button>
+          {/* ── Date Picker ── */}
+          <div className="dashboard-date-picker" style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+            <button
+              onClick={handlePrevDate}
+              style={{ transition: 'background 0.2s ease', background: 'transparent', border: 'none', padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', borderRight: '1px solid var(--border-color)' }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(128, 128, 128, 0.15)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              title="Previous day"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            
+            <input 
+              type="date" 
+              value={selectedDate} 
+              onChange={(e) => {
+                const val = e.target.value;
+                const parsed = parseLocalDate(val);
+                if (!parsed) return;
+                const today = parseLocalDate(format(new Date(), 'yyyy-MM-dd'))!;
+                setSelectedDate(parsed > today ? format(new Date(), 'yyyy-MM-dd') : val);
+              }}
+              max={format(new Date(), 'yyyy-MM-dd')}
+              className="input-field"
+              aria-label="Select date for attendance history"
+              title="Select date for attendance history"
+              style={{ 
+                transition: 'background 0.2s ease',
+                width: 'auto', 
+                padding: '10px 16px', 
+                border: 'none', 
+                background: 'transparent', 
+                color: 'var(--text-primary)', 
+                fontFamily: 'inherit',
+                fontWeight: 500,
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(128, 128, 128, 0.08)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+            />
+
+            <button
+              onClick={handleNextDate}
+              disabled={isToday}
+              style={{ 
+                transition: 'background 0.2s ease',
+                background: 'transparent', 
+                border: 'none', 
+                padding: '10px 14px', 
+                cursor: isToday ? 'not-allowed' : 'pointer', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                color: isToday ? 'var(--text-muted)' : 'var(--text-secondary)', 
+                borderLeft: '1px solid var(--border-color)',
+                opacity: isToday ? 0.5 : 1
+              }}
+              onMouseEnter={(e) => { if(!isToday) e.currentTarget.style.background = 'rgba(128, 128, 128, 0.15)'}}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              title="Next day"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -757,114 +835,212 @@ export default function DashboardPage() {
         </>
       )}
 
-      {/* ── Slide-in Platform Bulletin Announcement ── */}
-      {showBulletin && activeBulletins[currentBulletinIdx] && (
-        <>
-          <style dangerouslySetInnerHTML={{ __html: `
-            @keyframes slideInRight {
-              from { transform: translateX(120%); opacity: 0; }
-              to { transform: translateX(0); opacity: 1; }
-            }
-          `}} />
-          <div style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            width: '100%',
-            maxWidth: '380px',
-            background: 'var(--bg-card)',
-            borderLeft: `5px solid ${
-              activeBulletins[currentBulletinIdx].type === 'warning' ? '#ef4444' :
-              activeBulletins[currentBulletinIdx].type === 'success' ? '#22c55e' :
-              activeBulletins[currentBulletinIdx].type === 'maintenance' ? '#eab308' : '#3b82f6'
-            }`,
-            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3), 0 10px 10px -5px rgba(0,0,0,0.3)',
-            borderRadius: '12px',
-            padding: '20px',
-            zIndex: 10000,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
-            animation: 'slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-            backdropFilter: 'blur(12px)',
-            borderTop: '1px solid var(--border)',
-            borderRight: '1px solid var(--border)',
-            borderBottom: '1px solid var(--border)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{
-                  color:
-                    activeBulletins[currentBulletinIdx].type === 'warning' ? '#ef4444' :
-                    activeBulletins[currentBulletinIdx].type === 'success' ? '#22c55e' :
-                    activeBulletins[currentBulletinIdx].type === 'maintenance' ? '#eab308' : '#3b82f6',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}>
-                  <Megaphone size={18} />
-                </span>
-                <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-secondary)' }}>
-                  Announcement
-                </span>
+      {/* ── Slide-in Platform Bulletin Popup ── */}
+      {showBulletin && visibleBulletins[currentBulletinIdx] && (() => {
+        const b = visibleBulletins[currentBulletinIdx];
+        const accentColor = b.type === 'warning' ? '#ef4444' : b.type === 'success' ? '#22c55e' : b.type === 'maintenance' ? '#eab308' : '#3b82f6';
+        return (
+          <>
+            <style dangerouslySetInnerHTML={{ __html: `
+              @keyframes slideInRight {
+                from { transform: translateX(120%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+              }
+            `}} />
+            {/* ── Opaque solid wrapper — no backdrop-filter so dark theme is fully covered ── */}
+            <div style={{
+              position: 'fixed',
+              bottom: '24px',
+              right: '24px',
+              width: '100%',
+              maxWidth: '380px',
+              /* Opaque dark/light card — does NOT use --bg-card which is semi-transparent in dark mode */
+              background: 'var(--bg-page, #0f1117)',
+              borderLeft: `5px solid ${accentColor}`,
+              border: `1px solid var(--border)`,
+              borderLeftWidth: '5px',
+              borderLeftColor: accentColor,
+              boxShadow: '0 24px 48px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.3)',
+              borderRadius: '12px',
+              padding: '20px',
+              zIndex: 10000,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              animation: 'slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}>
+              {/* Header row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ color: accentColor, display: 'flex', alignItems: 'center' }}>
+                    <Megaphone size={16} />
+                  </span>
+                  <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-secondary)' }}>Announcement</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button
+                    onClick={() => setShowAllBulletins(true)}
+                    title="View all announcements"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, padding: '2px 6px', borderRadius: '4px' }}
+                  >
+                    View all
+                  </button>
+                  <button
+                    onClick={() => dismissBulletin(b.id)}
+                    title="Dismiss this announcement"
+                    aria-label="Dismiss"
+                    style={{ width: '24px', height: '24px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-input, rgba(255,255,255,0.05))', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div>
+                <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', lineHeight: 1.4 }}>
+                  {b.title}
+                </h4>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-wrap' }}>
+                  {b.content.split('**').map((part: string, i: number) =>
+                    i % 2 === 1 ? <strong key={i} style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{part}</strong> : part
+                  )}
+                </p>
+              </div>
+
+              {/* Pagination footer */}
+              {visibleBulletins.length > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '10px', marginTop: '4px' }}>
+                  <button
+                    onClick={() => setCurrentBulletinIdx(prev => (prev - 1 + visibleBulletins.length) % visibleBulletins.length)}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                  >
+                    &larr; Prev
+                  </button>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                    {currentBulletinIdx + 1} of {visibleBulletins.length}
+                  </span>
+                  <button
+                    onClick={() => setCurrentBulletinIdx(prev => (prev + 1) % visibleBulletins.length)}
+                    style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                  >
+                    Next &rarr;
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        );
+      })()}
+
+      {/* ── All Announcements Modal ── */}
+      {showAllBulletins && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10001, padding: '16px', animation: 'fadeIn 0.2s ease-out' }}>
+          <div style={{ width: '100%', maxWidth: '540px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-page, #0f1117)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 40px 80px rgba(0,0,0,0.6)' }}>
+
+            {/* Modal Header */}
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(99,102,241,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Bell size={16} color="var(--primary)" />
+                </div>
+                <div>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>Announcements</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '1px' }}>
+                    {activeBulletins.length} total · {unreadCount} unread
+                  </div>
+                </div>
               </div>
               <button
-                onClick={() => setShowBulletin(false)}
-                title="Close"
+                onClick={() => setShowAllBulletins(false)}
                 aria-label="Close"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-input, rgba(255,255,255,0.05))', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
-                <X size={16} />
+                <X size={14} />
               </button>
             </div>
 
-            <div>
-              <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>
-                {activeBulletins[currentBulletinIdx].title}
-              </h4>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0, whiteSpace: 'pre-wrap' }}>
-                {activeBulletins[currentBulletinIdx].content.split('**').map((part: string, i: number) => 
-                  i % 2 === 1 ? <strong key={i} style={{ color: 'var(--text-primary)' }}>{part}</strong> : part
-                )}
-              </p>
+            {/* Bulletin List */}
+            <div style={{ overflowY: 'auto', flex: 1, padding: '8px 0' }}>
+              {activeBulletins.length === 0 ? (
+                <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <Bell size={36} style={{ opacity: 0.3, margin: '0 auto 12px', display: 'block' }} />
+                  <p style={{ margin: 0, fontSize: '14px' }}>No announcements yet.</p>
+                </div>
+              ) : activeBulletins.map((b) => {
+                const isRead = readIds.has(b.id);
+                const isDismissed = dismissedIds.has(b.id);
+                const accentColor = b.type === 'warning' ? '#ef4444' : b.type === 'success' ? '#22c55e' : b.type === 'maintenance' ? '#eab308' : '#3b82f6';
+                return (
+                  <div
+                    key={b.id}
+                    style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '14px', opacity: isDismissed ? 0.45 : 1, transition: 'opacity 0.2s' }}
+                    onClick={() => markRead(b.id)}
+                  >
+                    {/* Unread dot / read check */}
+                    <div style={{ flexShrink: 0, paddingTop: '3px' }}>
+                      {isRead || isDismissed ? (
+                        <CheckCircle size={16} color="var(--text-secondary)" style={{ opacity: 0.5 }} />
+                      ) : (
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: accentColor, marginTop: '4px', marginLeft: '4px', boxShadow: `0 0 6px ${accentColor}88` }} />
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: isRead ? 600 : 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>{b.title}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                          {!isDismissed && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); dismissBulletin(b.id); }}
+                              title="Dismiss announcement"
+                              style={{ width: '24px', height: '24px', borderRadius: '6px', border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <p style={{ margin: '0 0 6px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                        {b.content.split('**').map((part: string, i: number) =>
+                          i % 2 === 1 ? <strong key={i} style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{part}</strong> : part
+                        )}
+                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', padding: '2px 6px', borderRadius: '4px', background: `${accentColor}18`, color: accentColor, border: `1px solid ${accentColor}30` }}>
+                          {b.type}
+                        </span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                          {b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                        </span>
+                        {isDismissed && <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>Dismissed</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
-            {activeBulletins.length > 1 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', borderTop: '1px solid var(--border)', paddingTop: '10px' }}>
+            {/* Footer */}
+            {dismissedIds.size > 0 && (
+              <div style={{ padding: '12px 24px', borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{dismissedIds.size} dismissed announcement{dismissedIds.size !== 1 ? 's' : ''}</span>
                 <button
-                  onClick={() => setCurrentBulletinIdx(prev => (prev - 1 + activeBulletins.length) % activeBulletins.length)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text-secondary)',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    padding: 0
+                  onClick={() => {
+                    setDismissedIds(new Set());
+                    if (dismissedKey) try { localStorage.removeItem(dismissedKey); } catch { /* ignore */ }
+                    // Re-show popup if there are bulletins
+                    if (activeBulletins.length > 0) { setCurrentBulletinIdx(0); setShowBulletin(true); }
                   }}
+                  style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                 >
-                  &larr; Prev
-                </button>
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                  {currentBulletinIdx + 1} of {activeBulletins.length} announcements
-                </span>
-                <button
-                  onClick={() => setCurrentBulletinIdx(prev => (prev + 1) % activeBulletins.length)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--primary)',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    padding: 0
-                  }}
-                >
-                  Next &rarr;
+                  Restore all
                 </button>
               </div>
             )}
           </div>
-        </>
+        </div>
       )}
     </div>
   );

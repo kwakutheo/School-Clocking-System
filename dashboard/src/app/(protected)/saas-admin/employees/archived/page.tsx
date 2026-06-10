@@ -12,6 +12,7 @@ interface EmployeeGlobal {
   photoUrl: string | null;
   hireDate: string | null;
   createdAt: string;
+  archivedAt: string | null;
   user: {
     id: string;
     fullName: string;
@@ -259,7 +260,11 @@ export default function ArchivedEmployeesPage() {
                       {emp.department || '—'}
                     </td>
                     <td style={{ padding: '16px 24px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                      {emp.createdAt ? new Date(emp.createdAt).toLocaleDateString() : '—'}
+                      {emp.archivedAt
+                        ? new Date(emp.archivedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                        : emp.createdAt
+                        ? new Date(emp.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                        : '—'}
                     </td>
                     <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                       <button

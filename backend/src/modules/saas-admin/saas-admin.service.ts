@@ -2234,6 +2234,9 @@ export class SaasAdminService implements OnModuleInit {
       photoUrl: emp.photoUrl,
       hireDate: emp.hireDate,
       createdAt: emp.createdAt,
+      // statusChangeDate is explicitly set to new Date() when an employee is archived,
+      // so this is the accurate "Date Archived" field.
+      archivedAt: emp.statusChangeDate || null,
       user: emp.user ? {
         id: emp.user.id,
         fullName: emp.user.fullName,

@@ -81,9 +81,15 @@ export class AuthService {
     }
 
     // Check employee status before allowing login
+    // Use the inclusive lookup so archived employees are not silently passed through.
     const employee = await this.employees
-      .findByUserId(user.id)
+      .findByUserIdIncludingArchived(user.id)
       .catch(() => null);
+    if (employee?.isArchived) {
+      throw new UnauthorizedException(
+        'ACCOUNT_ARCHIVED: Your account has been permanently removed from this system by the platform administrator. Please contact support if you believe this is an error.',
+      );
+    }
     if (employee && employee.status === 'inactive') {
       throw new UnauthorizedException(
         'Your account has been deactivated. Please contact your HR administrator for assistance.',
@@ -127,9 +133,16 @@ export class AuthService {
       }
     }
 
+    // Use inclusive lookup so token-refresh is blocked for archived users too.
     const employee = await this.employees
-      .findByUserId(user.id)
+      .findByUserIdIncludingArchived(user.id)
       .catch(() => null);
+
+    if (employee?.isArchived) {
+      throw new UnauthorizedException(
+        'ACCOUNT_ARCHIVED: Your account has been permanently removed from this system by the platform administrator. Please contact support if you believe this is an error.',
+      );
+    }
 
     if (employee && employee.status !== 'active') {
       throw new UnauthorizedException(

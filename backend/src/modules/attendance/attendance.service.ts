@@ -60,6 +60,12 @@ export class AttendanceService {
       );
     }
 
+    if (employee.isArchived) {
+      throw new BadRequestException(
+        'Action denied: Your account has been permanently removed from this system. Please contact the platform administrator.',
+      );
+    }
+
     if (employee.status !== 'active') {
       throw new BadRequestException(
         `Action denied. Your account status is currently: ${employee.status.toUpperCase()}.`,
@@ -433,6 +439,13 @@ export class AttendanceService {
       );
     }
 
+    // ── Archived employee guard ─────────────────────────────────────────────
+    if (targetEmployee.isArchived) {
+      throw new ForbiddenException(
+        'Action denied: This employee has been permanently removed from the system. Manual clocking is not permitted.',
+      );
+    }
+
     if (targetEmployee.status !== 'active') {
       throw new BadRequestException(
         `Action denied. The target employee account status is: ${targetEmployee.status.toUpperCase()}.`,
@@ -614,6 +627,12 @@ export class AttendanceService {
     if (!employee.shift) {
       throw new BadRequestException(
         'You have not been assigned a work shift. Please contact HR to assign you a shift before clocking in.',
+      );
+    }
+
+    if (employee.isArchived) {
+      throw new BadRequestException(
+        'Action denied: Your account has been permanently removed from this system. Please contact the platform administrator.',
       );
     }
 

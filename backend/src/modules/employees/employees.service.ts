@@ -264,6 +264,22 @@ export class EmployeesService implements OnModuleInit {
     return qb.getOne();
   }
 
+  /**
+   * Finds an employee by user ID WITHOUT filtering out archived employees.
+   * Used exclusively by auth guards so we can detect and block archived users
+   * with a specific "you have been removed from the system" message.
+   */
+  async findByUserIdIncludingArchived(userId: string): Promise<Employee | null> {
+    return this.repo
+      .createQueryBuilder('emp')
+      .leftJoinAndSelect('emp.user', 'user')
+      .leftJoinAndSelect('emp.branch', 'branch')
+      .leftJoinAndSelect('emp.department', 'department')
+      .leftJoinAndSelect('emp.shift', 'shift')
+      .where('user.id = :userId', { userId })
+      .getOne();
+  }
+
   async create(data: Partial<Employee>): Promise<Employee> {
     const existing = await this.repo.findOne({
       where: { employeeCode: data.employeeCode },

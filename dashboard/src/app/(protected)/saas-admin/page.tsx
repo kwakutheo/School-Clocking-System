@@ -844,6 +844,10 @@ export default function SaasOverviewPage() {
   const [modalSearch, setModalSearch] = useState("");
   const [modalTotal, setModalTotal] = useState(0);
 
+  // KPI School modal state
+  const [kpiSchoolsList, setKpiSchoolsList] = useState<SchoolMetric[]>([]);
+  const [kpiSchoolsLoading, setKpiSchoolsLoading] = useState(false);
+
   // Employee rankings state
   const [empRankings, setEmpRankings] = useState<EmployeeRanking[]>([]);
   const [empLoading, setEmpLoading] = useState(false);
@@ -878,7 +882,7 @@ export default function SaasOverviewPage() {
       return;
     setAllSchoolsLoading(true);
     saasAdminApi
-      .listTenants(timeframe, undefined, undefined, { limit: 10000, sort: "presenceRate:DESC" }, true)
+      .listTenants(timeframe, undefined, undefined, { limit: 10000, sort: "presenceRate:DESC" })
       .then((res) => {
         const list: SchoolMetric[] = Array.isArray(res.data)
           ? res.data
@@ -895,6 +899,23 @@ export default function SaasOverviewPage() {
         setAllSchoolsLoading(false);
       });
   }, [fullSchoolsList.length, timeframe]);
+
+  const fetchKpiSchools = useCallback(() => {
+    if (kpiSchoolsList.length > 0) return;
+    setKpiSchoolsLoading(true);
+    saasAdminApi
+      .listTenants(undefined, undefined, undefined, { limit: 10000, sort: "name:ASC" }, true)
+      .then((res) => {
+        const list: SchoolMetric[] = Array.isArray(res.data)
+          ? res.data
+          : res.data?.results || [];
+        setKpiSchoolsList(list);
+      })
+      .catch((err) => console.error(err))
+      .finally(() => {
+        setKpiSchoolsLoading(false);
+      });
+  }, [kpiSchoolsList.length]);
 
   const handleOpenAllSchoolsModal = () => {
     setShowAllSchoolsModal(true);
@@ -919,7 +940,7 @@ export default function SaasOverviewPage() {
   const handleOpenKpiSchoolsModal = () => {
     setShowKpiSchoolsModal(true);
     setModalSearch("");
-    fetchAllSchools();
+    fetchKpiSchools();
   };
 
   // ── Employee rankings fetch (initial + on param change) ───────────────────
@@ -1137,7 +1158,7 @@ export default function SaasOverviewPage() {
     : sortedFullList;
 
   // KPI Schools modal — sorted alphabetically by name
-  const kpiSchoolsAlpha = [...fullSchoolsList].sort((a, b) =>
+  const kpiSchoolsAlpha = [...kpiSchoolsList].sort((a, b) =>
     a.name.localeCompare(b.name),
   );
   const kpiSchoolsFiltered = modalSearch.trim()
@@ -3685,7 +3706,7 @@ export default function SaasOverviewPage() {
             </div>
             
             <div style={{ overflowY: "auto", padding: "12px 24px" }}>
-              {allSchoolsLoading ? (
+              {kpiSchoolsLoading ? (
                 <div style={{ padding: "40px", textAlign: "center" }}>
                   <div className="spinner" />
                 </div>

@@ -1653,14 +1653,6 @@ export default function ReportsPage() {
             color: 'var(--text-secondary)',
           }}
         >
-          <Download size={14} color="#ec4899" style={{ flexShrink: 0 }} />
-          <span>
-            The exported PDF will contain <strong style={{ color: 'var(--text-primary)' }}>{previewCount} rows</strong> with your
-            school&apos;s branding, page numbers, and a generated timestamp on every page.
-            {reportType !== 'summary' && (
-              <> Use the filter above to narrow down the data before exporting.</>
-            )}
-          </span>
         </div>
       )}
     </div>

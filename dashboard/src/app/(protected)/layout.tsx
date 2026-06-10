@@ -46,21 +46,21 @@ const NAV: NavItem[] = [
   { href: '/holidays',    icon: Calendar,         label: 'Holidays',          permission: 'holidays.manage'    },
   { href: '/calendar',    icon: Calendar,         label: 'Academic Calendar', permission: 'calendar.view'      },
   { href: '/audit',       icon: ShieldCheck,      label: 'Audit Logs',        permission: 'audit.view'         },
-  { href: '/permissions', icon: ShieldAlert,      label: 'Permissions',       permission: 'permissions.manage' },
   { href: '/departments', icon: Building2,        label: 'Departments',       permission: 'departments.manage' },
   { href: '/branches',    icon: MapPin,           label: 'Branches',          permission: 'branches.manage'    },
   { href: '/mobile-app',  icon: Smartphone,       label: 'Mobile App',        permission: 'employees.view'     },
   { href: '/settings',    icon: Settings,         label: 'School Settings',   permission: 'permissions.manage' },
+  { href: '/permissions', icon: ShieldAlert,      label: 'Permissions',       permission: 'permissions.manage' },
 ];
 
 const DEVELOPER_NAV: NavItem[] = [
   { href: '/saas-admin',         icon: LayoutDashboard, label: 'Overview' },
   { href: '/saas-admin/schools', icon: Building2,        label: 'Schools Registry' },
-  { href: '/saas-admin/admins',  icon: ShieldCheck,      label: 'Admin Users', globalRoles: ['super_admin'] },
   { href: '/saas-admin/calendar', icon: Calendar,         label: 'Academic Calendar' },
   { href: '/saas-admin/holidays', icon: Calendar,         label: 'Holidays' },
   { href: '/saas-admin/bulletins', icon: Megaphone,      label: 'Announcements', globalRoles: ['super_admin', 'hr_admin'] },
   { href: '/saas-admin/reports',  icon: BarChart2,        label: 'Reports & Export' },
+  { href: '/saas-admin/admins',  icon: ShieldCheck,      label: 'Admin Users', globalRoles: ['super_admin'] },
 ];
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {

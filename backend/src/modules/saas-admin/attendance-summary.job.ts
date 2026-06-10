@@ -17,44 +17,13 @@ import {
 
 /**
  * AttendanceSummaryJob
- *
- * Runs nightly at 01:00 AM server time. Recomputes the last BACKFILL_DAYS
- * calendar days for every active tenant and upserts one row per (tenant, date)
- * into attendance_daily_summaries.
- *
- * Why pre-computed summaries?
- * ─────────────────
- *  With 1 000+ schools × 100+ employees each you easily reach 100 000 employee
- *  records. Computing presence rates on every dashboard page-load by scanning
- *  attendance_logs with complex date arithmetic would take seconds and would
- *  not scale over 10 years of accumulated log data.
- *
- *  By materialising one tiny row per (tenant, date) the SaaS Admin dashboard
- *  can aggregate months of data in milliseconds with a simple SUM query.
- *
- * Correctness guarantees
- * ──────────────────────
- *  • Expected count uses EmployeeStatusLog to reconstruct what each employee's
- *    status was on each specific calendar date – not their current status.
- *  • Employees hired after a date are excluded (hireDate > date).
- *  • Employees on a shift whose workingDays does not include the ISO day-of-week
- *    (1=Mon … 7=Sun) are excluded. Employees with no shift assigned default to
- *    Mon–Fri (ISO days 1-5).
- *  • Employees on approved leave for a specific date are excluded from
- *    expectedCount so schools are not penalized for legitimate absences, and
- *    are counted separately in leaveCount for reporting transparency.
- *  • Both global (tenantId IS NULL) and school-specific holidays are applied,
- *    setting expectedCount = 0 for that date.
- *  • The 90-day rolling backfill window corrects for backdated admin changes.
+
  */
 @Injectable()
 export class AttendanceSummaryJob {
   private readonly logger = new Logger(AttendanceSummaryJob.name);
 
-  /**
-   * How many calendar days back the job will recompute on each nightly run.
-   * 90 days catches retroactive status changes, bulk imports, and term edits.
-   */
+
   private readonly BACKFILL_DAYS = 90;
 
   constructor(
@@ -94,10 +63,7 @@ export class AttendanceSummaryJob {
     this.logger.log(`Attendance summary job finished in ${Date.now() - t0}ms`);
   }
 
-  /**
-   * Public method so that the SaasAdminController can trigger an on-demand
-   * backfill (e.g. immediately after a global holiday is added/deleted).
-   */
+
   async recompute(start: Date, end: Date): Promise<void> {
     const tenants = await this.tenantRepo.find({ where: { isActive: true } });
     if (tenants.length === 0) return;

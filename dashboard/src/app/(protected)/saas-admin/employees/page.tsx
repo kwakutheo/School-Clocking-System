@@ -82,7 +82,7 @@ export default function GlobalEmployeeRegistryPage() {
         limit: itemsPerPage,
         search: debouncedSearch || undefined,
         schoolId: schoolIdFilter || undefined,
-        status: 'ACTIVE,SUSPENDED', // Main page never shows INACTIVE (archived) employees
+        status: 'active,suspended', // Main page never shows inactive (archived) employees
       });
       setEmployees(res.data.data || []);
       setTotalPages(res.data.totalPages || 1);

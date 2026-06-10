@@ -1777,6 +1777,8 @@ export class SaasAdminService implements OnModuleInit {
           'emp.employeeCode',
           'emp.position',
           'emp.photoUrl',
+          'emp.hireDate',
+          'emp.createdAt',
           'user.id',
           'user.fullName',
           'shift.id',
@@ -1825,6 +1827,29 @@ export class SaasAdminService implements OnModuleInit {
       }
 
       const employeeIds = employees.map((e) => e.id);
+
+      // ── Load all ACTIVE status log periods for every employee in one query ──
+      // Each row represents one contiguous window when the employee was ACTIVE.
+      // endDate IS NULL means the period is still ongoing (currently employed).
+      const statusLogs = employeeIds.length > 0
+        ? await this.connection
+            .getRepository(EmployeeStatusLog)
+            .createQueryBuilder('sl')
+            .select(['sl.employeeId', 'sl.status', 'sl.startDate', 'sl.endDate'])
+            .where('sl.employee_id = ANY(:ids)', { ids: employeeIds })
+            .andWhere("sl.status = 'active'")
+            .getMany()
+        : [];
+
+      // Build a lookup: employeeId → array of { start: Date, end: Date | null }
+      const statusLogsByEmp = new Map<string, Array<{ start: Date; end: Date | null }>>();
+      for (const log of statusLogs) {
+        if (!statusLogsByEmp.has(log.employeeId)) statusLogsByEmp.set(log.employeeId, []);
+        statusLogsByEmp.get(log.employeeId)!.push({
+          start: new Date(log.startDate),
+          end:   log.endDate ? new Date(log.endDate) : null,
+        });
+      }
 
       // Use queryStart (= startDate for non-term, broadest term boundary for 'term')
       const clockInLogs = await this.connection.query(
@@ -1883,78 +1908,104 @@ export class SaasAdminService implements OnModuleInit {
         const tenant = tenantMap.get(emp.tenantId);
         if (!tenant) continue;
 
-        // Determine this employee's effective date range.
-        // For 'term': use their tenant's resolved term window (or 90d fallback).
+        // ── Resolve the timeframe window for this employee ──────────────────
+        // For 'term': use the tenant's resolved term boundaries (or 90d fallback).
         // For all other timeframes: use the global startDate / endOfToday.
-        let empStart: Date;
-        let empEnd: Date;
+        let timeframeStart: Date;
+        let timeframeEnd: Date;
         if (timeframe === 'term') {
           const termStart = tenantTermStartMap.get(emp.tenantId);
           const termEnd   = tenantTermEndMap.get(emp.tenantId);
           if (termStart && termEnd) {
-            empStart = termStart;
-            empEnd   = termEnd;
+            timeframeStart = termStart;
+            timeframeEnd   = termEnd;
           } else {
-            // Fallback: no active term configured for this school → 90 days
-            empStart = new Date();
-            empStart.setDate(empStart.getDate() - 89);
-            empStart.setHours(0, 0, 0, 0);
-            empEnd = endOfToday;
+            timeframeStart = new Date();
+            timeframeStart.setDate(timeframeStart.getDate() - 89);
+            timeframeStart.setHours(0, 0, 0, 0);
+            timeframeEnd = endOfToday;
           }
         } else {
-          empStart = startDate;
-          empEnd   = endOfToday;
+          timeframeStart = startDate;
+          timeframeEnd   = endOfToday;
         }
 
-        // Convert boundaries to date strings for log filtering.
-        const empStartStr = empStart.toISOString().split('T')[0];
-        const empEndStr   = empEnd.toISOString().split('T')[0];
+        // ── Build the set of valid date-strings from ACTIVE status windows ──
+        // For each ACTIVE log period, compute its intersection with the
+        // timeframe window, then walk working days in that intersection.
+        // This correctly handles:
+        //   • New hires (startDate AFTER timeframe end → no intersection)
+        //   • Terminations (endDate BEFORE timeframe start → no intersection)
+        //   • Re-employment (multiple ACTIVE periods in the employee's history)
+        const activePeriods = statusLogsByEmp.get(emp.id) ?? [];
+
+        // Fallback: if the school has never written status logs for this employee
+        // (legacy records), treat them as always-active from hireDate/createdAt.
+        const fallbackStart: Date = emp.hireDate
+          ? new Date(emp.hireDate)
+          : new Date(emp.createdAt);
+        fallbackStart.setHours(0, 0, 0, 0);
+
+        const periodsToUse: Array<{ start: Date; end: Date | null }> =
+          activePeriods.length > 0
+            ? activePeriods
+            : [{ start: fallbackStart, end: null }];
 
         const workingDays: number[] = shift?.workingDays ?? [1, 2, 3, 4, 5];
         let expectedDays = 0;
-        const expectedEnd = empEnd > endOfToday ? endOfToday : empEnd;
-        if (empStart <= expectedEnd) {
-          const cursor = new Date(empStart);
-          while (cursor <= expectedEnd) {
+
+        // Collect the set of valid date strings (YYYY-MM-DD) where this
+        // employee was ACTIVE within the timeframe. Used to filter log maps.
+        const validActiveDateStrs = new Set<string>();
+
+        for (const period of periodsToUse) {
+          // Intersection of period window and timeframe window
+          const periodStart = period.start;
+          const periodEnd   = period.end ?? endOfToday; // null = still employed
+
+          const windowStart = periodStart > timeframeStart ? periodStart : timeframeStart;
+          const windowEnd   = periodEnd   < timeframeEnd   ? periodEnd   : timeframeEnd;
+
+          // Cap to today so we never count future expected days
+          const effectiveEnd = windowEnd > endOfToday ? endOfToday : windowEnd;
+
+          if (windowStart > effectiveEnd) continue; // No overlap
+
+          const cursor = new Date(windowStart);
+          cursor.setHours(0, 0, 0, 0);
+          while (cursor <= effectiveEnd) {
             const dow = cursor.getDay();
-            if (workingDays.includes(dow === 0 ? 7 : dow)) expectedDays++;
+            if (workingDays.includes(dow === 0 ? 7 : dow)) {
+              expectedDays++;
+              validActiveDateStrs.add(cursor.toISOString().split('T')[0]);
+            }
             cursor.setDate(cursor.getDate() + 1);
           }
         }
 
-        // For 'term', narrow the pre-fetched logs to this employee's exact
-        // term window.  For other timeframes the SQL already scoped correctly.
-        let inMap: Map<string, { isLate: boolean; ts: Date }>;
-        let outMap: Map<string, Date>;
-        if (timeframe === 'term') {
-          const rawIn = clockInsByEmp.get(emp.id)?.dates ?? new Map<string, { isLate: boolean; ts: Date }>();
-          inMap = new Map();
-          for (const [d, v] of rawIn) {
-            if (d >= empStartStr && d <= empEndStr) inMap.set(d, v);
-          }
-          const rawOut = clockOutsByEmp.get(emp.id) ?? new Map<string, Date>();
-          outMap = new Map();
-          for (const [d, v] of rawOut) {
-            if (d >= empStartStr && d <= empEndStr) outMap.set(d, v);
-          }
-        } else {
-          inMap  = clockInsByEmp.get(emp.id)?.dates ?? new Map<string, { isLate: boolean; ts: Date }>();
-          outMap = clockOutsByEmp.get(emp.id) ?? new Map<string, Date>();
+        // Filter clock-in/out logs to only days in the resolved active windows.
+        // This is correct for all timeframes (including 'term').
+        const rawIn  = clockInsByEmp.get(emp.id)?.dates ?? new Map<string, { isLate: boolean; ts: Date }>();
+        const rawOut = clockOutsByEmp.get(emp.id) ?? new Map<string, Date>();
+
+        const inMap  = new Map<string, { isLate: boolean; ts: Date }>();
+        const outMap = new Map<string, Date>();
+
+        for (const [d, v] of rawIn) {
+          if (validActiveDateStrs.has(d)) inMap.set(d, v);
+        }
+        for (const [d, v] of rawOut) {
+          if (validActiveDateStrs.has(d)) outMap.set(d, v);
         }
 
         const presentDates = Array.from(inMap.keys());
         const daysPresent = presentDates.length;
 
-        // Skip employees who had no scheduled working days in the selected
-        // timeframe. This covers two real-world cases:
-        //   1. The employee was hired *after* the timeframe ended — their
-        //      expectedDays will be 0 because no working days fall in the window.
-        //   2. The employee was suspended/inactive for the *entire* timeframe.
-        // Showing such employees as 0% performers is factually incorrect; they
-        // simply did not exist (for this time window) and must be omitted.
-        // Note: for 'term', we also skip employees who were present 0 days —
-        // that guard is kept as an additional safety net but the expectedDays
-        // check below is the canonical filter for all timeframes.
+        // Skip employees with no working days in their active window within
+        // the timeframe. This correctly excludes:
+        //   • Employees registered after the timeframe ended
+        //   • Employees terminated before the timeframe started
+        //   • Employees with no status log overlap with the timeframe
         if (expectedDays === 0) {
           continue;
         }

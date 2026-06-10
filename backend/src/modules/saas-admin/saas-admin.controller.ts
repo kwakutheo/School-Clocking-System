@@ -356,4 +356,50 @@ export class SaasAdminController {
     await this.adminService.deleteBulletin(id);
     return { success: true, message: 'Bulletin removed successfully.' };
   }
+
+  // ── Global Employee Registry ────────────────────────────────────────────────
+
+  @Get('employees')
+  @ApiOperation({ summary: 'Fetch all employees across all tenants' })
+  async getAllEmployees(
+    @Req() req: any,
+    @Res({ passthrough: true }) res: any,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('schoolId') schoolId?: string,
+  ) {
+    this.verifyGlobalAdmin(req);
+    const result = await this.adminService.getAllGlobalEmployees(
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 50,
+      search,
+      schoolId,
+    );
+    res.setHeader('x-total-count', result.total.toString());
+    res.setHeader('Access-Control-Expose-Headers', 'x-total-count');
+    return result;
+  }
+
+  @Put('employees/:id/status')
+  @ApiOperation({ summary: 'Toggle an employee status globally' })
+  async updateGlobalEmployeeStatus(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: { status: string },
+  ) {
+    this.verifyGlobalAdmin(req);
+    return this.adminService.updateGlobalEmployeeStatus(id, body.status);
+  }
+
+  @Delete('employees/:id')
+  @ApiOperation({ summary: 'Permanently delete an employee globally' })
+  async deleteGlobalEmployee(
+    @Req() req: any,
+    @Param('id') id: string,
+  ) {
+    this.verifyGlobalSuperAdmin(req);
+    await this.adminService.deleteGlobalEmployee(id);
+    return { success: true, message: 'Employee permanently deleted.' };
+  }
 }

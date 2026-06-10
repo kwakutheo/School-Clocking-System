@@ -399,4 +399,14 @@ export const saasAdminApi = {
   restoreAdminUser: (id: string) => api.post(`/saas-admin/admin-users/${id}/restore`),
   sendAdminResetLink: (id: string) =>
     api.post(`/saas-admin/admin-users/${id}/reset-password`),
+  getAllEmployees: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    schoolId?: string;
+  }) => api.get("/saas-admin/employees", { params }),
+  updateGlobalEmployeeStatus: (id: string, status: string) =>
+    api.put(`/saas-admin/employees/${id}/status`, { status }),
+  deleteGlobalEmployee: (id: string) =>
+    api.delete(`/saas-admin/employees/${id}`),
 };

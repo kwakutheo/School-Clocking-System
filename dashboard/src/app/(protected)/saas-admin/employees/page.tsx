@@ -1,0 +1,444 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { saasAdminApi } from '@/lib/api';
+import { Users, Search, Building2, UserCircle, RefreshCcw, UserX, UserCheck, ShieldAlert, X, Eye } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
+interface EmployeeGlobal {
+  id: string;
+  employeeCode: string;
+  position: string | null;
+  status: 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
+  photoUrl: string | null;
+  hireDate: string | null;
+  createdAt: string;
+  user: {
+    id: string;
+    fullName: string;
+    email: string | null;
+    phone: string | null;
+  } | null;
+  school: {
+    id: string;
+    name: string;
+    slug: string;
+    primaryColor: string;
+  } | null;
+  department: string | null;
+  branch: string | null;
+  shift: string | null;
+}
+
+export default function GlobalEmployeeRegistryPage() {
+  const router = useRouter();
+  const [employees, setEmployees] = useState<EmployeeGlobal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Pagination & Search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [schoolIdFilter, setSchoolIdFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
+  // Modals
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [selectedEmp, setSelectedEmp] = useState<EmployeeGlobal | null>(null);
+  const [newStatus, setNewStatus] = useState<'ACTIVE' | 'SUSPENDED' | 'INACTIVE'>('ACTIVE');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [currentPage, itemsPerPage, debouncedSearch, schoolIdFilter]);
+
+  const fetchEmployees = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await saasAdminApi.getAllEmployees({
+        page: currentPage,
+        limit: itemsPerPage,
+        search: debouncedSearch,
+        schoolId: schoolIdFilter || undefined,
+      });
+      setEmployees(res.data.data || []);
+      setTotalPages(res.data.totalPages || 1);
+      setTotalItems(res.data.total || 0);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Failed to load employees.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStatusUpdate = async () => {
+    if (!selectedEmp) return;
+    setSubmitting(true);
+    try {
+      if (newStatus === 'INACTIVE' && selectedEmp.status !== 'INACTIVE') {
+        // Soft Delete
+        await saasAdminApi.deleteGlobalEmployee(selectedEmp.id);
+      } else {
+        // Toggle Active / Suspended
+        await saasAdminApi.updateGlobalEmployeeStatus(selectedEmp.id, newStatus);
+      }
+      setStatusModalOpen(false);
+      fetchEmployees();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to update employee status.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openStatusModal = (emp: EmployeeGlobal, status: 'ACTIVE' | 'SUSPENDED' | 'INACTIVE') => {
+    setSelectedEmp(emp);
+    setNewStatus(status);
+    setStatusModalOpen(true);
+  };
+
+  const openViewModal = (emp: EmployeeGlobal) => {
+    setSelectedEmp(emp);
+    setViewModalOpen(true);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'ACTIVE':
+        return <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 700, background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>Active</span>;
+      case 'SUSPENDED':
+        return <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 700, background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>Suspended</span>;
+      case 'INACTIVE':
+        return <span style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 700, background: 'rgba(107,114,128,0.15)', color: '#9ca3af' }}>Archived</span>;
+      default:
+        return <span>{status}</span>;
+    }
+  };
+
+  const getPaginationPages = (total: number, page: number, maxButtons = 7): (number | '...')[] => {
+    if (total <= maxButtons) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages: (number | '...')[] = [];
+    const left = Math.max(2, page - 1);
+    const right = Math.min(total - 1, page + 1);
+    pages.push(1);
+    if (left > 2) pages.push('...');
+    for (let p = left; p <= right; p++) pages.push(p);
+    if (right < total - 1) pages.push('...');
+    pages.push(total);
+    return pages;
+  };
+
+  const paginationPages = getPaginationPages(totalPages, currentPage);
+
+  return (
+    <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
+      {/* ── Header ── */}
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+        <div>
+          <h1 className="page-title" style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px' }}>
+            Employee Registry
+          </h1>
+          <p className="page-sub" style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
+            A global directory of all staff registered across all onboarded schools.
+          </p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="error-card card" style={{ marginBottom: '24px' }}>
+          <p className="text-danger">{error}</p>
+        </div>
+      )}
+
+      {/* ── Search & Filter Toolbar ── */}
+      <div className="card" style={{ padding: '16px 24px', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-card-alt, rgba(255,255,255,0.02))', border: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px', flex: 1 }}>
+          <div style={{ position: 'relative', minWidth: '260px', flex: 1, maxWidth: '400px' }}>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Search by name, email, or code..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ paddingLeft: '40px', height: '40px', borderRadius: '8px' }}
+            />
+            <span style={{ position: 'absolute', left: '14px', top: '12px', color: 'var(--text-secondary)' }}>
+              <Search size={16} />
+            </span>
+          </div>
+
+          <div style={{ position: 'relative', minWidth: '200px' }}>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Filter by School ID (exact)"
+              value={schoolIdFilter}
+              onChange={(e) => setSchoolIdFilter(e.target.value)}
+              style={{ paddingLeft: '40px', height: '40px', borderRadius: '8px' }}
+            />
+            <span style={{ position: 'absolute', left: '14px', top: '12px', color: 'var(--text-secondary)' }}>
+              <Building2 size={16} />
+            </span>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label htmlFor="items-per-page-select" style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Show</label>
+          <select
+            id="items-per-page-select"
+            value={itemsPerPage}
+            onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+            style={{ background: 'var(--bg-input, rgba(255,255,255,0.03))', color: 'var(--text-primary)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, outline: 'none' }}
+          >
+            <option value={10}>10 rows</option>
+            <option value={25}>25 rows</option>
+            <option value={50}>50 rows</option>
+          </select>
+        </div>
+      </div>
+
+      {/* ── Table ── */}
+      <div className="card" style={{ padding: '0px', overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', minWidth: '250px' }}>Employee</th>
+                <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Contact</th>
+                <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>School</th>
+                <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Department</th>
+                <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Status</th>
+                <th style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading && employees.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center' }}>
+                    <div className="spinner" style={{ margin: '0 auto' }} />
+                  </td>
+                </tr>
+              ) : employees.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                    No employees found matching your criteria.
+                  </td>
+                </tr>
+              ) : (
+                employees.map((emp) => (
+                  <tr key={emp.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}>
+                    <td style={{ padding: '16px 24px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {emp.photoUrl ? (
+                          <img src={emp.photoUrl} alt="Avatar" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--bg-input)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <UserCircle size={20} color="var(--text-secondary)" />
+                          </div>
+                        )}
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>{emp.user?.fullName || 'Unknown'}</div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                            {emp.employeeCode} {emp.position ? `• ${emp.position}` : ''}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px 24px', fontSize: '13px' }}>
+                      <div style={{ color: 'var(--text-primary)' }}>{emp.user?.email || '—'}</div>
+                      <div style={{ color: 'var(--text-secondary)', marginTop: '2px' }}>{emp.user?.phone || '—'}</div>
+                    </td>
+                    <td style={{ padding: '16px 24px' }}>
+                      {emp.school ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: emp.school.primaryColor }} />
+                          <span style={{ fontSize: '13px', fontWeight: 600 }}>{emp.school.name}</span>
+                        </div>
+                      ) : '—'}
+                    </td>
+                    <td style={{ padding: '16px 24px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      {emp.department || '—'}
+                    </td>
+                    <td style={{ padding: '16px 24px' }}>
+                      {getStatusBadge(emp.status)}
+                    </td>
+                    <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                        <button onClick={() => openViewModal(emp)} className="btn btn-secondary" style={{ padding: '6px', minWidth: 'unset', height: 'auto', background: 'transparent' }} title="View Profile">
+                          <Eye size={16} color="var(--text-secondary)" />
+                        </button>
+                        {emp.status === 'ACTIVE' && (
+                          <button onClick={() => openStatusModal(emp, 'SUSPENDED')} className="btn btn-secondary" style={{ padding: '6px', minWidth: 'unset', height: 'auto', background: 'transparent' }} title="Suspend">
+                            <UserX size={16} color="var(--text-secondary)" />
+                          </button>
+                        )}
+                        {emp.status === 'SUSPENDED' && (
+                          <button onClick={() => openStatusModal(emp, 'ACTIVE')} className="btn btn-secondary" style={{ padding: '6px', minWidth: 'unset', height: 'auto', background: 'transparent' }} title="Reactivate">
+                            <UserCheck size={16} color="var(--text-secondary)" />
+                          </button>
+                        )}
+                        {emp.status !== 'INACTIVE' && (
+                          <button onClick={() => openStatusModal(emp, 'INACTIVE')} className="btn btn-secondary" style={{ padding: '6px', minWidth: 'unset', height: 'auto', background: 'transparent' }} title="Soft Delete (Archive)">
+                            <X size={16} color="var(--danger)" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ── Pagination ── */}
+        {totalPages > 1 && (
+          <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card-alt, rgba(255,255,255,0.01))' }}>
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+              Showing {employees.length} of {totalItems} employees
+            </span>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                style={{ padding: '6px 12px', border: '1px solid var(--border)', background: 'var(--bg-input)', borderRadius: '6px', color: 'var(--text-secondary)', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', opacity: currentPage === 1 ? 0.5 : 1 }}
+              >
+                Prev
+              </button>
+              {paginationPages.map((p, i) => (
+                <button
+                  key={i}
+                  disabled={p === '...'}
+                  onClick={() => p !== '...' && setCurrentPage(p)}
+                  style={{ padding: '6px 12px', border: p === currentPage ? '1px solid var(--primary)' : '1px solid var(--border)', background: p === currentPage ? 'var(--primary)' : 'var(--bg-input)', color: p === currentPage ? '#fff' : 'var(--text-secondary)', borderRadius: '6px', cursor: p === '...' ? 'default' : 'pointer', fontWeight: p === currentPage ? 700 : 500 }}
+                >
+                  {p}
+                </button>
+              ))}
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                style={{ padding: '6px 12px', border: '1px solid var(--border)', background: 'var(--bg-input)', borderRadius: '6px', color: 'var(--text-secondary)', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', opacity: currentPage === totalPages ? 0.5 : 1 }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── View Profile Modal ── */}
+      {viewModalOpen && selectedEmp && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, animation: 'fadeIn 0.2s ease-out' }}>
+          <div className="card" style={{ width: '100%', maxWidth: '500px', padding: '32px', position: 'relative', boxShadow: '0 24px 48px rgba(0,0,0,0.5)', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <UserCircle size={22} color="var(--primary)" />
+                <h2 style={{ fontSize: '20px', fontWeight: 800 }}>Employee Profile</h2>
+              </div>
+              <button onClick={() => setViewModalOpen(false)} title="Close" aria-label="Close" style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid var(--border)' }}>
+              {selectedEmp.photoUrl ? (
+                <img src={selectedEmp.photoUrl} alt="Avatar" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--bg-input)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <UserCircle size={32} color="var(--text-secondary)" />
+                </div>
+              )}
+              <div>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>{selectedEmp.user?.fullName}</div>
+                <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginTop: '2px' }}>{selectedEmp.employeeCode} • {selectedEmp.position || 'No Position'}</div>
+                <div style={{ marginTop: '6px' }}>{getStatusBadge(selectedEmp.status)}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Email Address</label>
+                <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedEmp.user?.email || '—'}</div>
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Phone Number</label>
+                <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedEmp.user?.phone || '—'}</div>
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>School / Tenant</label>
+                <div style={{ fontSize: '14px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {selectedEmp.school && <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: selectedEmp.school.primaryColor }} />}
+                  {selectedEmp.school?.name || '—'}
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Hire Date</label>
+                <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedEmp.hireDate ? new Date(selectedEmp.hireDate).toLocaleDateString() : '—'}</div>
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Department</label>
+                <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedEmp.department || '—'}</div>
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Branch</label>
+                <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedEmp.branch || '—'}</div>
+              </div>
+            </div>
+            
+            <button type="button" className="btn btn-secondary" onClick={() => setViewModalOpen(false)} style={{ width: '100%', padding: '12px' }}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Status Change Modal ── */}
+      {statusModalOpen && selectedEmp && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, animation: 'fadeIn 0.2s ease-out' }}>
+          <div className="card" style={{ width: '100%', maxWidth: '400px', padding: '32px', position: 'relative', boxShadow: '0 24px 48px rgba(0,0,0,0.5)', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <ShieldAlert size={22} color={newStatus === 'INACTIVE' ? 'var(--danger)' : 'var(--warning)'} />
+                <h2 style={{ fontSize: '20px', fontWeight: 800 }}>Confirm Action</h2>
+              </div>
+              <button onClick={() => setStatusModalOpen(false)} title="Close" aria-label="Close" style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '24px' }}>
+              Are you sure you want to {newStatus === 'INACTIVE' ? 'archive' : newStatus === 'SUSPENDED' ? 'suspend' : 'reactivate'}{' '}
+              <strong style={{ color: 'var(--text-primary)' }}>{selectedEmp.user?.fullName}</strong>?
+              {newStatus === 'INACTIVE' && ' This will revoke their access to the system entirely.'}
+              {newStatus === 'SUSPENDED' && ' They will not be able to log in until reactivated.'}
+            </p>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setStatusModalOpen(false)} style={{ flex: 1, padding: '12px' }}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn-primary" onClick={handleStatusUpdate} disabled={submitting} style={{ flex: 1, padding: '12px', background: newStatus === 'INACTIVE' ? 'var(--danger)' : newStatus === 'SUSPENDED' ? 'var(--warning)' : 'var(--success)' }}>
+                {submitting ? 'Updating...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

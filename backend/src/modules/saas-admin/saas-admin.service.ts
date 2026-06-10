@@ -2174,4 +2174,118 @@ export class SaasAdminService implements OnModuleInit {
     }
     await this.tenantRepo.remove(tenant);
   }
+
+  // ── Global Employee Registry ────────────────────────────────────────────────
+
+  /** Fetch a paginated list of all employees across all tenants */
+  async getAllGlobalEmployees(
+    page: number = 1,
+    limit: number = 50,
+    search?: string,
+    schoolId?: string,
+  ): Promise<{ data: any[]; total: number; page: number; limit: number; totalPages: number }> {
+    const qb = this.employeeRepo
+      .createQueryBuilder('e')
+      .leftJoinAndSelect('e.user', 'user')
+      .leftJoinAndSelect('e.tenant', 'tenant')
+      .leftJoinAndSelect('e.department', 'department')
+      .leftJoinAndSelect('e.branch', 'branch')
+      .leftJoinAndSelect('e.shift', 'shift')
+      .orderBy('e.createdAt', 'DESC');
+
+    if (schoolId) {
+      qb.andWhere('e.tenantId = :schoolId', { schoolId });
+    }
+
+    if (search && search.trim() !== '') {
+      const s = `%${search.trim()}%`;
+      qb.andWhere(
+        '(user.fullName ILIKE :search OR user.email ILIKE :search OR e.employeeCode ILIKE :search)',
+        { search: s },
+      );
+    }
+
+    const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
+    const total = await qb.getCount();
+    const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+    const safePage = Math.min(Math.max(Number(page) || 1, 1), totalPages);
+    
+    qb.skip((safePage - 1) * safeLimit).take(safeLimit);
+    
+    const employees = await qb.getMany();
+    
+    // Map to a clean response
+    const data = employees.map(emp => ({
+      id: emp.id,
+      employeeCode: emp.employeeCode,
+      position: emp.position,
+      status: emp.status,
+      photoUrl: emp.photoUrl,
+      hireDate: emp.hireDate,
+      createdAt: emp.createdAt,
+      user: emp.user ? {
+        id: emp.user.id,
+        fullName: emp.user.fullName,
+        email: emp.user.email,
+        phone: emp.user.phone,
+      } : null,
+      school: emp.tenant ? {
+        id: emp.tenant.id,
+        name: emp.tenant.name,
+        slug: emp.tenant.slug,
+        primaryColor: emp.tenant.primaryColor,
+      } : null,
+      department: emp.department ? emp.department.name : null,
+      branch: emp.branch ? emp.branch.name : null,
+      shift: emp.shift ? emp.shift.name : null,
+    }));
+
+    return {
+      data,
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages,
+    };
+  }
+
+  /** Update an employee's status globally */
+  async updateGlobalEmployeeStatus(id: string, status: string): Promise<any> {
+    const emp = await this.employeeRepo.findOne({ where: { id } });
+    if (!emp) {
+      throw new NotFoundException(`Employee with ID "${id}" not found.`);
+    }
+    
+    emp.status = status as any;
+    emp.statusChangeDate = new Date();
+    await this.employeeRepo.save(emp);
+    
+    // Also update the underlying User isActive flag if necessary
+    if (emp.user) {
+      const isActive = status === 'ACTIVE';
+      const userRepo = this.connection.getRepository(User);
+      await userRepo.update(emp.user.id, { isActive });
+    }
+    
+    return { success: true, message: 'Employee status updated.' };
+  }
+
+  /** Soft delete an employee and their user account (set to INACTIVE) */
+  async deleteGlobalEmployee(id: string): Promise<void> {
+    const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user'] });
+    if (!emp) {
+      throw new NotFoundException(`Employee with ID "${id}" not found.`);
+    }
+    
+    // Soft delete by updating status
+    emp.status = 'INACTIVE' as any;
+    emp.statusChangeDate = new Date();
+    await this.employeeRepo.save(emp);
+    
+    // Also deactivate the associated user account
+    if (emp.user) {
+      const userRepo = this.connection.getRepository(User);
+      await userRepo.update(emp.user.id, { isActive: false });
+    }
+  }
 }

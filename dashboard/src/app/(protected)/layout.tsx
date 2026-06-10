@@ -56,6 +56,7 @@ const NAV: NavItem[] = [
 const DEVELOPER_NAV: NavItem[] = [
   { href: '/saas-admin',         icon: LayoutDashboard, label: 'Overview' },
   { href: '/saas-admin/schools', icon: Building2,        label: 'Schools Registry' },
+  { href: '/saas-admin/employees', icon: Users,          label: 'Employee Registry' },
   { href: '/saas-admin/calendar', icon: Calendar,         label: 'Academic Calendar' },
   { href: '/saas-admin/holidays', icon: Calendar,         label: 'Holidays' },
   { href: '/saas-admin/bulletins', icon: Megaphone,      label: 'Announcements', globalRoles: ['super_admin', 'hr_admin'] },

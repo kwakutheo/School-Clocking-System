@@ -926,6 +926,12 @@ export default function SaasOverviewPage() {
     fetchAllSchools();
   };
 
+  // Auto-fetch schools list so the KPI card number is always correct without
+  // requiring the user to open the modal first.
+  useEffect(() => {
+    fetchAllSchools();
+  }, [fetchAllSchools]);
+
   // ── Employee rankings fetch (initial + on param change) ───────────────────
   const fetchEmpRankings = useCallback(
     (showSpinner = true) => {
@@ -1420,7 +1426,9 @@ export default function SaasOverviewPage() {
                   lineHeight: 1,
                 }}
               >
-                {stats?.overview.totalSchools ?? 0}
+                {fullSchoolsList.length > 0
+                  ? fullSchoolsList.length
+                  : (stats?.overview.activeSchools ?? 0)}
               </div>
               <div style={{ marginTop: "10px", display: "flex", gap: "12px" }}>
                 <span

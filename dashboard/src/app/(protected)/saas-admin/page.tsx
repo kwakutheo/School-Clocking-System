@@ -878,7 +878,7 @@ export default function SaasOverviewPage() {
       return;
     setAllSchoolsLoading(true);
     saasAdminApi
-      .listTenants(timeframe, undefined, undefined, { limit: 10000, sort: "presenceRate:DESC" })
+      .listTenants(timeframe, undefined, undefined, { limit: 10000, sort: "presenceRate:DESC" }, true)
       .then((res) => {
         const list: SchoolMetric[] = Array.isArray(res.data)
           ? res.data

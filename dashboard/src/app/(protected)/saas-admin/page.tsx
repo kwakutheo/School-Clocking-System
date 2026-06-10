@@ -1432,27 +1432,19 @@ export default function SaasOverviewPage() {
                   ? (stats?.overview.activeSchools ?? 0)
                   : fullSchoolsList.length}
               </div>
-              <div style={{ marginTop: "10px", display: "flex", gap: "12px" }}>
+              <div
+                style={{
+                  marginTop: "10px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
                 <span
-                  style={{
-                    fontSize: "12px",
-                    color: "#22c55e",
-                    fontWeight: 600,
-                  }}
+                  style={{ fontSize: "12px", color: "var(--text-secondary)" }}
                 >
-                  ● {stats?.overview.activeSchools ?? 0} Active
+                  {TIMEFRAME_LABELS[timeframe]}
                 </span>
-                {(stats?.overview.suspendedSchools ?? 0) > 0 && (
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      color: "#ef4444",
-                      fontWeight: 600,
-                    }}
-                  >
-                    ● {stats?.overview.suspendedSchools} Suspended
-                  </span>
-                )}
               </div>
             </div>
             <div

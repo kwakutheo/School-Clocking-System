@@ -852,7 +852,7 @@ export default function SchoolsRegistryPage() {
           zIndex: 999, animation: 'fadeIn 0.2s ease-out'
         }}>
           <div className="card" style={{
-            width: '100%', maxWidth: '480px',
+            width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto',
             padding: '32px', position: 'relative',
             boxShadow: '0 24px 48px rgba(0,0,0,0.5)',
             border: '1px solid var(--border)'

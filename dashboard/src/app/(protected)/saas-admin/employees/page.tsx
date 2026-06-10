@@ -395,8 +395,8 @@ export default function GlobalEmployeeRegistryPage() {
               </div>
               <button
                 onClick={() => setViewModalOpen(false)}
-                title="Close"
-                aria-label="Close"
+                title="Clo"
+                aria-label="Clo"
                 style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', flexShrink: 0 }}
               >
                 <X size={14} />

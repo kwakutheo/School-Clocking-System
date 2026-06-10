@@ -1945,7 +1945,17 @@ export class SaasAdminService implements OnModuleInit {
         const presentDates = Array.from(inMap.keys());
         const daysPresent = presentDates.length;
 
-        if (timeframe === 'term' && daysPresent === 0) {
+        // Skip employees who had no scheduled working days in the selected
+        // timeframe. This covers two real-world cases:
+        //   1. The employee was hired *after* the timeframe ended — their
+        //      expectedDays will be 0 because no working days fall in the window.
+        //   2. The employee was suspended/inactive for the *entire* timeframe.
+        // Showing such employees as 0% performers is factually incorrect; they
+        // simply did not exist (for this time window) and must be omitted.
+        // Note: for 'term', we also skip employees who were present 0 days —
+        // that guard is kept as an additional safety net but the expectedDays
+        // check below is the canonical filter for all timeframes.
+        if (expectedDays === 0) {
           continue;
         }
 

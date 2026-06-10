@@ -517,7 +517,7 @@ export class AttendanceReportService {
 
     return {
       employee: {
-        fullName: employee.user.fullName,
+        fullName: employee.isArchived ? `${employee.user.fullName} (Archived)` : employee.user.fullName,
         code: employee.employeeCode,
         shift: employee.shift
           ? `${employee.shift.startTime} - ${employee.shift.endTime}`

@@ -1779,6 +1779,7 @@ export class SaasAdminService implements OnModuleInit {
           'emp.photoUrl',
           'emp.hireDate',
           'emp.createdAt',
+          'emp.isArchived',
           'user.id',
           'user.fullName',
           'shift.id',
@@ -2120,7 +2121,7 @@ export class SaasAdminService implements OnModuleInit {
 
         results.push({
           id: emp.id,
-          name: emp.user?.fullName ?? 'Unknown',
+          name: emp.isArchived ? `${emp.user?.fullName ?? 'Unknown'} (Archived)` : (emp.user?.fullName ?? 'Unknown'),
           employeeCode: emp.employeeCode,
           position: emp.position ?? null,
           photoUrl: emp.photoUrl ?? null,

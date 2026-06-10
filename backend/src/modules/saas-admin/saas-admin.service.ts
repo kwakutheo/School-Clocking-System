@@ -1016,8 +1016,7 @@ export class SaasAdminService implements OnModuleInit {
             sustained30DayRate: sustained30DayRate,
           },
         };
-      })
-      .filter((school) => school.metrics.expectedEmployeeDays > 0);
+      });
 
     if (cohort) {
       if (cohort === 'excellent') {

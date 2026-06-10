@@ -3,10 +3,11 @@ import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:tk_clocking_system/core/constants/app_constants.dart';
-import 'package:tk_clocking_system/core/errors/exceptions.dart';
+import 'package:tk_clocking_system/core/errors/exceptions.dart' hide NetworkException;
 import 'package:tk_clocking_system/core/errors/failures.dart';
 import 'package:tk_clocking_system/core/network/api_client.dart';
 import 'package:tk_clocking_system/core/network/api_endpoints.dart';
+import 'package:tk_clocking_system/core/network/network_exception.dart';
 import 'package:tk_clocking_system/core/services/connectivity_service.dart';
 import 'package:tk_clocking_system/core/services/time_service.dart';
 import 'package:tk_clocking_system/core/services/uptime_service.dart';
@@ -63,8 +64,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     }
 
     final currentUptime = await _uptime.getUptimeMs();
-    final calculatedBootTime = currentUptime > 0 
-        ? DateTime.now().millisecondsSinceEpoch - currentUptime 
+    final calculatedBootTime = currentUptime > 0
+        ? DateTime.now().millisecondsSinceEpoch - currentUptime
         : null;
 
     final pending = AttendanceModel.pending(
@@ -108,11 +109,12 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       }
       // Extract the actual server error message (e.g. geofence / duplicate).
       final rawMsg = e.response?.data?['message'];
+      final networkException = NetworkException.fromDioError(e);
       final serverMsg = rawMsg is String
           ? rawMsg
           : rawMsg is List
               ? rawMsg.join(', ')
-              : e.message ?? 'Server error.';
+              : networkException.message;
 
       // Check for structured early-clock-out warning.
       try {
@@ -161,7 +163,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
           e.type == DioExceptionType.receiveTimeout) {
         return const Left(NetworkFailure());
       }
-      return Left(ServerFailure(e.message ?? 'Server error.'));
+      final networkException = NetworkException.fromDioError(e);
+      return Left(ServerFailure(networkException.message));
     } catch (_) {
       return const Left(ServerFailure());
     }
@@ -191,13 +194,16 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       // term, then whatever is first in the list.
       final now = await _time.getGhanaTimeAsync();
 
-      AcademicTermModel? activeTerm = terms.cast<AcademicTermModel?>().firstWhere(
-            (t) => t?.containsDate(now) == true,
-            orElse: () => null,
-          );
+      AcademicTermModel? activeTerm =
+          terms.cast<AcademicTermModel?>().firstWhere(
+                (t) => t?.containsDate(now) == true,
+                orElse: () => null,
+              );
       activeTerm ??= terms.cast<AcademicTermModel?>().firstWhere(
-            (t) => t != null && t.endDate.isNotEmpty && t.endDate.compareTo(
-              now.toIso8601String().substring(0, 10)) < 0,
+            (t) =>
+                t != null &&
+                t.endDate.isNotEmpty &&
+                t.endDate.compareTo(now.toIso8601String().substring(0, 10)) < 0,
             orElse: () => terms.isNotEmpty ? terms.first : null,
           );
 
@@ -218,12 +224,17 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       final report = TermReportModel.fromJson(rawReport);
       return Right(report);
     } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        return const Left(
+            ServerFailure('No report found, please refresh and try again'));
+      }
       if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
         return const Left(NetworkFailure());
       }
-      return Left(ServerFailure(e.message ?? 'Server error.'));
+      final networkException = NetworkException.fromDioError(e);
+      return Left(ServerFailure(networkException.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -245,7 +256,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
           e.type == DioExceptionType.receiveTimeout) {
         return const Left(NetworkFailure());
       }
-      return Left(ServerFailure(e.message ?? 'Server error.'));
+      final networkException = NetworkException.fromDioError(e);
+      return Left(ServerFailure(networkException.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -268,8 +280,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
 
       try {
         final currentUptime = await _uptime.getUptimeMs();
-        final calculatedBootTime = currentUptime > 0 
-            ? DateTime.now().millisecondsSinceEpoch - currentUptime 
+        final calculatedBootTime = currentUptime > 0
+            ? DateTime.now().millisecondsSinceEpoch - currentUptime
             : null;
 
         await _api.post<void>(
@@ -292,11 +304,12 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
         }
 
         final rawMsg = e.response?.data?['message'];
+        final networkException = NetworkException.fromDioError(e);
         final serverMsg = rawMsg is String
             ? rawMsg
             : rawMsg is List
                 ? rawMsg.join(', ')
-                : e.message ?? 'Server error.';
+                : networkException.message;
 
         firstError ??= serverMsg;
 
@@ -336,8 +349,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     }
 
     final currentUptime = await _uptime.getUptimeMs();
-    final calculatedBootTime = currentUptime > 0 
-        ? DateTime.now().millisecondsSinceEpoch - currentUptime 
+    final calculatedBootTime = currentUptime > 0
+        ? DateTime.now().millisecondsSinceEpoch - currentUptime
         : null;
 
     final pending = AttendanceModel.pending(
@@ -382,11 +395,12 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
         return Right(pending);
       }
       final rawMsg = e.response?.data?['message'];
+      final networkException = NetworkException.fromDioError(e);
       final serverMsg = rawMsg is String
           ? rawMsg
           : rawMsg is List
               ? rawMsg.join(', ')
-              : e.message ?? 'Server error.';
+              : networkException.message;
 
       // Check for structured early-clock-out warning.
       try {

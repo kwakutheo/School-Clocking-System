@@ -8,6 +8,7 @@ import 'package:dartz/dartz.dart';
 import 'package:tk_clocking_system/core/errors/failures.dart';
 import 'package:tk_clocking_system/core/network/api_client.dart';
 import 'package:tk_clocking_system/core/network/api_endpoints.dart';
+import 'package:tk_clocking_system/core/network/network_exception.dart';
 import 'package:tk_clocking_system/core/services/storage_service.dart';
 import 'package:tk_clocking_system/features/auth/data/models/user_model.dart';
 import 'package:tk_clocking_system/features/auth/domain/entities/login_result.dart';
@@ -73,7 +74,8 @@ class AuthRepositoryImpl implements AuthRepository {
       if (e.type == DioExceptionType.connectionError) {
         return await _tryOfflineLogin(username, password);
       }
-      return const Left(ServerFailure('Unable to connect to the server. Please check your network or server IP.'));
+      final networkException = NetworkException.fromDioError(e);
+      return Left(ServerFailure(networkException.message));
     } catch (_) {
       return const Left(ServerFailure());
     }
@@ -184,7 +186,8 @@ class AuthRepositoryImpl implements AuthRepository {
       if (e.response?.statusCode == 401) {
         return const Left(InvalidCredentialsFailure());
       }
-      return Left(ServerFailure(e.message ?? 'Server error.'));
+      final networkException = NetworkException.fromDioError(e);
+      return Left(ServerFailure(networkException.message));
     } catch (_) {
       return const Left(ServerFailure());
     }
@@ -199,7 +202,8 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       return const Right(null);
     } on DioException catch (e) {
-      return Left(ServerFailure(e.message ?? 'Server error.'));
+      final networkException = NetworkException.fromDioError(e);
+      return Left(ServerFailure(networkException.message));
     } catch (_) {
       return const Left(ServerFailure());
     }

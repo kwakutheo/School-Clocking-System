@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:tk_clocking_system/core/constants/app_constants.dart';
 import 'package:tk_clocking_system/core/errors/failures.dart';
 import 'package:tk_clocking_system/core/network/api_client.dart';
+import 'package:tk_clocking_system/core/network/network_exception.dart';
 import 'package:tk_clocking_system/features/profile/data/models/employee_status_log_model.dart';
 import 'package:tk_clocking_system/features/profile/domain/entities/employee_status_log_entity.dart';
 import 'package:tk_clocking_system/features/profile/domain/repositories/profile_repository.dart';
@@ -11,13 +12,19 @@ import 'package:tk_clocking_system/features/profile/domain/repositories/profile_
 class ProfileRepositoryImpl implements ProfileRepository {
   final ApiClient _apiClient;
 
-  ProfileRepositoryImpl({required ApiClient apiClient}) : _apiClient = apiClient;
+  ProfileRepositoryImpl({required ApiClient apiClient})
+      : _apiClient = apiClient;
 
   @override
-  Future<Either<Failure, List<EmployeeStatusLogEntity>>> getWorkHistory({String? employeeId}) async {
-    final cacheKey = employeeId != null ? 'work_history_cache_$employeeId' : 'work_history_cache_me';
+  Future<Either<Failure, List<EmployeeStatusLogEntity>>> getWorkHistory(
+      {String? employeeId}) async {
+    final cacheKey = employeeId != null
+        ? 'work_history_cache_$employeeId'
+        : 'work_history_cache_me';
     try {
-      final endpoint = employeeId != null ? '/employees/$employeeId/history' : '/employees/me/history';
+      final endpoint = employeeId != null
+          ? '/employees/$employeeId/history'
+          : '/employees/me/history';
       final response = await _apiClient.get<List<dynamic>>(endpoint);
 
       final data = response.data;
@@ -34,11 +41,16 @@ class ProfileRepositoryImpl implements ProfileRepository {
       }
 
       final history = data
-          .map((json) => EmployeeStatusLogModel.fromJson(json as Map<String, dynamic>))
+          .map((json) =>
+              EmployeeStatusLogModel.fromJson(json as Map<String, dynamic>))
           .toList();
 
       return Right(history);
     } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        return const Left(ServerFailure(
+            'No work history found, please refresh and try again'));
+      }
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout ||
           e.type == DioExceptionType.connectionError ||
@@ -50,7 +62,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
           if (cached != null && cached['data'] is List) {
             final cachedData = cached['data'] as List;
             final history = cachedData
-                .map((json) => EmployeeStatusLogModel.fromJson(Map<String, dynamic>.from(json as Map)))
+                .map((json) => EmployeeStatusLogModel.fromJson(
+                    Map<String, dynamic>.from(json as Map)))
                 .toList();
             return Right(history);
           }
@@ -59,7 +72,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
         }
         return const Left(NetworkFailure());
       }
-      return Left(ServerFailure(e.message ?? 'Failed to fetch work history.'));
+      final networkException = NetworkException.fromDioError(e);
+      return Left(ServerFailure(networkException.message));
     } catch (e) {
       // Catch all fallback (e.g. SocketException) - try cache first
       try {
@@ -68,7 +82,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
         if (cached != null && cached['data'] is List) {
           final cachedData = cached['data'] as List;
           final history = cachedData
-              .map((json) => EmployeeStatusLogModel.fromJson(Map<String, dynamic>.from(json as Map)))
+              .map((json) => EmployeeStatusLogModel.fromJson(
+                  Map<String, dynamic>.from(json as Map)))
               .toList();
           return Right(history);
         }

@@ -45,154 +45,171 @@ class _WorkHistoryView extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: BlocBuilder<ProfileBloc, ProfileState>(
-        builder: (context, state) {
-          if (state is ProfileLoading || state is ProfileInitial) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: RefreshIndicator(
+        onRefresh: () async {
+          context.read<ProfileBloc>().add(const LoadWorkHistoryEvent());
+          // Wait until it's no longer loading to hide the refresh indicator
+          await context.read<ProfileBloc>().stream.firstWhere((s) => s is! ProfileLoading);
+        },
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: BlocBuilder<ProfileBloc, ProfileState>(
+                builder: (context, state) {
+                  if (state is ProfileLoading || state is ProfileInitial) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-          if (state is ProfileError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.error_outline_rounded,
-                        size: 48, color: cs.error),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Could not load work history.',
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      state.message,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: cs.onSurfaceVariant),
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton.icon(
-                      onPressed: () => context
-                          .read<ProfileBloc>()
-                          .add(const LoadWorkHistoryEvent()),
-                      icon: const Icon(Icons.refresh_rounded),
-                      label: const Text('Try Again'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          if (state is ProfileHistoryLoaded) {
-            final history = state.history;
-
-            if (history.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.history_rounded,
-                        size: 56, color: cs.outlineVariant),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No work history yet.',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: cs.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            // Group entries by year for a clean, organized layout
-            final grouped = _groupByYear(history);
-            final years = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
-
-            return FutureBuilder<DateTime>(
-              future: sl<TimeService>().getGhanaTimeAsync(),
-              initialData: sl<TimeService>().currentGhanaTime,
-              builder: (context, snapshot) {
-                final now = snapshot.data ?? sl<TimeService>().currentGhanaTime;
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                  itemCount: years.length,
-                  itemBuilder: (context, yearIndex) {
-                final year = years[yearIndex];
-                final entries = grouped[year]!;
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Year Header ─────────────────────────────────────
-                    Padding(
-                      padding: EdgeInsets.only(
-                          left: 4, bottom: 12, top: yearIndex == 0 ? 0 : 8),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: cs.primaryContainer,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              year.toString(),
-                              style: theme.textTheme.labelLarge?.copyWith(
-                                color: cs.onPrimaryContainer,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Divider(
-                                color: cs.outline.withValues(alpha: 0.2)),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // ── Timeline entries for this year ───────────────────
-                    Card(
-                      elevation: 0,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(
-                            color: cs.outline.withValues(alpha: 0.15)),
-                      ),
+                  if (state is ProfileError) {
+                    return Center(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 8, horizontal: 16),
+                        padding: const EdgeInsets.all(32),
                         child: Column(
-                          children: List.generate(entries.length, (i) {
-                            return _FullTimelineTile(
-                              log: entries[i],
-                              isLast: i == entries.length - 1,
-                              now: now,
-                            );
-                          }),
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.error_outline_rounded,
+                                size: 48, color: cs.error),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Could not load work history.',
+                              style: theme.textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              state.message,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyMedium
+                                  ?.copyWith(color: cs.onSurfaceVariant),
+                            ),
+                            const SizedBox(height: 24),
+                            FilledButton.icon(
+                              onPressed: () => context
+                                  .read<ProfileBloc>()
+                                  .add(const LoadWorkHistoryEvent()),
+                              icon: const Icon(Icons.refresh_rounded),
+                              label: const Text('Try Again'),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
-                );
-                  },
-                );
-              },
-            );
-          }
+                    );
+                  }
 
-          return const SizedBox.shrink();
-        },
+                  if (state is ProfileHistoryLoaded) {
+                    final history = state.history;
+
+                    if (history.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.history_rounded,
+                                size: 56, color: cs.outlineVariant),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No work history yet.',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: cs.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    // Group entries by year for a clean, organized layout
+                    final grouped = _groupByYear(history);
+                    final years = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+
+                    return FutureBuilder<DateTime>(
+                      future: sl<TimeService>().getGhanaTimeAsync(),
+                      initialData: sl<TimeService>().currentGhanaTime,
+                      builder: (context, snapshot) {
+                        final now = snapshot.data ?? sl<TimeService>().currentGhanaTime;
+                        return ListView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                          itemCount: years.length,
+                          itemBuilder: (context, yearIndex) {
+                            final year = years[yearIndex];
+                            final entries = grouped[year]!;
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // ── Year Header ─────────────────────────────────────
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                      left: 4, bottom: 12, top: yearIndex == 0 ? 0 : 8),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: cs.primaryContainer,
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Text(
+                                          year.toString(),
+                                          style: theme.textTheme.labelLarge?.copyWith(
+                                            color: cs.onPrimaryContainer,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Divider(
+                                            color: cs.outline.withValues(alpha: 0.2)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // ── Timeline entries for this year ───────────────────
+                                Card(
+                                  elevation: 0,
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    side: BorderSide(
+                                        color: cs.outline.withValues(alpha: 0.15)),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8, horizontal: 16),
+                                    child: Column(
+                                      children: List.generate(entries.length, (i) {
+                                        return _FullTimelineTile(
+                                          log: entries[i],
+                                          isLast: i == entries.length - 1,
+                                          now: now,
+                                        );
+                                      }),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    );
+                  }
+
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

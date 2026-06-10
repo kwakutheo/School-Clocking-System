@@ -70,6 +70,16 @@ export default function BulletinsManagerPage() {
   useEffect(() => {
     fetchBulletins();
     fetchTenants();
+
+    // Re-fetch tenants whenever the user navigates back to this tab so that
+    // any schools registered on the Schools page appear immediately.
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchTenants();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, []);
 
   const resetForm = () => {

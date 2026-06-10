@@ -236,6 +236,7 @@ export default function SchoolsRegistryPage() {
             setAdminUsername('');
             setAdminPassword('');
             fetchSchools();
+            router.refresh();
           })
           .catch((err) => {
             console.error(err);
@@ -265,6 +266,9 @@ export default function SchoolsRegistryPage() {
             setAdminUsername('');
             setAdminPassword('');
             fetchSchools();
+            // Invalidate Next.js cache so other saas pages re-fetch the
+            // updated tenant list the next time they are visited.
+            router.refresh();
           })
           .catch((err2) => {
             console.error(err2);

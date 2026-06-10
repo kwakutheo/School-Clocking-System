@@ -271,11 +271,11 @@ export default function ArchivedEmployeesPage() {
                         onClick={() => openReactivateModal(emp)}
                         className="btn btn-secondary"
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '8px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#22c55e', cursor: 'pointer', transition: 'all 0.2s' }}
-                        title="Re-activate Employee"
-                        aria-label="Re-activate Employee"
+                        title="Reactivate Employee"
+                        aria-label="Reactivate Employee"
                       >
                         <UserCheck size={14} />
-                        Re-activate
+                        Reactivate
                       </button>
                     </td>
                   </tr>
@@ -328,7 +328,7 @@ export default function ArchivedEmployeesPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <UserCheck size={22} color="#22c55e" />
-                <h2 style={{ fontSize: '20px', fontWeight: 800 }}>Un-archive Employee</h2>
+                <h2 style={{ fontSize: '20px', fontWeight: 800 }}>Reactivate Employee</h2>
               </div>
               <button onClick={() => setReactivateModalOpen(false)} title="Close" aria-label="Close" style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}>
                 <X size={20} />
@@ -352,7 +352,7 @@ export default function ArchivedEmployeesPage() {
                 disabled={reactivateSubmitting}
                 style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: '#22c55e', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '14px', transition: 'all 0.2s' }}
               >
-                {reactivateSubmitting ? 'Processing...' : 'Yes, Reactivate Staff'}
+                {reactivateSubmitting ? 'Processing...' : 'Yes, Reactivate'}
               </button>
             </div>
           </div>

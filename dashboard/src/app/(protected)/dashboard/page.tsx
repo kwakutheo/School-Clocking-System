@@ -936,7 +936,7 @@ export default function DashboardPage() {
       {/* ── All Announcements Modal ── */}
       {showAllBulletins && (
         <div style={{ position: 'fixed', inset: 0, background: 'var(--background)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10001, padding: '16px', animation: 'fadeIn 0.2s ease-out' }}>
-          <div style={{ width: '100%', maxWidth: '540px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-page, #0f1117)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 40px 80px rgba(0,0,0,0.6)' }}>
+          <div style={{ width: '100%', maxWidth: '540px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-page)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 40px 80px rgba(0,0,0,0.6)' }}>
 
             {/* Modal Header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>

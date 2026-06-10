@@ -855,7 +855,7 @@ export default function DashboardPage() {
               width: '100%',
               maxWidth: '380px',
               /* Opaque dark/light card — does NOT use --bg-card which is semi-transparent in dark mode */
-              background: 'var(--bg-page, #0f1117)',
+              background: 'var(--bg-surface)',
               borderLeft: `5px solid ${accentColor}`,
               border: `1px solid var(--border)`,
               borderLeftWidth: '5px',

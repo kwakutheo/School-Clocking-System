@@ -878,6 +878,8 @@ export default function SaasOverviewPage() {
   const fetchAllSchools = useCallback(() => {
     if (fullSchoolsList.length > 0 && loadedTimeframe.current === timeframe)
       return;
+    // Clear stale data from the previous timeframe before fetching fresh data.
+    setFullSchoolsList([]);
     setAllSchoolsLoading(true);
     saasAdminApi
       .listTenants(timeframe, undefined, undefined, { limit: 10000, sort: "presenceRate:DESC" })
@@ -1426,9 +1428,9 @@ export default function SaasOverviewPage() {
                   lineHeight: 1,
                 }}
               >
-                {fullSchoolsList.length > 0
-                  ? fullSchoolsList.length
-                  : (stats?.overview.activeSchools ?? 0)}
+                {allSchoolsLoading
+                  ? (stats?.overview.activeSchools ?? 0)
+                  : fullSchoolsList.length}
               </div>
               <div style={{ marginTop: "10px", display: "flex", gap: "12px" }}>
                 <span

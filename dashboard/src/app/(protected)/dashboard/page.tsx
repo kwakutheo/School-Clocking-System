@@ -822,12 +822,28 @@ export default function DashboardPage() {
                 {activeBulletins[currentBulletinIdx].title}
               </h4>
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0, whiteSpace: 'pre-wrap' }}>
-                {activeBulletins[currentBulletinIdx].content}
+                {activeBulletins[currentBulletinIdx].content.split('**').map((part: string, i: number) => 
+                  i % 2 === 1 ? <strong key={i} style={{ color: 'var(--text-primary)' }}>{part}</strong> : part
+                )}
               </p>
             </div>
 
             {activeBulletins.length > 1 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', borderTop: '1px solid var(--border)', paddingTop: '10px' }}>
+                <button
+                  onClick={() => setCurrentBulletinIdx(prev => (prev - 1 + activeBulletins.length) % activeBulletins.length)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: 0
+                  }}
+                >
+                  &larr; Prev
+                </button>
                 <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                   {currentBulletinIdx + 1} of {activeBulletins.length} announcements
                 </span>
@@ -843,7 +859,7 @@ export default function DashboardPage() {
                     padding: 0
                   }}
                 >
-                  Next Notice &rarr;
+                  Next &rarr;
                 </button>
               </div>
             )}

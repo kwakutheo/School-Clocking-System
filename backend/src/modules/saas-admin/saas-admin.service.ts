@@ -2375,7 +2375,7 @@ export class SaasAdminService implements OnModuleInit {
       const empName = emp.user?.fullName || emp.employeeCode;
       const bulletin = this.bulletinRepo.create({
         title: `System Admin Action: Archived Staff Member Returned`,
-        content: `The staff member **${empName}** (${emp.employeeCode}) has been **un-archived** by the System Administrator and is now visible on your dashboard again.\n\n⚠️ **Action Required:** This employee's account remains **Inactive**. You must open their profile and change their status to **Active** before they can log in or clock in.`,
+        content: `The staff member **${empName}** (${emp.employeeCode}) has been **un-archived (reactivated)** by the System Administrator and is now visible on your dashboard again.\n\n⚠️ **Action Required:** This employee's account remains **Inactive** at your end. You must open their profile and change their status to **Active** before they can log in or clock in.`,
         type: BulletinType.INFO,
         targetTenantIds: [emp.tenantId],
         isActive: true,

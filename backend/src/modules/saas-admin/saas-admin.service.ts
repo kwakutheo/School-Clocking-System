@@ -2268,16 +2268,11 @@ export class SaasAdminService implements OnModuleInit {
     
     emp.status = status as any;
     emp.statusChangeDate = new Date();
-    
-    // Reactivating unarchives the employee if they were archived
-    if (status === 'ACTIVE') {
-      emp.isArchived = false;
-    }
     await this.employeeRepo.save(emp);
-    
-    // Also update the underlying User isActive flag if necessary
+
+    // Also update the underlying User isActive flag
     if (emp.user) {
-      const isActive = status === 'ACTIVE';
+      const isActive = (status === 'active' || status === 'ACTIVE');
       const userRepo = this.connection.getRepository(User);
       await userRepo.update(emp.user.id, { isActive });
     }
@@ -2338,6 +2333,46 @@ export class SaasAdminService implements OnModuleInit {
         title: `System Admin Action: Staff Member Archived`,
         content: `Please be informed that the staff member **${empName}** (${emp.employeeCode}) has been **Archived** globally by the SaaS System Administrator.\n\nThey have been deactivated and their record is now hidden from the active workforce on your dashboard. Contact support if you require further details.`,
         type: BulletinType.WARNING,
+        targetTenantIds: [emp.tenantId],
+        isActive: true,
+      });
+      await this.bulletinRepo.save(bulletin);
+    }
+  }
+
+  /**
+   * Un-archive an employee: makes them visible to the school admin again but
+   * keeps them INACTIVE. The school admin must then open the edit modal and
+   * explicitly set the status to Active before the employee can log in.
+   */
+  async unarchiveGlobalEmployee(id: string): Promise<void> {
+    const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user'] });
+    if (!emp) {
+      throw new NotFoundException(`Employee with ID "${id}" not found.`);
+    }
+
+    if (!emp.isArchived) {
+      throw new BadRequestException('This employee is not currently archived.');
+    }
+
+    // Clear the archive flag. Keep status = inactive and user.isActive = false
+    // so the employee cannot log in until the school admin explicitly activates them.
+    emp.isArchived = false;
+    emp.status = 'inactive' as any;
+    emp.statusChangeDate = new Date();
+    await this.employeeRepo.save(emp);
+
+    // Keep user.isActive = false — school admin must activate via edit modal.
+    // (user.isActive is already false from the archive step, so no change needed)
+
+    // Notify the school admin that the employee record has been returned to them,
+    // and that they must manually activate the person.
+    if (emp.tenantId) {
+      const empName = emp.user?.fullName || emp.employeeCode;
+      const bulletin = this.bulletinRepo.create({
+        title: `System Admin Action: Archived Staff Member Returned`,
+        content: `The staff member **${empName}** (${emp.employeeCode}) has been **un-archived** by the System Administrator and is now visible on your dashboard again.\n\n⚠️ **Action Required:** This employee's account remains **Inactive**. You must open their profile and change their status to **Active** before they can log in or clock in.`,
+        type: BulletinType.INFO,
         targetTenantIds: [emp.tenantId],
         isActive: true,
       });

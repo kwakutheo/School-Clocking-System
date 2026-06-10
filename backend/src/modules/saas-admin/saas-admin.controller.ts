@@ -414,4 +414,19 @@ export class SaasAdminController {
     await this.adminService.archiveGlobalEmployee(id, req.user as User, body.password);
     return { success: true, message: 'Employee archived successfully.' };
   }
+
+  @Post('employees/:id/unarchive')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Un-archive an employee, returning them to the school admin as INACTIVE. The school admin must manually activate them.' })
+  async unarchiveGlobalEmployee(
+    @Req() req: any,
+    @Param('id') id: string,
+  ) {
+    this.verifyGlobalSuperAdmin(req);
+    await this.adminService.unarchiveGlobalEmployee(id);
+    return {
+      success: true,
+      message: 'Employee has been returned to the school dashboard as Inactive. The school administrator must now manually activate their account.',
+    };
+  }
 }

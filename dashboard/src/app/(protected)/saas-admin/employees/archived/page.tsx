@@ -86,9 +86,10 @@ export default function ArchivedEmployeesPage() {
     if (!selectedEmp) return;
     setReactivateSubmitting(true);
     try {
-      await saasAdminApi.updateGlobalEmployeeStatus(selectedEmp.id, 'ACTIVE');
+      const res = await saasAdminApi.unarchiveGlobalEmployee(selectedEmp.id);
       setReactivateModalOpen(false);
       fetchArchivedEmployees();
+      alert(res.data.message);
     } catch (err: any) {
       console.error(err);
       alert(err.response?.data?.message || 'Failed to reactivate employee.');
@@ -265,11 +266,11 @@ export default function ArchivedEmployeesPage() {
                         onClick={() => openReactivateModal(emp)}
                         className="btn btn-secondary"
                         style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '8px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#22c55e', cursor: 'pointer', transition: 'all 0.2s' }}
-                        title="Reactivate Employee"
-                        aria-label="Reactivate Employee"
+                        title="Un-archive Employee"
+                        aria-label="Un-archive Employee"
                       >
                         <UserCheck size={14} />
-                        Reactivate
+                        Un-archive
                       </button>
                     </td>
                   </tr>
@@ -322,7 +323,7 @@ export default function ArchivedEmployeesPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <UserCheck size={22} color="#22c55e" />
-                <h2 style={{ fontSize: '20px', fontWeight: 800 }}>Reactivate Employee</h2>
+                <h2 style={{ fontSize: '20px', fontWeight: 800 }}>Un-archive Employee</h2>
               </div>
               <button onClick={() => setReactivateModalOpen(false)} title="Close" aria-label="Close" style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}>
                 <X size={20} />
@@ -330,9 +331,10 @@ export default function ArchivedEmployeesPage() {
             </div>
 
             <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '24px' }}>
-              Are you sure you want to reactivate{' '}
+              Are you sure you want to un-archive{' '}
               <strong style={{ color: 'var(--text-primary)' }}>{selectedEmp.user?.fullName}</strong>? 
-              Their account and login access will be restored immediately.
+              They will be returned to their school dashboard as <strong style={{ color: 'var(--text-primary)' }}>Inactive</strong>. 
+              The school administrator must manually activate their account before they can log in again.
             </p>
 
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -345,7 +347,7 @@ export default function ArchivedEmployeesPage() {
                 disabled={reactivateSubmitting}
                 style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: '#22c55e', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '14px', transition: 'all 0.2s' }}
               >
-                {reactivateSubmitting ? 'Reactivating...' : 'Yes, Reactivate'}
+                {reactivateSubmitting ? 'Processing...' : 'Yes, Un-archive'}
               </button>
             </div>
           </div>

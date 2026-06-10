@@ -411,4 +411,6 @@ export const saasAdminApi = {
     api.put(`/saas-admin/employees/${id}/status`, { status }),
   archiveGlobalEmployee: (id: string, password: string) =>
     api.post(`/saas-admin/employees/${id}/archive`, { password }),
+  unarchiveGlobalEmployee: (id: string) =>
+    api.post(`/saas-admin/employees/${id}/unarchive`),
 };

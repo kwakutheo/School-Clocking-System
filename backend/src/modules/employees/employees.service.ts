@@ -647,6 +647,13 @@ export class EmployeesService implements OnModuleInit {
             [diff, emp.tenantId, todayStr]
           ).catch(e => this.logger.error('Failed to sync daily summary expected count', e));
         }
+
+        // ── User account activation sync ─────────────────────────────────────
+        // Ensure that changing status back to ACTIVE allows the user to log in again
+        if (emp.user) {
+          const isActive = (data.status === EmployeeStatus.ACTIVE || data.status === 'active' as any);
+          await this.userRepo.update(emp.user.id, { isActive });
+        }
       }
       emp.status = data.status;
     }

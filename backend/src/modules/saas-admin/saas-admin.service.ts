@@ -2256,7 +2256,7 @@ export class SaasAdminService implements OnModuleInit {
 
   /** Update an employee's status globally */
   async updateGlobalEmployeeStatus(id: string, status: string): Promise<any> {
-    const emp = await this.employeeRepo.findOne({ where: { id } });
+    const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user'] });
     if (!emp) {
       throw new NotFoundException(`Employee with ID "${id}" not found.`);
     }
@@ -2270,6 +2270,22 @@ export class SaasAdminService implements OnModuleInit {
       const isActive = status === 'ACTIVE';
       const userRepo = this.connection.getRepository(User);
       await userRepo.update(emp.user.id, { isActive });
+    }
+
+    // Notify the school admin via a targeted System Bulletin
+    if (emp.tenantId) {
+      const action = status === 'ACTIVE' ? 'Reactivated' : 'Suspended';
+      const bType = status === 'ACTIVE' ? BulletinType.SUCCESS : BulletinType.WARNING;
+      const empName = emp.user?.fullName || emp.employeeCode;
+      
+      const bulletin = this.bulletinRepo.create({
+        title: `System Admin Action: Staff Member ${action}`,
+        content: `Please be informed that the staff member **${empName}** (${emp.employeeCode}) has been **${action.toLowerCase()}** globally by the SaaS System Administrator.\n\nTheir access and permissions have been updated accordingly. Contact support if you require further details.`,
+        type: bType,
+        targetTenantIds: [emp.tenantId],
+        isActive: true,
+      });
+      await this.bulletinRepo.save(bulletin);
     }
     
     return { success: true, message: 'Employee status updated.' };
@@ -2302,6 +2318,19 @@ export class SaasAdminService implements OnModuleInit {
     // Deactivate the linked user account so they can no longer log in
     if (emp.user) {
       await this.userRepo.update(emp.user.id, { isActive: false });
+    }
+
+    // Notify the school admin via a targeted System Bulletin
+    if (emp.tenantId) {
+      const empName = emp.user?.fullName || emp.employeeCode;
+      const bulletin = this.bulletinRepo.create({
+        title: `System Admin Action: Staff Member Archived`,
+        content: `Please be informed that the staff member **${empName}** (${emp.employeeCode}) has been **Archived** globally by the SaaS System Administrator.\n\nThey have been deactivated and their record is now hidden from the active workforce on your dashboard. Contact support if you require further details.`,
+        type: BulletinType.WARNING,
+        targetTenantIds: [emp.tenantId],
+        isActive: true,
+      });
+      await this.bulletinRepo.save(bulletin);
     }
   }
 }

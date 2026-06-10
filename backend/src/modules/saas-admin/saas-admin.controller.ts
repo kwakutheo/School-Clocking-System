@@ -136,6 +136,7 @@ export class SaasAdminController {
     @Query('cohort') cohort?: string,
     @Query('academicYear') academicYear?: string,
     @Query('termName') termName?: string,
+    @Query('includeAll') includeAll?: string,
   ) {
     this.verifyGlobalAdmin(req);
     const { results, total } = await this.adminService.findAllTenants(
@@ -147,6 +148,7 @@ export class SaasAdminController {
       cohort,
       academicYear,
       termName,
+      includeAll === 'true',
     );
     res.setHeader('x-total-count', total.toString());
     res.setHeader('Access-Control-Expose-Headers', 'x-total-count');

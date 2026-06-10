@@ -710,6 +710,7 @@ export class SaasAdminService implements OnModuleInit {
     cohort?: string,
     academicYear?: string,
     termName?: string,
+    includeAll: boolean = false,
   ): Promise<{ results: any[]; total: number }> {
     let tenants: Tenant[];
     if (search && search.trim() !== '') {
@@ -1017,6 +1018,15 @@ export class SaasAdminService implements OnModuleInit {
           },
         };
       });
+
+    // For performance reports/rankings, exclude schools that had no active
+    // workforce scheduled in the selected timeframe — showing them as 0%
+    // would be misleading. The Schools Registry page bypasses this by
+    // passing includeAll=true since it is an administrative list, not a
+    // ranked performance report.
+    if (!includeAll) {
+      results = results.filter((school) => school.metrics.expectedEmployeeDays > 0);
+    }
 
     if (cohort) {
       if (cohort === 'excellent') {

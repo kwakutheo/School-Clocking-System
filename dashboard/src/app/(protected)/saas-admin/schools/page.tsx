@@ -107,7 +107,9 @@ export default function SchoolsRegistryPage() {
 
   const fetchSchools = () => {
     setLoading(true);
-    saasAdminApi.listTenants()
+    // includeAll=true bypasses the expectedEmployeeDays>0 filter so that
+    // newly registered schools with no activity yet still appear in the registry.
+    saasAdminApi.listTenants(undefined, undefined, undefined, undefined, true)
       .then((res) => {
         setSchools(res.data);
         setLoading(false);

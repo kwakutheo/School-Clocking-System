@@ -310,8 +310,8 @@ export const settingsApi = {
 export const saasAdminApi = {
   getStats: (timeframe?: string, academicYear?: string, termName?: string) =>
     api.get("/saas-admin/stats", { params: { timeframe, academicYear, termName } }),
-  listTenants: (timeframe?: string, academicYear?: string, termName?: string, params?: Record<string, any>) =>
-    api.get("/saas-admin/tenants", { params: { timeframe, academicYear, termName, ...params } }),
+  listTenants: (timeframe?: string, academicYear?: string, termName?: string, params?: Record<string, any>, includeAll?: boolean) =>
+    api.get("/saas-admin/tenants", { params: { timeframe, academicYear, termName, ...(includeAll ? { includeAll: 'true' } : {}), ...params } }),
   onboardTenant: (data: {
     name: string;
     slug: string;

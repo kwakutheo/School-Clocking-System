@@ -382,66 +382,89 @@ export default function GlobalEmployeeRegistryPage() {
 
       {/* ── View Profile Modal ── */}
       {viewModalOpen && selectedEmp && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, animation: 'fadeIn 0.2s ease-out' }}>
-          <div className="card" style={{ width: '100%', maxWidth: '500px', padding: '32px', position: 'relative', boxShadow: '0 24px 48px rgba(0,0,0,0.5)', border: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: '16px', animation: 'fadeIn 0.2s ease-out' }}>
+          <div className="card" style={{ width: '100%', maxWidth: '480px', padding: '0', position: 'relative', boxShadow: '0 32px 64px rgba(0,0,0,0.5)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden' }}>
+
+            {/* Modal Header */}
+            <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <UserCircle size={22} color="var(--primary)" />
-                <h2 style={{ fontSize: '20px', fontWeight: 800 }}>Employee Profile</h2>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(99,102,241,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <UserCircle size={18} color="var(--primary)" />
+                </div>
+                <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Employee Profile</h2>
               </div>
-              <button onClick={() => setViewModalOpen(false)} title="Close" aria-label="Close" style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}>
-                <X size={20} />
+              <button
+                onClick={() => setViewModalOpen(false)}
+                title="Close"
+                aria-label="Close"
+                style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', flexShrink: 0 }}
+              >
+                <X size={14} />
               </button>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid var(--border)' }}>
+            {/* Avatar + Identity Hero */}
+            <div style={{ padding: '24px', background: 'linear-gradient(135deg, rgba(99,102,241,0.06) 0%, transparent 60%)', display: 'flex', alignItems: 'center', gap: '16px', borderBottom: '1px solid var(--border)' }}>
               {selectedEmp.photoUrl ? (
-                <img src={selectedEmp.photoUrl} alt="Avatar" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover' }} />
+                <img src={selectedEmp.photoUrl} alt="Avatar" style={{ width: '60px', height: '60px', borderRadius: '12px', objectFit: 'cover', border: '2px solid var(--border)', flexShrink: 0 }} />
               ) : (
-                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--bg-input)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <UserCircle size={32} color="var(--text-secondary)" />
+                <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: `linear-gradient(135deg, ${selectedEmp.school?.primaryColor || 'var(--primary)'} 0%, ${selectedEmp.school?.primaryColor || 'var(--primary)'}88 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 4px 12px ${selectedEmp.school?.primaryColor || 'var(--primary)'}40` }}>
+                  <span style={{ fontSize: '22px', fontWeight: 800, color: '#fff' }}>
+                    {selectedEmp.user?.fullName?.charAt(0)?.toUpperCase() || '?'}
+                  </span>
                 </div>
               )}
-              <div>
-                <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>{selectedEmp.user?.fullName}</div>
-                <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginTop: '2px' }}>{selectedEmp.employeeCode} • {selectedEmp.position || 'No Position'}</div>
-                <div style={{ marginTop: '6px' }}>{getStatusBadge(selectedEmp.status)}</div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{selectedEmp.user?.fullName || 'Unknown'}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '3px', fontFamily: 'monospace', letterSpacing: '0.03em' }}>{selectedEmp.employeeCode}{selectedEmp.position ? ` · ${selectedEmp.position}` : ''}</div>
+                <div style={{ marginTop: '8px' }}>{getStatusBadge(selectedEmp.status)}</div>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Email Address</label>
-                <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedEmp.user?.email || '—'}</div>
-              </div>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Phone Number</label>
-                <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedEmp.user?.phone || '—'}</div>
-              </div>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>School / Tenant</label>
-                <div style={{ fontSize: '14px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  {selectedEmp.school && <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: selectedEmp.school.primaryColor }} />}
-                  {selectedEmp.school?.name || '—'}
+            {/* Info Grid */}
+            <div style={{ padding: '20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0', background: 'var(--bg-card)' }}>
+              {[
+                { label: 'Email Address', value: selectedEmp.user?.email || '—' },
+                { label: 'Phone Number', value: selectedEmp.user?.phone || '—' },
+                { label: 'Department', value: selectedEmp.department || '—' },
+                { label: 'Branch', value: selectedEmp.branch || '—' },
+                { label: 'Shift', value: selectedEmp.shift || '—' },
+                {
+                  label: 'Hire Date',
+                  value: selectedEmp.hireDate
+                    ? new Date(selectedEmp.hireDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                    : '—'
+                },
+              ].map((field, i) => (
+                <div key={field.label} style={{ padding: '12px 0', borderBottom: i < 4 ? '1px solid var(--border)' : 'none', paddingRight: i % 2 === 0 ? '20px' : '0', paddingLeft: i % 2 === 1 ? '20px' : '0', borderLeft: i % 2 === 1 ? '1px solid var(--border)' : 'none' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{field.label}</div>
+                  <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{field.value}</div>
                 </div>
-              </div>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Hire Date</label>
-                <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedEmp.hireDate ? new Date(selectedEmp.hireDate).toLocaleDateString() : '—'}</div>
-              </div>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Department</label>
-                <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedEmp.department || '—'}</div>
-              </div>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Branch</label>
-                <div style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{selectedEmp.branch || '—'}</div>
-              </div>
+              ))}
             </div>
-            
-            <button type="button" className="btn btn-secondary" onClick={() => setViewModalOpen(false)} style={{ width: '100%', padding: '12px' }}>
-              Close
-            </button>
+
+            {/* School row */}
+            <div style={{ padding: '12px 24px', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-card)' }}>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>School</div>
+              <div style={{ flexGrow: 1 }} />
+              {selectedEmp.school ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: selectedEmp.school.primaryColor, flexShrink: 0 }} />
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{selectedEmp.school.name}</span>
+                </div>
+              ) : <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>—</span>}
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', background: 'var(--bg-card)' }}>
+              <button
+                type="button"
+                onClick={() => setViewModalOpen(false)}
+                style={{ padding: '8px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text-primary)', fontWeight: 600, fontSize: '13px', cursor: 'pointer', transition: 'all 0.15s' }}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

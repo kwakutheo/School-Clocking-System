@@ -404,9 +404,10 @@ export const saasAdminApi = {
     limit?: number;
     search?: string;
     schoolId?: string;
+    status?: string; // e.g. 'ACTIVE,SUSPENDED' or 'INACTIVE'
   }) => api.get("/saas-admin/employees", { params }),
   updateGlobalEmployeeStatus: (id: string, status: string) =>
     api.put(`/saas-admin/employees/${id}/status`, { status }),
-  deleteGlobalEmployee: (id: string) =>
-    api.delete(`/saas-admin/employees/${id}`),
+  archiveGlobalEmployee: (id: string, password: string) =>
+    api.post(`/saas-admin/employees/${id}/archive`, { password }),
 };

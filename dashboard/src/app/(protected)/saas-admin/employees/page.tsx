@@ -1,7 +1,7 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { saasAdminApi } from '@/lib/api';
-import { Users, Search, Building2, UserCircle, RefreshCcw, UserX, UserCheck, ShieldAlert, X, Eye } from 'lucide-react';
+import { Search, Building2, UserCircle, UserX, UserCheck, ShieldAlert, X, Eye, Archive } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface EmployeeGlobal {
@@ -44,17 +44,27 @@ export default function GlobalEmployeeRegistryPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
-  // Modals
+  // View Profile Modal
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState<EmployeeGlobal | null>(null);
-  const [newStatus, setNewStatus] = useState<'ACTIVE' | 'SUSPENDED' | 'INACTIVE'>('ACTIVE');
-  const [submitting, setSubmitting] = useState(false);
+
+  // Status Modal (Suspend / Reactivate)
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [newStatus, setNewStatus] = useState<'ACTIVE' | 'SUSPENDED'>('ACTIVE');
+  const [statusSubmitting, setStatusSubmitting] = useState(false);
+
+  // Archive Modal (requires super_admin password)
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false);
+  const [archivePassword, setArchivePassword] = useState('');
+  const [archivePasswordError, setArchivePasswordError] = useState<string | null>(null);
+  const [archiveSubmitting, setArchiveSubmitting] = useState(false);
+  const archivePasswordRef = useRef<HTMLInputElement>(null);
 
   // Debounce search
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchQuery);
+      setCurrentPage(1);
     }, 500);
     return () => clearTimeout(handler);
   }, [searchQuery]);
@@ -70,8 +80,9 @@ export default function GlobalEmployeeRegistryPage() {
       const res = await saasAdminApi.getAllEmployees({
         page: currentPage,
         limit: itemsPerPage,
-        search: debouncedSearch,
+        search: debouncedSearch || undefined,
         schoolId: schoolIdFilter || undefined,
+        status: 'ACTIVE,SUSPENDED', // Main page never shows INACTIVE (archived) employees
       });
       setEmployees(res.data.data || []);
       setTotalPages(res.data.totalPages || 1);
@@ -84,31 +95,52 @@ export default function GlobalEmployeeRegistryPage() {
     }
   };
 
+  // ── Status Toggle (Suspend / Reactivate) ──
   const handleStatusUpdate = async () => {
     if (!selectedEmp) return;
-    setSubmitting(true);
+    setStatusSubmitting(true);
     try {
-      if (newStatus === 'INACTIVE' && selectedEmp.status !== 'INACTIVE') {
-        // Soft Delete
-        await saasAdminApi.deleteGlobalEmployee(selectedEmp.id);
-      } else {
-        // Toggle Active / Suspended
-        await saasAdminApi.updateGlobalEmployeeStatus(selectedEmp.id, newStatus);
-      }
+      await saasAdminApi.updateGlobalEmployeeStatus(selectedEmp.id, newStatus);
       setStatusModalOpen(false);
       fetchEmployees();
     } catch (err: any) {
       console.error(err);
       alert(err.response?.data?.message || 'Failed to update employee status.');
     } finally {
-      setSubmitting(false);
+      setStatusSubmitting(false);
     }
   };
 
-  const openStatusModal = (emp: EmployeeGlobal, status: 'ACTIVE' | 'SUSPENDED' | 'INACTIVE') => {
+  // ── Archive (Soft-Delete) with password ──
+  const handleArchive = async () => {
+    if (!selectedEmp || !archivePassword) return;
+    setArchivePasswordError(null);
+    setArchiveSubmitting(true);
+    try {
+      await saasAdminApi.archiveGlobalEmployee(selectedEmp.id, archivePassword);
+      setArchiveModalOpen(false);
+      setArchivePassword('');
+      fetchEmployees();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Failed to archive employee.';
+      setArchivePasswordError(msg);
+    } finally {
+      setArchiveSubmitting(false);
+    }
+  };
+
+  const openStatusModal = (emp: EmployeeGlobal, status: 'ACTIVE' | 'SUSPENDED') => {
     setSelectedEmp(emp);
     setNewStatus(status);
     setStatusModalOpen(true);
+  };
+
+  const openArchiveModal = (emp: EmployeeGlobal) => {
+    setSelectedEmp(emp);
+    setArchivePassword('');
+    setArchivePasswordError(null);
+    setArchiveModalOpen(true);
+    setTimeout(() => archivePasswordRef.current?.focus(), 100);
   };
 
   const openViewModal = (emp: EmployeeGlobal) => {
@@ -147,15 +179,24 @@ export default function GlobalEmployeeRegistryPage() {
   return (
     <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
       {/* ── Header ── */}
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 className="page-title" style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px' }}>
             Employee Registry
           </h1>
           <p className="page-sub" style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
-            A global directory of all staff registered across all onboarded schools.
+            Active and suspended staff registered across all onboarded schools.
           </p>
         </div>
+        <button
+          id="view-archived-staff-btn"
+          className="btn btn-secondary"
+          onClick={() => router.push('/saas-admin/employees/archived')}
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '10px', border: '1px solid var(--border)' }}
+        >
+          <Archive size={16} />
+          View Archived Staff
+        </button>
       </div>
 
       {error && (
@@ -187,7 +228,7 @@ export default function GlobalEmployeeRegistryPage() {
               className="form-input"
               placeholder="Filter by School ID (exact)"
               value={schoolIdFilter}
-              onChange={(e) => setSchoolIdFilter(e.target.value)}
+              onChange={(e) => { setSchoolIdFilter(e.target.value); setCurrentPage(1); }}
               style={{ paddingLeft: '40px', height: '40px', borderRadius: '8px' }}
             />
             <span style={{ position: 'absolute', left: '14px', top: '12px', color: 'var(--text-secondary)' }}>
@@ -278,24 +319,22 @@ export default function GlobalEmployeeRegistryPage() {
                     </td>
                     <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                        <button onClick={() => openViewModal(emp)} className="btn btn-secondary" style={{ padding: '6px', minWidth: 'unset', height: 'auto', background: 'transparent' }} title="View Profile">
+                        <button onClick={() => openViewModal(emp)} className="btn btn-secondary" style={{ padding: '6px', minWidth: 'unset', height: 'auto', background: 'transparent' }} title="View Profile" aria-label="View Profile">
                           <Eye size={16} color="var(--text-secondary)" />
                         </button>
                         {emp.status === 'ACTIVE' && (
-                          <button onClick={() => openStatusModal(emp, 'SUSPENDED')} className="btn btn-secondary" style={{ padding: '6px', minWidth: 'unset', height: 'auto', background: 'transparent' }} title="Suspend">
+                          <button onClick={() => openStatusModal(emp, 'SUSPENDED')} className="btn btn-secondary" style={{ padding: '6px', minWidth: 'unset', height: 'auto', background: 'transparent' }} title="Suspend" aria-label="Suspend">
                             <UserX size={16} color="var(--text-secondary)" />
                           </button>
                         )}
                         {emp.status === 'SUSPENDED' && (
-                          <button onClick={() => openStatusModal(emp, 'ACTIVE')} className="btn btn-secondary" style={{ padding: '6px', minWidth: 'unset', height: 'auto', background: 'transparent' }} title="Reactivate">
+                          <button onClick={() => openStatusModal(emp, 'ACTIVE')} className="btn btn-secondary" style={{ padding: '6px', minWidth: 'unset', height: 'auto', background: 'transparent' }} title="Reactivate" aria-label="Reactivate">
                             <UserCheck size={16} color="var(--text-secondary)" />
                           </button>
                         )}
-                        {emp.status !== 'INACTIVE' && (
-                          <button onClick={() => openStatusModal(emp, 'INACTIVE')} className="btn btn-secondary" style={{ padding: '6px', minWidth: 'unset', height: 'auto', background: 'transparent' }} title="Soft Delete (Archive)">
-                            <X size={16} color="var(--danger)" />
-                          </button>
-                        )}
+                        <button onClick={() => openArchiveModal(emp)} className="btn btn-secondary" style={{ padding: '6px', minWidth: 'unset', height: 'auto', background: 'transparent' }} title="Archive Employee" aria-label="Archive Employee">
+                          <Archive size={16} color="var(--danger)" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -407,13 +446,13 @@ export default function GlobalEmployeeRegistryPage() {
         </div>
       )}
 
-      {/* ── Status Change Modal ── */}
+      {/* ── Status Modal (Suspend / Reactivate) ── */}
       {statusModalOpen && selectedEmp && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, animation: 'fadeIn 0.2s ease-out' }}>
           <div className="card" style={{ width: '100%', maxWidth: '400px', padding: '32px', position: 'relative', boxShadow: '0 24px 48px rgba(0,0,0,0.5)', border: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <ShieldAlert size={22} color={newStatus === 'INACTIVE' ? 'var(--danger)' : 'var(--warning)'} />
+                <ShieldAlert size={22} color="var(--warning)" />
                 <h2 style={{ fontSize: '20px', fontWeight: 800 }}>Confirm Action</h2>
               </div>
               <button onClick={() => setStatusModalOpen(false)} title="Close" aria-label="Close" style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}>
@@ -422,9 +461,8 @@ export default function GlobalEmployeeRegistryPage() {
             </div>
 
             <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '24px' }}>
-              Are you sure you want to {newStatus === 'INACTIVE' ? 'archive' : newStatus === 'SUSPENDED' ? 'suspend' : 'reactivate'}{' '}
+              Are you sure you want to {newStatus === 'SUSPENDED' ? 'suspend' : 'reactivate'}{' '}
               <strong style={{ color: 'var(--text-primary)' }}>{selectedEmp.user?.fullName}</strong>?
-              {newStatus === 'INACTIVE' && ' This will revoke their access to the system entirely.'}
               {newStatus === 'SUSPENDED' && ' They will not be able to log in until reactivated.'}
             </p>
 
@@ -432,8 +470,67 @@ export default function GlobalEmployeeRegistryPage() {
               <button type="button" className="btn btn-secondary" onClick={() => setStatusModalOpen(false)} style={{ flex: 1, padding: '12px' }}>
                 Cancel
               </button>
-              <button type="button" className="btn btn-primary" onClick={handleStatusUpdate} disabled={submitting} style={{ flex: 1, padding: '12px', background: newStatus === 'INACTIVE' ? 'var(--danger)' : newStatus === 'SUSPENDED' ? 'var(--warning)' : 'var(--success)' }}>
-                {submitting ? 'Updating...' : 'Confirm'}
+              <button type="button" className="btn btn-primary" onClick={handleStatusUpdate} disabled={statusSubmitting} style={{ flex: 1, padding: '12px', background: newStatus === 'SUSPENDED' ? 'var(--warning)' : 'var(--success)' }}>
+                {statusSubmitting ? 'Updating...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Archive Modal (requires Super Admin password) ── */}
+      {archiveModalOpen && selectedEmp && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, animation: 'fadeIn 0.2s ease-out' }}>
+          <div className="card" style={{ width: '100%', maxWidth: '420px', padding: '32px', position: 'relative', boxShadow: '0 24px 48px rgba(0,0,0,0.5)', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Archive size={22} color="var(--danger)" />
+                <h2 style={{ fontSize: '20px', fontWeight: 800 }}>Archive Employee</h2>
+              </div>
+              <button onClick={() => setArchiveModalOpen(false)} title="Close" aria-label="Close" style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.08)', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.2)', marginBottom: '20px' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                You are about to archive <strong style={{ color: 'var(--text-primary)' }}>{selectedEmp.user?.fullName}</strong> from{' '}
+                <strong style={{ color: 'var(--text-primary)' }}>{selectedEmp.school?.name || 'their school'}</strong>.
+                Their account will be deactivated immediately. This action requires Super Admin password confirmation.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label htmlFor="archive-password-input" style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>
+                Your Super Admin Password
+              </label>
+              <input
+                id="archive-password-input"
+                ref={archivePasswordRef}
+                type="password"
+                className="form-input"
+                placeholder="Enter your password to confirm"
+                value={archivePassword}
+                onChange={(e) => { setArchivePassword(e.target.value); setArchivePasswordError(null); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' && archivePassword) handleArchive(); }}
+                style={{ width: '100%', borderColor: archivePasswordError ? 'var(--danger)' : undefined }}
+              />
+              {archivePasswordError && (
+                <p style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '6px' }}>{archivePasswordError}</p>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setArchiveModalOpen(false)} style={{ flex: 1, padding: '12px' }}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleArchive}
+                disabled={archiveSubmitting || !archivePassword}
+                style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: !archivePassword ? 'rgba(239,68,68,0.4)' : 'var(--danger)', color: '#fff', fontWeight: 700, cursor: !archivePassword ? 'not-allowed' : 'pointer', fontSize: '14px', transition: 'all 0.2s' }}
+              >
+                {archiveSubmitting ? 'Archiving...' : 'Archive Employee'}
               </button>
             </div>
           </div>

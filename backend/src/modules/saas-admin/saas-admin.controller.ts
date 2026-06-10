@@ -368,13 +368,17 @@ export class SaasAdminController {
     @Query('limit') limit?: string,
     @Query('search') search?: string,
     @Query('schoolId') schoolId?: string,
+    @Query('status') status?: string,
   ) {
     this.verifyGlobalAdmin(req);
+    // Parse comma-separated status values: e.g. "ACTIVE,SUSPENDED" or "INACTIVE"
+    const statuses = status ? status.split(',').map(s => s.trim()).filter(Boolean) : undefined;
     const result = await this.adminService.getAllGlobalEmployees(
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 50,
       search,
       schoolId,
+      statuses,
     );
     res.setHeader('x-total-count', result.total.toString());
     res.setHeader('Access-Control-Expose-Headers', 'x-total-count');
@@ -382,24 +386,29 @@ export class SaasAdminController {
   }
 
   @Put('employees/:id/status')
-  @ApiOperation({ summary: 'Toggle an employee status globally' })
+  @ApiOperation({ summary: 'Toggle an employee status globally (Suspend/Reactivate)' })
   async updateGlobalEmployeeStatus(
     @Req() req: any,
     @Param('id') id: string,
     @Body() body: { status: string },
   ) {
-    this.verifyGlobalAdmin(req);
+    this.verifyGlobalSuperAdmin(req);
     return this.adminService.updateGlobalEmployeeStatus(id, body.status);
   }
 
-  @Delete('employees/:id')
-  @ApiOperation({ summary: 'Permanently delete an employee globally' })
-  async deleteGlobalEmployee(
+  @Post('employees/:id/archive')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Archive (soft-delete) an employee with Super Admin password confirmation' })
+  async archiveGlobalEmployee(
     @Req() req: any,
     @Param('id') id: string,
+    @Body() body: { password: string },
   ) {
     this.verifyGlobalSuperAdmin(req);
-    await this.adminService.deleteGlobalEmployee(id);
-    return { success: true, message: 'Employee permanently deleted.' };
+    if (!body.password) {
+      throw new ForbiddenException('Password confirmation is required to archive an employee.');
+    }
+    await this.adminService.archiveGlobalEmployee(id, req.user as User, body.password);
+    return { success: true, message: 'Employee archived successfully.' };
   }
 }

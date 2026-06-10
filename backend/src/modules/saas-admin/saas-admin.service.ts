@@ -2183,6 +2183,7 @@ export class SaasAdminService implements OnModuleInit {
     limit: number = 50,
     search?: string,
     schoolId?: string,
+    statuses?: string[],
   ): Promise<{ data: any[]; total: number; page: number; limit: number; totalPages: number }> {
     const qb = this.employeeRepo
       .createQueryBuilder('e')
@@ -2192,6 +2193,10 @@ export class SaasAdminService implements OnModuleInit {
       .leftJoinAndSelect('e.branch', 'branch')
       .leftJoinAndSelect('e.shift', 'shift')
       .orderBy('e.createdAt', 'DESC');
+
+    // Default: exclude archived (INACTIVE) employees unless explicitly requested
+    const statusFilter = (statuses && statuses.length > 0) ? statuses : ['ACTIVE', 'SUSPENDED'];
+    qb.andWhere('e.status IN (:...statuses)', { statuses: statusFilter });
 
     if (schoolId) {
       qb.andWhere('e.tenantId = :schoolId', { schoolId });
@@ -2270,22 +2275,33 @@ export class SaasAdminService implements OnModuleInit {
     return { success: true, message: 'Employee status updated.' };
   }
 
-  /** Soft delete an employee and their user account (set to INACTIVE) */
-  async deleteGlobalEmployee(id: string): Promise<void> {
+  /** Archive (soft-delete) an employee with Super Admin password confirmation */
+  async archiveGlobalEmployee(id: string, adminUser: User, password: string): Promise<void> {
+    // Reload user with passwordHash from the database
+    const fullAdmin = await this.userRepo.findOne({ where: { id: adminUser.id } });
+    if (!fullAdmin) {
+      throw new NotFoundException('Admin user not found.');
+    }
+
+    // bcrypt password verification
+    const isPasswordValid = await bcrypt.compare(password, fullAdmin.passwordHash);
+    if (!isPasswordValid) {
+      throw new ForbiddenException('Incorrect password. Archive operation was denied.');
+    }
+
     const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user'] });
     if (!emp) {
       throw new NotFoundException(`Employee with ID "${id}" not found.`);
     }
-    
-    // Soft delete by updating status
+
+    // Soft archive: set status to INACTIVE
     emp.status = 'INACTIVE' as any;
     emp.statusChangeDate = new Date();
     await this.employeeRepo.save(emp);
-    
-    // Also deactivate the associated user account
+
+    // Deactivate the linked user account so they can no longer log in
     if (emp.user) {
-      const userRepo = this.connection.getRepository(User);
-      await userRepo.update(emp.user.id, { isActive: false });
+      await this.userRepo.update(emp.user.id, { isActive: false });
     }
   }
 }

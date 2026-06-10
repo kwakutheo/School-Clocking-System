@@ -69,7 +69,7 @@ export default function ArchivedEmployeesPage() {
         page: currentPage,
         limit: itemsPerPage,
         search: debouncedSearch || undefined,
-        status: 'inactive', // Only fetch archived employees
+        isArchived: true, // Only fetch explicitly archived employees
       });
       setEmployees(res.data.data || []);
       setTotalPages(res.data.totalPages || 1);

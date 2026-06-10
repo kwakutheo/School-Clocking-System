@@ -69,6 +69,9 @@ export class Employee extends TenantBaseEntity {
   @Column({ name: 'status_change_date', type: 'date', nullable: true })
   statusChangeDate: Date;
 
+  @Column({ name: 'is_archived', default: false })
+  isArchived: boolean;
+
   @OneToMany('EmployeeStatusLog', 'employee', { cascade: true })
   statusLogs: any[];
 

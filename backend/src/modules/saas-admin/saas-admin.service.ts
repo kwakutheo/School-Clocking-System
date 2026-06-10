@@ -2184,6 +2184,7 @@ export class SaasAdminService implements OnModuleInit {
     search?: string,
     schoolId?: string,
     statuses?: string[],
+    isArchived?: boolean,
   ): Promise<{ data: any[]; total: number; page: number; limit: number; totalPages: number }> {
     const qb = this.employeeRepo
       .createQueryBuilder('e')
@@ -2194,9 +2195,13 @@ export class SaasAdminService implements OnModuleInit {
       .leftJoinAndSelect('e.shift', 'shift')
       .orderBy('e.createdAt', 'DESC');
 
-    // Default: exclude archived (INACTIVE) employees unless explicitly requested
-    const statusFilter = (statuses && statuses.length > 0) ? statuses : ['ACTIVE', 'SUSPENDED'];
-    qb.andWhere('e.status IN (:...statuses)', { statuses: statusFilter });
+    // Default: exclude globally archived employees unless explicitly requested
+    const archiveFlag = isArchived !== undefined ? isArchived : false;
+    qb.andWhere('e.isArchived = :archiveFlag', { archiveFlag });
+
+    if (statuses && statuses.length > 0) {
+      qb.andWhere('e.status IN (:...statuses)', { statuses });
+    }
 
     if (schoolId) {
       qb.andWhere('e.tenantId = :schoolId', { schoolId });
@@ -2263,6 +2268,11 @@ export class SaasAdminService implements OnModuleInit {
     
     emp.status = status as any;
     emp.statusChangeDate = new Date();
+    
+    // Reactivating unarchives the employee if they were archived
+    if (status === 'ACTIVE') {
+      emp.isArchived = false;
+    }
     await this.employeeRepo.save(emp);
     
     // Also update the underlying User isActive flag if necessary
@@ -2310,8 +2320,9 @@ export class SaasAdminService implements OnModuleInit {
       throw new NotFoundException(`Employee with ID "${id}" not found.`);
     }
 
-    // Soft archive: set status to INACTIVE
+    // Soft archive: set status to INACTIVE and isArchived to true
     emp.status = 'INACTIVE' as any;
+    emp.isArchived = true;
     emp.statusChangeDate = new Date();
     await this.employeeRepo.save(emp);
 

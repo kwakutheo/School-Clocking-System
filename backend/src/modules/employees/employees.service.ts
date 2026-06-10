@@ -129,7 +129,7 @@ export class EmployeesService implements OnModuleInit {
   async findAllUnpaginated(): Promise<Employee[]> {
     const tenantId = getCurrentTenantId();
     return this.repo.find({
-      where: tenantId ? { tenantId } : {},
+      where: tenantId ? { tenantId, isArchived: false } : { isArchived: false },
       relations: ['user', 'department', 'branch', 'shift'],
     });
   }
@@ -172,6 +172,7 @@ export class EmployeesService implements OnModuleInit {
     if (tenantId) {
       qb.where('emp.tenantId = :tenantId', { tenantId });
     }
+    qb.andWhere('emp.isArchived = :isArchived', { isArchived: false });
 
     if (opts.search) {
       const q = `%${opts.search.toLowerCase()}%`;
@@ -201,6 +202,7 @@ export class EmployeesService implements OnModuleInit {
     if (tenantId) {
       cqb.where('empC.tenantId = :tenantId', { tenantId });
     }
+    cqb.andWhere('empC.isArchived = :isArchived', { isArchived: false });
 
     if (opts.search) {
       const q = `%${opts.search.toLowerCase()}%`;
@@ -233,7 +235,7 @@ export class EmployeesService implements OnModuleInit {
 
   async findById(id: string): Promise<Employee> {
     const tenantId = getCurrentTenantId();
-    const where: any = tenantId ? { id, tenantId } : { id };
+    const where: any = tenantId ? { id, tenantId, isArchived: false } : { id, isArchived: false };
     const emp = await this.repo.findOne({
       where,
       relations: ['user', 'department', 'branch', 'shift'],
@@ -257,6 +259,7 @@ export class EmployeesService implements OnModuleInit {
     if (tenantId) {
       qb.andWhere('emp.tenantId = :tenantId', { tenantId });
     }
+    qb.andWhere('emp.isArchived = :isArchived', { isArchived: false });
 
     return qb.getOne();
   }

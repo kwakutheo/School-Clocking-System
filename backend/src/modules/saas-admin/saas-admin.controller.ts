@@ -369,16 +369,19 @@ export class SaasAdminController {
     @Query('search') search?: string,
     @Query('schoolId') schoolId?: string,
     @Query('status') status?: string,
+    @Query('isArchived') isArchived?: string,
   ) {
     this.verifyGlobalAdmin(req);
     // Parse comma-separated status values: e.g. "ACTIVE,SUSPENDED" or "INACTIVE"
     const statuses = status ? status.split(',').map(s => s.trim()).filter(Boolean) : undefined;
+    const isArchivedBool = isArchived === 'true' ? true : isArchived === 'false' ? false : undefined;
     const result = await this.adminService.getAllGlobalEmployees(
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 50,
       search,
       schoolId,
       statuses,
+      isArchivedBool,
     );
     res.setHeader('x-total-count', result.total.toString());
     res.setHeader('Access-Control-Expose-Headers', 'x-total-count');

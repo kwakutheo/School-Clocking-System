@@ -405,6 +405,7 @@ export const saasAdminApi = {
     search?: string;
     schoolId?: string;
     status?: string; // e.g. 'ACTIVE,SUSPENDED' or 'INACTIVE'
+    isArchived?: boolean;
   }) => api.get("/saas-admin/employees", { params }),
   updateGlobalEmployeeStatus: (id: string, status: string) =>
     api.put(`/saas-admin/employees/${id}/status`, { status }),

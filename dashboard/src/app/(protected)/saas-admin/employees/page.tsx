@@ -38,7 +38,7 @@ export default function GlobalEmployeeRegistryPage() {
   // Pagination & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [schoolIdFilter, setSchoolIdFilter] = useState('');
+  const [schoolNameFilter, setSchoolNameFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
@@ -71,7 +71,7 @@ export default function GlobalEmployeeRegistryPage() {
 
   useEffect(() => {
     fetchEmployees();
-  }, [currentPage, itemsPerPage, debouncedSearch, schoolIdFilter]);
+  }, [currentPage, itemsPerPage, debouncedSearch, schoolNameFilter]);
 
   const fetchEmployees = async () => {
     setLoading(true);
@@ -81,7 +81,7 @@ export default function GlobalEmployeeRegistryPage() {
         page: currentPage,
         limit: itemsPerPage,
         search: debouncedSearch || undefined,
-        schoolId: schoolIdFilter || undefined,
+        schoolName: schoolNameFilter || undefined,
         isArchived: false, // Hide globally archived employees
       });
       setEmployees(res.data.data || []);
@@ -226,9 +226,9 @@ export default function GlobalEmployeeRegistryPage() {
             <input
               type="text"
               className="form-input"
-              placeholder="Filter by School ID (exact)"
-              value={schoolIdFilter}
-              onChange={(e) => { setSchoolIdFilter(e.target.value); setCurrentPage(1); }}
+              placeholder="Filter by School Name..."
+              value={schoolNameFilter}
+              onChange={(e) => { setSchoolNameFilter(e.target.value); setCurrentPage(1); }}
               style={{ paddingLeft: '40px', height: '40px', borderRadius: '8px' }}
             />
             <span style={{ position: 'absolute', left: '14px', top: '12px', color: 'var(--text-secondary)' }}>

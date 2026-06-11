@@ -367,7 +367,7 @@ export class SaasAdminController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
-    @Query('schoolId') schoolId?: string,
+    @Query('schoolName') schoolName?: string,
     @Query('status') status?: string,
     @Query('isArchived') isArchived?: string,
   ) {
@@ -379,7 +379,7 @@ export class SaasAdminController {
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 50,
       search,
-      schoolId,
+      schoolName,
       statuses,
       isArchivedBool,
     );

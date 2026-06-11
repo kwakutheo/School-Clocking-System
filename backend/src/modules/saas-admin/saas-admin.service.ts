@@ -2183,7 +2183,7 @@ export class SaasAdminService implements OnModuleInit {
     page: number = 1,
     limit: number = 50,
     search?: string,
-    schoolId?: string,
+    schoolName?: string,
     statuses?: string[],
     isArchived?: boolean,
   ): Promise<{ data: any[]; total: number; page: number; limit: number; totalPages: number }> {
@@ -2204,8 +2204,8 @@ export class SaasAdminService implements OnModuleInit {
       qb.andWhere('e.status IN (:...statuses)', { statuses });
     }
 
-    if (schoolId) {
-      qb.andWhere('e.tenantId = :schoolId', { schoolId });
+    if (schoolName && schoolName.trim() !== '') {
+      qb.andWhere('tenant.name ILIKE :schoolName', { schoolName: `%${schoolName.trim()}%` });
     }
 
     if (search && search.trim() !== '') {

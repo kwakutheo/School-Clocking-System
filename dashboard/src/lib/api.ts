@@ -406,7 +406,7 @@ export const saasAdminApi = {
     page?: number;
     limit?: number;
     search?: string;
-    schoolId?: string;
+    schoolName?: string;
     status?: string; // e.g. 'ACTIVE,SUSPENDED' or 'INACTIVE'
     isArchived?: boolean;
   }) => api.get("/saas-admin/employees", { params }),

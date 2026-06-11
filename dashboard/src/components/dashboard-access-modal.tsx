@@ -356,13 +356,35 @@ export default function DashboardAccessModal({ onClose }: DashboardAccessModalPr
           <>
             {/* Search */}
             <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)' }}>
-              <div className="search-bar" style={{ margin: 0 }}>
-                <Search size={16} />
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div style={{ position: 'absolute', left: 14, color: 'var(--text-muted)', pointerEvents: 'none' }}>
+                  <Search size={16} />
+                </div>
                 <input 
                   type="text" 
                   placeholder="Search HR admins or supervisors by name or code..." 
                   value={search}
                   onChange={e => setSearch(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px 12px 40px',
+                    borderRadius: 12,
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg-input)',
+                    color: 'var(--text-primary)',
+                    fontSize: 14,
+                    transition: 'all 0.2s ease',
+                    outline: 'none',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = 'var(--primary)';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(var(--primary-rgb), 0.15)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'var(--border)';
+                    e.target.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.02)';
+                  }}
                 />
               </div>
             </div>

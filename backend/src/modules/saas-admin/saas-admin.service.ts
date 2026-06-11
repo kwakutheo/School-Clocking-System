@@ -2406,12 +2406,29 @@ export class SaasAdminService implements OnModuleInit {
       throw new NotFoundException(`Employee with ID "${id}" not found.`);
     }
 
+    // Extract details before deletion for the notification
+    const empTenantId = emp.tenantId;
+    const empName = emp.user?.fullName || emp.employeeCode;
+    const empCode = emp.employeeCode;
+
     // Permanently delete the user (this cascades and deletes the employee)
     if (emp.user) {
       await this.userRepo.delete(emp.user.id);
     } else {
       // Fallback if there is no linked user somehow
       await this.employeeRepo.delete(emp.id);
+    }
+
+    // Notify the school admin via a targeted System Bulletin
+    if (empTenantId) {
+      const bulletin = this.bulletinRepo.create({
+        title: `System Admin Action: Staff Member Permanently Deleted`,
+        content: `Please be informed that the staff member **${empName}** (${empCode}) has been **Permanently Deleted** from the entire system by Global Administrator **${fullAdmin.fullName}**.\n\nAll their access has been permanently revoked and their record can no longer be retrieved. This action is irreversible.`,
+        type: BulletinType.WARNING,
+        targetTenantIds: [empTenantId],
+        isActive: true,
+      });
+      await this.bulletinRepo.save(bulletin);
     }
   }
 }

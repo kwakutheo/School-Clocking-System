@@ -276,14 +276,61 @@ export default function DashboardAccessModal({ onClose }: DashboardAccessModalPr
             </div>
 
             <div className="form-group" style={{ marginTop: 24 }}>
-              <label>Administrator Password <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
-              <input 
-                type="password"
-                className="input" 
-                placeholder="Enter your password to confirm"
-                value={adminPassword}
-                onChange={e => setAdminPassword(e.target.value)}
-              />
+              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8, display: 'block' }}>
+                Administrator Password <span style={{ color: 'var(--danger, #ef4444)' }}>*</span>
+              </label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div style={{ position: 'absolute', left: 14, color: 'var(--text-muted)', pointerEvents: 'none' }}>
+                  <Lock size={16} />
+                </div>
+                <input 
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password to confirm"
+                  value={adminPassword}
+                  onChange={e => setAdminPassword(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 40px',
+                    borderRadius: 12,
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg-input)',
+                    color: 'var(--text-primary)',
+                    fontSize: 14,
+                    transition: 'all 0.2s ease',
+                    outline: 'none',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#10b981';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'var(--border)';
+                    e.target.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.02)';
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: 12,
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    padding: 4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>

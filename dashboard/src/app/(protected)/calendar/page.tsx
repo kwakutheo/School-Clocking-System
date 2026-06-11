@@ -382,9 +382,6 @@ export default function AcademicCalendarPage() {
             <button className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 8 }} onClick={() => setShowCloneModal(true)}>
               <GraduationCap size={18} /> Import from Central Templates
             </button>
-            <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8 }} onClick={() => setShowYearModal(true)}>
-              <Plus size={18} /> Create Academic Year
-            </button>
           </div>
         )}
       </div>
@@ -399,9 +396,6 @@ export default function AcademicCalendarPage() {
             <div style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 8 }} onClick={() => setShowCloneModal(true)}>
                 <GraduationCap size={18} /> Import from Central Templates
-              </button>
-              <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8 }} onClick={() => setShowYearModal(true)}>
-                <Plus size={18} /> Create Custom Year
               </button>
             </div>
           )}

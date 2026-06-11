@@ -69,7 +69,7 @@ export class AuthService {
 
       if (user.isDashboardBlocked) {
         throw new UnauthorizedException(
-          'DASHBOARD_ACCESS_BLOCKED: Your access to the admin dashboard has been restricted by the school administrator.'
+          'DASHBOARD_ACCESS_BLOCKED: Your access to the admin dashboard has been restricted by the school super administrator.'
           + (user.dashboardBlockReason ? ` Reason: ${user.dashboardBlockReason}` : '')
         );
       }

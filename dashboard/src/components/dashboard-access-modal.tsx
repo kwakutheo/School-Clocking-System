@@ -12,9 +12,11 @@ export default function DashboardAccessModal({ onClose }: DashboardAccessModalPr
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   
-  // State for the inner "Block Reason" panel
+  // State for the inner panels (Block / Restore)
   const [blockingEmployee, setBlockingEmployee] = useState<any | null>(null);
+  const [restoringEmployee, setRestoringEmployee] = useState<any | null>(null);
   const [blockReason, setBlockReason] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -36,9 +38,11 @@ export default function DashboardAccessModal({ onClose }: DashboardAccessModalPr
 
   const handleBlockConfirm = async () => {
     if (!blockingEmployee) return;
+    if (!adminPassword) return alert('Administrator password is required.');
+    
     try {
       setProcessingId(blockingEmployee.id);
-      await employeesApi.setDashboardAccess(blockingEmployee.id, true, blockReason.trim() || undefined);
+      await employeesApi.setDashboardAccess(blockingEmployee.id, true, blockReason.trim() || undefined, adminPassword);
       
       // Update local state
       setStaff(prev => prev.map(s => 
@@ -49,27 +53,33 @@ export default function DashboardAccessModal({ onClose }: DashboardAccessModalPr
       
       setBlockingEmployee(null);
       setBlockReason('');
-    } catch (err) {
-      alert('Failed to block access. Please try again.');
+      setAdminPassword('');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to block access. Please check your password and try again.');
     } finally {
       setProcessingId(null);
     }
   };
 
-  const handleRestore = async (employeeId: string) => {
-    if (!confirm('Are you sure you want to restore dashboard access for this user?')) return;
+  const handleRestoreConfirm = async () => {
+    if (!restoringEmployee) return;
+    if (!adminPassword) return alert('Administrator password is required.');
+
     try {
-      setProcessingId(employeeId);
-      await employeesApi.setDashboardAccess(employeeId, false);
+      setProcessingId(restoringEmployee.id);
+      await employeesApi.setDashboardAccess(restoringEmployee.id, false, undefined, adminPassword);
       
       // Update local state
       setStaff(prev => prev.map(s => 
-        s.id === employeeId 
+        s.id === restoringEmployee.id 
           ? { ...s, user: { ...s.user, isDashboardBlocked: false, dashboardBlockReason: null, dashboardBlockedAt: null } } 
           : s
       ));
-    } catch (err) {
-      alert('Failed to restore access. Please try again.');
+
+      setRestoringEmployee(null);
+      setAdminPassword('');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to restore access. Please check your password and try again.');
     } finally {
       setProcessingId(null);
     }
@@ -144,11 +154,22 @@ export default function DashboardAccessModal({ onClose }: DashboardAccessModalPr
               </span>
             </div>
 
+            <div className="form-group" style={{ marginTop: 24 }}>
+              <label>Administrator Password <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
+              <input 
+                type="password"
+                className="input" 
+                placeholder="Enter your password to confirm"
+                value={adminPassword}
+                onChange={e => setAdminPassword(e.target.value)}
+              />
+            </div>
+
             <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>
               <button 
                 className="btn btn-ghost" 
                 style={{ flex: 1 }} 
-                onClick={() => { setBlockingEmployee(null); setBlockReason(''); }}
+                onClick={() => { setBlockingEmployee(null); setBlockReason(''); setAdminPassword(''); }}
               >
                 Cancel
               </button>
@@ -159,6 +180,58 @@ export default function DashboardAccessModal({ onClose }: DashboardAccessModalPr
                 disabled={processingId === blockingEmployee.id}
               >
                 {processingId === blockingEmployee.id ? 'Applying...' : 'Apply Restriction'}
+              </button>
+            </div>
+          </div>
+        ) : restoringEmployee ? (
+          <div style={{ padding: 24, flex: 1, overflowY: 'auto' }}>
+            <button 
+              className="btn btn-ghost" 
+              style={{ marginBottom: 16, padding: '6px 12px', fontSize: 13 }}
+              onClick={() => { setRestoringEmployee(null); setAdminPassword(''); }}
+            >
+              &larr; Back to list
+            </button>
+            
+            <div style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+              <p style={{ margin: '0 0 8px 0', fontSize: 14, fontWeight: 600 }}>You are about to restore access for:</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: 14 }}>
+                  {initials(restoringEmployee.user.fullName)}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 15 }}>{restoringEmployee.user.fullName}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{restoringEmployee.user.role === 'hr_admin' ? 'HR Admin' : 'Supervisor'} • {restoringEmployee.employeeCode}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginTop: 24 }}>
+              <label>Administrator Password <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
+              <input 
+                type="password"
+                className="input" 
+                placeholder="Enter your password to confirm"
+                value={adminPassword}
+                onChange={e => setAdminPassword(e.target.value)}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>
+              <button 
+                className="btn btn-ghost" 
+                style={{ flex: 1 }} 
+                onClick={() => { setRestoringEmployee(null); setAdminPassword(''); }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn" 
+                style={{ flex: 1, background: '#10b981', color: '#fff', border: 'none' }}
+                onClick={handleRestoreConfirm}
+                disabled={processingId === restoringEmployee.id}
+              >
+                {processingId === restoringEmployee.id ? 'Restoring...' : 'Restore Access'}
               </button>
             </div>
           </div>
@@ -237,10 +310,9 @@ export default function DashboardAccessModal({ onClose }: DashboardAccessModalPr
                             <button 
                               className="btn btn-ghost" 
                               style={{ color: '#10b981', borderColor: 'rgba(16, 185, 129, 0.3)', padding: '6px 12px', fontSize: 13, height: 'auto' }}
-                              onClick={() => handleRestore(s.id)}
-                              disabled={processingId === s.id}
+                              onClick={() => setRestoringEmployee(s)}
                             >
-                              {processingId === s.id ? 'Restoring...' : <><Unlock size={14} style={{ marginRight: 6 }} /> Restore Access</>}
+                              <Unlock size={14} style={{ marginRight: 6 }} /> Restore Access
                             </button>
                           ) : (
                             <button 

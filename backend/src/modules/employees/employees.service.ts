@@ -4,6 +4,7 @@ import {
   ConflictException,
   ForbiddenException,
   BadRequestException,
+  UnauthorizedException,
   OnModuleInit,
   Logger,
 } from '@nestjs/common';
@@ -828,8 +829,18 @@ export class EmployeesService implements OnModuleInit {
     id: string,
     blocked: boolean,
     reason: string | undefined,
+    adminPassword: string,
     adminUser: User,
   ): Promise<void> {
+    if (!adminPassword) {
+      throw new UnauthorizedException('Administrator password is required to confirm this action.');
+    }
+
+    const isPasswordValid = await bcrypt.compare(adminPassword, adminUser.passwordHash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid administrator password.');
+    }
+
     const emp = await this.findById(id);
 
     if (emp.user.role === UserRole.SUPER_ADMIN) {

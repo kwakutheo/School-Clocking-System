@@ -220,8 +220,8 @@ export const employeesApi = {
   delete: (id: string) => api.delete(`/employees/${id}`),
   resetPassword: (id: string, adminPassword: string) =>
     api.post(`/employees/${id}/reset-password`, { adminPassword }),
-  setDashboardAccess: (id: string, blocked: boolean, reason?: string) =>
-    api.patch(`/employees/${id}/dashboard-access`, { blocked, reason }),
+  setDashboardAccess: (id: string, blocked: boolean, reason: string | undefined, adminPassword: string) =>
+    api.patch(`/employees/${id}/dashboard-access`, { blocked, reason, adminPassword }),
 };
 
 // ── Academic Calendar ─────────────────────────────────────────────────────

@@ -149,10 +149,10 @@ export class EmployeesController {
   @ApiOperation({ summary: 'Block or restore dashboard access for HR/Supervisor' })
   setDashboardAccess(
     @Param('id') id: string,
-    @Body() body: { blocked: boolean; reason?: string },
+    @Body() body: { blocked: boolean; reason?: string; adminPassword: string },
     @CurrentUser() adminUser: User,
   ): Promise<void> {
-    return this.service.setDashboardBlock(id, body.blocked, body.reason, adminUser);
+    return this.service.setDashboardBlock(id, body.blocked, body.reason, body.adminPassword, adminUser);
   }
 
   @Get(':id/history')

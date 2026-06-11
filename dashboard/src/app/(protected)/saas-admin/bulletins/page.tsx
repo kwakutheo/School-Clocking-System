@@ -29,6 +29,11 @@ export default function BulletinsManagerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Pagination and View states
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
   // Form states
   const [showComposeModal, setShowComposeModal] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
@@ -261,21 +266,26 @@ export default function BulletinsManagerPage() {
           </p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
-          {bulletins.map((bulletin) => (
-            <div
-              key={bulletin.id}
-              className="card"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                padding: '24px',
-                background: 'var(--card-bg)',
-                border: '1px solid var(--border)',
-                borderRadius: '16px',
-                transition: 'all 0.3s ease',
-                position: 'relative',
-              }}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
+            {bulletins.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((bulletin) => {
+              const isExpanded = expandedIds.has(bulletin.id);
+              const needsExpansion = bulletin.content.length > 200;
+              
+              return (
+              <div
+                key={bulletin.id}
+                className="card"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '24px',
+                  background: 'var(--card-bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '16px',
+                  transition: 'all 0.3s ease',
+                  position: 'relative',
+                }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '20px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
@@ -289,9 +299,31 @@ export default function BulletinsManagerPage() {
                   <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '4px' }}>
                     {bulletin.title}
                   </h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.6', marginTop: '8px', whiteSpace: 'pre-wrap' }}>
-                    {bulletin.content}
-                  </p>
+                  <div style={{ marginTop: '8px' }}>
+                    <p style={{ 
+                      color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-wrap',
+                      ...( (!isExpanded && needsExpansion) ? { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {} )
+                    }}>
+                      {bulletin.content.split('**').map((part, i) =>
+                        i % 2 === 1 ? <strong key={i} style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{part}</strong> : part
+                      )}
+                    </p>
+                    {needsExpansion && (
+                      <button 
+                        onClick={() => setExpandedIds(prev => {
+                          const next = new Set(prev);
+                          if (next.has(bulletin.id)) next.delete(bulletin.id);
+                          else next.add(bulletin.id);
+                          return next;
+                        })}
+                        style={{ background: 'none', border: 'none', color: 'var(--primary)', padding: 0, cursor: 'pointer', marginTop: '6px', fontSize: '13px', fontWeight: 600, transition: 'color 0.2s' }}
+                        onMouseEnter={e => e.currentTarget.style.color = 'var(--primary-hover, #2563eb)'}
+                        onMouseLeave={e => e.currentTarget.style.color = 'var(--primary)'}
+                      >
+                        {isExpanded ? 'Show less' : 'Read more'}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', alignSelf: 'flex-start', paddingTop: '4px' }}>
@@ -330,7 +362,39 @@ export default function BulletinsManagerPage() {
                 </div>
               </div>
             </div>
-          ))}
+            )})}
+          </div>
+
+          {/* Pagination Controls */}
+          {bulletins.length > pageSize && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', padding: '16px', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '12px' }}>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, bulletins.length)} of {bulletins.length} bulletins
+              </span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  style={{ 
+                    padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                    background: currentPage === 1 ? 'transparent' : 'var(--bg-base)', border: '1px solid var(--border)', color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-primary)'
+                  }}
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(bulletins.length / pageSize), p + 1))}
+                  disabled={currentPage === Math.ceil(bulletins.length / pageSize)}
+                  style={{ 
+                    padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: currentPage === Math.ceil(bulletins.length / pageSize) ? 'not-allowed' : 'pointer',
+                    background: currentPage === Math.ceil(bulletins.length / pageSize) ? 'transparent' : 'var(--bg-base)', border: '1px solid var(--border)', color: currentPage === Math.ceil(bulletins.length / pageSize) ? 'var(--text-muted)' : 'var(--text-primary)'
+                  }}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -429,4 +429,19 @@ export class SaasAdminController {
       message: 'Employee has been returned to the school dashboard as Inactive. The school administrator must now manually activate their account.',
     };
   }
+
+  @Delete('employees/:id/permanently')
+  @ApiOperation({ summary: 'Permanently delete an employee and their user account with Super Admin password confirmation' })
+  async permanentlyDeleteEmployee(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: { adminPassword: string },
+  ) {
+    this.verifyGlobalSuperAdmin(req);
+    if (!body.adminPassword) {
+      throw new ForbiddenException('Password confirmation is required to permanently delete an employee.');
+    }
+    await this.adminService.permanentlyDeleteEmployee(id, req.user as User, body.adminPassword);
+    return { success: true, message: 'Employee permanently deleted from the system.' };
+  }
 }

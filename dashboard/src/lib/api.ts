@@ -416,4 +416,6 @@ export const saasAdminApi = {
     api.post(`/saas-admin/employees/${id}/archive`, { password }),
   unarchiveGlobalEmployee: (id: string) =>
     api.post(`/saas-admin/employees/${id}/unarchive`),
+  permanentlyDeleteEmployee: (id: string, adminPassword: string) =>
+    api.delete(`/saas-admin/employees/${id}/permanently`, { data: { adminPassword } }),
 };

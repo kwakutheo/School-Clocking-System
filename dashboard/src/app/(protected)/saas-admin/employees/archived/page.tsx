@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { saasAdminApi } from '@/lib/api';
-import { Search, Building2, UserCircle, UserCheck, ArrowLeft, Archive, X } from 'lucide-react';
+import { Search, Building2, UserCircle, UserCheck, ArrowLeft, Archive, X, MoreVertical, Trash2, Lock, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface EmployeeGlobal {
@@ -44,10 +44,20 @@ export default function ArchivedEmployeesPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
+  // Action Menu
+  const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0, bottom: 0 });
+
   // Reactivate Confirmation Modal
   const [reactivateModalOpen, setReactivateModalOpen] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState<EmployeeGlobal | null>(null);
   const [reactivateSubmitting, setReactivateSubmitting] = useState(false);
+
+  // Permanently Delete Modal
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Debounce search
   useEffect(() => {
@@ -102,6 +112,33 @@ export default function ArchivedEmployeesPage() {
   const openReactivateModal = (emp: EmployeeGlobal) => {
     setSelectedEmp(emp);
     setReactivateModalOpen(true);
+  };
+
+  const handlePermanentlyDelete = async () => {
+    if (!selectedEmp) return;
+    if (!adminPassword) {
+      alert('Administrator password is required to permanently delete.');
+      return;
+    }
+    setDeleteSubmitting(true);
+    try {
+      const res = await saasAdminApi.permanentlyDeleteEmployee(selectedEmp.id, adminPassword);
+      setDeleteModalOpen(false);
+      setAdminPassword('');
+      fetchArchivedEmployees();
+      alert(res.data.message);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to permanently delete employee.');
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  };
+
+  const openDeleteModal = (emp: EmployeeGlobal) => {
+    setSelectedEmp(emp);
+    setAdminPassword('');
+    setDeleteModalOpen(true);
   };
 
   const getPaginationPages = (total: number, page: number, maxButtons = 7): (number | '...')[] => {
@@ -268,14 +305,22 @@ export default function ArchivedEmployeesPage() {
                     </td>
                     <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                       <button
-                        onClick={() => openReactivateModal(emp)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (openActionMenu === emp.id) {
+                            setOpenActionMenu(null);
+                            return;
+                          }
+                          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                          setMenuPosition({ top: rect.bottom + 4, right: window.innerWidth - rect.right, bottom: 0 });
+                          setOpenActionMenu(emp.id);
+                        }}
                         className="btn btn-secondary"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '8px', border: '1px solid rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.08)', color: '#22c55e', cursor: 'pointer', transition: 'all 0.2s' }}
-                        title="Reactivate Employee"
-                        aria-label="Reactivate Employee"
+                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text-secondary)', cursor: 'pointer', transition: 'all 0.2s', padding: 0 }}
+                        title="Actions"
+                        aria-label="Actions"
                       >
-                        <UserCheck size={14} />
-                        Reactivate
+                        <MoreVertical size={16} />
                       </button>
                     </td>
                   </tr>
@@ -353,6 +398,99 @@ export default function ArchivedEmployeesPage() {
                 style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: '#22c55e', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '14px', transition: 'all 0.2s' }}
               >
                 {reactivateSubmitting ? 'Processing...' : 'Yes, Reactivate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Action Menu Dropdown ── */}
+      {openActionMenu && (() => {
+        const emp = employees.find(e => e.id === openActionMenu);
+        if (!emp) return null;
+        return (
+          <>
+            <div style={{ position: 'fixed', inset: 0, zIndex: 900 }} onClick={() => setOpenActionMenu(null)} />
+            <div style={{ position: 'fixed', top: menuPosition.top, bottom: menuPosition.bottom, right: menuPosition.right, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 6, display: 'flex', flexDirection: 'column', gap: 2, zIndex: 901, boxShadow: '0 10px 25px -5px rgba(0,0,0,0.25)', minWidth: 175 }} onClick={e => e.stopPropagation()}>
+              <button className="btn btn-sm btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', padding: '8px 12px', fontSize: 13, color: '#22c55e', border: 'none', background: 'transparent' }} onClick={() => { setOpenActionMenu(null); openReactivateModal(emp); }}>
+                <span style={{ marginRight: 10 }}><UserCheck size={14} /></span> Reactivate
+              </button>
+              <button className="btn btn-sm btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', padding: '8px 12px', fontSize: 13, color: 'var(--danger)', border: 'none', background: 'transparent' }} onClick={() => { setOpenActionMenu(null); openDeleteModal(emp); }}>
+                <span style={{ marginRight: 10 }}><Trash2 size={14} /></span> Permanently Delete
+              </button>
+            </div>
+          </>
+        );
+      })()}
+
+      {/* ── Permanently Delete Confirmation Modal ── */}
+      {deleteModalOpen && selectedEmp && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, animation: 'fadeIn 0.2s ease-out' }}>
+          <div className="card" style={{ width: '100%', maxWidth: '450px', padding: '32px', position: 'relative', boxShadow: '0 24px 48px rgba(0,0,0,0.5)', border: '1px solid var(--danger)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <AlertTriangle size={22} color="var(--danger)" />
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--danger)' }}>Permanently Delete Staff</h2>
+              </div>
+              <button onClick={() => setDeleteModalOpen(false)} title="Close" aria-label="Close" style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ padding: '16px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.2)', marginBottom: '24px' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>
+                You are about to <strong>PERMANENTLY DELETE</strong> <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>{selectedEmp.user?.fullName}</span>.
+                <br /><br />
+                This action is irreversible. It will wipe this user entirely from the system across all tenants. All associated data cannot be retrieved once this action is performed.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>
+                Confirm your Admin Password <span style={{ color: 'var(--danger)' }}>*</span>
+              </label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div style={{ position: 'absolute', left: 14, color: 'var(--text-muted)', pointerEvents: 'none' }}>
+                  <Lock size={16} />
+                </div>
+                <input 
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your super admin password..." 
+                  value={adminPassword}
+                  onChange={e => setAdminPassword(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px 12px 40px',
+                    borderRadius: 12,
+                    border: '1px solid var(--danger)',
+                    background: 'var(--bg-input)',
+                    color: 'var(--text-primary)',
+                    fontSize: 14,
+                    transition: 'all 0.2s ease',
+                    outline: 'none',
+                  }}
+                />
+                <button 
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ position: 'absolute', right: 14, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setDeleteModalOpen(false)} style={{ flex: 1, padding: '12px' }}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handlePermanentlyDelete}
+                disabled={deleteSubmitting || !adminPassword}
+                style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--danger)', color: '#fff', fontWeight: 700, cursor: (deleteSubmitting || !adminPassword) ? 'not-allowed' : 'pointer', fontSize: '14px', transition: 'all 0.2s', opacity: (deleteSubmitting || !adminPassword) ? 0.6 : 1 }}
+              >
+                {deleteSubmitting ? 'Deleting...' : 'Permanently Delete'}
               </button>
             </div>
           </div>

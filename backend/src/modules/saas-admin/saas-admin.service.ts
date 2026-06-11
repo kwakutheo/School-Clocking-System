@@ -2383,4 +2383,35 @@ export class SaasAdminService implements OnModuleInit {
       await this.bulletinRepo.save(bulletin);
     }
   }
+
+  /**
+   * Permanently delete an employee and their associated user account.
+   * This is irreversible and requires the global super admin password.
+   */
+  async permanentlyDeleteEmployee(id: string, adminUser: User, password: string): Promise<void> {
+    // Reload user with passwordHash from the database
+    const fullAdmin = await this.userRepo.findOne({ where: { id: adminUser.id } });
+    if (!fullAdmin) {
+      throw new NotFoundException('Admin user not found.');
+    }
+
+    // bcrypt password verification
+    const isPasswordValid = await bcrypt.compare(password, fullAdmin.passwordHash);
+    if (!isPasswordValid) {
+      throw new ForbiddenException('Incorrect password. Delete operation was denied.');
+    }
+
+    const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user'] });
+    if (!emp) {
+      throw new NotFoundException(`Employee with ID "${id}" not found.`);
+    }
+
+    // Permanently delete the user (this cascades and deletes the employee)
+    if (emp.user) {
+      await this.userRepo.delete(emp.user.id);
+    } else {
+      // Fallback if there is no linked user somehow
+      await this.employeeRepo.delete(emp.id);
+    }
+  }
 }

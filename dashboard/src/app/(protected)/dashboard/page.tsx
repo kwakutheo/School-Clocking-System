@@ -1004,17 +1004,16 @@ export default function DashboardPage() {
                         display: 'flex', 
                         gap: '14px',
                         background: isRead ? 'transparent' : `linear-gradient(90deg, ${accentColor}08 0%, transparent 100%)`,
-                        borderLeft: isRead ? '3px solid transparent' : `3px solid ${accentColor}`,
-                        transition: 'background 0.2s, opacity 0.2s',
-                        cursor: isRead ? 'default' : 'pointer',
+                        borderLeft: isRead ? '3px solid var(--border)' : `3px solid ${accentColor}`,
+                        transition: 'background 0.2s',
+                        cursor: 'default',
                         opacity: 1
                       }}
-                      onClick={() => markRead(b.id)}
                     >
                       {/* Unread dot / read check */}
                       <div style={{ flexShrink: 0, paddingTop: '3px' }}>
                         {isRead ? (
-                          <CheckCircle size={16} color="var(--text-muted)" style={{ opacity: 0.5 }} />
+                          <CheckCircle size={16} color="var(--text-muted)" style={{ opacity: 0.4 }} />
                         ) : (
                           <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: accentColor, marginTop: '4px', marginLeft: '4px', boxShadow: `0 0 8px ${accentColor}` }} />
                         )}
@@ -1023,7 +1022,7 @@ export default function DashboardPage() {
                       {/* Content */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
-                          <div style={{ fontSize: '14px', fontWeight: isRead ? 500 : 700, color: isRead ? 'var(--text-secondary)' : 'var(--text-primary)', lineHeight: 1.4 }}>{b.title}</div>
+                          <div style={{ fontSize: '14px', fontWeight: isRead ? 500 : 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>{b.title}</div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                             <button
                               onClick={(e) => { e.stopPropagation(); dismissBulletin(b.id); }}
@@ -1036,13 +1035,13 @@ export default function DashboardPage() {
                             </button>
                           </div>
                         </div>
-                        <p style={{ margin: '0 0 8px', fontSize: '13px', color: isRead ? 'var(--text-muted)' : 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                        <p style={{ margin: '0 0 8px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
                           {b.content.split('**').map((part: string, i: number) =>
-                            i % 2 === 1 ? <strong key={i} style={{ color: isRead ? 'var(--text-secondary)' : 'var(--text-primary)', fontWeight: 600 }}>{part}</strong> : part
+                            i % 2 === 1 ? <strong key={i} style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{part}</strong> : part
                           )}
                         </p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', padding: '2px 6px', borderRadius: '4px', background: `${accentColor}${isRead ? '10' : '18'}`, color: accentColor, border: `1px solid ${accentColor}${isRead ? '20' : '30'}`, opacity: isRead ? 0.7 : 1 }}>
+                          <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', padding: '2px 6px', borderRadius: '4px', background: `${accentColor}15`, color: accentColor, border: `1px solid ${accentColor}30` }}>
                             {b.type}
                           </span>
                           <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>

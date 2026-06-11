@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, ShieldAlert, Lock, Unlock, AlertTriangle } from 'lucide-react';
+import { X, Search, ShieldAlert, Lock, Unlock, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { employeesApi } from '@/lib/api';
 import { initials } from '@/lib/store';
 
@@ -17,6 +17,7 @@ export default function DashboardAccessModal({ onClose }: DashboardAccessModalPr
   const [restoringEmployee, setRestoringEmployee] = useState<any | null>(null);
   const [blockReason, setBlockReason] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -139,30 +140,98 @@ export default function DashboardAccessModal({ onClose }: DashboardAccessModalPr
               </div>
             </div>
 
-            <div className="form-group">
-              <label>Reason for restriction (Optional)</label>
-              <textarea 
-                className="input" 
-                rows={3} 
-                placeholder="e.g. Temporary leave of absence, Awaiting security review..."
-                value={blockReason}
-                onChange={e => setBlockReason(e.target.value)}
-                style={{ resize: 'none' }}
-              />
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+            <div className="form-group" style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8, display: 'block' }}>Reason for restriction (Optional)</label>
+              <div style={{ position: 'relative' }}>
+                <textarea 
+                  rows={3} 
+                  placeholder="e.g. Temporary leave of absence, Awaiting security review..."
+                  value={blockReason}
+                  onChange={e => setBlockReason(e.target.value)}
+                  style={{ 
+                    width: '100%',
+                    resize: 'none',
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg-input)',
+                    color: 'var(--text-primary)',
+                    fontSize: 14,
+                    transition: 'all 0.2s ease',
+                    outline: 'none',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = 'var(--primary)';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(var(--primary-rgb), 0.15)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'var(--border)';
+                    e.target.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.02)';
+                  }}
+                />
+              </div>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, display: 'block' }}>
                 This reason will be visible to the user when they attempt to log in to the dashboard.
               </span>
             </div>
 
             <div className="form-group" style={{ marginTop: 24 }}>
-              <label>Administrator Password <span style={{ color: 'var(--danger, #ef4444)' }}>*</span></label>
-              <input 
-                type="password"
-                className="input" 
-                placeholder="Enter your password to confirm"
-                value={adminPassword}
-                onChange={e => setAdminPassword(e.target.value)}
-              />
+              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8, display: 'block' }}>
+                Administrator Password <span style={{ color: 'var(--danger, #ef4444)' }}>*</span>
+              </label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div style={{ position: 'absolute', left: 14, color: 'var(--text-muted)', pointerEvents: 'none' }}>
+                  <Lock size={16} />
+                </div>
+                <input 
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password to confirm"
+                  value={adminPassword}
+                  onChange={e => setAdminPassword(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 40px',
+                    borderRadius: 12,
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg-input)',
+                    color: 'var(--text-primary)',
+                    fontSize: 14,
+                    transition: 'all 0.2s ease',
+                    outline: 'none',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = 'var(--danger, #ef4444)';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.15)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'var(--border)';
+                    e.target.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.02)';
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: 12,
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    padding: 4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>

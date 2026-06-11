@@ -78,7 +78,7 @@ export default function DashboardBlockedPage() {
         </h1>
         
         <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-          Hello <strong>{user.fullName}</strong>, your access to the school administrative dashboard has been temporarily restricted by the system administrator.
+          Hello <strong>{user.fullName}</strong>, your access to the school administrative dashboard has been temporarily restricted by your school super administrator.
         </p>
 
         {user.dashboardBlockReason && (

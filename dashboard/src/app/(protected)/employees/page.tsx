@@ -460,11 +460,6 @@ export default function EmployeesPage() {
                   <span style={{ marginRight: 10 }}>🔑</span> Reset Password
                 </button>
               )}
-              {can(userRole, 'employees.delete') && (
-                <button className="btn btn-sm btn-ghost" style={{ justifyContent: 'flex-start', width: '100%', padding: '8px 12px', fontSize: 13, color: 'var(--danger)', border: 'none', background: 'transparent' }} onClick={() => { setOpenActionMenu(null); setDeleteConfirm(emp.id); setDeleteInputName(''); }}>
-                  <span style={{ marginRight: 10 }}>🗑️</span> Delete Employee
-                </button>
-              )}
             </div>
           </>
         );

@@ -54,6 +54,15 @@ export class EmployeesService implements OnModuleInit {
       await this.dataSource.query(
         `ALTER TABLE users ADD COLUMN IF NOT EXISTS fcm_token TEXT NULL;`,
       );
+      await this.dataSource.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS is_dashboard_blocked BOOLEAN NOT NULL DEFAULT false;`,
+      );
+      await this.dataSource.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS dashboard_block_reason TEXT NULL;`,
+      );
+      await this.dataSource.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS dashboard_blocked_at TIMESTAMPTZ NULL;`,
+      );
 
       await this.dataSource.query(`
         CREATE TABLE IF NOT EXISTS employee_status_logs (
@@ -141,6 +150,7 @@ export class EmployeesService implements OnModuleInit {
       search?: string;
       status?: string;
       branchId?: string;
+      roles?: string;
     } = {},
   ): Promise<{
     data: Employee[];
@@ -187,6 +197,10 @@ export class EmployeesService implements OnModuleInit {
     if (opts.branchId) {
       qb.andWhere('branch.id = :branchId', { branchId: opts.branchId });
     }
+    if (opts.roles) {
+      const rolesArray = opts.roles.split(',').map(r => r.trim());
+      qb.andWhere('user.role IN (:...roles)', { roles: rolesArray });
+    }
 
     qb.orderBy('emp.employeeCode', 'ASC').skip(skip).take(limit);
     const [data, total] = await qb.getManyAndCount();
@@ -213,6 +227,10 @@ export class EmployeesService implements OnModuleInit {
     }
     if (opts.branchId) {
       cqb.andWhere('branchC.id = :branchId', { branchId: opts.branchId });
+    }
+    if (opts.roles) {
+      const rolesArray = opts.roles.split(',').map(r => r.trim());
+      cqb.andWhere('userC.role IN (:...roles)', { roles: rolesArray });
     }
 
     const rawCounts = await cqb
@@ -804,6 +822,46 @@ export class EmployeesService implements OnModuleInit {
     // Delete the user; the employee row cascades because
     // Employee.user has onDelete: 'CASCADE'.
     await this.userRepo.delete(emp.user.id);
+  }
+
+  async setDashboardBlock(
+    id: string,
+    blocked: boolean,
+    reason: string | undefined,
+    adminUser: User,
+  ): Promise<void> {
+    const emp = await this.findById(id);
+
+    if (emp.user.role === UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException('Super admins cannot be blocked from the dashboard.');
+    }
+
+    if (emp.user.role !== UserRole.HR_ADMIN && emp.user.role !== UserRole.SUPERVISOR) {
+      throw new BadRequestException('Dashboard blocking is only applicable to HR Admins and Supervisors.');
+    }
+
+    const oldValues = {
+      isDashboardBlocked: emp.user.isDashboardBlocked,
+      dashboardBlockReason: emp.user.dashboardBlockReason,
+    };
+
+    emp.user.isDashboardBlocked = blocked;
+    emp.user.dashboardBlockReason = blocked && reason ? reason : null;
+    emp.user.dashboardBlockedAt = blocked ? new Date() : null;
+
+    await this.userRepo.save(emp.user);
+
+    await this.auditService.log({
+      user: adminUser,
+      action: blocked ? 'BLOCK_DASHBOARD_ACCESS' : 'RESTORE_DASHBOARD_ACCESS',
+      module: 'EMPLOYEES',
+      targetId: id,
+      oldValues,
+      newValues: {
+        isDashboardBlocked: emp.user.isDashboardBlocked,
+        dashboardBlockReason: emp.user.dashboardBlockReason,
+      },
+    });
   }
 
   async getStatusHistory(employeeId: string): Promise<EmployeeStatusLog[]> {

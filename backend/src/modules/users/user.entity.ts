@@ -57,6 +57,15 @@ export class User extends TenantBaseEntity {
   @Column({ name: 'fcm_token', type: 'text', nullable: true })
   fcmToken: string | null;
 
+  @Column({ name: 'is_dashboard_blocked', default: false })
+  isDashboardBlocked: boolean;
+
+  @Column({ name: 'dashboard_block_reason', type: 'text', nullable: true })
+  dashboardBlockReason: string | null;
+
+  @Column({ name: 'dashboard_blocked_at', type: 'timestamp', nullable: true })
+  dashboardBlockedAt: Date | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

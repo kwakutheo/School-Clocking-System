@@ -66,6 +66,13 @@ export class AuthService {
           );
         }
       }
+
+      if (user.isDashboardBlocked) {
+        throw new UnauthorizedException(
+          'DASHBOARD_ACCESS_BLOCKED: Your access to the admin dashboard has been restricted by the school administrator.'
+          + (user.dashboardBlockReason ? ` Reason: ${user.dashboardBlockReason}` : '')
+        );
+      }
     }
 
     // Check if school subscription is active (suspended check)

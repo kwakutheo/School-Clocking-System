@@ -15,6 +15,8 @@ import {
   type Role,
 } from '@/lib/permissions';
 import { settingsApi } from '@/lib/api';
+import { useAuthStore } from '@/lib/store';
+import DashboardAccessModal from '@/components/dashboard-access-modal';
 
 const ROLE_DESCRIPTIONS: Record<Role, string> = {
   super_admin: 'Full system control. Cannot be restricted.',
@@ -32,6 +34,8 @@ export default function PermissionsPage() {
   const [matrix, setMatrix] = useState<PermissionMatrix>(() => loadPermissions());
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showAccessModal, setShowAccessModal] = useState(false);
+  const { user } = useAuthStore();
   const hasUnsavedChanges = React.useRef(false);
 
   // Sync server data into local state + cache once loaded
@@ -288,7 +292,52 @@ export default function PermissionsPage() {
         </table>
       </div>
 
+      {/* ── Dashboard Access Control (Super Admin Only) ────────────────────── */}
+      {user?.role === 'super_admin' && (
+        <div style={{ marginTop: 40, marginBottom: 40 }}>
+          <div style={{
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border)',
+            borderRadius: 12,
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+              <div style={{ display: 'flex', gap: 16 }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 12,
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  color: 'var(--danger, #ef4444)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <ShieldCheck size={24} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 4px 0' }}>Dashboard Access Control</h3>
+                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, maxWidth: 500, lineHeight: 1.5 }}>
+                    Restrict specific HR Admins or Supervisors from accessing this administrative dashboard. 
+                    Blocked users will still be able to use the mobile application for normal clocking activities.
+                  </p>
+                </div>
+              </div>
+              <button 
+                className="btn" 
+                style={{ background: 'var(--danger, #ef4444)', color: '#fff', border: 'none' }}
+                onClick={() => setShowAccessModal(true)}
+              >
+                Manage Restrictions
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
+      {showAccessModal && (
+        <DashboardAccessModal onClose={() => setShowAccessModal(false)} />
+      )}
     </>
   );
 }

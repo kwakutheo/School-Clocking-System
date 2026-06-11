@@ -158,6 +158,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     }
     if (isHydrated && user && user.tenantId === null && !impersonatedTenant && (pathname === '/dashboard' || pathname === '/')) {
       router.push('/saas-admin');
+      return;
+    }
+    if (isHydrated && user && user.isDashboardBlocked && pathname !== '/dashboard-blocked') {
+      router.push('/dashboard-blocked');
+      return;
     }
   }, [isHydrated, user, impersonatedTenant, router, pathname]);
 

@@ -21,7 +21,9 @@ import {
 import { EmployeesService } from './employees.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserRole } from '../../common/enums';
 import { Employee } from './employee.entity';
@@ -48,14 +50,16 @@ export class EmployeesController {
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'status', required: false, type: String })
   @ApiQuery({ name: 'branchId', required: false, type: String })
+  @ApiQuery({ name: 'roles', required: false, type: String })
   findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
     @Query('search') search?: string,
     @Query('status') status?: string,
     @Query('branchId') branchId?: string,
+    @Query('roles') roles?: string,
   ) {
-    return this.service.findAll({ page, limit, search, status, branchId });
+    return this.service.findAll({ page, limit, search, status, branchId, roles });
   }
 
   @Get('me')
@@ -137,6 +141,18 @@ export class EmployeesController {
     const emp = await this.service.findByUserId(user.id);
     if (!emp) throw new Error('Employee profile not found.');
     return this.service.getStatusHistory(emp.id);
+  }
+
+  @Patch(':id/dashboard-access')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Block or restore dashboard access for HR/Supervisor' })
+  setDashboardAccess(
+    @Param('id') id: string,
+    @Body() body: { blocked: boolean; reason?: string },
+    @CurrentUser() adminUser: User,
+  ): Promise<void> {
+    return this.service.setDashboardBlock(id, body.blocked, body.reason, adminUser);
   }
 
   @Get(':id/history')

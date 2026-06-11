@@ -9,6 +9,8 @@ export interface AuthUser {
   username?: string;
   role: 'employee' | 'supervisor' | 'hr_admin' | 'super_admin';
   isActive: boolean;
+  isDashboardBlocked?: boolean;
+  dashboardBlockReason?: string | null;
   tenantId: string | null;
   tenant?: {
     id: string;

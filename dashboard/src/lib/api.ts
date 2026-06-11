@@ -177,6 +177,7 @@ export const employeesApi = {
     search?: string;
     status?: string;
     branchId?: string;
+    roles?: string;
   }) =>
     api.get<{
       data: any[];
@@ -219,6 +220,8 @@ export const employeesApi = {
   delete: (id: string) => api.delete(`/employees/${id}`),
   resetPassword: (id: string, adminPassword: string) =>
     api.post(`/employees/${id}/reset-password`, { adminPassword }),
+  setDashboardAccess: (id: string, blocked: boolean, reason?: string) =>
+    api.patch(`/employees/${id}/dashboard-access`, { blocked, reason }),
 };
 
 // ── Academic Calendar ─────────────────────────────────────────────────────

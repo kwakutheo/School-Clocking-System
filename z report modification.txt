@@ -1,27 +1,98 @@
-You bring up an excellent architectural point. Real-world reporting must reflect the exact state of the organization *at that specific point in time*. 
+# Dashboard Access Block Feature
 
-If a school or employee did not exist (or was inactive/deleted) during the selected timeframe, showing them with a 0% score is fundamentally incorrect—they should be entirely omitted from that report.
+Allow the school **super admin** to block HR admins and supervisors from accessing the school's admin dashboard without suspending them system-wide. The blocked user can still use the mobile app for normal clocking. The super admin can reverse the block at any time.
 
-Here is exactly how I plan to fix this in the backend to ensure it perfectly mirrors real life:
+The control panel for this feature lives on the existing **Roles & Permissions** page and is **only visible to super admins**.
 
-### 1. Fixing School Rankings (Institution Level)
-Currently, the system iterates over all schools and if a school had 0 `expectedEmployeeDays` in the selected timeframe, it defaults to a 0% presence rate. 
-**The Fix:** 
-I will add a filter. If a school’s `expectedEmployeeDays` is exactly `0` for the selected timeframe (meaning no active employees were scheduled to work during those dates), **the school will be completely dropped from the returned list**. 
-* **Real-life result:** If you look at "4 Weeks Ago" and a school hadn't been onboarded yet, it simply won't be in the ranking list at all.
+---
 
-### 2. Fixing Employee Rankings (Staff Level)
-Currently, the `getEmployeeRankings` method calculates scores for every employee. If they were hired *after* the timeframe, their `expectedDays` is calculated as 0, which results in a 0% completion score.
-**The Fix:**
-Inside the loop that calculates employee metrics, I will add a check: if `expectedDays === 0` (meaning they were not hired yet, or they were suspended/deleted for the entirety of that specific timeframe), **I will `continue` and skip adding that employee to the results array.**
-* **Real-life result:** If Kwame was hired 2 weeks ago, and you view the "4 Weeks Ago" ranking, Kwame will not be in the list.
+## Proposed Changes
 
-### 3. Handling Deleted/Suspended Entities (The Time-Travel Rule)
-Because you mentioned that schools and employees will be removed over time:
-* If an employee was active 4 weeks ago, but is deleted/suspended *today*, they **should still appear** in the "4 Weeks Ago" report because they were active *then*. 
-* The system's `EmployeeStatusLog` already tracks this history correctly, but I will ensure the filtering logic relies strictly on the historical `expectedDays > 0` metric, rather than checking if `employee.status === 'active'` *today*.
+### Backend
 
-**Summary of the Code Change:**
-In `saas-admin.service.ts`:
-1. In `findAllTenants()`: Filter out any tenant where `metrics.expectedEmployeeDays === 0`.
-2. In `getEmployeeRankingRows()`: Skip pushing any employee into the `results` array if `expectedDays === 0`.
+#### [MODIFY] [user.entity.ts](file:///d:/source_codes/school_clocking_system/backend/src/modules/users/user.entity.ts)
+Add three new nullable/defaulted columns:
+- `isDashboardBlocked: boolean` (default: `false`)
+- `dashboardBlockReason: string | null`
+- `dashboardBlockedAt: Date | null`
+
+#### [MODIFY] [employees.service.ts](file:///d:/source_codes/school_clocking_system/backend/src/modules/employees/employees.service.ts)
+- Add `ALTER TABLE` migrations in `onModuleInit` for the three new `users` columns (matches existing pattern).
+- Add `setDashboardBlock(employeeId, blocked, reason, adminUser)` method that:
+  - Looks up the employee, validates it belongs to the same tenant.
+  - Ensures only `hr_admin` or `supervisor` users can be blocked (super admins are immune).
+  - Updates `user.isDashboardBlocked`, `user.dashboardBlockReason`, `user.dashboardBlockedAt`.
+  - Writes an audit log entry.
+
+#### [MODIFY] [employees.controller.ts](file:///d:/source_codes/school_clocking_system/backend/src/modules/employees/employees.controller.ts)
+Add `PATCH /employees/:id/dashboard-access` — requires `JwtAuthGuard` + `super_admin` role only. Body: `{ blocked: boolean, reason?: string }`.
+
+#### [MODIFY] [auth.service.ts](file:///d:/source_codes/school_clocking_system/backend/src/modules/auth/auth.service.ts)
+In `validateUser`, after the existing `inactive`/`suspended` checks, add:
+```ts
+if (isWebDashboardLogin && user.isDashboardBlocked) {
+  throw new UnauthorizedException(
+    'DASHBOARD_ACCESS_BLOCKED: Your access to the admin dashboard has been restricted by the school administrator.'
+    + (user.dashboardBlockReason ? ` Reason: ${user.dashboardBlockReason}` : '')
+  );
+}
+```
+Mobile app logins skip this check because `context` is not `'central_dashboard'`.
+
+---
+
+### Frontend
+
+#### [MODIFY] [store.ts](file:///d:/source_codes/school_clocking_system/dashboard/src/lib/store.ts)
+Add `isDashboardBlocked?: boolean` to the `AuthUser` interface.
+
+#### [MODIFY] [api.ts](file:///d:/source_codes/school_clocking_system/dashboard/src/lib/api.ts)
+Add to `employeesApi`:
+```ts
+setDashboardAccess: (id: string, blocked: boolean, reason?: string) =>
+  api.patch(`/employees/${id}/dashboard-access`, { blocked, reason }),
+```
+
+Also add a new `permissionsApi` section:
+```ts
+listAdminStaff: () => api.get('/employees', { params: { roles: 'hr_admin,supervisor', limit: 200 } }),
+```
+
+#### [NEW] [dashboard-blocked/page.tsx](file:///d:/source_codes/school_clocking_system/dashboard/src/app/dashboard-blocked/page.tsx)
+A premium standalone page shown when a blocked user tries to access the dashboard. Features:
+- Large animated lock icon
+- "Dashboard Access Restricted" heading
+- Personalized message + block reason (if any)
+- "Contact your administrator" info
+- Logout button
+
+#### [MODIFY] [layout.tsx](file:///d:/source_codes/school_clocking_system/dashboard/src/app/(protected)/layout.tsx)
+In the `useEffect` that calls `authApi.me()`, if the returned user has `isDashboardBlocked === true`, immediately redirect to `/dashboard-blocked` instead of letting them in.
+
+#### [MODIFY] [permissions/page.tsx](file:///d:/source_codes/school_clocking_system/dashboard/src/app/(protected)/permissions/page.tsx)
+Add a new section **below** the existing permissions matrix, visible **only when `user.role === 'super_admin'`**:
+
+- **Section header**: "Dashboard Access Control" with a shield/lock icon and a description.
+- **"Manage Restrictions" button** in the section header → opens the management modal.
+- **Management Modal**:
+  - Title: "Dashboard Access Restrictions"
+  - Search bar to filter staff by name.
+  - Scrollable list of all HR Admins & Supervisors in the school, each showing:
+    - Avatar initials + full name + role badge
+    - Status badge: `RESTRICTED` (red) or `FULL ACCESS` (green)
+    - If restricted: shows reason + date blocked
+    - Action button: **"Block Access"** or **"Restore Access"** 
+  - Clicking "Block Access" opens a small inner panel to enter an optional reason, then confirm.
+  - Clicking "Restore Access" unblocks immediately with a confirmation toast.
+
+---
+
+## Verification Plan
+
+### Manual Verification
+1. Log in as super admin → go to Permissions page → see the new "Dashboard Access Control" section.
+2. Block an HR admin with a reason → confirm modal closes and list shows `RESTRICTED` badge.
+3. Log out → try to log in as the blocked HR admin → expect to see the `/dashboard-blocked` page with the correct reason.
+4. Log back in as super admin → restore access → confirm badge changes to `FULL ACCESS`.
+5. Log in as the HR admin again → confirm normal dashboard access is restored.
+6. Confirm the blocked HR admin can still use the mobile app (mobile context does not send `central_dashboard`).

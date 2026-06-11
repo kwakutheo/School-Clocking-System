@@ -483,27 +483,7 @@ export default function AcademicCalendarPage() {
                                 {isCurrentTerm && <span className="badge badge-green" style={{ marginTop: 2, fontSize: 10, padding: '2px 6px' }}>Current Term</span>}
                               </div>
                               <div style={{ display: 'flex', gap: 4 }}>
-                              {can(userRole, 'calendar.edit') && (
-                              <button 
-                                onClick={() => openEditTerm(term)} 
-                                style={{ color: 'var(--text-secondary)' }}
-                                aria-label="Edit Term"
-                                title="Edit Term"
-                              >
-                                <Edit2 size={14} />
-                              </button>
-                              )}
-                              {can(userRole, 'calendar.delete') && (
-                              <button 
-                                onClick={() => deleteTerm(term.id)} 
-                                style={{ color: 'var(--danger)' }}
-                                aria-label="Delete Term"
-                                title="Delete Term"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                              )}
-                            </div>
+                              </div>
                           </div>
 
                           <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: 6, fontSize: 12 }}>
@@ -548,16 +528,7 @@ export default function AcademicCalendarPage() {
                                         {format(parseISO(b.startDate), 'dd MMM')} — {format(parseISO(b.endDate), 'dd MMM')}
                                       </div>
                                     </div>
-                                    {can(userRole, 'calendar.delete') && (
-                                    <button 
-                                      onClick={() => deleteBreak(b.id)} 
-                                      style={{ color: 'var(--danger)', opacity: 0.6 }}
-                                      aria-label="Delete Break"
-                                      title="Delete Break"
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
-                                    )}
+
                                   </div>
                                 ))}
                               </div>

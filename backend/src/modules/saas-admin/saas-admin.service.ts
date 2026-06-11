@@ -2423,7 +2423,7 @@ export class SaasAdminService implements OnModuleInit {
     if (empTenantId) {
       const bulletin = this.bulletinRepo.create({
         title: `System Admin Action: Staff Member Permanently Deleted`,
-        content: `Please be informed that the staff member **${empName}** (${empCode}) has been **Permanently Deleted** from the entire system by Global Administrator **${fullAdmin.fullName}**.\n\nAll their access has been permanently revoked and their record can no longer be retrieved. This action is irreversible.`,
+        content: `Please be informed that the staff member **${empName}** (${empCode}) has been **Permanently Deleted** from the entire system by Central Management Administrator, **${fullAdmin.fullName}**.\n\nAll of his/her access has been permanently revoked and his/her record can no longer be retrieved. This action is irreversible.`,
         type: BulletinType.WARNING,
         targetTenantIds: [empTenantId],
         isActive: true,

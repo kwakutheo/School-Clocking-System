@@ -155,6 +155,14 @@ export default function DashboardPage() {
     try { localStorage.setItem(readKey, JSON.stringify([...next])); } catch { /* ignore */ }
   };
 
+  const markAllAsRead = () => {
+    if (!readKey) return;
+    const allIds = activeBulletins.map(b => b.id);
+    const next = new Set([...readIds, ...allIds]);
+    setReadIds(next);
+    try { localStorage.setItem(readKey, JSON.stringify([...next])); } catch { /* ignore */ }
+  };
+
   const dismissBulletin = (id: string) => {
     const next = new Set([...dismissedIds, id]);
     setDismissedIds(next);
@@ -951,75 +959,104 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => setShowAllBulletins(false)}
-                aria-label="Close"
-                style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <X size={14} />
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllAsRead}
+                    style={{ background: 'var(--primary-color-dim)', border: 'none', color: 'var(--primary)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', padding: '6px 12px', borderRadius: '6px', transition: 'background 0.2s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--primary-color-dim-hover, rgba(59, 130, 246, 0.15))'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'var(--primary-color-dim)'}
+                  >
+                    Mark all as read
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowAllBulletins(false)}
+                  aria-label="Close"
+                  style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
             </div>
 
             {/* Bulletin List */}
             <div style={{ overflowY: 'auto', flex: 1, padding: '8px 0' }}>
-              {activeBulletins.length === 0 ? (
-                <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                  <Bell size={36} style={{ opacity: 0.3, margin: '0 auto 12px', display: 'block' }} />
-                  <p style={{ margin: 0, fontSize: '14px' }}>No announcements yet.</p>
-                </div>
-              ) : activeBulletins.map((b) => {
-                const isRead = readIds.has(b.id);
-                const isDismissed = dismissedIds.has(b.id);
-                const accentColor = b.type === 'warning' ? '#ef4444' : b.type === 'success' ? '#22c55e' : b.type === 'maintenance' ? '#eab308' : '#3b82f6';
-                return (
-                  <div
-                    key={b.id}
-                    style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '14px', opacity: isDismissed ? 0.45 : 1, transition: 'opacity 0.2s' }}
-                    onClick={() => markRead(b.id)}
-                  >
-                    {/* Unread dot / read check */}
-                    <div style={{ flexShrink: 0, paddingTop: '3px' }}>
-                      {isRead || isDismissed ? (
-                        <CheckCircle size={16} color="var(--text-secondary)" style={{ opacity: 0.5 }} />
-                      ) : (
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: accentColor, marginTop: '4px', marginLeft: '4px', boxShadow: `0 0 6px ${accentColor}88` }} />
-                      )}
+              {(() => {
+                const visibleInModal = activeBulletins.filter(b => !dismissedIds.has(b.id));
+                if (visibleInModal.length === 0) {
+                  return (
+                    <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      <Bell size={36} style={{ opacity: 0.3, margin: '0 auto 12px', display: 'block' }} />
+                      <p style={{ margin: 0, fontSize: '14px' }}>No active announcements.</p>
                     </div>
+                  );
+                }
+                return visibleInModal.map((b) => {
+                  const isRead = readIds.has(b.id);
+                  const accentColor = b.type === 'warning' ? '#ef4444' : b.type === 'success' ? '#22c55e' : b.type === 'maintenance' ? '#eab308' : '#3b82f6';
+                  return (
+                    <div
+                      key={b.id}
+                      style={{ 
+                        padding: '16px 24px', 
+                        borderBottom: '1px solid var(--border)', 
+                        display: 'flex', 
+                        gap: '14px',
+                        background: isRead ? 'transparent' : `linear-gradient(90deg, ${accentColor}08 0%, transparent 100%)`,
+                        borderLeft: isRead ? '3px solid transparent' : `3px solid ${accentColor}`,
+                        transition: 'background 0.2s, opacity 0.2s',
+                        cursor: isRead ? 'default' : 'pointer',
+                        opacity: 1
+                      }}
+                      onClick={() => markRead(b.id)}
+                    >
+                      {/* Unread dot / read check */}
+                      <div style={{ flexShrink: 0, paddingTop: '3px' }}>
+                        {isRead ? (
+                          <CheckCircle size={16} color="var(--text-muted)" style={{ opacity: 0.5 }} />
+                        ) : (
+                          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: accentColor, marginTop: '4px', marginLeft: '4px', boxShadow: `0 0 8px ${accentColor}` }} />
+                        )}
+                      </div>
 
-                    {/* Content */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
-                        <div style={{ fontSize: '13px', fontWeight: isRead ? 600 : 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>{b.title}</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                          {!isDismissed && (
+                      {/* Content */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
+                          <div style={{ fontSize: '14px', fontWeight: isRead ? 500 : 700, color: isRead ? 'var(--text-secondary)' : 'var(--text-primary)', lineHeight: 1.4 }}>{b.title}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                             <button
                               onClick={(e) => { e.stopPropagation(); dismissBulletin(b.id); }}
-                              title="Dismiss announcement"
-                              style={{ width: '24px', height: '24px', borderRadius: '6px', border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+                              title="Delete announcement"
+                              style={{ width: '26px', height: '26px', borderRadius: '6px', border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+                              onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = '#ef444415'; e.currentTarget.style.borderColor = '#ef444450'; }}
+                              onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'var(--border)'; }}
                             >
-                              <Trash2 size={12} />
+                              <Trash2 size={14} />
                             </button>
+                          </div>
+                        </div>
+                        <p style={{ margin: '0 0 8px', fontSize: '13px', color: isRead ? 'var(--text-muted)' : 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                          {b.content.split('**').map((part: string, i: number) =>
+                            i % 2 === 1 ? <strong key={i} style={{ color: isRead ? 'var(--text-secondary)' : 'var(--text-primary)', fontWeight: 600 }}>{part}</strong> : part
+                          )}
+                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', padding: '2px 6px', borderRadius: '4px', background: `${accentColor}${isRead ? '10' : '18'}`, color: accentColor, border: `1px solid ${accentColor}${isRead ? '20' : '30'}`, opacity: isRead ? 0.7 : 1 }}>
+                            {b.type}
+                          </span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                            {b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                          </span>
+                          {!isRead && (
+                            <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--primary)', background: 'var(--primary-color-dim)', padding: '2px 6px', borderRadius: '4px' }}>New</span>
                           )}
                         </div>
                       </div>
-                      <p style={{ margin: '0 0 6px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                        {b.content.split('**').map((part: string, i: number) =>
-                          i % 2 === 1 ? <strong key={i} style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{part}</strong> : part
-                        )}
-                      </p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', padding: '2px 6px', borderRadius: '4px', background: `${accentColor}18`, color: accentColor, border: `1px solid ${accentColor}30` }}>
-                          {b.type}
-                        </span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                          {b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
-                        </span>
-                        {isDismissed && <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>Dismissed</span>}
-                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
 
             {/* Footer */}

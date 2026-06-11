@@ -46,7 +46,7 @@ export default function ArchivedEmployeesPage() {
 
   // Action Menu
   const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
-  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0, bottom: 0 });
+  const [menuPosition, setMenuPosition] = useState<{ top?: number; bottom?: number; right: number }>({ right: 0 });
 
   // Reactivate Confirmation Modal
   const [reactivateModalOpen, setReactivateModalOpen] = useState(false);
@@ -312,7 +312,13 @@ export default function ArchivedEmployeesPage() {
                             return;
                           }
                           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                          setMenuPosition({ top: rect.bottom + 4, right: window.innerWidth - rect.right, bottom: 0 });
+                          const menuHeight = 100;
+                          const spaceBelow = window.innerHeight - rect.bottom;
+                          if (spaceBelow < menuHeight) {
+                            setMenuPosition({ bottom: window.innerHeight - rect.top + 4, right: window.innerWidth - rect.right });
+                          } else {
+                            setMenuPosition({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                          }
                           setOpenActionMenu(emp.id);
                         }}
                         className="btn btn-secondary"

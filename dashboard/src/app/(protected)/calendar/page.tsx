@@ -528,7 +528,16 @@ export default function AcademicCalendarPage() {
                                         {format(parseISO(b.startDate), 'dd MMM')} — {format(parseISO(b.endDate), 'dd MMM')}
                                       </div>
                                     </div>
-
+                                    {can(userRole, 'calendar.delete') && (
+                                    <button 
+                                      onClick={() => deleteBreak(b.id)} 
+                                      style={{ color: 'var(--danger)', opacity: 0.6 }}
+                                      aria-label="Delete Break"
+                                      title="Delete Break"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                    )}
                                   </div>
                                 ))}
                               </div>

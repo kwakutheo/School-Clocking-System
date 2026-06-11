@@ -65,7 +65,19 @@ export function AdminManualClockModal({ onClose, onSuccess, selectedDate }: Prop
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const eligibleEmployees = employees ?? [];
+  // Determine the effective date for this clock entry
+  const effectiveDate = useCustomTime && customDate ? customDate : todayDateString;
+
+  // Only show employees who existed on (or before) the effective date.
+  // Employees registered AFTER the selected date are excluded — they didn't exist then.
+  const allEmployees = employees ?? [];
+  const eligibleEmployees = allEmployees.filter((e: any) => {
+    if (!e.createdAt) return true; // no creation date info → include safely
+    const empDate = format(new Date(e.createdAt), 'yyyy-MM-dd');
+    return empDate <= effectiveDate;
+  });
+  const filteredOutCount = allEmployees.length - eligibleEmployees.length;
+
   const selectedEmp = eligibleEmployees.find((e: any) => e.id === employeeId);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -281,6 +293,14 @@ export function AdminManualClockModal({ onClose, onSuccess, selectedDate }: Prop
                         if (val === todayDateString && customTime && customTime > currentTime) {
                           setCustomTime(currentTime);
                         }
+                        // Clear the selected employee if they were registered after the new date
+                        if (employeeId) {
+                          const emp = allEmployees.find((e: any) => e.id === employeeId);
+                          if (emp?.createdAt) {
+                            const empDate = format(new Date(emp.createdAt), 'yyyy-MM-dd');
+                            if (empDate > val) setEmployeeId('');
+                          }
+                        }
                       }}
                     />
                   </div>
@@ -305,6 +325,11 @@ export function AdminManualClockModal({ onClose, onSuccess, selectedDate }: Prop
                 <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 0 }}>
                   Entry is restricted to the current week (Monday onwards). Future dates/times and weekends are not permitted.
                 </p>
+                {filteredOutCount > 0 && (
+                  <div style={{ fontSize: 12, color: '#f59e0b', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 8, padding: '8px 12px' }}>
+                    <strong>{filteredOutCount}</strong> employee{filteredOutCount !== 1 ? 's' : ''} hidden — registered after this date and cannot be clocked for it.
+                  </div>
+                )}
                 {customDate !== todayDateString && selectedEmp?.shift && (
                   <div style={{ fontSize: 12, color: 'var(--primary)', marginTop: 4, background: 'rgba(59,130,246,0.1)', padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(59,130,246,0.2)' }}>
                     <strong>Shift Constraint:</strong> Time must be within {selectedEmp.shift.startTime} - {selectedEmp.shift.endTime}

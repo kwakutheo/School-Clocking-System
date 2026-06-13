@@ -46,35 +46,36 @@ export function AttendanceChart({ data }: { data: Log[] }) {
     <div style={{ width: '100%', height: 280, minHeight: 280 }}>
       <ResponsiveContainer width="100%" height="100%" debounce={100}>
         <BarChart data={chartData} barGap={4}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, rgba(255,255,255,0.05))" vertical={false} />
           <XAxis
             dataKey="hour"
-            tick={{ fill: '#64748b', fontSize: 11 }}
-            axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+            tick={{ fill: 'var(--text-secondary, #64748b)', fontSize: 11 }}
+            axisLine={{ stroke: 'var(--border-color, rgba(255,255,255,0.08))' }}
             tickLine={false}
           />
           <YAxis
-            tick={{ fill: '#64748b', fontSize: 11 }}
+            tick={{ fill: 'var(--text-secondary, #64748b)', fontSize: 11 }}
             axisLine={false}
             tickLine={false}
             allowDecimals={false}
           />
           <Tooltip
             contentStyle={{
-              background: '#0f1420',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'var(--bg-card, #0f1420)',
+              border: '1px solid var(--border-color, rgba(255,255,255,0.08))',
               borderRadius: 10,
               fontSize: 12,
-              color: '#f1f5f9',
+              color: 'var(--text-primary, #f1f5f9)',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
             }}
-            cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+            cursor={{ fill: 'var(--border-color, rgba(128,128,128,0.1))' }}
           />
-          <Bar dataKey="clockIns" name="Clock In" radius={[4, 4, 0, 0]} maxBarSize={28}>
+          <Bar dataKey="clockIns" name="Clock In" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={28}>
             {chartData.map((_, i) => (
               <Cell key={`in-${i}`} fill="#10b981" fillOpacity={0.85} />
             ))}
           </Bar>
-          <Bar dataKey="clockOuts" name="Clock Out" radius={[4, 4, 0, 0]} maxBarSize={28}>
+          <Bar dataKey="clockOuts" name="Clock Out" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={28}>
             {chartData.map((_, i) => (
               <Cell key={`out-${i}`} fill="#ef4444" fillOpacity={0.85} />
             ))}

@@ -404,7 +404,7 @@ export class SaasAdminService implements OnModuleInit {
 
   async getGlobalAuditLogs(): Promise<AuditLog[]> {
     return this.connection.getRepository(AuditLog).find({
-      where: { tenantId: IsNull() },
+      where: { user: { tenantId: IsNull() } },
       relations: ['user'],
       order: { createdAt: 'DESC' },
       take: 200,

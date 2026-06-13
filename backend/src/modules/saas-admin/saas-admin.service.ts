@@ -1141,7 +1141,7 @@ export class SaasAdminService implements OnModuleInit {
     initials?: string;
     adminUsername: string;
     adminPasswordHash: string; // Plain password passed from controller which we will hash
-  }): Promise<Tenant> {
+  }, adminUser: User): Promise<Tenant> {
     const cleanSlug = this.normalizeSlugValue(data.slug);
     const initialsNorm = this.normalizeInitialsValue(data.initials);
 
@@ -1218,6 +1218,13 @@ export class SaasAdminService implements OnModuleInit {
       await queryRunner.manager.save(User, adminUser);
 
       await queryRunner.commitTransaction();
+      await this.auditService.log({
+        user: adminUser,
+        action: 'ONBOARD_TENANT',
+        module: 'TENANTS',
+        targetId: savedTenant.id,
+        newValues: { name: savedTenant.name, slug: savedTenant.slug, initials: savedTenant.initials },
+      });
       return savedTenant;
     } catch (err: any) {
       await queryRunner.rollbackTransaction();
@@ -1248,14 +1255,22 @@ export class SaasAdminService implements OnModuleInit {
   }
 
   /** Toggle active/suspended state of a school. */
-  async toggleTenantStatus(id: string, isActive: boolean): Promise<Tenant> {
+  async toggleTenantStatus(id: string, isActive: boolean, adminUser: User): Promise<Tenant> {
     const tenant = await this.tenantRepo.findOne({ where: { id } });
     if (!tenant) {
       throw new NotFoundException(`School with ID "${id}" not found.`);
     }
 
     tenant.isActive = isActive;
-    return this.tenantRepo.save(tenant);
+    const saved = await this.tenantRepo.save(tenant);
+    await this.auditService.log({
+      user: adminUser,
+      action: 'TOGGLE_TENANT_STATUS',
+      module: 'TENANTS',
+      targetId: saved.id,
+      newValues: { isActive: saved.isActive },
+    });
+    return saved;
   }
 
   /** Get platform-wide business and usage stats for the system owner. */
@@ -1493,6 +1508,7 @@ export class SaasAdminService implements OnModuleInit {
       logoUrl?: string;
       customDomain?: string;
     },
+    adminUser: User,
   ): Promise<Tenant> {
     const tenant = await this.tenantRepo.findOne({ where: { id } });
     if (!tenant) {
@@ -1568,7 +1584,15 @@ export class SaasAdminService implements OnModuleInit {
     }
     if (data.logoUrl !== undefined) tenant.logoUrl = data.logoUrl || null;
 
-    return this.tenantRepo.save(tenant);
+    const saved = await this.tenantRepo.save(tenant);
+    await this.auditService.log({
+      user: adminUser,
+      action: 'UPDATE_TENANT_BRANDING',
+      module: 'TENANTS',
+      targetId: saved.id,
+      newValues: { name: saved.name, slug: saved.slug, customDomain: saved.customDomain, primaryColor: saved.primaryColor },
+    });
+    return saved;
   }
 
   // ── Bulletins / System CRM Operations ──────────────────────────────────────
@@ -1609,7 +1633,7 @@ export class SaasAdminService implements OnModuleInit {
     content: string;
     type: BulletinType;
     targetTenantIds?: string[] | null;
-  }): Promise<SystemBulletin> {
+  }, adminUser: User): Promise<SystemBulletin> {
     if (!data.title || !data.content) {
       throw new BadRequestException(
         'Title and content are required to publish a bulletin.',
@@ -1626,7 +1650,15 @@ export class SaasAdminService implements OnModuleInit {
           ? data.targetTenantIds
           : null,
     });
-    return this.bulletinRepo.save(bulletin);
+    const saved = await this.bulletinRepo.save(bulletin);
+    await this.auditService.log({
+      user: adminUser,
+      action: 'PUBLISH_BULLETIN',
+      module: 'BULLETINS',
+      targetId: saved.id,
+      newValues: { title: saved.title, type: saved.type },
+    });
+    return saved;
   }
 
   /** Update a bulletin status or body. */
@@ -1638,6 +1670,7 @@ export class SaasAdminService implements OnModuleInit {
       type?: BulletinType;
       isActive?: boolean;
     },
+    adminUser: User,
   ): Promise<SystemBulletin> {
     const bulletin = await this.bulletinRepo.findOne({ where: { id } });
     if (!bulletin) {
@@ -1651,18 +1684,34 @@ export class SaasAdminService implements OnModuleInit {
     if (data.type) bulletin.type = data.type;
     if (data.isActive !== undefined) bulletin.isActive = data.isActive;
 
-    return this.bulletinRepo.save(bulletin);
+    const saved = await this.bulletinRepo.save(bulletin);
+    await this.auditService.log({
+      user: adminUser,
+      action: 'UPDATE_BULLETIN',
+      module: 'BULLETINS',
+      targetId: saved.id,
+      newValues: { title: saved.title, type: saved.type, isActive: saved.isActive },
+    });
+    return saved;
   }
 
   /** Delete a bulletin permanently. */
-  async deleteBulletin(id: string): Promise<void> {
+  async deleteBulletin(id: string, adminUser: User): Promise<void> {
     const bulletin = await this.bulletinRepo.findOne({ where: { id } });
     if (!bulletin) {
       throw new NotFoundException(
         `Bulletin announcement with ID "${id}" not found.`,
       );
     }
+    const title = bulletin.title;
     await this.bulletinRepo.remove(bulletin);
+    await this.auditService.log({
+      user: adminUser,
+      action: 'DELETE_BULLETIN',
+      module: 'BULLETINS',
+      targetId: id,
+      newValues: { title },
+    });
   }
 
   /** Get individual employee performance rankings across all tenants.
@@ -2178,12 +2227,20 @@ export class SaasAdminService implements OnModuleInit {
   }
 
   /** Delete a school tenant permanently (hard-purge all associated tables via database cascade). */
-  async deleteTenant(id: string): Promise<void> {
+  async deleteTenant(id: string, adminUser: User): Promise<void> {
     const tenant = await this.tenantRepo.findOne({ where: { id } });
     if (!tenant) {
       throw new NotFoundException(`School tenant with ID "${id}" not found.`);
     }
+    const name = tenant.name;
     await this.tenantRepo.remove(tenant);
+    await this.auditService.log({
+      user: adminUser,
+      action: 'DELETE_TENANT',
+      module: 'TENANTS',
+      targetId: id,
+      newValues: { name },
+    });
   }
 
   // ── Global Employee Registry ────────────────────────────────────────────────
@@ -2274,7 +2331,7 @@ export class SaasAdminService implements OnModuleInit {
   }
 
   /** Update an employee's status globally */
-  async updateGlobalEmployeeStatus(id: string, status: string): Promise<any> {
+  async updateGlobalEmployeeStatus(id: string, status: string, adminUser: User): Promise<any> {
     const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user'] });
     if (!emp) {
       throw new NotFoundException(`Employee with ID "${id}" not found.`);
@@ -2307,6 +2364,14 @@ export class SaasAdminService implements OnModuleInit {
       await this.bulletinRepo.save(bulletin);
     }
     
+    await this.auditService.log({
+      user: adminUser,
+      action: 'UPDATE_EMPLOYEE_STATUS',
+      module: 'EMPLOYEES',
+      targetId: emp.id,
+      newValues: { status },
+    });
+
     return { success: true, message: 'Employee status updated.' };
   }
 
@@ -2352,6 +2417,14 @@ export class SaasAdminService implements OnModuleInit {
       });
       await this.bulletinRepo.save(bulletin);
     }
+
+    await this.auditService.log({
+      user: adminUser,
+      action: 'ARCHIVE_EMPLOYEE',
+      module: 'EMPLOYEES',
+      targetId: emp.id,
+      newValues: { status: emp.status, isArchived: emp.isArchived },
+    });
   }
 
   /**
@@ -2359,7 +2432,7 @@ export class SaasAdminService implements OnModuleInit {
    * keeps them INACTIVE. The school admin must then open the edit modal and
    * explicitly set the status to Active before the employee can log in.
    */
-  async unarchiveGlobalEmployee(id: string): Promise<void> {
+  async unarchiveGlobalEmployee(id: string, adminUser: User): Promise<void> {
     const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user'] });
     if (!emp) {
       throw new NotFoundException(`Employee with ID "${id}" not found.`);
@@ -2392,6 +2465,14 @@ export class SaasAdminService implements OnModuleInit {
       });
       await this.bulletinRepo.save(bulletin);
     }
+
+    await this.auditService.log({
+      user: adminUser,
+      action: 'UNARCHIVE_EMPLOYEE',
+      module: 'EMPLOYEES',
+      targetId: emp.id,
+      newValues: { status: emp.status, isArchived: emp.isArchived },
+    });
   }
 
   /**
@@ -2440,5 +2521,13 @@ export class SaasAdminService implements OnModuleInit {
       });
       await this.bulletinRepo.save(bulletin);
     }
+
+    await this.auditService.log({
+      user: adminUser,
+      action: 'PERMANENTLY_DELETE_EMPLOYEE',
+      module: 'EMPLOYEES',
+      targetId: id,
+      newValues: { name: empName, code: empCode },
+    });
   }
 }

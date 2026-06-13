@@ -178,7 +178,7 @@ export class SaasAdminController {
     },
   ) {
     this.verifyGlobalSuperAdmin(req);
-    return this.adminService.onboardTenant(body);
+    return this.adminService.onboardTenant(body, req.user as User);
   }
 
   @Get('tenants/check-unique')
@@ -227,7 +227,7 @@ export class SaasAdminController {
     },
   ) {
     this.verifyGlobalSuperAdmin(req);
-    return this.adminService.updateTenantBranding(id, body);
+    return this.adminService.updateTenantBranding(id, body, req.user as User);
   }
 
   @Put('tenants/:id/status')
@@ -238,7 +238,7 @@ export class SaasAdminController {
     @Body() body: { isActive: boolean },
   ) {
     this.verifyGlobalSuperAdmin(req);
-    return this.adminService.toggleTenantStatus(id, body.isActive);
+    return this.adminService.toggleTenantStatus(id, body.isActive, req.user as User);
   }
 
   @Get('stats')
@@ -290,7 +290,7 @@ export class SaasAdminController {
   })
   async deleteTenant(@Req() req: any, @Param('id') id: string) {
     this.verifyGlobalSuperAdmin(req);
-    await this.adminService.deleteTenant(id);
+    await this.adminService.deleteTenant(id, req.user as User);
     return {
       success: true,
       message: 'School tenant and all associated data removed permanently.',
@@ -334,7 +334,7 @@ export class SaasAdminController {
     },
   ) {
     this.verifyGlobalAdmin(req, [UserRole.SUPER_ADMIN, UserRole.HR_ADMIN]);
-    return this.adminService.createBulletin(body);
+    return this.adminService.createBulletin(body, req.user as User);
   }
 
   @Put('bulletins/:id')
@@ -353,14 +353,14 @@ export class SaasAdminController {
     },
   ) {
     this.verifyGlobalAdmin(req, [UserRole.SUPER_ADMIN, UserRole.HR_ADMIN]);
-    return this.adminService.updateBulletin(id, body);
+    return this.adminService.updateBulletin(id, body, req.user as User);
   }
 
   @Delete('bulletins/:id')
   @ApiOperation({ summary: 'Permanently remove a platform announcement' })
   async deleteBulletin(@Req() req: any, @Param('id') id: string) {
     this.verifyGlobalSuperAdmin(req);
-    await this.adminService.deleteBulletin(id);
+    await this.adminService.deleteBulletin(id, req.user as User);
     return { success: true, message: 'Bulletin removed successfully.' };
   }
 
@@ -403,7 +403,7 @@ export class SaasAdminController {
     @Body() body: { status: string },
   ) {
     this.verifyGlobalSuperAdmin(req);
-    return this.adminService.updateGlobalEmployeeStatus(id, body.status);
+    return this.adminService.updateGlobalEmployeeStatus(id, body.status, req.user as User);
   }
 
   @Post('employees/:id/archive')
@@ -430,7 +430,7 @@ export class SaasAdminController {
     @Param('id') id: string,
   ) {
     this.verifyGlobalSuperAdmin(req);
-    await this.adminService.unarchiveGlobalEmployee(id);
+    await this.adminService.unarchiveGlobalEmployee(id, req.user as User);
     return {
       success: true,
       message: 'Employee has been returned to the school dashboard as Inactive. The school administrator must now manually activate their account.',

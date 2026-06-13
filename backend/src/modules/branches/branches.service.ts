@@ -58,8 +58,8 @@ export class BranchesService {
     // TypeORM can silently fail to load relations defined on a base/parent entity class.
     return this.repo
       .createQueryBuilder('branch')
-      .leftJoinAndSelect('branch.tenant', 'tenant')
-      .where('branch.qr_code = :qrCode', { qrCode })
+      .leftJoinAndSelect('branch.tenant', 'branchTenant')
+      .where('branch.qrCode = :qrCode', { qrCode })
       .getOne();
   }
 

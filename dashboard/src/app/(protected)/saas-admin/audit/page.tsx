@@ -160,6 +160,9 @@ export default function SaasAuditLogsPage() {
       case 'EMPLOYEES': return <Users size={14} />;
       case 'TENANTS': return <Building size={14} />;
       case 'BULLETINS': return <LayoutDashboard size={14} />;
+      case 'AUTH': return <Key size={14} />;
+      case 'LEAVES': return <CalendarDays size={14} />;
+      case 'ATTENDANCE': return <Clock size={14} />;
       default: return <Settings size={14} />;
     }
   };
@@ -170,6 +173,9 @@ export default function SaasAuditLogsPage() {
       case 'EMPLOYEES': return 'Employees';
       case 'TENANTS': return 'Schools';
       case 'BULLETINS': return 'Announcements';
+      case 'AUTH': return 'Authentication';
+      case 'LEAVES': return 'Leave Requests';
+      case 'ATTENDANCE': return 'Attendance';
       default: return module;
     }
   };

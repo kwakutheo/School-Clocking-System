@@ -75,6 +75,36 @@ export default function SaasAuditLogsPage() {
     );
   };
 
+  const formatAuditKey = (key: string) => {
+    const map: Record<string, string> = {
+      name: 'School Name',
+      tenantName: 'School Name',
+      schoolName: 'School Name',
+      slug: 'Subdomain',
+      initials: 'School Initials',
+      isActive: 'Status',
+      primaryColor: 'Brand Color',
+      customDomain: 'Custom Domain',
+      title: 'Announcement Title',
+      type: 'Announcement Type',
+      status: 'Staff Status',
+      isArchived: 'Archived Status',
+      employeeName: 'Staff Name',
+      employeeCode: 'Staff ID',
+      code: 'Staff ID'
+    };
+    return map[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+  };
+
+  const formatAuditValue = (key: string, val: any) => {
+    if (key === 'isActive') return val ? 'Active' : 'Suspended';
+    if (key === 'isArchived') return val ? 'Archived' : 'Active';
+    if (key === 'status' && typeof val === 'string') return val.charAt(0).toUpperCase() + val.slice(1).toLowerCase();
+    if (typeof val === 'boolean') return val ? 'Yes' : 'No';
+    if (typeof val === 'object') return JSON.stringify(val);
+    return String(val);
+  };
+
   const renderDiff = (oldVals: any, newVals: any) => {
     const o = typeof oldVals === 'object' && oldVals !== null ? oldVals : {};
     const n = typeof newVals === 'object' && newVals !== null ? newVals : {};
@@ -103,7 +133,9 @@ export default function SaasAuditLogsPage() {
               borderRadius: '8px',
               border: '1px solid var(--border)'
             }}>
-              <span style={{ fontWeight: 600, color: 'var(--text-secondary)', minWidth: '140px', paddingTop: '2px' }}>{key}</span>
+              <span style={{ fontWeight: 600, color: 'var(--text-secondary)', minWidth: '160px', paddingTop: '2px' }}>
+                {formatAuditKey(key)}
+              </span>
               
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flex: 1, flexWrap: 'wrap' }}>
                 {oldVal !== undefined && (
@@ -116,7 +148,7 @@ export default function SaasAuditLogsPage() {
                     borderRadius: '4px',
                     wordBreak: 'break-all'
                   }}>
-                    {typeof oldVal === 'object' ? JSON.stringify(oldVal) : String(oldVal)}
+                    {formatAuditValue(key, oldVal)}
                   </span>
                 )}
                 
@@ -135,7 +167,7 @@ export default function SaasAuditLogsPage() {
                     borderRadius: '4px',
                     wordBreak: 'break-all'
                   }}>
-                    {typeof newVal === 'object' ? JSON.stringify(newVal) : String(newVal)}
+                    {formatAuditValue(key, newVal)}
                   </span>
                 )}
               </div>

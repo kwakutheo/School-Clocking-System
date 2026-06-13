@@ -2175,7 +2175,7 @@ export default function SaasOverviewPage() {
                       fontSize: "14px",
                     }}
                   >
-                    No schools data available yet.
+                    No schools data available for selected timeframe.
                   </div>
                 ) : (
                   allRanked.map((school, i) => (
@@ -2316,7 +2316,7 @@ export default function SaasOverviewPage() {
                       fontSize: "14px",
                     }}
                   >
-                    No attendance data available for this timeframe.
+                    No attendance data available for selected timeframe.
                   </div>
                 ) : (
                   empRankings.map((emp, i) => (
@@ -2431,7 +2431,7 @@ export default function SaasOverviewPage() {
                     fontSize: "13px",
                   }}
                 >
-                  No data available yet.
+                  No data available for selected timeframe.
                 </div>
               ) : (
                 (stats?.topTenSustained ?? []).map((school, i) => (

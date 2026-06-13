@@ -2528,7 +2528,7 @@ export class SaasAdminService implements OnModuleInit {
       action: 'PERMANENTLY_DELETE_EMPLOYEE',
       module: 'EMPLOYEES',
       targetId: id,
-      newValues: { name: empName, code: empCode },
+      newValues: { employeeName: empName, employeeCode: empCode, schoolName },
     });
   }
 }

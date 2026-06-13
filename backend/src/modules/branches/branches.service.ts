@@ -54,13 +54,27 @@ export class BranchesService {
   }
 
   async findUnscopedByQrCode(qrCode: string): Promise<Branch | null> {
-    // Use an explicit QueryBuilder join instead of `relations: ['tenant']` because
-    // TypeORM can silently fail to load relations defined on a base/parent entity class.
-    return this.repo
-      .createQueryBuilder('branch')
-      .leftJoinAndSelect('branch.tenant', 'branchTenant')
-      .where('branch.qrCode = :qrCode', { qrCode })
-      .getOne();
+    // Use a raw SQL query to completely bypass any TypeORM entity metadata quirks,
+    // inheritance relation issues, or invisible query filters.
+    const rawData = await this.repo.query(
+      `SELECT b.*, t.name as tenant_name 
+       FROM branches b 
+       LEFT JOIN tenants t ON b.tenant_id = t.id 
+       WHERE b.qr_code = $1`,
+      [qrCode],
+    );
+
+    if (rawData && rawData.length > 0) {
+      const row = rawData[0];
+      const branch = new Branch();
+      // Manually map just what we need for the error message
+      branch.id = row.id;
+      branch.name = row.name;
+      branch.qrCode = row.qr_code;
+      branch.tenant = { name: row.tenant_name } as any;
+      return branch;
+    }
+    return null;
   }
 
   create(data: Partial<Branch>): Promise<Branch> {

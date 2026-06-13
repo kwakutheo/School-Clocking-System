@@ -169,7 +169,7 @@ function DeltaBadge({ value }: { value: number }) {
           display: "inline-flex",
           alignItems: "center",
           gap: "3px",
-          color: "#22c55e",
+          color: "var(--text-primary)",
           fontSize: "13px",
           fontWeight: 700,
         }}

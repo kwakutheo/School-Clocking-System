@@ -90,8 +90,8 @@ export default function SaasAuditLogsPage() {
       status: 'Staff Status',
       isArchived: 'Archived Status',
       employeeName: 'Staff Name',
-      employeeCode: 'Staff ID',
-      code: 'Staff ID'
+      employeeCode: 'Employee Code',
+      code: 'Employee Code'
     };
     return map[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
   };

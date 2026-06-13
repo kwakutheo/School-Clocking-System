@@ -16,7 +16,6 @@ import 'package:tk_clocking_system/features/auth/presentation/bloc/auth_event.da
 import 'package:tk_clocking_system/features/auth/presentation/bloc/auth_state.dart';
 import 'package:tk_clocking_system/features/dashboard/domain/entities/home_data_entity.dart';
 import 'package:tk_clocking_system/features/dashboard/data/models/home_data_model.dart';
-// LateStatus enum is defined in home_data_entity.dart
 import 'package:tk_clocking_system/features/profile/presentation/pages/profile_page.dart';
 import 'package:tk_clocking_system/features/attendance/presentation/pages/history_page.dart';
 import 'package:tk_clocking_system/features/attendance/presentation/pages/my_report_page.dart';
@@ -29,8 +28,6 @@ import 'package:tk_clocking_system/core/services/notification_service.dart';
 import 'package:tk_clocking_system/core/services/time_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
-/// Shell home page with bottom navigation between Attendance, History,
-/// and Profile tabs.
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -221,7 +218,8 @@ class _DashboardTabState extends State<_DashboardTab> {
     final cached = box.get('home_data_cache');
     if (cached != null) {
       try {
-        final cachedData = HomeDataModel.fromJson(Map<String, dynamic>.from(cached));
+        final cachedData =
+            HomeDataModel.fromJson(Map<String, dynamic>.from(cached));
         setState(() {
           _data = cachedData;
           _isLoading = false;
@@ -364,7 +362,8 @@ class _DashboardTabState extends State<_DashboardTab> {
           // Cancel shift reminders that are no longer relevant based on
           // what action was just recorded.
           final notifService = sl<NotificationService>();
-          final type = state.record.type; // AttendanceType from the recorded entity
+          final type =
+              state.record.type; // AttendanceType from the recorded entity
           if (type == AttendanceType.clockIn) {
             // Clocked in — cancel only the pre-shift / late warnings (IDs 200-203).
             // Do NOT cancel ID 204; _loadData will schedule it correctly with fresh data.

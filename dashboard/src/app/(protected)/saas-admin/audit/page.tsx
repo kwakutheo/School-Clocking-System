@@ -164,6 +164,16 @@ export default function SaasAuditLogsPage() {
     }
   };
 
+  const getModuleDisplayName = (module: string) => {
+    switch (module.toUpperCase()) {
+      case 'SAAS_ADMIN': return 'Central Administration';
+      case 'EMPLOYEES': return 'Employees';
+      case 'TENANTS': return 'Schools';
+      case 'BULLETINS': return 'Announcements';
+      default: return module;
+    }
+  };
+
   const toggleRawJson = (id: string) => {
     setShowRawJson(prev => ({ ...prev, [id]: !prev[id] }));
   };
@@ -173,7 +183,7 @@ export default function SaasAuditLogsPage() {
       <div className="page-header" style={{ marginBottom: 32 }}>
         <div>
           <h1 className="page-title text-gradient">Global Audit Logs</h1>
-          <p className="page-subtitle">Platform-wide compliance tracking and SaaS administration events</p>
+          <p className="page-subtitle">Platform-wide compliance tracking and Central administration events</p>
         </div>
       </div>
 
@@ -204,7 +214,7 @@ export default function SaasAuditLogsPage() {
             >
               <option value="ALL">All Modules</option>
               {uniqueModules.map(m => (
-                <option key={m} value={m}>{m}</option>
+                <option key={m} value={m}>{getModuleDisplayName(m)}</option>
               ))}
             </select>
           </div>
@@ -295,7 +305,7 @@ export default function SaasAuditLogsPage() {
                           border: '1px solid var(--border)'
                         }}>
                           {getModuleIcon(log.module)}
-                          {log.module}
+                          {getModuleDisplayName(log.module)}
                         </span>
                       </div>
                     </div>

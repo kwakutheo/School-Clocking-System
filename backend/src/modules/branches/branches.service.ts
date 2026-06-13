@@ -54,10 +54,13 @@ export class BranchesService {
   }
 
   async findUnscopedByQrCode(qrCode: string): Promise<Branch | null> {
-    return this.repo.findOne({
-      where: { qrCode },
-      relations: ['tenant'],
-    });
+    // Use an explicit QueryBuilder join instead of `relations: ['tenant']` because
+    // TypeORM can silently fail to load relations defined on a base/parent entity class.
+    return this.repo
+      .createQueryBuilder('branch')
+      .leftJoinAndSelect('branch.tenant', 'tenant')
+      .where('branch.qr_code = :qrCode', { qrCode })
+      .getOne();
   }
 
   create(data: Partial<Branch>): Promise<Branch> {

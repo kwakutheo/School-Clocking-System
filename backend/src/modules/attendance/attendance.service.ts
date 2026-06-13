@@ -304,7 +304,12 @@ export class AttendanceService {
       throw new BadRequestException('The assigned branch could not be found.');
     }
 
-    if (branch?.latitude && dto.latitude && dto.longitude) {
+    if (branch?.latitude) {
+      if (!dto.latitude || !dto.longitude) {
+        throw new BadRequestException(
+          'GPS coordinates are required to clock in at this branch. Please enable location services.',
+        );
+      }
       const dist = this._haversine(
         dto.latitude,
         dto.longitude,

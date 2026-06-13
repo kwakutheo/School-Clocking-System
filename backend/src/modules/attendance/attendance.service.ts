@@ -616,23 +616,26 @@ export class AttendanceService {
 
   // ── QR code clock-in ──────────────────────────────────────────────────────
   async recordViaQr(userId: string, dto: QrClockDto): Promise<AttendanceLog> {
+    // Resolve the employee first so their school name is available for error messages.
+    const employee = await this.employees.findByUserId(userId);
+    if (!employee) {
+      throw new NotFoundException('No employee profile found for this user.');
+    }
+
     const branch = await this.branches.findByQrCode(dto.qrCode);
     if (!branch) {
       // Do an unscoped lookup to identify which school this QR code belongs to.
       const foreignBranch = await this.branches.findUnscopedByQrCode(dto.qrCode);
+      const mySchoolName = employee.user?.tenant?.name;
       if (foreignBranch?.tenant?.name) {
+        const mySchoolSuffix = mySchoolName ? `, "${mySchoolName}"` : '';
         throw new BadRequestException(
-          `This QR code belongs to "${foreignBranch.tenant.name}", not your school. Please scan the correct QR code for your school.`,
+          `This QR code belongs to "${foreignBranch.tenant.name}", not your school. Please scan the correct QR code for your school${mySchoolSuffix}.`,
         );
       }
       throw new BadRequestException(
         'This QR code is invalid or does not belong to any registered school. Please check and try again.',
       );
-    }
-
-    const employee = await this.employees.findByUserId(userId);
-    if (!employee) {
-      throw new NotFoundException('No employee profile found for this user.');
     }
 
     if (employee.branch?.id !== branch.id) {

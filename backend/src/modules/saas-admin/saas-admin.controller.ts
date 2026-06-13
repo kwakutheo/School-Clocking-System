@@ -59,6 +59,13 @@ export class SaasAdminController {
     return this.adminService.findGlobalAdmins(showArchived === 'true');
   }
 
+  @Get('audit')
+  @ApiOperation({ summary: 'List global SaaS audit logs' })
+  async getGlobalAuditLogs(@Req() req: any) {
+    this.verifyGlobalSuperAdmin(req);
+    return this.adminService.getGlobalAuditLogs();
+  }
+
   @Post('admin-users')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register a central dashboard admin account' })

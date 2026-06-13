@@ -311,6 +311,7 @@ export const settingsApi = {
 
 // ── SaaS Admin ─────────────────────────────────────────────────────────────
 export const saasAdminApi = {
+  getAuditLogs: () => api.get("/saas-admin/audit"),
   getStats: (timeframe?: string, academicYear?: string, termName?: string) =>
     api.get("/saas-admin/stats", { params: { timeframe, academicYear, termName } }),
   listTenants: (timeframe?: string, academicYear?: string, termName?: string, params?: Record<string, any>, includeAll?: boolean) =>

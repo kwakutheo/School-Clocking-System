@@ -62,6 +62,7 @@ const DEVELOPER_NAV: NavItem[] = [
   { href: '/saas-admin/holidays', icon: Calendar,         label: 'Holidays' },
   { href: '/saas-admin/bulletins', icon: Megaphone,      label: 'Announcements', globalRoles: ['super_admin', 'hr_admin'] },
   { href: '/saas-admin/admins',  icon: ShieldCheck,      label: 'Admins', globalRoles: ['super_admin'] },
+  { href: '/saas-admin/audit',   icon: ShieldAlert,      label: 'Audit Logs', globalRoles: ['super_admin'] },
 ];
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {

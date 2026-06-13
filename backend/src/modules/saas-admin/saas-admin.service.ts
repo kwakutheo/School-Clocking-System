@@ -23,6 +23,7 @@ import { AttendanceDailySummary } from '../attendance/attendance-daily-summary.e
 import { AcademicTerm } from '../academic-calendar/term.entity';
 import { EmployeeStatusLog } from '../employees/employee-status-log.entity';
 import { AuditService } from '../audit/audit.service';
+import { AuditLog } from '../audit/audit.entity';
 
 @Injectable()
 export class SaasAdminService implements OnModuleInit {
@@ -399,6 +400,15 @@ export class SaasAdminService implements OnModuleInit {
     d.setDate(diff);
     d.setHours(0, 0, 0, 0);
     return d;
+  }
+
+  async getGlobalAuditLogs(): Promise<AuditLog[]> {
+    return this.connection.getRepository(AuditLog).find({
+      where: { tenantId: IsNull() },
+      relations: ['user'],
+      order: { createdAt: 'DESC' },
+      take: 200,
+    });
   }
 
   private countWeekdays(

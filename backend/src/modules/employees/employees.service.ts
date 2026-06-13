@@ -64,6 +64,9 @@ export class EmployeesService implements OnModuleInit {
       await this.dataSource.query(
         `ALTER TABLE users ADD COLUMN IF NOT EXISTS dashboard_blocked_at TIMESTAMPTZ NULL;`,
       );
+      await this.dataSource.query(
+        `ALTER TABLE tenants ADD COLUMN IF NOT EXISTS last_employee_serial INT NOT NULL DEFAULT 0;`,
+      );
 
       await this.dataSource.query(`
         CREATE TABLE IF NOT EXISTS employee_status_logs (
@@ -314,9 +317,10 @@ export class EmployeesService implements OnModuleInit {
   private async _generateEmployeeCode(): Promise<string> {
     const tenantId = tenantLocalStorage.getStore();
     let prefix = 'TK';
+    let tenant: Tenant | null = null;
 
     if (tenantId) {
-      const tenant = await this.dataSource
+      tenant = await this.dataSource
         .getRepository(Tenant)
         .findOne({ where: { id: tenantId } });
       if (tenant) {
@@ -332,23 +336,53 @@ export class EmployeesService implements OnModuleInit {
     const yymm = `${yy}${mm}`;
 
     const basePrefix = `${prefix}/${yymm}/`;
-
-    // Find the highest serial number for this prefix
-    const highestEmp = await this.repo
-      .createQueryBuilder('emp')
-      .where('emp.employeeCode LIKE :pattern', { pattern: `${basePrefix}%` })
-      .orderBy('emp.employeeCode', 'DESC')
-      .getOne();
-
     let nextSerial = 1;
-    if (highestEmp) {
-      const parts = highestEmp.employeeCode.split('/');
-      if (parts.length === 3) {
-        const lastSerial = parseInt(parts[2], 10);
-        if (!isNaN(lastSerial)) {
-          nextSerial = lastSerial + 1;
-          if (nextSerial > 999) {
-            nextSerial = 1;
+
+    if (tenant) {
+      let currentMax = tenant.lastEmployeeSerial || 0;
+      
+      if (currentMax === 0) {
+        const allEmps = await this.repo.find({ 
+          where: { tenantId: tenant.id },
+          select: ['employeeCode']
+        });
+        for (const e of allEmps) {
+          if (!e.employeeCode) continue;
+          const parts = e.employeeCode.split('/');
+          if (parts.length === 3) {
+            const serial = parseInt(parts[2], 10);
+            if (!isNaN(serial) && serial > currentMax) {
+               currentMax = serial;
+            }
+          }
+        }
+      }
+
+      nextSerial = currentMax + 1;
+      if (nextSerial > 999) {
+        nextSerial = 1;
+      }
+
+      await this.dataSource.query(
+        `UPDATE tenants SET last_employee_serial = $1 WHERE id = $2`,
+        [nextSerial, tenant.id]
+      );
+    } else {
+      const highestEmp = await this.repo
+        .createQueryBuilder('emp')
+        .where('emp.employeeCode LIKE :pattern', { pattern: `${basePrefix}%` })
+        .orderBy('emp.employeeCode', 'DESC')
+        .getOne();
+
+      if (highestEmp) {
+        const parts = highestEmp.employeeCode.split('/');
+        if (parts.length === 3) {
+          const lastSerial = parseInt(parts[2], 10);
+          if (!isNaN(lastSerial)) {
+            nextSerial = lastSerial + 1;
+            if (nextSerial > 999) {
+              nextSerial = 1;
+            }
           }
         }
       }

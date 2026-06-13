@@ -37,6 +37,9 @@ export class Tenant {
   @Column({ type: 'varchar', length: 10, nullable: true, unique: true })
   initials: string | null;
 
+  @Column({ name: 'last_employee_serial', type: 'int', default: 0 })
+  lastEmployeeSerial: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

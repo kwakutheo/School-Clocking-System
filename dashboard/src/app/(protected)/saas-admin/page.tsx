@@ -1874,7 +1874,7 @@ export default function SaasOverviewPage() {
               <TrendingUp
                 size={16}
                 color={
-                  (stats?.overview.momGrowth ?? 0 >= 0) ? "" : "#ef4444"
+                  (stats?.overview.momGrowth ?? 0 >= 0) ? "var(--primary)" : "#ef4444"
                 }
               />
               <DeltaBadge value={stats?.overview.momGrowth ?? 0} />

@@ -477,7 +477,7 @@ export default function DashboardPage() {
               data={liveList}
               onHourClick={(hour, logs) => {
                 setModalDetails({
-                  title: `Attendance Activity at ${hour}`,
+                  title: `Attendance Activity within the hour of ${hour}`,
                   type: 'chartClick',
                   data: logs.map((l: any) => ({
                     fullName: l.employee?.user?.fullName || 'Unknown',

@@ -1853,7 +1853,7 @@ export default function SaasOverviewPage() {
                 style={{
                   fontSize: "13px",
                   fontWeight: 700,
-                  color: "var(--text-secondary)",
+                  color: "var(--text-primary)",
                   textTransform: "uppercase",
                   letterSpacing: "0.06em",
                 }}

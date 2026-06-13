@@ -1268,7 +1268,7 @@ export class SaasAdminService implements OnModuleInit {
       action: 'TOGGLE_TENANT_STATUS',
       module: 'TENANTS',
       targetId: saved.id,
-      newValues: { isActive: saved.isActive },
+      newValues: { isActive: saved.isActive, name: saved.name, slug: saved.slug },
     });
     return saved;
   }
@@ -2332,7 +2332,7 @@ export class SaasAdminService implements OnModuleInit {
 
   /** Update an employee's status globally */
   async updateGlobalEmployeeStatus(id: string, status: string, adminUser: User): Promise<any> {
-    const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user'] });
+    const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user', 'tenant'] });
     if (!emp) {
       throw new NotFoundException(`Employee with ID "${id}" not found.`);
     }
@@ -2369,7 +2369,7 @@ export class SaasAdminService implements OnModuleInit {
       action: 'UPDATE_EMPLOYEE_STATUS',
       module: 'EMPLOYEES',
       targetId: emp.id,
-      newValues: { status },
+      newValues: { status, employeeName: emp.user?.fullName, employeeCode: emp.employeeCode, schoolName: emp.tenant?.name },
     });
 
     return { success: true, message: 'Employee status updated.' };
@@ -2389,7 +2389,7 @@ export class SaasAdminService implements OnModuleInit {
       throw new ForbiddenException('Incorrect password. Archive operation was denied.');
     }
 
-    const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user'] });
+    const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user', 'tenant'] });
     if (!emp) {
       throw new NotFoundException(`Employee with ID "${id}" not found.`);
     }
@@ -2423,7 +2423,7 @@ export class SaasAdminService implements OnModuleInit {
       action: 'ARCHIVE_EMPLOYEE',
       module: 'EMPLOYEES',
       targetId: emp.id,
-      newValues: { status: emp.status, isArchived: emp.isArchived },
+      newValues: { status: emp.status, isArchived: emp.isArchived, employeeName: emp.user?.fullName, employeeCode: emp.employeeCode, schoolName: emp.tenant?.name },
     });
   }
 
@@ -2433,7 +2433,7 @@ export class SaasAdminService implements OnModuleInit {
    * explicitly set the status to Active before the employee can log in.
    */
   async unarchiveGlobalEmployee(id: string, adminUser: User): Promise<void> {
-    const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user'] });
+    const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user', 'tenant'] });
     if (!emp) {
       throw new NotFoundException(`Employee with ID "${id}" not found.`);
     }
@@ -2471,7 +2471,7 @@ export class SaasAdminService implements OnModuleInit {
       action: 'UNARCHIVE_EMPLOYEE',
       module: 'EMPLOYEES',
       targetId: emp.id,
-      newValues: { status: emp.status, isArchived: emp.isArchived },
+      newValues: { status: emp.status, isArchived: emp.isArchived, employeeName: emp.user?.fullName, employeeCode: emp.employeeCode, schoolName: emp.tenant?.name },
     });
   }
 
@@ -2492,7 +2492,7 @@ export class SaasAdminService implements OnModuleInit {
       throw new ForbiddenException('Incorrect password. Delete operation was denied.');
     }
 
-    const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user'] });
+    const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user', 'tenant'] });
     if (!emp) {
       throw new NotFoundException(`Employee with ID "${id}" not found.`);
     }
@@ -2501,6 +2501,7 @@ export class SaasAdminService implements OnModuleInit {
     const empTenantId = emp.tenantId;
     const empName = emp.user?.fullName || emp.employeeCode;
     const empCode = emp.employeeCode;
+    const schoolName = emp.tenant?.name || 'Unknown';
 
     // Permanently delete the user (this cascades and deletes the employee)
     if (emp.user) {

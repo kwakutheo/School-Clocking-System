@@ -473,7 +473,22 @@ export default function DashboardPage() {
               <div className="spinner" />
             </div>
           ) : (
-            <AttendanceChart data={liveList} />
+            <AttendanceChart 
+              data={liveList}
+              onHourClick={(hour, logs) => {
+                setModalDetails({
+                  title: `Attendance Activity at ${hour}`,
+                  type: 'chartClick',
+                  data: logs.map((l: any) => ({
+                    fullName: l.employee?.user?.fullName || 'Unknown',
+                    employeeCode: l.employee?.employeeCode,
+                    branch: l.branch?.name,
+                    logType: l.type,
+                    timestamp: l.timestamp
+                  }))
+                });
+              }}
+            />
           )}
         </div>
 
@@ -728,6 +743,12 @@ export default function DashboardPage() {
                     <tr>
                       <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Employee</th>
                       <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Branch</th>
+                      {modalDetails.type === 'chartClick' && (
+                        <>
+                          <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Event</th>
+                          <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Time</th>
+                        </>
+                      )}
                       {modalDetails.type === 'present' && (
                         <>
                           <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Clock In</th>
@@ -769,6 +790,17 @@ export default function DashboardPage() {
                         </td>
                         <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{emp.branch || '—'}</td>
                         
+                        {modalDetails.type === 'chartClick' && (
+                          <>
+                            <td style={{ padding: '12px 16px' }}>
+                              <span className={`badge ${typeBadge(emp.logType)}`}>{typeLabel(emp.logType)}</span>
+                            </td>
+                            <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>
+                              {emp.timestamp ? format(new Date(emp.timestamp), 'HH:mm:ss') : '—'}
+                            </td>
+                          </>
+                        )}
+
                         {modalDetails.type === 'present' && (
                           <>
                             <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>

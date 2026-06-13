@@ -14,9 +14,70 @@ import { useState, useEffect } from 'react';
 interface Log {
   type: string;
   timestamp: string;
+  employee?: {
+    user?: { fullName: string };
+    employeeCode?: string;
+  };
+  branch?: { name: string };
 }
 
-export function AttendanceChart({ data }: { data: Log[] }) {
+interface AttendanceChartProps {
+  data: Log[];
+  onHourClick?: (hour: string, logs: Log[]) => void;
+}
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div style={{
+        background: 'var(--bg-card, #0f1420)',
+        border: '1px solid var(--border-color, rgba(255,255,255,0.08))',
+        borderRadius: 10,
+        padding: '12px 16px',
+        fontSize: 12,
+        color: 'var(--text-primary, #f1f5f9)',
+        boxShadow: '0 8px 16px -4px rgba(0, 0, 0, 0.2)',
+        minWidth: 160
+      }}>
+        <div style={{ fontWeight: 600, marginBottom: 10, fontSize: 13 }}>{label}</div>
+        
+        {data.clockIns > 0 && (
+          <div style={{ marginBottom: data.clockOuts > 0 ? 10 : 0 }}>
+            <div style={{ color: '#10b981', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
+              <span>Clock In:</span>
+              <span>{data.clockIns}</span>
+            </div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: 11, marginTop: 4, lineHeight: 1.4 }}>
+              {data.clockInLogs.slice(0, 3).map((l: any) => l.employee?.user?.fullName?.split(' ')[0] || 'Unknown').join(', ')}
+              {data.clockInLogs.length > 3 ? ` +${data.clockInLogs.length - 3} more` : ''}
+            </div>
+          </div>
+        )}
+
+        {data.clockOuts > 0 && (
+          <div>
+            <div style={{ color: '#ef4444', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
+              <span>Clock Out:</span>
+              <span>{data.clockOuts}</span>
+            </div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: 11, marginTop: 4, lineHeight: 1.4 }}>
+              {data.clockOutLogs.slice(0, 3).map((l: any) => l.employee?.user?.fullName?.split(' ')[0] || 'Unknown').join(', ')}
+              {data.clockOutLogs.length > 3 ? ` +${data.clockOutLogs.length - 3} more` : ''}
+            </div>
+          </div>
+        )}
+        
+        {data.clockIns === 0 && data.clockOuts === 0 && (
+          <div style={{ color: 'var(--text-secondary)' }}>No activity</div>
+        )}
+      </div>
+    );
+  }
+  return null;
+};
+
+export function AttendanceChart({ data, onHourClick }: AttendanceChartProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -27,15 +88,18 @@ export function AttendanceChart({ data }: { data: Log[] }) {
 
   const chartData = hours.map((h) => {
     const label = `${h}:00`;
-    const clockIns = data.filter((d) => {
-      const hour = new Date(d.timestamp).getHours();
-      return d.type === 'clock_in' && hour === h;
-    }).length;
-    const clockOuts = data.filter((d) => {
-      const hour = new Date(d.timestamp).getHours();
-      return d.type === 'clock_out' && hour === h;
-    }).length;
-    return { hour: label, clockIns, clockOuts };
+    const hourLogs = data.filter(d => new Date(d.timestamp).getHours() === h);
+    const clockInLogs = hourLogs.filter(d => d.type === 'clock_in');
+    const clockOutLogs = hourLogs.filter(d => d.type === 'clock_out');
+    
+    return { 
+      hour: label, 
+      clockIns: clockInLogs.length, 
+      clockOuts: clockOutLogs.length,
+      clockInLogs,
+      clockOutLogs,
+      rawLogs: hourLogs
+    };
   });
 
   if (!mounted) {
@@ -60,24 +124,41 @@ export function AttendanceChart({ data }: { data: Log[] }) {
             allowDecimals={false}
           />
           <Tooltip
-            contentStyle={{
-              background: 'var(--bg-card, #0f1420)',
-              border: '1px solid var(--border-color, rgba(255,255,255,0.08))',
-              borderRadius: 10,
-              fontSize: 12,
-              color: 'var(--text-primary, #f1f5f9)',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-            }}
+            content={<CustomTooltip />}
             cursor={{ fill: 'var(--border-color, rgba(128,128,128,0.1))' }}
           />
-          <Bar dataKey="clockIns" name="Clock In" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={28}>
-            {chartData.map((_, i) => (
-              <Cell key={`in-${i}`} fill="#10b981" fillOpacity={0.85} />
+          <Bar 
+            dataKey="clockIns" 
+            name="Clock In" 
+            fill="#10b981" 
+            radius={[4, 4, 0, 0]} 
+            maxBarSize={28}
+            onClick={(data: any) => {
+              const payload = data?.payload || data;
+              if (onHourClick && payload?.rawLogs?.length > 0) {
+                onHourClick(payload.hour, payload.rawLogs);
+              }
+            }}
+          >
+            {chartData.map((entry, i) => (
+              <Cell key={`in-${i}`} fill="#10b981" fillOpacity={0.85} style={{ cursor: entry.clockIns > 0 && onHourClick ? 'pointer' : 'default' }}/>
             ))}
           </Bar>
-          <Bar dataKey="clockOuts" name="Clock Out" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={28}>
-            {chartData.map((_, i) => (
-              <Cell key={`out-${i}`} fill="#ef4444" fillOpacity={0.85} />
+          <Bar 
+            dataKey="clockOuts" 
+            name="Clock Out" 
+            fill="#ef4444" 
+            radius={[4, 4, 0, 0]} 
+            maxBarSize={28}
+            onClick={(data: any) => {
+              const payload = data?.payload || data;
+              if (onHourClick && payload?.rawLogs?.length > 0) {
+                onHourClick(payload.hour, payload.rawLogs);
+              }
+            }}
+          >
+            {chartData.map((entry, i) => (
+              <Cell key={`out-${i}`} fill="#ef4444" fillOpacity={0.85} style={{ cursor: entry.clockOuts > 0 && onHourClick ? 'pointer' : 'default' }}/>
             ))}
           </Bar>
         </BarChart>

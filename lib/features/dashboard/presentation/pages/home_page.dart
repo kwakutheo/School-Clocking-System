@@ -20,6 +20,8 @@ import 'package:tk_clocking_system/features/dashboard/data/models/home_data_mode
 import 'package:tk_clocking_system/features/profile/presentation/pages/profile_page.dart';
 import 'package:tk_clocking_system/features/attendance/presentation/pages/history_page.dart';
 import 'package:tk_clocking_system/features/attendance/presentation/pages/my_report_page.dart';
+import 'package:tk_clocking_system/features/leaves/presentation/pages/leaves_page.dart';
+import 'package:tk_clocking_system/features/calendar/presentation/pages/calendar_page.dart';
 import 'package:tk_clocking_system/shared/enums/attendance_type.dart';
 import 'package:tk_clocking_system/shared/enums/sync_status.dart';
 import 'package:tk_clocking_system/core/services/location_service.dart';
@@ -68,7 +70,7 @@ class HomePageState extends State<HomePage> {
                 title: const Text('Leaves'),
                 onTap: () {
                   Navigator.pop(context);
-                  context.push('/home/leaves');
+                  setState(() => _selectedIndex = 4);
                 },
               ),
               ListTile(
@@ -76,7 +78,7 @@ class HomePageState extends State<HomePage> {
                 title: const Text('Calendar'),
                 onTap: () {
                   Navigator.pop(context);
-                  context.push('/home/calendar');
+                  setState(() => _selectedIndex = 5);
                 },
               ),
               const SizedBox(height: 8),
@@ -97,10 +99,12 @@ class HomePageState extends State<HomePage> {
           HistoryPage(),
           MyReportPage(),
           ProfilePage(),
+          LeavesPage(),
+          CalendarPage(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
+        selectedIndex: _selectedIndex > 3 ? 3 : _selectedIndex,
         onDestinationSelected: (index) {
           if (index == 3) {
             _showMoreMenu();

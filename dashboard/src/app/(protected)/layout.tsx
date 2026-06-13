@@ -40,7 +40,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { href: '/dashboard',   icon: LayoutDashboard, label: 'Overview'    },
   { href: '/attendance',  icon: Clock,            label: 'Attendance',        permission: 'attendance.view'    },
-  { href: '/employees',   icon: Users,            label: 'Employees',         permission: 'employees.view'     },
+  { href: '/employees',   icon: Users,            label: 'Staff',         permission: 'employees.view'     },
   { href: '/leaves',      icon: FileText,         label: 'Leave Requests'                                       },
   { href: '/shifts',      icon: Clock,            label: 'Shifts',            permission: 'shifts.manage'      },
   { href: '/holidays',    icon: Calendar,         label: 'Holidays',          permission: 'holidays.manage'    },
@@ -56,7 +56,7 @@ const NAV: NavItem[] = [
 const DEVELOPER_NAV: NavItem[] = [
   { href: '/saas-admin',         icon: LayoutDashboard, label: 'Overview' },
   { href: '/saas-admin/schools', icon: Building2,        label: 'Schools Registry' },
-  { href: '/saas-admin/employees', icon: Users,          label: 'Employee Registry' },
+  { href: '/saas-admin/employees', icon: Users,          label: 'Staff Registry' },
   { href: '/saas-admin/reports',  icon: BarChart2,        label: 'Reports & Export' },
   { href: '/saas-admin/calendar', icon: Calendar,         label: 'Academic Calendar' },
   { href: '/saas-admin/holidays', icon: Calendar,         label: 'Holidays' },

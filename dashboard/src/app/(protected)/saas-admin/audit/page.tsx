@@ -77,7 +77,7 @@ export default function SaasAuditLogsPage() {
 
   const formatAuditKey = (key: string) => {
     const map: Record<string, string> = {
-      name: 'School Name',
+      name: 'Name',
       tenantName: 'School Name',
       schoolName: 'School Name',
       slug: 'Subdomain',

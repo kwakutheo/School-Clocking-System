@@ -616,17 +616,26 @@ export class AttendanceService {
 
   // ── QR code clock-in ──────────────────────────────────────────────────────
   async recordViaQr(userId: string, dto: QrClockDto): Promise<AttendanceLog> {
+    const branch = await this.branches.findByQrCode(dto.qrCode);
+    if (!branch) throw new BadRequestException('This QR code does not belong to your school. Please check and try again.');
+
+    const employee = await this.employees.findByUserId(userId);
+    if (!employee) {
+      throw new NotFoundException('No employee profile found for this user.');
+    }
+
+    if (employee.branch?.id !== branch.id) {
+      throw new BadRequestException(
+        'This QR code does not belong to your assigned branch in your school. Please check and try again.',
+      );
+    }
+
     // Check if school has academic terms configured
     const allTerms = await this.academicCalendar.findAllTerms();
     if (!allTerms || allTerms.length === 0) {
       throw new BadRequestException(
         'Action denied: Your school has no active academic calendar. Please contact your school administrator.',
       );
-    }
-
-    const employee = await this.employees.findByUserId(userId);
-    if (!employee) {
-      throw new NotFoundException('No employee profile found for this user.');
     }
 
     if (!employee.shift) {
@@ -668,15 +677,6 @@ export class AttendanceService {
       const leave = approvedLeaves[0];
       throw new BadRequestException(
         `Action denied: You have an approved ${leave.leaveType.toUpperCase()} LEAVE for today. Clocking is not allowed while on leave.`,
-      );
-    }
-
-    const branch = await this.branches.findByQrCode(dto.qrCode);
-    if (!branch) throw new BadRequestException('This QR code does not belong to your school. Please check and try again.');
-
-    if (employee.branch?.id !== branch.id) {
-      throw new BadRequestException(
-        'This QR code does not belong to your assigned branch in your school. Please check and try again.',
       );
     }
 

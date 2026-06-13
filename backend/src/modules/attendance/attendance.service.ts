@@ -617,7 +617,18 @@ export class AttendanceService {
   // ── QR code clock-in ──────────────────────────────────────────────────────
   async recordViaQr(userId: string, dto: QrClockDto): Promise<AttendanceLog> {
     const branch = await this.branches.findByQrCode(dto.qrCode);
-    if (!branch) throw new BadRequestException('This QR code does not belong to your school. Please check and try again.');
+    if (!branch) {
+      // Do an unscoped lookup to identify which school this QR code belongs to.
+      const foreignBranch = await this.branches.findUnscopedByQrCode(dto.qrCode);
+      if (foreignBranch?.tenant?.name) {
+        throw new BadRequestException(
+          `This QR code belongs to "${foreignBranch.tenant.name}", not your school. Please scan the correct QR code for your school.`,
+        );
+      }
+      throw new BadRequestException(
+        'This QR code is invalid or does not belong to any registered school. Please check and try again.',
+      );
+    }
 
     const employee = await this.employees.findByUserId(userId);
     if (!employee) {

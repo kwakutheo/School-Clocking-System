@@ -53,6 +53,13 @@ export class BranchesService {
     return this.repo.findOne({ where: { qrCode } });
   }
 
+  async findUnscopedByQrCode(qrCode: string): Promise<Branch | null> {
+    return this.repo.findOne({
+      where: { qrCode },
+      relations: ['tenant'],
+    });
+  }
+
   create(data: Partial<Branch>): Promise<Branch> {
     return this.repo.save(this.repo.create(data));
   }

@@ -1536,3 +1536,28 @@ input::-webkit-credentials-auto-fill-button {
     display: none !important;
   }
 }
+
+/* ── Responsive Dropdown ─────────────────────────────────────────────────── */
+.responsive-dropdown {
+  position: absolute;
+  top: 100%;
+  margin-top: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  width: 180px;
+  z-index: 100;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  right: 0;
+}
+
+@media (max-width: 768px) {
+  .responsive-dropdown {
+    right: auto;
+    left: 0;
+  }
+}
+

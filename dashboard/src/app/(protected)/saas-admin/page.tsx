@@ -1251,23 +1251,7 @@ export default function SaasOverviewPage() {
               </button>
 
               {timeframeDropdownOpen && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "100%",
-                    left: 0,
-                    marginTop: "8px",
-                    background: "var(--bg-surface)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "12px",
-                    boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
-                    width: "180px",
-                    zIndex: 100,
-                    overflow: "hidden",
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
-                >
+                <div className="responsive-dropdown">
                   {(Object.keys(TIMEFRAME_LABELS) as Timeframe[]).map((tf) => (
                     <button
                       key={tf}

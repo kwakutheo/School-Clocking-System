@@ -171,8 +171,10 @@ export default function SettingsPage() {
   return (
     <>
       <div className="page-header">
-        <h1 className="page-title">School Settings</h1>
-        <p className="page-subtitle">Configure your school configurations and brand identity</p>
+        <div>
+          <h1 className="page-title">School Settings</h1>
+          <p className="page-subtitle">Configure your school configurations and brand identity</p>
+        </div>
       </div>
 
       <div className="card" style={{ maxWidth: 520, position: 'relative' }}>

@@ -173,7 +173,7 @@ export default function AuditLogsPage() {
     <>
       <div className="page-header" style={{ marginBottom: 32 }}>
         <div>
-          <h1 className="page-title text-gradient">System Audit Logs</h1>
+          <h1 className="page-title">System Audit Logs</h1>
           <p className="page-subtitle">Compliance tracking of all administrative changes</p>
         </div>
       </div>

@@ -231,8 +231,10 @@ export default function AttendanceReportPage() {
   return (
     <>
       <div className="page-header">
+        <div>
         <h1 className="page-title">Attendance Reports</h1>
         <p className="page-subtitle">Detailed tracking of days worked, absences, lateness, and early departures</p>
+        </div>
       </div>
 
       <div className="card" style={{ padding: 24, marginBottom: 24, position: 'relative', zIndex: 100 }}>

@@ -87,7 +87,7 @@ export default function DepartmentsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Departments</h1>
-          <p className="page-subtitle">Manage company departments</p>
+          <p className="page-subtitle">Manage your school departments</p>
         </div>
         {can(userRole, 'departments.manage') && (
           <button className="btn btn-primary" onClick={openCreate}>+ Add Department</button>

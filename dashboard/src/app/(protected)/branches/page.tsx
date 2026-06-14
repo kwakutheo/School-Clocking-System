@@ -64,6 +64,8 @@ function QrCodeImage({ text, size = 180 }: { text: string; size?: number }) {
   );
 }
 
+import { createPortal } from 'react-dom';
+
 function PasswordModal({
   isOpen,
   onClose,
@@ -79,6 +81,11 @@ function PasswordModal({
 }) {
   const [password, setPassword] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -87,9 +94,9 @@ function PasswordModal({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
       style={{
         position: 'fixed',
@@ -99,7 +106,7 @@ function PasswordModal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 1000,
+        zIndex: 9999, // Ensure it's above everything
         padding: 16,
       }}
       onClick={onClose}
@@ -162,7 +169,8 @@ function PasswordModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

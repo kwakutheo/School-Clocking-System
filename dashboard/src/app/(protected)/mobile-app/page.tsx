@@ -94,7 +94,7 @@ export default function MobileAppPage() {
       <div className={styles.header}>
         <h1 className={styles.title}>Mobile App Distribution</h1>
         <p className={styles.subtitle}>
-          Distribute the TK Clocking mobile application to your employees (Android Only, iOS will be available soon)
+          Distribute the TK Clocking mobile application to your staff (Android Only, iOS will be available soon)
         </p>
       </div>
 

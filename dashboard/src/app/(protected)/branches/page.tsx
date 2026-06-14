@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import QRCode from 'qrcode';
 import { branchesApi } from '@/lib/api';
 import { can } from '@/lib/permissions';
+import { useAuthStore } from '@/lib/store';
 
 const fetcher = () => branchesApi.list().then((r) => r.data);
 
@@ -175,6 +176,10 @@ function PasswordModal({
 }
 
 function BranchCard({ branch, onEdit, onDelete, canDelete }: { branch: any; onEdit: () => void; onDelete: () => void; canDelete: boolean }) {
+  const user = useAuthStore((s) => s.user);
+  const impersonatedTenant = useAuthStore((s) => s.impersonatedTenant);
+  const activeTenant = impersonatedTenant || user?.tenant;
+
   const [qrCode, setQrCode] = useState<string | null>(branch.qrCode ?? null);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -267,14 +272,22 @@ function BranchCard({ branch, onEdit, onDelete, canDelete }: { branch: any; onEd
         <body>
           <div class="container">
             <div style="display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 60px; padding-top: 40px;">
-              <img src="/logo.png" style="width: 60px; height: 60px; border: none; padding: 0; border-radius: 12px;" />
-              <div style="font-size: 32px; font-weight: 800; letter-spacing: -1px; color: #111827;">TK Clocking System</div>
+              ${activeTenant?.logoUrl 
+                ? `<img src="${activeTenant.logoUrl}" style="width: 60px; height: 60px; border: none; padding: 0; border-radius: 12px; object-fit: contain;" />` 
+                : `<img src="/logo.png" style="width: 60px; height: 60px; border: none; padding: 0; border-radius: 12px;" />`
+              }
+              <div style="font-size: 32px; font-weight: 800; letter-spacing: -1px; color: #111827;">${activeTenant?.name || 'TK Clocking System'}</div>
             </div>
 
             <img src="${printRef.current.querySelector('img')?.src}" alt="QR Code" />
             <h1>${branch.name}</h1>
             <p>Scan to clock</p>
             <div class="hint no-print">Print this page on A4 paper and paste it at the entrance.</div>
+            
+            <div style="margin-top: 80px; display: flex; align-items: center; justify-content: center; gap: 10px; opacity: 0.6;">
+              <img src="/logo.png" style="width: 24px; height: 24px; border: none; padding: 0; border-radius: 6px;" />
+              <div style="font-size: 16px; font-weight: 700; letter-spacing: -0.5px; color: #111827;">TK Clocking System</div>
+            </div>
           </div>
         </body>
       </html>

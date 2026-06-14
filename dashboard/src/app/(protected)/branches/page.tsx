@@ -69,11 +69,13 @@ function PasswordModal({
   onClose,
   onConfirm,
   isLoading,
+  error,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (password: string) => void;
   isLoading: boolean;
+  error?: string;
 }) {
   const [password, setPassword] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -115,6 +117,12 @@ function PasswordModal({
         <div style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24, lineHeight: 1.5 }}>
           Enter your login password to regenerate this branch QR code. The old code will become invalid immediately.
         </div>
+
+        {error && (
+          <div style={{ marginBottom: 16, padding: 12, borderRadius: 8, background: 'var(--danger-light, #fee2e2)', color: 'var(--danger, #dc2626)', fontSize: 14 }}>
+            {error}
+          </div>
+        )}
 
         <div className="form-group">
           <label htmlFor="modalPassword">Your Password</label>
@@ -162,17 +170,19 @@ function BranchCard({ branch, onEdit, onDelete, canDelete }: { branch: any; onEd
   const [qrCode, setQrCode] = useState<string | null>(branch.qrCode ?? null);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [modalError, setModalError] = useState<string | undefined>();
   const printRef = useRef<HTMLDivElement>(null);
 
   const handleRegenerate = async (password: string) => {
     setIsRegenerating(true);
+    setModalError(undefined);
     try {
       const res = await branchesApi.regenerateQr(branch.id, password);
       setQrCode(res.data.qrCode);
       setShowPasswordModal(false);
     } catch (err: any) {
       const msg = err?.response?.data?.message ?? 'Failed to regenerate QR code.';
-      alert(msg);
+      setModalError(Array.isArray(msg) ? msg.join(', ') : msg);
     } finally {
       setIsRegenerating(false);
     }
@@ -255,7 +265,7 @@ function BranchCard({ branch, onEdit, onDelete, canDelete }: { branch: any; onEd
 
             <img src="${printRef.current.querySelector('img')?.src}" alt="QR Code" />
             <h1>${branch.name}</h1>
-            <p>Scan to clock in / out</p>
+            <p>Scan to clock</p>
             <div class="hint no-print">Print this page on A4 paper and paste it at the entrance.</div>
           </div>
         </body>
@@ -365,6 +375,7 @@ function BranchCard({ branch, onEdit, onDelete, canDelete }: { branch: any; onEd
         onClose={() => setShowPasswordModal(false)}
         onConfirm={handleRegenerate}
         isLoading={isRegenerating}
+        error={modalError}
       />
     </div>
   );

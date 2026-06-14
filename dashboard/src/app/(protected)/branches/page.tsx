@@ -273,8 +273,8 @@ function BranchCard({ branch, onEdit, onDelete, canDelete }: { branch: any; onEd
           <div class="container">
             <div style="display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 60px; padding-top: 40px;">
               ${activeTenant?.logoUrl 
-                ? `<img src="${activeTenant.logoUrl}" style="width: 60px; height: 60px; border: none; padding: 0; border-radius: 12px; object-fit: contain;" />` 
-                : `<img src="/logo.png" style="width: 60px; height: 60px; border: none; padding: 0; border-radius: 12px;" />`
+                ? `<img src="${activeTenant.logoUrl}" style="width: 80px; height: 80px; border: none; padding: 0; border-radius: 12px; object-fit: contain;" />` 
+                : `<img src="/logo.png" style="width: 80px; height: 80px; border: none; padding: 0; border-radius: 12px;" />`
               }
               <div style="font-size: 32px; font-weight: 800; letter-spacing: -1px; color: #111827;">${activeTenant?.name || 'TK Clocking System'}</div>
             </div>

@@ -1654,11 +1654,21 @@ export default function SaasOverviewPage() {
                 style={{
                   marginTop: "10px",
                   fontSize: "12px",
-                  color: "var(--text-secondary)",
+                  color: "#F59E0D",
                   fontWeight: 600,
                 }}
               >
-                {cohorts.warning} on warning · {cohorts.excellent} excellent
+                {cohorts.warning} on warning
+              </div>
+              <div
+                style={{
+                  marginTop: "10px",
+                  fontSize: "12px",
+                  color: "#22C55E",
+                  fontWeight: 600,
+                }}
+              >
+                {cohorts.excellent} excellent
               </div>
             </div>
             <div

@@ -172,9 +172,8 @@ export default function SettingsPage() {
     <>
       <div className="page-header">
         <h1 className="page-title">School Settings</h1>
-        <p className="page-subtitle">Configure your school configurations and brand identity</p>
       </div>
-      <div>
+      <div className="page-header">
         <p className="page-subtitle">Configure your school configurations and brand identity</p>
       </div>
 

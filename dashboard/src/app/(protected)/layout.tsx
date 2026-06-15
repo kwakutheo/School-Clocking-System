@@ -41,7 +41,7 @@ const NAV: NavItem[] = [
   { href: '/dashboard',   icon: LayoutDashboard, label: 'Overview'    },
   { href: '/attendance',  icon: Clock,            label: 'Attendance',        permission: 'attendance.view'    },
   { href: '/employees',   icon: Users,            label: 'Staff',         permission: 'employees.view'     },
-  { href: '/leaves',      icon: FileText,         label: 'Leave Requests'                                       },
+  { href: '/leaves',      icon: FileText,         label: 'Permissions & Leaves'                                       },
   { href: '/shifts',      icon: Clock,            label: 'Shifts',            permission: 'shifts.manage'      },
   { href: '/holidays',    icon: Calendar,         label: 'Holidays',          permission: 'holidays.manage'    },
   { href: '/calendar',    icon: Calendar,         label: 'Academic Calendar', permission: 'calendar.view'      },

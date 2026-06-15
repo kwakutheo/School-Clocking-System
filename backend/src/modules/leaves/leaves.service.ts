@@ -9,11 +9,13 @@ import { Repository } from 'typeorm';
 import { LeaveRequest } from './leave-request.entity';
 import { Employee } from '../employees/employee.entity';
 import { User } from '../users/user.entity';
-import { LeaveStatus, UserRole } from '../../common/enums';
+import { LeaveStatus, UserRole, LeaveType } from '../../common/enums';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { tenantLocalStorage } from '../../common/tenant/tenant.context';
 import { getCurrentTenantId } from '../../common/tenant/tenant-filter.helper';
+
+import { AcademicCalendarService } from '../academic-calendar/academic-calendar.service';
 
 @Injectable()
 export class LeavesService {
@@ -24,6 +26,7 @@ export class LeavesService {
     private readonly employeeRepo: Repository<Employee>,
     private readonly auditService: AuditService,
     private readonly notificationsService: NotificationsService,
+    private readonly academicCalendarService: AcademicCalendarService,
   ) {}
 
   // ── Employee Actions ──────────────────────────────────────────────────────
@@ -89,6 +92,8 @@ export class LeavesService {
           `Please cancel it first or choose different dates.`,
       );
     }
+
+    await this._validatePermissionsRules(employee.id, data.leaveType, data.reason, data.startDate, data.endDate);
 
     const leave = this.leaveRepo.create({
       employee,
@@ -337,6 +342,8 @@ export class LeavesService {
       );
     }
 
+    await this._validatePermissionsRules(employee.id, data.leaveType, data.reason, data.startDate, data.endDate);
+
     const targetStatus = data.status || LeaveStatus.APPROVED;
 
     const leave = this.leaveRepo.create({
@@ -399,5 +406,51 @@ export class LeavesService {
     });
     if (!leave) throw new NotFoundException('Leave request not found.');
     return leave;
+  }
+
+  private async _validatePermissionsRules(
+    employeeId: string,
+    leaveType: string,
+    reason: string | undefined,
+    startDateStr: string,
+    endDateStr: string,
+  ): Promise<void> {
+    if (leaveType !== LeaveType.EXCUSED && leaveType !== LeaveType.ERRAND) return;
+
+    if (!reason || reason.trim().length < 5) {
+      throw new BadRequestException('A detailed reason is required for errands and excused absences.');
+    }
+
+    if (leaveType === LeaveType.EXCUSED) {
+      const startDate = new Date(startDateStr);
+      const endDate = new Date(endDateStr);
+      
+      const term = await this.academicCalendarService.getTermForDate(startDate);
+      if (!term) return; // If no active term, we can't accurately enforce term limits, so bypass.
+
+      // Find all approved/pending excused leaves in this term
+      const leavesInTerm = await this.leaveRepo
+        .createQueryBuilder('leave')
+        .where('leave.employee_id = :empId', { empId: employeeId })
+        .andWhere('leave.leave_type = :type', { type: LeaveType.EXCUSED })
+        .andWhere('leave.status IN (:...statuses)', { statuses: [LeaveStatus.PENDING, LeaveStatus.APPROVED] })
+        .andWhere('leave.start_date <= :termEnd', { termEnd: term.endDate })
+        .andWhere('leave.end_date >= :termStart', { termStart: term.startDate })
+        .getMany();
+
+      let daysUsed = 0;
+      for (const leave of leavesInTerm) {
+        // Only count days that actually fall within the term
+        const lStart = new Date(leave.startDate) < new Date(term.startDate) ? new Date(term.startDate) : new Date(leave.startDate);
+        const lEnd = new Date(leave.endDate) > new Date(term.endDate) ? new Date(term.endDate) : new Date(leave.endDate);
+        daysUsed += Math.round((lEnd.getTime() - lStart.getTime()) / 86400000) + 1;
+      }
+
+      const currentRequestDays = Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
+
+      if (daysUsed + currentRequestDays > 5) {
+        throw new BadRequestException(`Request denied. You only have ${Math.max(0, 5 - daysUsed)} excused absence day(s) remaining for this academic term.`);
+      }
+    }
   }
 }

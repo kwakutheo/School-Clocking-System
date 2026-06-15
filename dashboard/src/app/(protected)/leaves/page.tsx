@@ -8,6 +8,7 @@ import { CheckCircle, XCircle, Clock, FileText, Plus, ChevronDown, ChevronUp, Al
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
 
 const LEAVE_TYPES = ['SICK', 'ANNUAL', 'CASUAL', 'MATERNITY', 'PATERNITY', 'OTHER'];
+const PERMISSION_TYPES = ['EXCUSED', 'ERRAND'];
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   PENDING:   { bg: 'rgba(234,179,8,0.12)',  text: '#eab308' },
@@ -19,6 +20,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 const TYPE_COLORS: Record<string, string> = {
   SICK: '#f97316', ANNUAL: '#3b82f6', CASUAL: '#8b5cf6',
   MATERNITY: '#ec4899', PATERNITY: '#06b6d4', OTHER: '#64748b',
+  EXCUSED: '#eab308', ERRAND: '#22c55e',
 };
 
 function Badge({ label, color, bg }: { label: string; color: string; bg: string }) {
@@ -176,6 +178,7 @@ export default function LeavesPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [activeTab, setActiveTab] = useState<'LEAVES' | 'PERMISSIONS'>('LEAVES');
 
   // ── Pagination & Search State ──
   const [searchTerm, setSearchTerm] = useState('');
@@ -268,9 +271,9 @@ export default function LeavesPage() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.message ?? 'Failed to submit leave'); }
-      setSuccess('Leave request submitted successfully!');
+      setSuccess('Request submitted successfully!');
       setShowForm(false);
-      setForm({ leaveType: 'SICK', startDate: '', endDate: '', reason: '', employeeId: '', status: 'APPROVED' });
+      setForm({ leaveType: activeTab === 'LEAVES' ? 'SICK' : 'EXCUSED', startDate: '', endDate: '', reason: '', employeeId: '', status: 'APPROVED' });
       fetchMyLeaves();
       if (isAdmin) fetchAllLeaves();
     } catch (err: any) {
@@ -305,7 +308,13 @@ export default function LeavesPage() {
   };
 
   // ── Computed Variables ──
-  const paginatedLeaves = allLeaves;
+  const filteredAllLeaves = allLeaves.filter(l => 
+    activeTab === 'LEAVES' ? LEAVE_TYPES.includes(l.leaveType) : PERMISSION_TYPES.includes(l.leaveType)
+  );
+
+  const filteredMyLeaves = myLeaves.filter(l => 
+    activeTab === 'LEAVES' ? LEAVE_TYPES.includes(l.leaveType) : PERMISSION_TYPES.includes(l.leaveType)
+  );
 
   // Reset page when filters change
   useEffect(() => {
@@ -322,18 +331,46 @@ export default function LeavesPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <FileText size={26} /> Leave Requests
+            <FileText size={26} /> Permissions & Leaves
           </h1>
           <p className="page-subtitle">
             {isAdmin ? 'Review and manage staff leave requests' : 'Submit and track your personal leave requests'}
           </p>
         </div>
         <button
-          onClick={() => { setShowForm(!showForm); setError(''); setSuccess(''); }}
+          onClick={() => { 
+            setShowForm(!showForm); 
+            setError(''); 
+            setSuccess(''); 
+            setForm({ ...form, leaveType: activeTab === 'LEAVES' ? 'SICK' : 'EXCUSED' });
+          }}
           className="btn btn-primary"
           style={{ display: 'flex', alignItems: 'center', gap: 8, outline: 'none', border: 'none' }}
         >
-          <Plus size={16} /> Request Leave
+          <Plus size={16} /> Request {activeTab === 'LEAVES' ? 'Leave' : 'Permission'}
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--border)', marginBottom: 24 }}>
+        <button
+          onClick={() => { setActiveTab('LEAVES'); setShowForm(false); }}
+          style={{
+            padding: '12px 0', fontSize: 15, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none',
+            color: activeTab === 'LEAVES' ? 'var(--primary)' : 'var(--text-secondary)',
+            borderBottom: activeTab === 'LEAVES' ? '2px solid var(--primary)' : '2px solid transparent',
+          }}
+        >
+          Leaves
+        </button>
+        <button
+          onClick={() => { setActiveTab('PERMISSIONS'); setShowForm(false); }}
+          style={{
+            padding: '12px 0', fontSize: 15, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none',
+            color: activeTab === 'PERMISSIONS' ? 'var(--primary)' : 'var(--text-secondary)',
+            borderBottom: activeTab === 'PERMISSIONS' ? '2px solid var(--primary)' : '2px solid transparent',
+          }}
+        >
+          Permissions
         </button>
       </div>
 
@@ -373,7 +410,7 @@ export default function LeavesPage() {
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, var(--primary), #8b5cf6, #ec4899)' }} />
           
           <h3 style={{ margin: '0 0 24px', color: 'var(--text-primary)', fontSize: 18, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <FileText size={20} style={{ color: 'var(--primary)' }} /> New Leave Request
+            <FileText size={20} style={{ color: 'var(--primary)' }} /> New {activeTab === 'LEAVES' ? 'Leave' : 'Permission'} Request
           </h3>
           
           <form onSubmit={handleSubmit}>
@@ -437,7 +474,7 @@ export default function LeavesPage() {
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Tag size={14} /> Leave Type
+                  <Tag size={14} /> Type
                 </label>
                 <select
                   className="form-input"
@@ -453,7 +490,7 @@ export default function LeavesPage() {
                   onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
                   onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
                 >
-                  {LEAVE_TYPES.map(t => (
+                  {(activeTab === 'LEAVES' ? LEAVE_TYPES : PERMISSION_TYPES).map(t => (
                     <option key={t} value={t}>
                       {t}
                     </option>
@@ -506,13 +543,14 @@ export default function LeavesPage() {
 
             <div style={{ marginBottom: 24 }}>
               <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <AlignLeft size={14} /> Reason (optional)
+                <AlignLeft size={14} /> Reason {activeTab === 'PERMISSIONS' ? <span style={{ color: '#ef4444' }}>*</span> : '(optional)'}
               </label>
               <textarea
                 value={form.reason}
                 onChange={(e) => setForm({ ...form, reason: e.target.value })}
+                required={activeTab === 'PERMISSIONS'}
                 rows={3}
-                placeholder="Describe the reason for your leave (e.g. Doctor's appointment, Personal matters)..."
+                placeholder={activeTab === 'PERMISSIONS' ? "Detailed reason is required for permissions..." : "Describe the reason for your leave (e.g. Doctor's appointment, Personal matters)..."}
                 aria-label="Reason"
                 style={{
                   width: '100%', padding: '14px 16px', borderRadius: 10,
@@ -566,7 +604,7 @@ export default function LeavesPage() {
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
             <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              All Leave Requests
+              All {activeTab === 'LEAVES' ? 'Leave' : 'Permission'} Requests
             </h2>
             <div style={{ display: 'flex', gap: 6 }}>
               {['PENDING', 'APPROVED', 'REJECTED', 'ALL'].map(s => (
@@ -597,8 +635,8 @@ export default function LeavesPage() {
               <Search size={16} style={{ position: 'absolute', left: 12, color: 'var(--text-secondary)' }} />
               <input
                 type="text"
-                aria-label="Search leaves"
-                placeholder="Search by employee name or code..."
+                aria-label={`Search ${activeTab.toLowerCase()}`}
+                placeholder={`Search ${activeTab === 'LEAVES' ? 'leaves' : 'permissions'} by employee name or code...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
@@ -630,15 +668,15 @@ export default function LeavesPage() {
             </div>
           </div>
 
-          {paginatedLeaves.length === 0 ? (
+          {filteredAllLeaves.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-secondary)', fontSize: 14 }}>
               <Clock size={36} style={{ opacity: 0.3, marginBottom: 12, display: 'block', margin: '0 auto 12px' }} />
-              No {filterStatus === 'ALL' ? '' : filterStatus.toLowerCase()} leave requests found matching your filters.
+              No {filterStatus === 'ALL' ? '' : filterStatus.toLowerCase()} {activeTab === 'LEAVES' ? 'leave' : 'permission'} requests found.
             </div>
           ) : (
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {paginatedLeaves.map(leave => (
+                {filteredAllLeaves.map(leave => (
                   <LeaveCard key={leave.id} leave={leave} isAdmin onReview={handleReview} />
                 ))}
               </div>
@@ -690,16 +728,16 @@ export default function LeavesPage() {
       {/* ── My Leaves Panel ──────────────────────────────────────────────────── */}
       <div>
         <h2 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
-          My Leave Requests
+          My {activeTab === 'LEAVES' ? 'Leave' : 'Permission'} Requests
         </h2>
-        {myLeaves.length === 0 ? (
+        {filteredMyLeaves.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-secondary)', fontSize: 14 }}>
             <FileText size={36} style={{ opacity: 0.3, display: 'block', margin: '0 auto 12px' }} />
-            You have no leave requests yet. Click "Request Leave" to submit one.
+            You have no {activeTab === 'LEAVES' ? 'leave' : 'permission'} requests yet.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {myLeaves.map(leave => (
+            {filteredMyLeaves.map(leave => (
               <LeaveCard key={leave.id} leave={leave} isAdmin={false} onCancel={handleCancel} />
             ))}
           </div>

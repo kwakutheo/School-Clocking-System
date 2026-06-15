@@ -25,65 +25,94 @@ class LeavesView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Leaves'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BlocProvider.value(
-                    value: context.read<LeavesBloc>(),
-                    child: const LeaveRequestFormPage(),
-                  ),
-                ),
-              );
-            },
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Permissions & Leaves'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Leaves'),
+              Tab(text: 'Permissions'),
+            ],
           ),
-        ],
-      ),
-      body: BlocConsumer<LeavesBloc, LeavesState>(
-        listener: (context, state) {
-          if (state is LeaveSubmissionFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content: Text(state.message), backgroundColor: Colors.red),
-            );
-          } else if (state is LeaveSubmissionSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('Leave request submitted!'),
-                  backgroundColor: Colors.green),
-            );
-          }
-        },
-        builder: (context, state) {
-          if (state is LeavesLoading || state is LeavesInitial) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (state is LeavesError) {
-            return Center(child: Text(state.message));
-          } else if (state is LeavesLoaded) {
-            if (state.leaves.isEmpty) {
-              return const Center(child: Text('No leave requests found.'));
+          actions: [
+            Builder(
+              builder: (ctx) {
+                return IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: () {
+                    final tabIndex = DefaultTabController.of(ctx).index;
+                    Navigator.push(
+                      ctx,
+                      MaterialPageRoute(
+                        builder: (_) => BlocProvider.value(
+                          value: ctx.read<LeavesBloc>(),
+                          child: LeaveRequestFormPage(isPermissionTab: tabIndex == 1),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }
+            ),
+          ],
+        ),
+        body: BlocConsumer<LeavesBloc, LeavesState>(
+          listener: (context, state) {
+            if (state is LeaveSubmissionFailure) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text(state.message), backgroundColor: Colors.red),
+              );
+            } else if (state is LeaveSubmissionSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('Request submitted successfully!'),
+                    backgroundColor: Colors.green),
+              );
             }
-            return RefreshIndicator(
-              onRefresh: () async {
-                context.read<LeavesBloc>().add(LoadMyLeaves());
-              },
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16.0),
-                itemCount: state.leaves.length,
-                itemBuilder: (context, index) {
-                  final leave = state.leaves[index];
-                  return _buildLeaveCard(context, leave);
-                },
-              ),
-            );
-          }
-          return const SizedBox.shrink();
+          },
+          builder: (context, state) {
+            if (state is LeavesLoading || state is LeavesInitial) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (state is LeavesError) {
+              return Center(child: Text(state.message));
+            } else if (state is LeavesLoaded) {
+              final leaveTypes = ['SICK', 'ANNUAL', 'CASUAL', 'MATERNITY', 'PATERNITY', 'OTHER', 'UNPAID'];
+              final permissionTypes = ['EXCUSED', 'ERRAND'];
+              
+              final leavesList = state.leaves.where((l) => leaveTypes.contains(l.leaveType)).toList();
+              final permissionsList = state.leaves.where((l) => permissionTypes.contains(l.leaveType)).toList();
+
+              return TabBarView(
+                children: [
+                  _buildList(context, leavesList, 'No leave requests found.'),
+                  _buildList(context, permissionsList, 'No permission requests found.'),
+                ],
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildList(BuildContext context, List<LeaveRequestModel> items, String emptyMsg) {
+    if (items.isEmpty) {
+      return Center(child: Text(emptyMsg));
+    }
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<LeavesBloc>().add(LoadMyLeaves());
+      },
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16.0),
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          final item = items[index];
+          return _buildLeaveCard(context, item);
         },
       ),
     );

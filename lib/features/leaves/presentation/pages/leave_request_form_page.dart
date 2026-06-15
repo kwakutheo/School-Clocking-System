@@ -8,7 +8,8 @@ import 'package:tk_clocking_system/features/leaves/presentation/bloc/leaves_even
 import 'package:tk_clocking_system/features/leaves/presentation/bloc/leaves_state.dart';
 
 class LeaveRequestFormPage extends StatefulWidget {
-  const LeaveRequestFormPage({super.key});
+  final bool isPermissionTab;
+  const LeaveRequestFormPage({super.key, this.isPermissionTab = false});
 
   @override
   State<LeaveRequestFormPage> createState() => _LeaveRequestFormPageState();
@@ -16,19 +17,21 @@ class LeaveRequestFormPage extends StatefulWidget {
 
 class _LeaveRequestFormPageState extends State<LeaveRequestFormPage> {
   final _formKey = GlobalKey<FormState>();
-  String _leaveType = 'CASUAL';
+  late String _leaveType;
   DateTime? _startDate;
   DateTime? _endDate;
   final _reasonController = TextEditingController();
 
-  final List<String> _leaveTypes = [
-    'SICK',
-    'CASUAL',
-    'ANNUAL',
-    'MATERNITY',
-    'PATERNITY',
-    'UNPAID'
-  ];
+  late final List<String> _leaveTypes;
+
+  @override
+  void initState() {
+    super.initState();
+    _leaveTypes = widget.isPermissionTab
+        ? ['EXCUSED', 'ERRAND']
+        : ['SICK', 'CASUAL', 'ANNUAL', 'MATERNITY', 'PATERNITY', 'UNPAID', 'OTHER'];
+    _leaveType = _leaveTypes.first;
+  }
 
   @override
   void dispose() {
@@ -47,6 +50,13 @@ class _LeaveRequestFormPageState extends State<LeaveRequestFormPage> {
       if (_endDate!.isBefore(_startDate!)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('End date must be after start date.')),
+        );
+        return;
+      }
+
+      if (widget.isPermissionTab && _reasonController.text.trim().length < 5) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('A detailed reason (min 5 characters) is required for permissions.')),
         );
         return;
       }
@@ -93,7 +103,7 @@ class _LeaveRequestFormPageState extends State<LeaveRequestFormPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Request Leave'),
+        title: Text(widget.isPermissionTab ? 'Request Permission' : 'Request Leave'),
       ),
       body: BlocListener<LeavesBloc, LeavesState>(
         listener: (context, state) {
@@ -161,9 +171,15 @@ class _LeaveRequestFormPageState extends State<LeaveRequestFormPage> {
                 TextFormField(
                   controller: _reasonController,
                   maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Reason (Optional)',
-                    border: OutlineInputBorder(),
+                  validator: (val) {
+                    if (widget.isPermissionTab && (val == null || val.trim().length < 5)) {
+                      return 'A detailed reason is required';
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    labelText: widget.isPermissionTab ? 'Reason *' : 'Reason (Optional)',
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 24),

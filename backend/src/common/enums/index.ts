@@ -25,6 +25,8 @@ export enum LeaveType {
   MATERNITY = 'MATERNITY',
   PATERNITY = 'PATERNITY',
   OTHER = 'OTHER',
+  EXCUSED = 'EXCUSED',
+  ERRAND = 'ERRAND',
 }
 
 export enum LeaveStatus {

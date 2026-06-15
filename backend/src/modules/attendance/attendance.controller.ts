@@ -81,15 +81,16 @@ export class AttendanceController {
     return this.reportService.getTermReport(employee.id, termId);
   }
 
-  @Get('my-report/academic-year')
+  @Get('my-report/academic-year/:academicYear')
   @ApiOperation({ summary: 'Get own detailed academic year attendance report' })
   async getMyAcademicYearReport(
     @CurrentUser() user: User,
-    @Query('academicYear') academicYear: string,
+    @Param('academicYear') academicYear: string,
   ) {
     const employee = await this.employeesService.findByUserId(user.id);
     if (!employee) throw new NotFoundException('Employee not found');
-    return this.reportService.getAcademicYearReport(employee.id, academicYear);
+    // academicYear can contain slashes, so in URL it should be encoded, e.g. 2025%2F2026
+    return this.reportService.getAcademicYearReport(employee.id, decodeURIComponent(academicYear));
   }
 
   @Get('report/:employeeId')
@@ -119,7 +120,7 @@ export class AttendanceController {
     return this.reportService.getTermReport(employeeId, termId);
   }
 
-  @Get('report/:employeeId/academic-year')
+  @Get('report/:employeeId/academic-year/:academicYear')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('attendance.view')
   @ApiOperation({
@@ -127,9 +128,9 @@ export class AttendanceController {
   })
   getAcademicYearReport(
     @Param('employeeId') employeeId: string,
-    @Query('academicYear') academicYear: string,
+    @Param('academicYear') academicYear: string,
   ) {
-    return this.reportService.getAcademicYearReport(employeeId, academicYear);
+    return this.reportService.getAcademicYearReport(employeeId, decodeURIComponent(academicYear));
   }
 
   @Get('export/pdf/monthly/:employeeId')
@@ -176,18 +177,19 @@ export class AttendanceController {
     res.send(pdfBuffer);
   }
 
-  @Get('export/pdf/academic-year/:employeeId')
+  @Get('export/pdf/academic-year/:employeeId/academic-year/:academicYear')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('attendance.export')
   @ApiOperation({ summary: 'Export academic year attendance report as PDF' })
   async exportAcademicYearPdf(
     @Param('employeeId') employeeId: string,
-    @Query('academicYear') academicYear: string,
+    @Param('academicYear') academicYear: string,
     @Res() res: Response,
   ) {
+    const decodedYear = decodeURIComponent(academicYear);
     const pdfBuffer = await this.exportService.exportAcademicYearPdf(
       employeeId,
-      academicYear,
+      decodedYear,
     );
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
@@ -247,18 +249,19 @@ export class AttendanceController {
     res.send(pdfBuffer);
   }
 
-  @Get('export/bulk/pdf/academic-year')
+  @Get('export/bulk/pdf/academic-year/:academicYear')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('attendance.export')
   @ApiOperation({ summary: 'Export bulk academic year attendance summary as PDF' })
   async exportBulkAcademicYearPdf(
-    @Query('academicYear') academicYear: string,
+    @Param('academicYear') academicYear: string,
     @Query('branchId') branchId: string,
     @Query('branchName') branchName: string,
     @Res() res: Response,
   ) {
+    const decodedYear = decodeURIComponent(academicYear);
     const pdfBuffer = await this.exportService.exportBulkAcademicYearPdf(
-      academicYear,
+      decodedYear,
       branchId,
       branchName,
     );

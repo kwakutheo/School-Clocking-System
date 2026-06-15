@@ -115,7 +115,7 @@ export const attendanceApi = {
   getTermReport: (employeeId: string, termId: string) =>
     api.get(`/attendance/report/${employeeId}/term/${termId}`),
   getAcademicYearReport: (employeeId: string, academicYear: string) =>
-    api.get(`/attendance/report/${employeeId}/academic-year`, { params: { academicYear } }),
+    api.get(`/attendance/report/${employeeId}/academic-year/${encodeURIComponent(academicYear)}`),
   /** Returns all employees the acting admin is allowed to clock (excludes self). */
   clockableEmployees: () => api.get("/attendance/clockable-employees"),
   adminManualClock: (data: {
@@ -154,8 +154,7 @@ export const attendanceApi = {
       responseType: "blob",
     }),
   exportAcademicYearPdf: (employeeId: string, academicYear: string) =>
-    api.get(`/attendance/export/pdf/academic-year/${employeeId}`, {
-      params: { academicYear },
+    api.get(`/attendance/export/pdf/academic-year/${employeeId}/academic-year/${encodeURIComponent(academicYear)}`, {
       responseType: "blob",
     }),
   exportBulkAcademicYearPdf: (
@@ -163,8 +162,8 @@ export const attendanceApi = {
     branchId?: string,
     branchName?: string,
   ) =>
-    api.get(`/attendance/export/bulk/pdf/academic-year`, {
-      params: { academicYear, branchId, branchName },
+    api.get(`/attendance/export/bulk/pdf/academic-year/${encodeURIComponent(academicYear)}`, {
+      params: { branchId, branchName },
       responseType: "blob",
     }),
 };

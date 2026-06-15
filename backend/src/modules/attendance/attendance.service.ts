@@ -477,9 +477,13 @@ export class AttendanceService {
 
     if (approvedLeaves.length > 0) {
       const leave = approvedLeaves[0];
-      throw new BadRequestException(
-        `Action denied: This person has an approved ${leave.leaveType.toUpperCase()} LEAVE for today. Manual clocking is not allowed while on leave.`,
-      );
+      let msg = `Action denied: This person has an approved ${leave.leaveType} leave for today. Manual clocking is not allowed.`;
+      if (leave.leaveType === 'EXCUSED') {
+        msg = `Action denied: This person is absent with permission today. Manual clocking is not allowed.`;
+      } else if (leave.leaveType === 'ERRAND') {
+        msg = `Action denied: This person is on official duty (errand) today. Manual clocking is not allowed.`;
+      }
+      throw new BadRequestException(msg);
     }
 
     // Relaxed to allow admins to manually clock employees for past dates, enabling

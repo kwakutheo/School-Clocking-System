@@ -138,7 +138,7 @@ class LeavesView extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  leave.leaveType,
+                  _getLeaveTypeDisplayLabel(leave.leaveType),
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 18),
                 ),
@@ -176,10 +176,10 @@ class LeavesView extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                   ),
                 ),
                 child: Text(
@@ -210,5 +210,30 @@ class LeavesView extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getLeaveTypeDisplayLabel(String type) {
+    switch (type) {
+      case 'EXCUSED':
+        return 'Absent with Permission';
+      case 'ERRAND':
+        return 'Official Duty (Errand)';
+      case 'SICK':
+        return 'Sick Leave';
+      case 'CASUAL':
+        return 'Casual Leave';
+      case 'ANNUAL':
+        return 'Annual Leave';
+      case 'MATERNITY':
+        return 'Maternity Leave';
+      case 'PATERNITY':
+        return 'Paternity Leave';
+      case 'UNPAID':
+        return 'Unpaid Leave';
+      case 'OTHER':
+        return 'Other Leave';
+      default:
+        return type;
+    }
   }
 }

@@ -119,14 +119,14 @@ class _LeaveRequestFormPageState extends State<LeaveRequestFormPage> {
               children: [
                 DropdownButtonFormField<String>(
                   initialValue: _leaveType,
-                  decoration: const InputDecoration(
-                    labelText: 'Leave Type',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: widget.isPermissionTab ? 'Permission Type' : 'Leave Type',
+                    border: const OutlineInputBorder(),
                   ),
                   items: _leaveTypes.map((type) {
                     return DropdownMenuItem(
                       value: type,
-                      child: Text(type),
+                      child: Text(_getLeaveTypeDisplayLabel(type)),
                     );
                   }).toList(),
                   onChanged: (val) {
@@ -204,5 +204,30 @@ class _LeaveRequestFormPageState extends State<LeaveRequestFormPage> {
         ),
       ),
     );
+  }
+
+  String _getLeaveTypeDisplayLabel(String type) {
+    switch (type) {
+      case 'EXCUSED':
+        return 'Absent with Permission';
+      case 'ERRAND':
+        return 'Official Duty (Errand)';
+      case 'SICK':
+        return 'Sick Leave';
+      case 'CASUAL':
+        return 'Casual Leave';
+      case 'ANNUAL':
+        return 'Annual Leave';
+      case 'MATERNITY':
+        return 'Maternity Leave';
+      case 'PATERNITY':
+        return 'Paternity Leave';
+      case 'UNPAID':
+        return 'Unpaid Leave';
+      case 'OTHER':
+        return 'Other Leave';
+      default:
+        return type;
+    }
   }
 }

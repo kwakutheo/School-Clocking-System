@@ -23,6 +23,17 @@ const TYPE_COLORS: Record<string, string> = {
   EXCUSED: '#eab308', ERRAND: '#22c55e',
 };
 
+const LEAVE_TYPE_LABELS: Record<string, string> = {
+  SICK: 'Sick Leave',
+  ANNUAL: 'Annual Leave',
+  CASUAL: 'Casual Leave',
+  MATERNITY: 'Maternity Leave',
+  PATERNITY: 'Paternity Leave',
+  OTHER: 'Other Leave',
+  EXCUSED: 'Absent with Permission',
+  ERRAND: 'Official Duty (Errand)',
+};
+
 function Badge({ label, color, bg }: { label: string; color: string; bg: string }) {
   return (
     <span style={{
@@ -56,7 +67,7 @@ function LeaveCard({ leave, isAdmin, onReview, onCancel }: {
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, justifyContent: 'space-between' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
-            <Badge label={leave.leaveType} color={typeColor} bg={`${typeColor}20`} />
+            <Badge label={LEAVE_TYPE_LABELS[leave.leaveType] || leave.leaveType} color={typeColor} bg={`${typeColor}20`} />
             <Badge label={leave.status} color={statusColor.text} bg={statusColor.bg} />
             <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
               {dayCount} day{dayCount !== 1 ? 's' : ''}
@@ -474,13 +485,14 @@ export default function LeavesPage() {
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Tag size={14} /> Type
+                  <Tag size={14} /> {activeTab === 'LEAVES' ? 'Leave Type' : 'Permission Type'}
                 </label>
                 <select
                   className="form-input"
                   value={form.leaveType}
                   onChange={(e) => setForm({ ...form, leaveType: e.target.value })}
-                  aria-label="Leave type"
+                  aria-label={activeTab === 'LEAVES' ? 'Leave type' : 'Permission type'}
+
                   style={{
                     padding: '12px 16px', borderRadius: 10, background: 'var(--bg-input)',
                     border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 14,
@@ -492,7 +504,7 @@ export default function LeavesPage() {
                 >
                   {(activeTab === 'LEAVES' ? LEAVE_TYPES : PERMISSION_TYPES).map(t => (
                     <option key={t} value={t}>
-                      {t}
+                      {LEAVE_TYPE_LABELS[t] || t}
                     </option>
                   ))}
                 </select>

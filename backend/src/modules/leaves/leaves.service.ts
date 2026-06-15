@@ -86,8 +86,9 @@ export class LeavesService {
       .getOne();
 
     if (conflicting) {
+      const typeDisplay = this._getLeaveTypeDisplay(conflicting.leaveType);
       throw new BadRequestException(
-        `You already have an overlapping ${conflicting.status.toLowerCase()} ${conflicting.leaveType} leave ` +
+        `You already have an overlapping ${conflicting.status.toLowerCase()} ${typeDisplay} ` +
           `from ${conflicting.startDate} to ${conflicting.endDate}. ` +
           `Please cancel it first or choose different dates.`,
       );
@@ -336,8 +337,9 @@ export class LeavesService {
       .getOne();
 
     if (conflicting) {
+      const typeDisplay = this._getLeaveTypeDisplay(conflicting.leaveType);
       throw new BadRequestException(
-        `This employee already has an overlapping ${conflicting.status.toLowerCase()} ${conflicting.leaveType} leave ` +
+        `This employee already has an overlapping ${conflicting.status.toLowerCase()} ${typeDisplay} ` +
           `from ${conflicting.startDate} to ${conflicting.endDate}.`,
       );
     }
@@ -383,10 +385,16 @@ export class LeavesService {
         employee.user.fcmToken,
         'refresh_dashboard',
       );
+      
+      const typeDisplay = this._getLeaveTypeDisplay(leave.leaveType);
+      const notifTitle = leave.leaveType === LeaveType.EXCUSED || leave.leaveType === LeaveType.ERRAND 
+        ? 'New Permission Registered' 
+        : 'New Leave Registered';
+
       await this.notificationsService.sendPushToToken(
         employee.user.fcmToken,
-        'New Leave Registered',
-        `A ${leave.leaveType.toLowerCase()} leave request has been submitted on your behalf and is ${leave.status.toLowerCase()}.`,
+        notifTitle,
+        `A ${typeDisplay} request has been submitted on your behalf and is ${leave.status.toLowerCase()}.`,
       );
     }
 
@@ -452,5 +460,11 @@ export class LeavesService {
         throw new BadRequestException(`Request denied. You only have ${Math.max(0, 5 - daysUsed)} excused absence day(s) remaining for this academic term.`);
       }
     }
+  }
+
+  private _getLeaveTypeDisplay(leaveType: string): string {
+    if (leaveType === LeaveType.EXCUSED) return 'excused absence';
+    if (leaveType === LeaveType.ERRAND) return 'official duty (errand)';
+    return `${leaveType.toLowerCase()} leave`;
   }
 }

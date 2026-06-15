@@ -176,13 +176,15 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className={`app-shell ${collapsed ? 'collapsed' : ''} ${impersonatedTenant ? 'impersonated-readonly' : ''}`}>
+    <div className={`app-shell ${collapsed ? 'collapsed' : ''} ${impersonatedTenant && !pathname.startsWith('/attendance') ? 'impersonated-readonly' : ''}`}>
       {/* ── Impersonation / View Mode Floating Banner ──────────────────── */}
       {impersonatedTenant && (
         <div className={`impersonation-banner banner-${bannerPosition}`}>
           <div className="banner-content">
             <span className="banner-badge">Super Admin Mode</span>
-            <span className="banner-badge-readonly">View-Only Mode</span>
+            {!pathname.startsWith('/attendance') && (
+              <span className="banner-badge-readonly">View-Only Mode</span>
+            )}
             <span className="banner-text">
               Viewing <strong>{impersonatedTenant.name}</strong>
             </span>

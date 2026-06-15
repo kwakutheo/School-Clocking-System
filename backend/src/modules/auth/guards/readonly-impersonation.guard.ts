@@ -18,9 +18,9 @@ export class ReadonlyImpersonationGuard implements CanActivate {
       return true;
     }
 
-    // Allow auth and saas-admin endpoints to be mutated by Super Admins
+    // Allow auth, saas-admin, and attendance endpoints to be mutated by Super Admins
     const isSaaSOrAuth =
-      originalUrl.includes('/saas-admin') || originalUrl.includes('/auth');
+      originalUrl.includes('/saas-admin') || originalUrl.includes('/auth') || originalUrl.includes('/attendance');
     if (isSaaSOrAuth) {
       return true;
     }

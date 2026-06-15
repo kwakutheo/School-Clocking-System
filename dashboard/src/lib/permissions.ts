@@ -183,7 +183,19 @@ export async function fetchAndCachePermissions(): Promise<PermissionMatrix> {
 // ── Sync can() — reads from cache (populated at login / page load) ─────────
 export function can(role: Role | string | undefined, permission: Permission): boolean {
   if (!role) return false;
-  if (role === 'super_admin') return true;
+
+  if (role === 'super_admin') {
+    // If impersonating a tenant, restrict Super Admin to view-only / export for attendance reports
+    if (typeof window !== 'undefined' && localStorage.getItem('impersonated_tenant_id')) {
+      const allowedImpersonationPerms: Permission[] = [
+        'attendance.view',
+        'attendance.export',
+      ];
+      return allowedImpersonationPerms.includes(permission);
+    }
+    return true;
+  }
+
   const matrix = loadPermissions();
   const rolePerms = matrix[role as Role] ?? [];
   return rolePerms.includes(permission);

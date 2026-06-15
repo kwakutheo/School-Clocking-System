@@ -409,11 +409,11 @@ export default function DashboardPage() {
               <StatCard
                 icon={<Plane size={20} />}
                 value={dashboardStats.onLeaveToday}
-                label={isToday ? "On Leave Today" : "On Leave"}
+                label={isToday ? "Away / On Permission" : "Away / On Permission"}
                 color="#0284c7"
-                secondary={isToday ? "Approved leave — authorized absence" : "On approved leave this day"}
+                secondary={isToday ? "On approved leave or official duty" : "On approved leave or official duty this day"}
                 onClick={() => setModalDetails({
-                  title: isToday ? "On Leave Today" : "On Leave",
+                  title: isToday ? "Away Today (Leave / Permissions)" : "Away This Day (Leave / Permissions)",
                   type: 'onLeave',
                   data: dashboardStats.onLeaveEmployees ?? []
                 })}
@@ -765,7 +765,7 @@ export default function DashboardPage() {
                         <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Shift</th>
                       )}
                       {modalDetails.type === 'onLeave' && (
-                        <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Leave Type</th>
+                        <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Status</th>
                       )}
                       {modalDetails.type === 'earlyOut' && (
                         <>
@@ -835,11 +835,13 @@ export default function DashboardPage() {
                           <td style={{ padding: '12px 16px' }}>
                             <span style={{
                               fontSize: 11, fontWeight: 700, padding: '3px 10px',
-                              borderRadius: 20, background: 'rgba(2,132,199,0.12)',
-                              color: '#0284c7', border: '1px solid rgba(2,132,199,0.3)',
-                              textTransform: 'uppercase', letterSpacing: 0.5,
+                              borderRadius: 20,
+                              background: emp.leaveType === 'EXCUSED' ? 'rgba(234,179,8,0.12)' : emp.leaveType === 'ERRAND' ? 'rgba(34,197,94,0.12)' : 'rgba(2,132,199,0.12)',
+                              color: emp.leaveType === 'EXCUSED' ? '#eab308' : emp.leaveType === 'ERRAND' ? '#22c55e' : '#0284c7',
+                              border: `1px solid ${emp.leaveType === 'EXCUSED' ? 'rgba(234,179,8,0.3)' : emp.leaveType === 'ERRAND' ? 'rgba(34,197,94,0.3)' : 'rgba(2,132,199,0.3)'}`,
+                              letterSpacing: 0.5,
                             }}>
-                              {emp.leaveType ?? '—'}
+                              {emp.leaveType === 'EXCUSED' ? 'Absent with Permission' : emp.leaveType === 'ERRAND' ? 'Official Duty (Errand)' : emp.leaveType ? `${emp.leaveType.charAt(0) + emp.leaveType.slice(1).toLowerCase()} Leave` : '—'}
                             </span>
                           </td>
                         )}

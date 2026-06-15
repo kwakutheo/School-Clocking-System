@@ -1208,12 +1208,16 @@ class _LiveStatusBanner extends StatelessWidget {
     }
 
     if (data.isVacation) {
+      final name = data.vacationName ?? 'Vacation';
+      final isErrand = name.toLowerCase().contains('errand');
+      final isPermission = name.toLowerCase().contains('permission');
+      
       return _buildBanner(
         context,
-        color: Colors.teal,
-        icon: Icons.beach_access_rounded,
-        title: data.vacationName ?? 'Vacation',
-        subtitle: 'Enjoy your break!',
+        color: isErrand ? Colors.green : (isPermission ? Colors.amber.shade700 : Colors.teal),
+        icon: isErrand ? Icons.directions_run_rounded : (isPermission ? Icons.assignment_ind_rounded : Icons.beach_access_rounded),
+        title: name,
+        subtitle: isErrand ? 'On official assignment' : (isPermission ? 'Authorized absence' : 'Enjoy your break!'),
       );
     }
 

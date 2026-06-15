@@ -92,9 +92,15 @@ export class AttendanceService {
 
     if (approvedLeaves.length > 0) {
       const leave = approvedLeaves[0];
-      throw new BadRequestException(
-        `Action denied: You have an approved ${leave.leaveType.toUpperCase()} LEAVE for today. Clocking is not allowed while on leave.`,
-      );
+      let selfMsg: string;
+      if (leave.leaveType === 'EXCUSED') {
+        selfMsg = `Action denied: Your absence today has an approved excuse (Absent with Permission). Clocking in is not allowed.`;
+      } else if (leave.leaveType === 'ERRAND') {
+        selfMsg = `Action denied: You are on official duty (errand) today. Clocking in is not allowed.`;
+      } else {
+        selfMsg = `Action denied: You have an approved ${leave.leaveType} leave for today. Clocking is not allowed while on leave.`;
+      }
+      throw new BadRequestException(selfMsg);
     }
 
     // ── Determine the current working day boundary ─────────────────────────
@@ -693,9 +699,15 @@ export class AttendanceService {
 
     if (approvedLeaves.length > 0) {
       const leave = approvedLeaves[0];
-      throw new BadRequestException(
-        `Action denied: You have an approved ${leave.leaveType.toUpperCase()} LEAVE for today. Clocking is not allowed while on leave.`,
-      );
+      let selfMsg2: string;
+      if (leave.leaveType === 'EXCUSED') {
+        selfMsg2 = `Action denied: Your absence today has an approved excuse (Absent with Permission). Clocking in is not allowed.`;
+      } else if (leave.leaveType === 'ERRAND') {
+        selfMsg2 = `Action denied: You are on official duty (errand) today. Clocking in is not allowed.`;
+      } else {
+        selfMsg2 = `Action denied: You have an approved ${leave.leaveType} leave for today. Clocking is not allowed while on leave.`;
+      }
+      throw new BadRequestException(selfMsg2);
     }
 
     // ── Same state-machine as record() ───────────────────────────────────
@@ -1039,7 +1051,14 @@ export class AttendanceService {
     );
     if (approvedLeaves.length > 0) {
       isVacation = true;
-      vacationName = `Leave (${approvedLeaves[0].leaveType})`;
+      const lvType = approvedLeaves[0].leaveType;
+      if (lvType === 'EXCUSED') {
+        vacationName = 'Absent with Permission';
+      } else if (lvType === 'ERRAND') {
+        vacationName = 'Official Duty (Errand)';
+      } else {
+        vacationName = `${lvType.charAt(0) + lvType.slice(1).toLowerCase()} Leave`;
+      }
       isNonWorking = true;
     }
 

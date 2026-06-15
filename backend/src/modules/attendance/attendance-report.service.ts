@@ -475,7 +475,13 @@ export class AttendanceReportService {
           );
           if (onLeave) {
             // Approved leave — not counted as absent
-            status = `LEAVE (${onLeave.leaveType})`;
+            if (onLeave.leaveType === 'EXCUSED') {
+              status = 'ABSENT WITH PERMISSION';
+            } else if (onLeave.leaveType === 'ERRAND') {
+              status = 'OFFICIAL DUTY (ERRAND)';
+            } else {
+              status = `${onLeave.leaveType} LEAVE`;
+            }
             daysOnLeave++;
           } else if (isFuture || isToday) {
             if (isToday && employee.shift) {

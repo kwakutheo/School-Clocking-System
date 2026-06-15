@@ -64,7 +64,7 @@ class HomePageState extends State<HomePage> {
               ),
               ListTile(
                 leading: const Icon(Icons.calendar_month_rounded),
-                title: const Text('Leaves'),
+                title: const Text('Permissions & Leaves'),
                 onTap: () {
                   Navigator.pop(context);
                   setState(() => _selectedIndex = 4);
@@ -1211,13 +1211,21 @@ class _LiveStatusBanner extends StatelessWidget {
       final name = data.vacationName ?? 'Vacation';
       final isErrand = name.toLowerCase().contains('errand');
       final isPermission = name.toLowerCase().contains('permission');
-      
+
       return _buildBanner(
         context,
-        color: isErrand ? Colors.green : (isPermission ? Colors.amber.shade700 : Colors.teal),
-        icon: isErrand ? Icons.directions_run_rounded : (isPermission ? Icons.assignment_ind_rounded : Icons.beach_access_rounded),
+        color: isErrand
+            ? Colors.green
+            : (isPermission ? Colors.amber.shade700 : Colors.teal),
+        icon: isErrand
+            ? Icons.directions_run_rounded
+            : (isPermission
+                ? Icons.assignment_ind_rounded
+                : Icons.beach_access_rounded),
         title: name,
-        subtitle: isErrand ? 'On official assignment' : (isPermission ? 'Authorized absence' : 'Enjoy your break!'),
+        subtitle: isErrand
+            ? 'On official assignment'
+            : (isPermission ? 'Authorized absence' : 'Enjoy your break!'),
       );
     }
 

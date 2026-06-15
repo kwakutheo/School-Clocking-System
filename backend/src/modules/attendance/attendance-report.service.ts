@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { AttendanceLog } from '../attendance/attendance-log.entity';
@@ -347,6 +347,61 @@ export class AttendanceReportService {
           return null;
 
         const report = await this.getTermReport(emp.id, termId, empLogs);
+        if (
+          emp.status === EmployeeStatus.INACTIVE &&
+          report.summary.daysWorked === 0
+        )
+          return null;
+
+        return { employee: report.employee, summary: report.summary };
+      }),
+    );
+
+    return results.filter((r) => r !== null);
+  }
+
+  async getBulkAcademicYearReport(academicYear: string, branchId?: string) {
+    const query: any = {};
+    if (branchId) query.branch = { id: branchId };
+    const employees = await this.employeeRepo.find({ where: query });
+
+    const terms = await this.academicCalendarService.findTermsByAcademicYear(academicYear);
+    if (terms.length === 0) {
+      throw new BadRequestException('No terms found for this academic year');
+    }
+
+    const firstTerm = terms[0];
+    const lastTerm = terms[terms.length - 1];
+    const tenantId = tenantLocalStorage.getStore();
+
+    // One bulk query for all status logs in the academic year range
+    const allLogs = await this.statusLogRepo
+      .createQueryBuilder('log')
+      .leftJoinAndSelect('log.employee', 'emp')
+      .where('log.start_date <= :end', { end: lastTerm.endDate })
+      .andWhere('(log.end_date IS NULL OR log.end_date >= :start)', {
+        start: firstTerm.startDate,
+      })
+      .andWhere('log.tenantId = :tenantId', { tenantId })
+      .getMany();
+
+    const logsByEmployee = new Map<string, EmployeeStatusLog[]>();
+    allLogs.forEach((log) => {
+      const empId = log.employee.id;
+      if (!logsByEmployee.has(empId)) logsByEmployee.set(empId, []);
+      logsByEmployee.get(empId)!.push(log);
+    });
+
+    const results = await Promise.all(
+      employees.map(async (emp) => {
+        const empLogs = logsByEmployee.get(emp.id) ?? [];
+        const wasEverActive = empLogs.some(
+          (l) => l.status === EmployeeStatus.ACTIVE,
+        );
+        if (!wasEverActive && emp.status === EmployeeStatus.INACTIVE)
+          return null;
+
+        const report = await this.getAcademicYearReport(emp.id, academicYear, empLogs);
         if (
           emp.status === EmployeeStatus.INACTIVE &&
           report.summary.daysWorked === 0

@@ -3536,12 +3536,12 @@ export default function SaasOverviewPage() {
               }}
             >
               <div
-                style={{ fontWeight: 700, fontSize: "14px", color: "#0011ffff" }}
+                style={{ fontWeight: 700, fontSize: "14px", color: "var(--text-primary)" }}
               >
                 Final Score
               </div>
               <div
-                style={{ fontSize: "24px", fontWeight: 900, color: "#0011ffff" }}
+                style={{ fontSize: "24px", fontWeight: 900, color: "var(--text-primary)" }}
               >
                 {formatPct(explainEmpModal.metrics.score)}%
               </div>

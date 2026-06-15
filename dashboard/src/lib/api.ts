@@ -23,7 +23,7 @@ api.interceptors.request.use((config) => {
       const method = config.method?.toUpperCase() ?? "";
       const isMutating = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
       const isSaaSOrAuth =
-        config.url?.includes("/saas-admin") || config.url?.includes("/auth") || config.url?.includes("/attendance");
+        config.url?.includes("/saas-admin") || config.url?.includes("/auth");
       if (isMutating && !isSaaSOrAuth) {
         const error = new Error(
           "Portal is in view-only mode. Changes are disabled.",

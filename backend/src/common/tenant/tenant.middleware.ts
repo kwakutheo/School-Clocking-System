@@ -87,6 +87,7 @@ export class TenantMiddleware implements NestMiddleware {
     const isGlobalRoute =
       req.originalUrl.includes('/saas-admin') ||
       (req.originalUrl.includes('/auth/login') && !tenantId) ||
+      (req.originalUrl.includes('/auth/refresh') && !tenantId) ||
       req.originalUrl.includes('/auth/request-password-reset') ||
       req.originalUrl.includes('/auth/complete-password-reset') ||
       req.originalUrl.includes('/api/docs') ||

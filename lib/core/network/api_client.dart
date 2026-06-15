@@ -72,7 +72,14 @@ class ApiClient {
               try {
                 // Attempt to get a new access token using the refresh token
                 final refreshResponse = await Dio(
-                  BaseOptions(baseUrl: _dio.options.baseUrl),
+                  BaseOptions(
+                    baseUrl: _dio.options.baseUrl,
+                    headers: {
+                      'Content-Type': 'application/json',
+                      if (_storage.getTenantId() != null)
+                        'x-tenant-id': _storage.getTenantId(),
+                    },
+                  ),
                 ).post(
                   '/auth/refresh',
                   data: {'refreshToken': refreshToken},

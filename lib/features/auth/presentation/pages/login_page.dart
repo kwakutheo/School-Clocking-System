@@ -9,6 +9,7 @@ import 'package:tk_clocking_system/core/constants/app_constants.dart';
 import 'package:tk_clocking_system/core/di/injection_container.dart';
 import 'package:tk_clocking_system/core/network/api_client.dart';
 import 'package:tk_clocking_system/core/services/storage_service.dart';
+import 'package:tk_clocking_system/core/services/biometric_service.dart';
 import 'package:tk_clocking_system/shared/widgets/app_text_field.dart';
 import 'package:tk_clocking_system/shared/widgets/primary_button.dart';
 
@@ -25,6 +26,51 @@ class _LoginPageState extends State<LoginPage> {
   final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+
+  bool _canUseBiometrics = false;
+  String? _savedUsername;
+  String? _savedPassword;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometrics();
+  }
+
+  Future<void> _checkBiometrics() async {
+    final storage = sl<StorageService>();
+    final username = await storage.getSecureIdentifier();
+    final password = await storage.getSecurePassword();
+
+    if (username != null && password != null) {
+      final biometricService = sl<BiometricService>();
+      final available = await biometricService.isBiometricAvailable();
+      if (mounted) {
+        setState(() {
+          _canUseBiometrics = available;
+          _savedUsername = username;
+          _savedPassword = password;
+        });
+      }
+    }
+  }
+
+  void _loginWithBiometrics() async {
+    if (_savedUsername == null || _savedPassword == null) return;
+
+    final authenticated = await sl<BiometricService>().authenticate(
+      'Please verify your identity to sign in',
+    );
+
+    if (authenticated && mounted) {
+      context.read<AuthBloc>().add(
+            AuthLoginEvent(
+              username: _savedUsername!,
+              password: _savedPassword!,
+            ),
+          );
+    }
+  }
 
   @override
   void dispose() {
@@ -233,11 +279,34 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildLoginButton() {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
-        return PrimaryButton(
-          label: 'Sign In',
-          icon: Icons.arrow_forward_rounded,
-          isLoading: state is AuthLoading,
-          onPressed: _submit,
+        return Row(
+          children: [
+            Expanded(
+              child: PrimaryButton(
+                label: 'Sign In',
+                icon: Icons.arrow_forward_rounded,
+                isLoading: state is AuthLoading,
+                onPressed: _submit,
+              ),
+            ),
+            if (_canUseBiometrics) ...[
+              const SizedBox(width: 16),
+              SizedBox(
+                height: 56, // Match PrimaryButton standard height
+                width: 56,
+                child: FilledButton.tonal(
+                  style: FilledButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  onPressed: state is AuthLoading ? null : _loginWithBiometrics,
+                  child: const Icon(Icons.fingerprint_rounded, size: 28),
+                ),
+              ),
+            ],
+          ],
         );
       },
     );

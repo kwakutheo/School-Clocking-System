@@ -20,6 +20,10 @@ abstract final class AppConstants {
   static const String offlineIdentifierKey = 'offline_identifier';
   static const String offlinePasswordHashKey = 'offline_password_hash';
 
+  // ── Biometric login keys (Secure Storage) ────────────────────────────────
+  static const String secureIdentifierKey = 'secure_identifier';
+  static const String securePasswordKey = 'secure_password';
+
   // ── Time Tampering keys ──────────────────────────────────────────────────
   static const String lastKnownTimeOffsetKey = 'last_known_time_offset';
   static const String lastKnownTrueTimeKey = 'last_known_true_time';
@@ -40,69 +44,3 @@ abstract final class AppConstants {
   // ── Retry ─────────────────────────────────────────────────────────────────
   static const int maxSyncRetries = 3;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

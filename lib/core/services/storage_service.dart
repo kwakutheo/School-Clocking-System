@@ -31,7 +31,8 @@ class StorageService {
 
   Future<void> clearSession() async {
     await Future.wait([
-      _secure.deleteAll(),
+      _secure.delete(key: AppConstants.accessTokenKey),
+      _secure.delete(key: AppConstants.refreshTokenKey),
       _prefs.remove(AppConstants.userKey),
       _prefs.remove(AppConstants.tenantIdKey),
     ]);
@@ -83,6 +84,26 @@ class StorageService {
     ]);
   }
 
+  // ── Biometric login credentials (secure storage) ──────────────────────────
+  Future<void> saveSecureIdentifier(String identifier) =>
+      _secure.write(key: AppConstants.secureIdentifierKey, value: identifier);
+
+  Future<String?> getSecureIdentifier() =>
+      _secure.read(key: AppConstants.secureIdentifierKey);
+
+  Future<void> saveSecurePassword(String password) =>
+      _secure.write(key: AppConstants.securePasswordKey, value: password);
+
+  Future<String?> getSecurePassword() =>
+      _secure.read(key: AppConstants.securePasswordKey);
+
+  Future<void> clearSecureCredentials() async {
+    await Future.wait([
+      _secure.delete(key: AppConstants.secureIdentifierKey),
+      _secure.delete(key: AppConstants.securePasswordKey),
+    ]);
+  }
+
   // ── Time Tampering ────────────────────────────────────────────────────────
   Future<void> saveLastKnownTimeOffset(int offsetMillis) =>
       _prefs.setInt(AppConstants.lastKnownTimeOffsetKey, offsetMillis);
@@ -90,8 +111,8 @@ class StorageService {
   int? getLastKnownTimeOffset() =>
       _prefs.getInt(AppConstants.lastKnownTimeOffsetKey);
 
-  Future<void> saveLastKnownTrueTime(DateTime time) =>
-      _prefs.setString(AppConstants.lastKnownTrueTimeKey, time.toIso8601String());
+  Future<void> saveLastKnownTrueTime(DateTime time) => _prefs.setString(
+      AppConstants.lastKnownTrueTimeKey, time.toIso8601String());
 
   DateTime? getLastKnownTrueTime() {
     final str = _prefs.getString(AppConstants.lastKnownTrueTimeKey);
@@ -108,6 +129,5 @@ class StorageService {
   Future<void> saveLastSavedUptime(int uptimeMs) =>
       _prefs.setInt(AppConstants.lastSavedUptimeKey, uptimeMs);
 
-  int? getLastSavedUptime() =>
-      _prefs.getInt(AppConstants.lastSavedUptimeKey);
+  int? getLastSavedUptime() => _prefs.getInt(AppConstants.lastSavedUptimeKey);
 }

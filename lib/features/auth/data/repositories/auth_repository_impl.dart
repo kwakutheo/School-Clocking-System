@@ -54,6 +54,10 @@ class AuthRepositoryImpl implements AuthRepository {
       await _storage.saveOfflineIdentifier(identifier);
       await _storage.saveOfflinePasswordHash(_hashPassword(password));
 
+      // Securely save actual credentials for Biometric login
+      await _storage.saveSecureIdentifier(username);
+      await _storage.saveSecurePassword(password);
+
       return Right(LoginResult(user: user));
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {

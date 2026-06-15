@@ -163,6 +163,97 @@ export class AttendanceReportService {
     };
   }
 
+  async getAcademicYearReport(
+    employeeId: string,
+    academicYear: string,
+    preloadedLogs?: EmployeeStatusLog[],
+  ) {
+    const terms = await this.academicCalendarService.findTermsByAcademicYear(academicYear);
+    if (terms.length === 0) {
+      throw new BadRequestException('No terms found for this academic year');
+    }
+
+    const startDate = parseISO(terms[0].startDate);
+    const endDate = parseISO(terms[terms.length - 1].endDate);
+
+    const approvedLeaves = await this.leavesService.findApprovedInRange(
+      employeeId,
+      terms[0].startDate,
+      terms[terms.length - 1].endDate,
+    );
+
+    const fullReport = await this.getReportForRange(
+      employeeId,
+      startDate,
+      endDate,
+      preloadedLogs,
+      approvedLeaves,
+    );
+
+    const termReports: any[] = [];
+
+    terms.forEach((term) => {
+      const tStart = parseISO(term.startDate);
+      const tEnd = parseISO(term.endDate);
+      const termDays = fullReport.days.filter((d) => {
+        const dDate = parseISO(d.date);
+        return dDate >= tStart && dDate <= tEnd;
+      });
+
+      if (termDays.length > 0) {
+        const tSummary = termDays.reduce(
+          (acc, day) => {
+            acc.totalHours += day.hours;
+            if (
+              day.status === 'PRESENT' ||
+              (day.status === 'IN PROGRESS' && day.clockIn)
+            )
+              acc.daysWorked++;
+            if (day.status === 'ABSENT') acc.daysAbsent++;
+            if (day.isLate) {
+              acc.daysLate++;
+              acc.totalLateMinutes += day.lateMinutes;
+            }
+            if (day.isEarlyOut) {
+              acc.daysEarlyDeparture++;
+              acc.totalEarlyOutMinutes += day.earlyOutMinutes;
+            }
+            if (day.missingClockOut) {
+              acc.daysForgotClockOut++;
+            }
+            return acc;
+          },
+          {
+            totalHours: 0,
+            daysWorked: 0,
+            daysAbsent: 0,
+            daysLate: 0,
+            totalLateMinutes: 0,
+            daysEarlyDeparture: 0,
+            totalEarlyOutMinutes: 0,
+            daysForgotClockOut: 0,
+          },
+        );
+
+        termReports.push({
+          name: term.name,
+          termId: term.id,
+          summary: {
+            ...tSummary,
+            totalHours: Number(tSummary.totalHours.toFixed(2)),
+          },
+          days: termDays,
+        });
+      }
+    });
+
+    return {
+      ...fullReport,
+      terms: termReports,
+      academicYear,
+    };
+  }
+
   async getBulkMonthlyReport(month: number, year: number, branchId?: string) {
     const query: any = {};
     if (branchId) query.branch = { id: branchId };

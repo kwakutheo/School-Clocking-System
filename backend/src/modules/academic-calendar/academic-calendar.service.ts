@@ -139,6 +139,19 @@ export class AcademicCalendarService {
     });
   }
 
+  async findTermsByAcademicYear(academicYear: string): Promise<AcademicTerm[]> {
+    const tenantId = getCurrentTenantId();
+    const where: any = tenantId
+      ? { academicYear, tenantId }
+      : { academicYear };
+
+    return this.termRepo.find({
+      where,
+      relations: ['breaks'],
+      order: { startDate: 'ASC' },
+    });
+  }
+
   async findOneTerm(id: string): Promise<AcademicTerm> {
     const tenantId = getCurrentTenantId();
     const where: any = tenantId ? { id, tenantId } : { id };

@@ -34,7 +34,7 @@ export default function AttendanceReportPage() {
   const [year, setYear] = useState<number | null>(null);
   const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<'month' | 'term'>('month');
+  const [viewMode, setViewMode] = useState<'month' | 'term' | 'academic-year'>('month');
   const [showExceptionsOnly, setShowExceptionsOnly] = useState(false);
   const [activeTab, setActiveTab] = useState<string | 'summary'>('summary');
   const [exporting, setExporting] = useState(false);
@@ -106,17 +106,20 @@ export default function AttendanceReportPage() {
     if (!selectedEmp) return;
     if (viewMode === 'month' && (month === null || year === null)) return;
     if (viewMode === 'term' && !selectedTermId) return;
+    if (viewMode === 'academic-year' && !selectedAcademicYear) return;
 
     setLoading(true);
     try {
       let res;
       if (viewMode === 'month') {
         res = await attendanceApi.getReport(selectedEmp, month!, year!);
-      } else {
+      } else if (viewMode === 'term') {
         res = await attendanceApi.getTermReport(selectedEmp, selectedTermId);
+      } else {
+        res = await attendanceApi.getAcademicYearReport(selectedEmp, selectedAcademicYear);
       }
       setReport(res.data);
-      if (viewMode === 'term') setActiveTab('summary');
+      if (viewMode === 'term' || viewMode === 'academic-year') setActiveTab('summary');
     } catch (err) {
       alert('Failed to fetch report');
     } finally {
@@ -138,9 +141,12 @@ export default function AttendanceReportPage() {
       if (viewMode === 'month') {
         res = await attendanceApi.exportMonthlyPdf(selectedEmp, month!, year!);
         filename = `${empName}-attendance-${month}-${year}.pdf`;
-      } else {
+      } else if (viewMode === 'term') {
         res = await attendanceApi.exportTermPdf(selectedEmp, selectedTermId);
         filename = `${empName}-attendance-term.pdf`;
+      } else {
+        res = await attendanceApi.exportAcademicYearPdf(selectedEmp, selectedAcademicYear);
+        filename = `${empName}-attendance-academic-year.pdf`;
       }
 
       const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -168,9 +174,12 @@ export default function AttendanceReportPage() {
       if (viewMode === 'month') {
         res = await attendanceApi.exportBulkMonthlyPdf(month!, year!, selectedBranch || undefined, branchName);
         filename = `bulk-attendance-${month}-${year}.pdf`;
-      } else {
+      } else if (viewMode === 'term') {
         res = await attendanceApi.exportBulkTermPdf(selectedTermId, selectedBranch || undefined, branchName, termName);
         filename = `bulk-attendance-term.pdf`;
+      } else {
+        res = await attendanceApi.exportBulkAcademicYearPdf(selectedAcademicYear, selectedBranch || undefined, branchName);
+        filename = `bulk-attendance-academic-year.pdf`;
       }
 
       const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -197,12 +206,19 @@ export default function AttendanceReportPage() {
      let days = [];
      if (viewMode === 'month') {
        days = report.days || [];
-     } else {
+     } else if (viewMode === 'term') {
        if (activeTab === 'summary') {
          return []; // Summary view doesn't show daily breakdown
        } else {
          const activeMonth = report.months?.find((m: any) => `${m.year}-${String(m.month).padStart(2, '0')}` === activeTab);
          days = activeMonth?.days || [];
+       }
+     } else if (viewMode === 'academic-year') {
+       if (activeTab === 'summary') {
+         return [];
+       } else {
+         const activeTerm = report.terms?.find((t: any) => t.termId === activeTab);
+         days = activeTerm?.days || [];
        }
      }
 
@@ -220,13 +236,19 @@ export default function AttendanceReportPage() {
   }, [report, viewMode, activeTab, showExceptionsOnly]);
 
   const currentSummary = useMemo(() => {
-     if (!report) return null;
-     if (viewMode === 'month') return report.summary;
-     if (activeTab === 'summary') return report.summary;
-     
-     const activeMonth = report.months?.find((m: any) => `${m.year}-${String(m.month).padStart(2, '0')}` === activeTab);
-     return activeMonth?.summary || report.summary;
-   }, [report, viewMode, activeTab]);
+    if (!report) return null;
+    if (viewMode === 'month') return report.summary;
+    if (activeTab === 'summary') return report.summary;
+    
+    if (viewMode === 'term') {
+      const activeMonth = report.months?.find((m: any) => `${m.year}-${String(m.month).padStart(2, '0')}` === activeTab);
+      return activeMonth?.summary || report.summary;
+    } else if (viewMode === 'academic-year') {
+      const activeTerm = report.terms?.find((t: any) => t.termId === activeTab);
+      return activeTerm?.summary || report.summary;
+    }
+    return report.summary;
+  }, [report, viewMode, activeTab]);
 
   return (
     <>
@@ -260,7 +282,7 @@ export default function AttendanceReportPage() {
               <button 
                 className="btn btn-secondary" 
                 onClick={handleExportBulkPdf} 
-                disabled={exporting || loading || (viewMode === 'month' && (month === null || year === null))}
+                disabled={exporting || loading || (viewMode === 'month' && (month === null || year === null)) || (viewMode === 'academic-year' && !selectedAcademicYear)}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}
                 title="Export summary for all employees"
               >
@@ -270,7 +292,7 @@ export default function AttendanceReportPage() {
               <button 
                 className="btn btn-secondary" 
                 onClick={handleExportPdf} 
-                disabled={exporting || loading || !selectedEmp || (viewMode === 'month' && (month === null || year === null))}
+                disabled={exporting || loading || !selectedEmp || (viewMode === 'month' && (month === null || year === null)) || (viewMode === 'academic-year' && !selectedAcademicYear)}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}
                 title="Export report for selected employee"
               >
@@ -279,7 +301,7 @@ export default function AttendanceReportPage() {
               </button>
             </>
           )}
-          <button className="btn btn-primary" onClick={fetchReport} disabled={loading || !selectedEmp || (viewMode === 'month' && (month === null || year === null))} style={{ fontWeight: 500 }}>
+          <button className="btn btn-primary" onClick={fetchReport} disabled={loading || !selectedEmp || (viewMode === 'month' && (month === null || year === null)) || (viewMode === 'academic-year' && !selectedAcademicYear)} style={{ fontWeight: 500 }}>
             {loading ? '...' : 'Refresh Report'}
           </button>
         </div>
@@ -318,6 +340,7 @@ export default function AttendanceReportPage() {
             >
               <option value="month">Monthly Report</option>
               <option value="term">Term Report</option>
+              <option value="academic-year">Academic Year Report</option>
             </select>
           </div>
           <div className="form-group">
@@ -338,17 +361,19 @@ export default function AttendanceReportPage() {
               ))}
             </select>
           </div>
-          <div className="form-group">
-            <label htmlFor="termSelect">Term</label>
-            <select id="termSelect" className="form-input" value={selectedTermId} onChange={e => setSelectedTermId(e.target.value)}>
-              <option value="">— Select Term —</option>
-              {filteredTerms.map((term: any) => (
-                <option key={term.id} value={term.id}>
-                  {term.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {viewMode !== 'academic-year' && (
+            <div className="form-group">
+              <label htmlFor="termSelect">Term</label>
+              <select id="termSelect" className="form-input" value={selectedTermId} onChange={e => setSelectedTermId(e.target.value)}>
+                <option value="">— Select Term —</option>
+                {filteredTerms.map((term: any) => (
+                  <option key={term.id} value={term.id}>
+                    {term.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           {viewMode === 'month' && (
             <div className="form-group">
               <label htmlFor="monthSelect">Month Within Term</label>
@@ -397,6 +422,25 @@ export default function AttendanceReportPage() {
                       </button>
                     );
                   })}
+                </>
+              )}
+              {viewMode === 'academic-year' && (
+                <>
+                  <button 
+                     className={`tab ${activeTab === 'summary' ? 'active' : ''}`}
+                     onClick={() => setActiveTab('summary')}
+                   >
+                     Academic Year Summary
+                   </button>
+                   {report.terms?.map((t: any) => (
+                     <button 
+                       key={t.termId}
+                       className={`tab ${activeTab === t.termId ? 'active' : ''}`}
+                       onClick={() => setActiveTab(t.termId)}
+                     >
+                       {t.name}
+                     </button>
+                   ))}
                 </>
               )}
             </div>

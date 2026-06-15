@@ -84,6 +84,14 @@ export class AttendanceExportService {
     return await pdfDoc.getBuffer();
   }
 
+  async exportAcademicYearPdf(employeeId: string, academicYear: string): Promise<Buffer> {
+    const report = await this.reportService.getAcademicYearReport(employeeId, academicYear);
+    const brand = await this.getTenantBrandInfo();
+    const docDefinition = this.buildAcademicYearDocDefinition(report, brand.name, brand.logoUrl);
+    const pdfDoc = pdfmake.createPdf(docDefinition);
+    return await pdfDoc.getBuffer();
+  }
+
   async exportBulkMonthlyPdf(
     month: number,
     year: number,
@@ -138,6 +146,31 @@ export class AttendanceExportService {
     );
 
     const title = `Bulk Attendance Summary - ${termName || 'Term'}`;
+    const subtitle = branchId ? `Branch: ${branchName}` : 'All Branches';
+
+    const brand = await this.getTenantBrandInfo();
+    const docDefinition = this.buildBulkSummaryDocDefinition(
+      reports,
+      title,
+      subtitle,
+      brand.name,
+      brand.logoUrl,
+    );
+    const pdfDoc = pdfmake.createPdf(docDefinition);
+    return await pdfDoc.getBuffer();
+  }
+
+  async exportBulkAcademicYearPdf(
+    academicYear: string,
+    branchId?: string,
+    branchName?: string,
+  ): Promise<Buffer> {
+    const reports = await this.reportService.getBulkAcademicYearReport(
+      academicYear,
+      branchId,
+    );
+
+    const title = `Bulk Attendance Summary - Academic Year ${academicYear}`;
     const subtitle = branchId ? `Branch: ${branchName}` : 'All Branches';
 
     const brand = await this.getTenantBrandInfo();
@@ -519,6 +552,153 @@ export class AttendanceExportService {
         margin: [0, 15, 0, 5],
       });
       content.push(this.buildDailyLogTable(m.days));
+    });
+
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    const generatedStr = `${dd}/${mm}/${yyyy} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+    const footerFn = function (currentPage: number, pageCount: number) {
+      const logoColumns: any[] = logoPath
+        ? [
+            {
+              image: logoPath,
+              width: 20,
+              margin: [0, -2, 5, 0],
+            },
+            {
+              text: tenantName,
+              alignment: 'left',
+              margin: [0, 2, 0, 0],
+              color: '#6b7280',
+              fontSize: 9,
+            },
+          ]
+        : [
+            {
+              text: tenantName,
+              alignment: 'left',
+              margin: [0, 2, 0, 0],
+              color: '#6b7280',
+              fontSize: 9,
+            },
+          ];
+      return {
+        columns: [
+          { width: '*', columns: logoColumns },
+          {
+            text: `Report generated on ${generatedStr}`,
+            alignment: 'center',
+            margin: [0, 2, 0, 0],
+            color: '#6b7280',
+            fontSize: 9,
+            width: '*',
+          },
+          {
+            text: `Page ${currentPage} of ${pageCount}`,
+            alignment: 'right',
+            margin: [0, 2, 0, 0],
+            color: '#6b7280',
+            fontSize: 9,
+            width: '*',
+          },
+        ],
+        margin: [40, 10, 40, 0],
+      };
+    };
+
+    return {
+      footer: footerFn,
+      defaultStyle: { font: 'Helvetica', fontSize: 10 },
+      content,
+      styles: {
+        coverSchoolName: { fontSize: 18, bold: true, color: '#4b5563' },
+        coverTitle: { fontSize: 24, bold: true, color: '#111827' },
+        coverName: { fontSize: 20, bold: true, color: '#2563eb' },
+        coverSub: { fontSize: 14, color: '#4b5563' },
+        header: { fontSize: 18, bold: true, margin: [0, 0, 0, 5] },
+        subheader: { fontSize: 12, color: '#4b5563', margin: [0, 0, 0, 5] },
+        sectionHeader: { fontSize: 14, bold: true },
+        tableHeader: { bold: true, fillColor: '#f3f4f6', color: '#374151' },
+      },
+    };
+  }
+
+  private buildAcademicYearDocDefinition(report: any, tenantName: string, logoPath: string | null): any {
+    const content: any[] = [
+      ...(logoPath
+        ? [
+            {
+              image: logoPath,
+              fit: [70, 70],
+              alignment: 'center',
+              margin: [0, 40, 0, 10],
+            },
+          ]
+        : []),
+      {
+        text: tenantName,
+        style: 'coverSchoolName',
+        alignment: 'center',
+        margin: [0, logoPath ? 0 : 40, 0, 10],
+      },
+      {
+        text: 'Academic Year Attendance Report',
+        style: 'coverTitle',
+        alignment: 'center',
+        margin: [0, 0, 0, 10],
+      },
+      {
+        canvas: [
+          {
+            type: 'line',
+            x1: 0,
+            y1: 0,
+            x2: 515,
+            y2: 0,
+            lineWidth: 1,
+            lineColor: '#00000038',
+          },
+        ],
+        margin: [0, 0, 0, 20],
+      },
+      {
+        text: report.employee.fullName,
+        style: 'coverName',
+        alignment: 'center',
+      },
+      { text: ``, alignment: 'center', margin: [0, 5, 0, 20] },
+      {
+        text: `Academic Year: ${report.academicYear}`,
+        style: 'coverSub',
+        alignment: 'center',
+        margin: [0, 5, 0, 40],
+      },
+      {
+        text: 'Academic Year Summary Overview',
+        style: 'sectionHeader',
+        alignment: 'center',
+        margin: [0, 0, 0, 15],
+      },
+      this.buildSummaryTable(report.summary),
+    ];
+
+    report.terms.forEach((t: any) => {
+      content.push({
+        text: t.name,
+        style: 'sectionHeader',
+        margin: [0, 20, 0, 10],
+        pageBreak: 'before',
+      });
+      content.push(this.buildSummaryTable(t.summary));
+      content.push({
+        text: 'Daily Log',
+        style: 'subheader',
+        margin: [0, 15, 0, 5],
+      });
+      content.push(this.buildDailyLogTable(t.days));
     });
 
     const now = new Date();

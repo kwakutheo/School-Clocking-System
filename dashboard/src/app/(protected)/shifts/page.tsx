@@ -19,8 +19,8 @@ export default function ShiftsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: '',
-    startTime: '08:00',
-    endTime: '17:00',
+    startTime: '',
+    endTime: '',
     graceMinutes: 0,
   });
 

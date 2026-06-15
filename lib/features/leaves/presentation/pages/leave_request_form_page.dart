@@ -74,7 +74,7 @@ class _LeaveRequestFormPageState extends State<LeaveRequestFormPage> {
 
   Future<void> _selectDate(BuildContext context, bool isStart) async {
     final now = await sl<TimeService>().getGhanaTimeAsync();
-    if (!mounted) return;
+    if (!context.mounted) return;
     
     final initialDate = isStart ? (_startDate ?? now) : (_endDate ?? _startDate ?? now);
     final DateTime? picked = await showDatePicker(

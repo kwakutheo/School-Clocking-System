@@ -21,7 +21,7 @@ export default function ShiftsPage() {
     name: '',
     startTime: '08:00',
     endTime: '17:00',
-    graceMinutes: 15,
+    graceMinutes: 0,
   });
 
   if (!canManage) {

@@ -332,8 +332,14 @@ export class SaasAdminService implements OnModuleInit {
     }
 
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedPin = await bcrypt.hash(pin, 12);
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15);
+
     await this.userRepo.update(user.id, {
-      resetPin: pin,
+      resetPin: hashedPin,
+      resetPinExpiresAt: expiresAt,
+      resetPinAttempts: 0,
       requiresPasswordChange: true,
     });
 

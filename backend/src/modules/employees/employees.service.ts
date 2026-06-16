@@ -818,8 +818,14 @@ export class EmployeesService implements OnModuleInit {
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Set requiresPasswordChange so the user is forced to change it on their next login
+    const hashedPin = await bcrypt.hash(pin, 12);
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15);
+
     await this.userRepo.update(emp.user.id, {
-      resetPin: pin,
+      resetPin: hashedPin,
+      resetPinExpiresAt: expiresAt,
+      resetPinAttempts: 0,
       requiresPasswordChange: true,
     });
 

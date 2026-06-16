@@ -425,7 +425,7 @@ export class LeavesService {
   ): Promise<void> {
     if (leaveType !== LeaveType.EXCUSED && leaveType !== LeaveType.ERRAND) return;
 
-    if (!reason || reason.trim().length < 5) {
+    if (!reason || reason.trim().length < 3) {
       throw new BadRequestException('A detailed reason is required for errands and excused absences.');
     }
 
@@ -456,8 +456,8 @@ export class LeavesService {
 
       const currentRequestDays = Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
 
-      if (daysUsed + currentRequestDays > 5) {
-        throw new BadRequestException(`Request denied. You only have ${Math.max(0, 5 - daysUsed)} excused absence day(s) remaining for this academic term.`);
+      if (daysUsed + currentRequestDays > 3) {
+        throw new BadRequestException(`Request denied. You only have ${Math.max(0, 3 - daysUsed)} excused absence day(s) remaining for this academic term.`);
       }
     }
   }

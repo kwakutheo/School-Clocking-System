@@ -457,7 +457,7 @@ export class LeavesService {
       const currentRequestDays = Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
 
       if (daysUsed + currentRequestDays > 3) {
-        throw new BadRequestException(`Request denied. You only have ${Math.max(0, 3 - daysUsed)} excused absence day(s) remaining for this academic term.`);
+        throw new BadRequestException(`Request denied. You only have ${Math.max(0, 3 - daysUsed)} excused absence day(s) remaining for this term.`);
       }
     }
   }

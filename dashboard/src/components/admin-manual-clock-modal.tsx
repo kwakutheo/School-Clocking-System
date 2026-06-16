@@ -327,7 +327,7 @@ export function AdminManualClockModal({ onClose, onSuccess, selectedDate }: Prop
                 </p>
                 {filteredOutCount > 0 && (
                   <div style={{ fontSize: 12, color: '#f59e0b', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 8, padding: '8px 12px' }}>
-                    <strong>{filteredOutCount}</strong> employee{filteredOutCount !== 1 ? 's' : ''} hidden — registered after this date and cannot be clocked for it.
+                    <strong>{filteredOutCount}</strong> employee{filteredOutCount !== 1 ? 's' : ''} hidden - registered after this date and cannot be clocked for it.
                   </div>
                 )}
                 {customDate !== todayDateString && selectedEmp?.shift && (

@@ -255,7 +255,9 @@ export class SaasAdminService implements OnModuleInit {
     if (data.isActive !== undefined) user.isActive = data.isActive;
     if (data.password) {
       if (data.password.length < 8) {
-        throw new BadRequestException('Password must be at least 8 characters.');
+        throw new BadRequestException(
+          'Password must be at least 8 characters.',
+        );
       }
       user.passwordHash = await bcrypt.hash(data.password, 12);
       user.requiresPasswordChange = false;
@@ -357,7 +359,10 @@ export class SaasAdminService implements OnModuleInit {
     console.warn(`PIN: ${pin}`);
     console.warn('========================================================\n');
 
-    return { success: true, message: 'Password reset link simulated and logged to console.' };
+    return {
+      success: true,
+      message: 'Password reset link simulated and logged to console.',
+    };
   }
 
   private toDateStr(d: Date): string {
@@ -522,7 +527,9 @@ export class SaasAdminService implements OnModuleInit {
         registrationDate.setHours(0, 0, 0, 0);
         if (registrationDate > cursor) continue;
 
-        const workingDays: number[] = employee.shift?.workingDays ?? [1, 2, 3, 4, 5];
+        const workingDays: number[] = employee.shift?.workingDays ?? [
+          1, 2, 3, 4, 5,
+        ];
         if (!workingDays.includes(isoDow)) continue;
 
         const status = this.getEmployeeStatusOnDate(
@@ -576,11 +583,11 @@ export class SaasAdminService implements OnModuleInit {
       const weeksAgo = weekOffsetMap[timeframe];
       const monday = this.startOfIsoWeek(defaultStart);
       monday.setDate(monday.getDate() - weeksAgo * 7);
-      
+
       const sunday = new Date(monday);
       sunday.setDate(sunday.getDate() + 6);
       sunday.setHours(23, 59, 59, 999);
-      
+
       defaultStart.setTime(monday.getTime());
       defaultEnd.setTime(sunday.getTime());
     } else if (timeframe === '30d') {
@@ -602,7 +609,7 @@ export class SaasAdminService implements OnModuleInit {
     } else {
       let activeTerms: AcademicTerm[] = [];
       const termRepo = this.connection.getRepository(AcademicTerm);
-      
+
       if (academicYear) {
         const whereClause: any = { academicYear };
         if (termName && termName !== 'all') {
@@ -625,10 +632,10 @@ export class SaasAdminService implements OnModuleInit {
       const now = new Date();
       for (const tenant of tenants) {
         let tenantTerms = tenantTermsMap.get(tenant.id) || [];
-        
+
         let tStart: Date;
         let tEnd: Date;
-        
+
         if (tenantTerms.length > 0) {
           if (!academicYear) {
             tenantTerms.sort((a, b) => {
@@ -654,22 +661,22 @@ export class SaasAdminService implements OnModuleInit {
             });
             tenantTerms = [tenantTerms[0]];
           }
-          
+
           let minStart = new Date(tenantTerms[0].startDate);
           let maxEnd = new Date(tenantTerms[0].endDate);
-          
+
           for (const term of tenantTerms) {
             const s = new Date(term.startDate);
             const e = new Date(term.endDate);
             if (s < minStart) minStart = s;
             if (e > maxEnd) maxEnd = e;
           }
-          
+
           tStart = minStart;
           tStart.setHours(0, 0, 0, 0);
           tEnd = maxEnd;
           tEnd.setHours(23, 59, 59, 999);
-          
+
           if (tStart > endOfToday) {
             // Future term: preserve the actual boundaries for querying, but
             // expose 0 elapsed weekdays so downstream metrics render as no-data.
@@ -679,7 +686,7 @@ export class SaasAdminService implements OnModuleInit {
               weekdays: 0,
             });
           } else {
-            // Current or past term: cap end date to today if it extends into the future, 
+            // Current or past term: cap end date to today if it extends into the future,
             // so we don't dilute the presence rate with future expected days.
             if (tEnd > endOfToday) {
               tEnd = new Date(endOfToday);
@@ -692,7 +699,10 @@ export class SaasAdminService implements OnModuleInit {
           }
         } else {
           // No terms found for this tenant
-          if (timeframe === 'term' && (academicYear || (termName && termName !== 'all'))) {
+          if (
+            timeframe === 'term' &&
+            (academicYear || (termName && termName !== 'all'))
+          ) {
             // If explicit academicYear/term was requested but tenant has no matching terms,
             // return a zero-day range so metrics naturally evaluate to 0
             tenantRangesMap.set(tenant.id, {
@@ -768,7 +778,12 @@ export class SaasAdminService implements OnModuleInit {
       .getRawMany();
 
     // Get tenant timeframe ranges
-    const tenantRangesMap = await this.getTenantRanges(tenants, timeframe, academicYear, termName);
+    const tenantRangesMap = await this.getTenantRanges(
+      tenants,
+      timeframe,
+      academicYear,
+      termName,
+    );
 
     let employeeStats: Array<{ tenantId: string; count: number }> = [];
     if (timeframe === 'term') {
@@ -954,7 +969,10 @@ export class SaasAdminService implements OnModuleInit {
         const current = expectedMap.get(summary.tenantId) || 0;
         expectedMap.set(summary.tenantId, current + summary.expectedCount);
         const currentLeave = leaveMap.get(summary.tenantId) || 0;
-        leaveMap.set(summary.tenantId, currentLeave + (summary.leaveCount ?? 0));
+        leaveMap.set(
+          summary.tenantId,
+          currentLeave + (summary.leaveCount ?? 0),
+        );
       }
     }
 
@@ -975,65 +993,64 @@ export class SaasAdminService implements OnModuleInit {
     }
 
     // Map tenants using the aggregated maps
-    let results = tenants
-      .map((tenant) => {
-        const employeeCount = employeeMap.get(tenant.id) || 0;
-        const branchCount = branchMap.get(tenant.id) || 0;
-        const departmentCount = departmentMap.get(tenant.id) || 0;
-        const shiftCount = shiftMap.get(tenant.id) || 0;
-        const presentCount = checkinMap.get(tenant.id) || 0;
-        const checkins30 = checkin30Map.get(tenant.id) || 0;
+    let results = tenants.map((tenant) => {
+      const employeeCount = employeeMap.get(tenant.id) || 0;
+      const branchCount = branchMap.get(tenant.id) || 0;
+      const departmentCount = departmentMap.get(tenant.id) || 0;
+      const shiftCount = shiftMap.get(tenant.id) || 0;
+      const presentCount = checkinMap.get(tenant.id) || 0;
+      const checkins30 = checkin30Map.get(tenant.id) || 0;
 
-        // Use the accurate time-series expected count. If 0 (e.g. no summary run yet), fallback to generic math.
-        const rangeParams = tenantRangesMap.get(tenant.id) || {
-          start: boundingStart,
-          end: boundingEnd,
-          weekdays: 1,
-        };
-        const expectedInTimeframe =
-          expectedMap.get(tenant.id) ?? employeeCount * rangeParams.weekdays;
-        const approvedLeaveDays = leaveMap.get(tenant.id) || 0;
+      // Use the accurate time-series expected count. If 0 (e.g. no summary run yet), fallback to generic math.
+      const rangeParams = tenantRangesMap.get(tenant.id) || {
+        start: boundingStart,
+        end: boundingEnd,
+        weekdays: 1,
+      };
+      const expectedInTimeframe =
+        expectedMap.get(tenant.id) ?? employeeCount * rangeParams.weekdays;
+      const approvedLeaveDays = leaveMap.get(tenant.id) || 0;
 
-        // Use two-decimal precision for rates; keep values numeric so frontend can format as needed
-        const presenceRateRaw =
-          expectedInTimeframe > 0
-            ? (presentCount / expectedInTimeframe) * 100
-            : 0;
-        const presenceRate = Number(Math.min(100, presenceRateRaw).toFixed(2));
+      // Use two-decimal precision for rates; keep values numeric so frontend can format as needed
+      const presenceRateRaw =
+        expectedInTimeframe > 0
+          ? (presentCount / expectedInTimeframe) * 100
+          : 0;
+      const presenceRate = Number(Math.min(100, presenceRateRaw).toFixed(2));
 
-        const expected30 =
-          expected30Map.get(tenant.id) ?? employeeCount * weekdays30Count;
-        const sustained30Raw =
-          expected30 > 0 ? (checkins30 / expected30) * 100 : 0;
-        const sustained30DayRate = Number(
-          Math.min(100, sustained30Raw).toFixed(2),
-        );
+      const expected30 =
+        expected30Map.get(tenant.id) ?? employeeCount * weekdays30Count;
+      const sustained30Raw =
+        expected30 > 0 ? (checkins30 / expected30) * 100 : 0;
+      const sustained30DayRate = Number(
+        Math.min(100, sustained30Raw).toFixed(2),
+      );
 
-        return {
-          id: tenant.id,
-          name: tenant.name,
-          slug: tenant.slug,
-          initials: tenant.initials,
-          isActive: tenant.isActive,
-          primaryColor: tenant.primaryColor,
-          logoUrl: tenant.logoUrl,
-          customDomain: tenant.customDomain,
-          createdAt: tenant.createdAt,
-          metrics: {
-            employees: employeeCount,
-            branches: branchCount,
-            departments: departmentCount,
-            shifts: shiftCount,
-            // Preserve existing field for compatibility, and add more explicit fields
-            presentToday: presentCount,
-            presentInTimeframe: presentCount,
-            expectedEmployeeDays: expectedInTimeframe,
-            approvedLeaveDays,
-            presenceRate: presenceRate,
-            sustained30DayRate: sustained30DayRate,
-          },
-        };
-      });
+      return {
+        id: tenant.id,
+        name: tenant.name,
+        slug: tenant.slug,
+        initials: tenant.initials,
+        isActive: tenant.isActive,
+        primaryColor: tenant.primaryColor,
+        logoUrl: tenant.logoUrl,
+        customDomain: tenant.customDomain,
+        createdAt: tenant.createdAt,
+        metrics: {
+          employees: employeeCount,
+          branches: branchCount,
+          departments: departmentCount,
+          shifts: shiftCount,
+          // Preserve existing field for compatibility, and add more explicit fields
+          presentToday: presentCount,
+          presentInTimeframe: presentCount,
+          expectedEmployeeDays: expectedInTimeframe,
+          approvedLeaveDays,
+          presenceRate: presenceRate,
+          sustained30DayRate: sustained30DayRate,
+        },
+      };
+    });
 
     // For performance reports/rankings, exclude schools that had no active
     // workforce scheduled in the selected timeframe — showing them as 0%
@@ -1041,7 +1058,9 @@ export class SaasAdminService implements OnModuleInit {
     // passing includeAll=true since it is an administrative list, not a
     // ranked performance report.
     if (!includeAll) {
-      results = results.filter((school) => school.metrics.expectedEmployeeDays > 0);
+      results = results.filter(
+        (school) => school.metrics.expectedEmployeeDays > 0,
+      );
     }
 
     if (cohort) {
@@ -1119,7 +1138,9 @@ export class SaasAdminService implements OnModuleInit {
 
       const initialsConflictWhere: any = { initials: slugNorm.toUpperCase() };
       if (excludeId) initialsConflictWhere.id = Not(excludeId);
-      const initialsConflict = await this.tenantRepo.findOne({ where: initialsConflictWhere });
+      const initialsConflict = await this.tenantRepo.findOne({
+        where: initialsConflictWhere,
+      });
       result.slugConflictWithInitials = !!initialsConflict;
     }
 
@@ -1127,12 +1148,16 @@ export class SaasAdminService implements OnModuleInit {
     if (initialsNorm) {
       const initialsWhere: any = { initials: initialsNorm };
       if (excludeId) initialsWhere.id = Not(excludeId);
-      const existingInitials = await this.tenantRepo.findOne({ where: initialsWhere });
+      const existingInitials = await this.tenantRepo.findOne({
+        where: initialsWhere,
+      });
       result.initialsTaken = !!existingInitials;
 
       const slugConflictWhere: any = { slug: initialsNorm.toLowerCase() };
       if (excludeId) slugConflictWhere.id = Not(excludeId);
-      const slugConflict = await this.tenantRepo.findOne({ where: slugConflictWhere });
+      const slugConflict = await this.tenantRepo.findOne({
+        where: slugConflictWhere,
+      });
       result.initialsConflictWithSlug = !!slugConflict;
     }
 
@@ -1140,19 +1165,24 @@ export class SaasAdminService implements OnModuleInit {
   }
 
   /** Dynamically onboard a brand new school. */
-  async onboardTenant(data: {
-    name: string;
-    slug: string;
-    primaryColor?: string;
-    initials?: string;
-    adminUsername: string;
-    adminPasswordHash: string; // Plain password passed from controller which we will hash
-  }, adminUser: User): Promise<Tenant> {
+  async onboardTenant(
+    data: {
+      name: string;
+      slug: string;
+      primaryColor?: string;
+      initials?: string;
+      adminUsername: string;
+      adminPasswordHash: string; // Plain password passed from controller which we will hash
+    },
+    adminUser: User,
+  ): Promise<Tenant> {
     const cleanSlug = this.normalizeSlugValue(data.slug);
     const initialsNorm = this.normalizeInitialsValue(data.initials);
 
     // 1. Verify unique slug
-    const existingTenant = await this.tenantRepo.findOne({ where: { slug: cleanSlug } });
+    const existingTenant = await this.tenantRepo.findOne({
+      where: { slug: cleanSlug },
+    });
     if (existingTenant) {
       throw new BadRequestException(
         `A school with the subdomain "${cleanSlug}" already exists.`,
@@ -1162,7 +1192,9 @@ export class SaasAdminService implements OnModuleInit {
     // When creating a tenant we must perform the full set of cross-field checks
     // so that slugs and initials are mutually exclusive and cannot collide.
     if (cleanSlug) {
-      const initialsConflict = await this.tenantRepo.findOne({ where: { initials: cleanSlug.toUpperCase() } });
+      const initialsConflict = await this.tenantRepo.findOne({
+        where: { initials: cleanSlug.toUpperCase() },
+      });
       if (initialsConflict) {
         throw new BadRequestException(
           `Subdomain "${cleanSlug}" conflicts with existing school initials "${initialsConflict.initials}".`,
@@ -1171,7 +1203,9 @@ export class SaasAdminService implements OnModuleInit {
     }
 
     if (initialsNorm) {
-      const existingInitials = await this.tenantRepo.findOne({ where: { initials: initialsNorm } });
+      const existingInitials = await this.tenantRepo.findOne({
+        where: { initials: initialsNorm },
+      });
       if (existingInitials) {
         throw new BadRequestException(
           `School initials "${initialsNorm}" are already in use.`,
@@ -1179,7 +1213,9 @@ export class SaasAdminService implements OnModuleInit {
       }
 
       // initials must not collide with existing slugs
-      const slugConflict = await this.tenantRepo.findOne({ where: { slug: initialsNorm.toLowerCase() } });
+      const slugConflict = await this.tenantRepo.findOne({
+        where: { slug: initialsNorm.toLowerCase() },
+      });
       if (slugConflict) {
         throw new BadRequestException(
           `Initials "${initialsNorm}" conflict with existing subdomain slug "${slugConflict.slug}".`,
@@ -1188,7 +1224,9 @@ export class SaasAdminService implements OnModuleInit {
     }
 
     // 3. Verify unique username
-    const existingUser = await this.userRepo.findOne({ where: { username: data.adminUsername } });
+    const existingUser = await this.userRepo.findOne({
+      where: { username: data.adminUsername },
+    });
     if (existingUser) {
       throw new BadRequestException(
         `A user with the admin username "${data.adminUsername}" already exists.`,
@@ -1212,7 +1250,10 @@ export class SaasAdminService implements OnModuleInit {
       const savedTenant = await queryRunner.manager.save(Tenant, tenant);
 
       // Create Admin User bound to that Tenant
-      const hashedPassword = await bcrypt.hash(data.adminPasswordHash.trim(), 12);
+      const hashedPassword = await bcrypt.hash(
+        data.adminPasswordHash.trim(),
+        12,
+      );
       const adminUser = queryRunner.manager.create(User, {
         fullName: `${data.name?.trim()} Admin`,
         username: data.adminUsername?.trim(),
@@ -1229,7 +1270,11 @@ export class SaasAdminService implements OnModuleInit {
         action: 'ONBOARD_TENANT',
         module: 'TENANTS',
         targetId: savedTenant.id,
-        newValues: { name: savedTenant.name, slug: savedTenant.slug, initials: savedTenant.initials },
+        newValues: {
+          name: savedTenant.name,
+          slug: savedTenant.slug,
+          initials: savedTenant.initials,
+        },
       });
       return savedTenant;
     } catch (err: any) {
@@ -1252,7 +1297,9 @@ export class SaasAdminService implements OnModuleInit {
             `A user with the admin username "${data.adminUsername}" already exists.`,
           );
         }
-        throw new BadRequestException('Duplicate value violates unique constraint.');
+        throw new BadRequestException(
+          'Duplicate value violates unique constraint.',
+        );
       }
       throw err;
     } finally {
@@ -1261,7 +1308,11 @@ export class SaasAdminService implements OnModuleInit {
   }
 
   /** Toggle active/suspended state of a school. */
-  async toggleTenantStatus(id: string, isActive: boolean, adminUser: User): Promise<Tenant> {
+  async toggleTenantStatus(
+    id: string,
+    isActive: boolean,
+    adminUser: User,
+  ): Promise<Tenant> {
     const tenant = await this.tenantRepo.findOne({ where: { id } });
     if (!tenant) {
       throw new NotFoundException(`School with ID "${id}" not found.`);
@@ -1274,7 +1325,11 @@ export class SaasAdminService implements OnModuleInit {
       action: 'TOGGLE_TENANT_STATUS',
       module: 'TENANTS',
       targetId: saved.id,
-      newValues: { isActive: saved.isActive, name: saved.name, slug: saved.slug },
+      newValues: {
+        isActive: saved.isActive,
+        name: saved.name,
+        slug: saved.slug,
+      },
     });
     return saved;
   }
@@ -1313,7 +1368,12 @@ export class SaasAdminService implements OnModuleInit {
 
     // Sum active expected check-ins count over this timeframe. Prefer expectedEmployeeDays when present
     const tenants = await this.tenantRepo.find();
-    const tenantRangesMap = await this.getTenantRanges(tenants, timeframe, academicYear, termName);
+    const tenantRangesMap = await this.getTenantRanges(
+      tenants,
+      timeframe,
+      academicYear,
+      termName,
+    );
 
     let totalExpected = 0;
     let totalApprovedLeaveDays = 0;
@@ -1383,7 +1443,7 @@ export class SaasAdminService implements OnModuleInit {
     // workforce snapshot.
     const history: number[] = [];
     const tenantIds = schools.map((school) => school.id);
-    
+
     const today = new Date();
     today.setHours(23, 59, 59, 999);
     const currentWeekStart = this.startOfIsoWeek(today);
@@ -1407,7 +1467,10 @@ export class SaasAdminService implements OnModuleInit {
           "COUNT(DISTINCT CONCAT(log.employee_id, '_', DATE_TRUNC('day', log.timestamp)))",
           'count',
         )
-        .where('log.timestamp BETWEEN :start AND :actualEnd', { start, actualEnd })
+        .where('log.timestamp BETWEEN :start AND :actualEnd', {
+          start,
+          actualEnd,
+        })
         .andWhere('log.type = :type', { type: AttendanceType.CLOCK_IN })
         .andWhere('EXTRACT(ISODOW FROM log.timestamp) IN (1, 2, 3, 4, 5)')
         .getRawOne();
@@ -1525,7 +1588,9 @@ export class SaasAdminService implements OnModuleInit {
     if (data.slug !== undefined) {
       const cleanSlug = this.normalizeSlugValue(data.slug);
       if (cleanSlug !== tenant.slug) {
-        const existing = await this.tenantRepo.findOne({ where: { slug: cleanSlug } });
+        const existing = await this.tenantRepo.findOne({
+          where: { slug: cleanSlug },
+        });
         if (existing && existing.id !== tenant.id) {
           throw new BadRequestException(
             `Subdomain "${cleanSlug}" is already registered to another school.`,
@@ -1534,7 +1599,9 @@ export class SaasAdminService implements OnModuleInit {
 
         // Ensure the new slug does not conflict with any tenant initials
         if (cleanSlug) {
-          const initialsConflict = await this.tenantRepo.findOne({ where: { initials: cleanSlug.toUpperCase() } });
+          const initialsConflict = await this.tenantRepo.findOne({
+            where: { initials: cleanSlug.toUpperCase() },
+          });
           if (initialsConflict && initialsConflict.id !== tenant.id) {
             throw new BadRequestException(
               `Subdomain "${cleanSlug}" conflicts with existing school initials "${initialsConflict.initials}".`,
@@ -1569,7 +1636,9 @@ export class SaasAdminService implements OnModuleInit {
       const initialsNorm = this.normalizeInitialsValue(data.initials);
       if ((tenant.initials || null) !== (initialsNorm || null)) {
         if (initialsNorm) {
-          const existing = await this.tenantRepo.findOne({ where: { initials: initialsNorm } });
+          const existing = await this.tenantRepo.findOne({
+            where: { initials: initialsNorm },
+          });
           if (existing && existing.id !== tenant.id) {
             throw new BadRequestException(
               `School initials "${initialsNorm}" are already in use.`,
@@ -1577,7 +1646,9 @@ export class SaasAdminService implements OnModuleInit {
           }
 
           // Ensure initials do not collide with any existing slug
-          const slugConflict = await this.tenantRepo.findOne({ where: { slug: initialsNorm.toLowerCase() } });
+          const slugConflict = await this.tenantRepo.findOne({
+            where: { slug: initialsNorm.toLowerCase() },
+          });
           if (slugConflict && slugConflict.id !== tenant.id) {
             throw new BadRequestException(
               `Initials "${initialsNorm}" conflict with existing subdomain slug "${slugConflict.slug}".`,
@@ -1596,7 +1667,12 @@ export class SaasAdminService implements OnModuleInit {
       action: 'UPDATE_TENANT_BRANDING',
       module: 'TENANTS',
       targetId: saved.id,
-      newValues: { name: saved.name, slug: saved.slug, customDomain: saved.customDomain, primaryColor: saved.primaryColor },
+      newValues: {
+        name: saved.name,
+        slug: saved.slug,
+        customDomain: saved.customDomain,
+        primaryColor: saved.primaryColor,
+      },
     });
     return saved;
   }
@@ -1634,12 +1710,15 @@ export class SaasAdminService implements OnModuleInit {
   }
 
   /** Create and publish a new platform bulletin. */
-  async createBulletin(data: {
-    title: string;
-    content: string;
-    type: BulletinType;
-    targetTenantIds?: string[] | null;
-  }, adminUser: User): Promise<SystemBulletin> {
+  async createBulletin(
+    data: {
+      title: string;
+      content: string;
+      type: BulletinType;
+      targetTenantIds?: string[] | null;
+    },
+    adminUser: User,
+  ): Promise<SystemBulletin> {
     if (!data.title || !data.content) {
       throw new BadRequestException(
         'Title and content are required to publish a bulletin.',
@@ -1696,7 +1775,11 @@ export class SaasAdminService implements OnModuleInit {
       action: 'UPDATE_BULLETIN',
       module: 'BULLETINS',
       targetId: saved.id,
-      newValues: { title: saved.title, type: saved.type, isActive: saved.isActive },
+      newValues: {
+        title: saved.title,
+        type: saved.type,
+        isActive: saved.isActive,
+      },
     });
     return saved;
   }
@@ -1739,7 +1822,11 @@ export class SaasAdminService implements OnModuleInit {
     limit: number;
     totalPages: number;
   }> {
-    const allResults = await this.getEmployeeRankingRows(timeframe, academicYear, termName);
+    const allResults = await this.getEmployeeRankingRows(
+      timeframe,
+      academicYear,
+      termName,
+    );
 
     const searchTerm = search?.trim().toLowerCase();
     const schoolTerm = school?.trim().toLowerCase();
@@ -1806,7 +1893,7 @@ export class SaasAdminService implements OnModuleInit {
       // academic terms, so we compute queryStart after that lookup below.
       const startDate = new Date();
       startDate.setHours(0, 0, 0, 0);
-      
+
       const weekOffsetMap: Record<string, number> = {
         '1w_ago': 1,
         '2w_ago': 2,
@@ -1822,7 +1909,7 @@ export class SaasAdminService implements OnModuleInit {
         const monday = this.startOfIsoWeek(startDate);
         monday.setDate(monday.getDate() - weeksAgo * 7);
         startDate.setTime(monday.getTime());
-        
+
         // Ensure endOfToday caps at Sunday of that specific historical week
         const sunday = new Date(monday);
         sunday.setDate(sunday.getDate() + 6);
@@ -1873,22 +1960,27 @@ export class SaasAdminService implements OnModuleInit {
       // The SQL query then uses the broadest bounding window; per-employee
       // filtering narrows the logs to the tenant's exact term window.
       const tenantTermStartMap = new Map<string, Date>();
-      const tenantTermEndMap   = new Map<string, Date>();
+      const tenantTermEndMap = new Map<string, Date>();
       let queryStart = startDate; // overridden below for 'term'
 
       if (timeframe === 'term') {
-        const ranges = await this.getTenantRanges(tenants, timeframe, academicYear, termName);
+        const ranges = await this.getTenantRanges(
+          tenants,
+          timeframe,
+          academicYear,
+          termName,
+        );
         const fallbackStart = new Date();
         fallbackStart.setDate(fallbackStart.getDate() - 89);
         fallbackStart.setHours(0, 0, 0, 0);
-        queryStart = new Date(endOfToday); 
-        
+        queryStart = new Date(endOfToday);
+
         for (const [tenantId, range] of ranges.entries()) {
           tenantTermStartMap.set(tenantId, range.start);
           tenantTermEndMap.set(tenantId, range.end);
           if (range.start < queryStart) queryStart = range.start;
         }
-        
+
         if (fallbackStart < queryStart) queryStart = fallbackStart;
       }
 
@@ -1897,23 +1989,33 @@ export class SaasAdminService implements OnModuleInit {
       // ── Load all ACTIVE status log periods for every employee in one query ──
       // Each row represents one contiguous window when the employee was ACTIVE.
       // endDate IS NULL means the period is still ongoing (currently employed).
-      const statusLogs = employeeIds.length > 0
-        ? await this.connection
-            .getRepository(EmployeeStatusLog)
-            .createQueryBuilder('sl')
-            .select(['sl.employeeId', 'sl.status', 'sl.startDate', 'sl.endDate'])
-            .where('sl.employee_id = ANY(:ids)', { ids: employeeIds })
-            .andWhere("sl.status = 'active'")
-            .getMany()
-        : [];
+      const statusLogs =
+        employeeIds.length > 0
+          ? await this.connection
+              .getRepository(EmployeeStatusLog)
+              .createQueryBuilder('sl')
+              .select([
+                'sl.employeeId',
+                'sl.status',
+                'sl.startDate',
+                'sl.endDate',
+              ])
+              .where('sl.employee_id = ANY(:ids)', { ids: employeeIds })
+              .andWhere("sl.status = 'active'")
+              .getMany()
+          : [];
 
       // Build a lookup: employeeId → array of { start: Date, end: Date | null }
-      const statusLogsByEmp = new Map<string, Array<{ start: Date; end: Date | null }>>();
+      const statusLogsByEmp = new Map<
+        string,
+        Array<{ start: Date; end: Date | null }>
+      >();
       for (const log of statusLogs) {
-        if (!statusLogsByEmp.has(log.employeeId)) statusLogsByEmp.set(log.employeeId, []);
+        if (!statusLogsByEmp.has(log.employeeId))
+          statusLogsByEmp.set(log.employeeId, []);
         statusLogsByEmp.get(log.employeeId)!.push({
           start: new Date(log.startDate),
-          end:   log.endDate ? new Date(log.endDate) : null,
+          end: log.endDate ? new Date(log.endDate) : null,
         });
       }
 
@@ -1981,10 +2083,10 @@ export class SaasAdminService implements OnModuleInit {
         let timeframeEnd: Date;
         if (timeframe === 'term') {
           const termStart = tenantTermStartMap.get(emp.tenantId);
-          const termEnd   = tenantTermEndMap.get(emp.tenantId);
+          const termEnd = tenantTermEndMap.get(emp.tenantId);
           if (termStart && termEnd) {
             timeframeStart = termStart;
-            timeframeEnd   = termEnd;
+            timeframeEnd = termEnd;
           } else {
             timeframeStart = new Date();
             timeframeStart.setDate(timeframeStart.getDate() - 89);
@@ -1993,7 +2095,7 @@ export class SaasAdminService implements OnModuleInit {
           }
         } else {
           timeframeStart = startDate;
-          timeframeEnd   = endOfToday;
+          timeframeEnd = endOfToday;
         }
 
         // ── Build the set of valid date-strings from ACTIVE status windows ──
@@ -2027,10 +2129,11 @@ export class SaasAdminService implements OnModuleInit {
         for (const period of periodsToUse) {
           // Intersection of period window and timeframe window
           const periodStart = period.start;
-          const periodEnd   = period.end ?? endOfToday; // null = still employed
+          const periodEnd = period.end ?? endOfToday; // null = still employed
 
-          const windowStart = periodStart > timeframeStart ? periodStart : timeframeStart;
-          const windowEnd   = periodEnd   < timeframeEnd   ? periodEnd   : timeframeEnd;
+          const windowStart =
+            periodStart > timeframeStart ? periodStart : timeframeStart;
+          const windowEnd = periodEnd < timeframeEnd ? periodEnd : timeframeEnd;
 
           // Cap to today so we never count future expected days
           const effectiveEnd = windowEnd > endOfToday ? endOfToday : windowEnd;
@@ -2051,10 +2154,12 @@ export class SaasAdminService implements OnModuleInit {
 
         // Filter clock-in/out logs to only days in the resolved active windows.
         // This is correct for all timeframes (including 'term').
-        const rawIn  = clockInsByEmp.get(emp.id)?.dates ?? new Map<string, { isLate: boolean; ts: Date }>();
+        const rawIn =
+          clockInsByEmp.get(emp.id)?.dates ??
+          new Map<string, { isLate: boolean; ts: Date }>();
         const rawOut = clockOutsByEmp.get(emp.id) ?? new Map<string, Date>();
 
-        const inMap  = new Map<string, { isLate: boolean; ts: Date }>();
+        const inMap = new Map<string, { isLate: boolean; ts: Date }>();
         const outMap = new Map<string, Date>();
 
         for (const [d, v] of rawIn) {
@@ -2186,7 +2291,9 @@ export class SaasAdminService implements OnModuleInit {
 
         results.push({
           id: emp.id,
-          name: emp.isArchived ? `${emp.user?.fullName ?? 'Unknown'} (Archived)` : (emp.user?.fullName ?? 'Unknown'),
+          name: emp.isArchived
+            ? `${emp.user?.fullName ?? 'Unknown'} (Archived)`
+            : (emp.user?.fullName ?? 'Unknown'),
           employeeCode: emp.employeeCode,
           position: emp.position ?? null,
           photoUrl: emp.photoUrl ?? null,
@@ -2259,7 +2366,13 @@ export class SaasAdminService implements OnModuleInit {
     schoolName?: string,
     statuses?: string[],
     isArchived?: boolean,
-  ): Promise<{ data: any[]; total: number; page: number; limit: number; totalPages: number }> {
+  ): Promise<{
+    data: any[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
     const qb = this.employeeRepo
       .createQueryBuilder('e')
       .leftJoinAndSelect('e.user', 'user')
@@ -2278,7 +2391,9 @@ export class SaasAdminService implements OnModuleInit {
     }
 
     if (schoolName && schoolName.trim() !== '') {
-      qb.andWhere('tenant.name ILIKE :schoolName', { schoolName: `%${schoolName.trim()}%` });
+      qb.andWhere('tenant.name ILIKE :schoolName', {
+        schoolName: `%${schoolName.trim()}%`,
+      });
     }
 
     if (search && search.trim() !== '') {
@@ -2293,13 +2408,13 @@ export class SaasAdminService implements OnModuleInit {
     const total = await qb.getCount();
     const totalPages = Math.max(1, Math.ceil(total / safeLimit));
     const safePage = Math.min(Math.max(Number(page) || 1, 1), totalPages);
-    
+
     qb.skip((safePage - 1) * safeLimit).take(safeLimit);
-    
+
     const employees = await qb.getMany();
-    
+
     // Map to a clean response
-    const data = employees.map(emp => ({
+    const data = employees.map((emp) => ({
       id: emp.id,
       employeeCode: emp.employeeCode,
       position: emp.position,
@@ -2310,18 +2425,22 @@ export class SaasAdminService implements OnModuleInit {
       // statusChangeDate is explicitly set to new Date() when an employee is archived,
       // so this is the accurate "Date Archived" field.
       archivedAt: emp.statusChangeDate || null,
-      user: emp.user ? {
-        id: emp.user.id,
-        fullName: emp.user.fullName,
-        email: emp.user.email,
-        phone: emp.user.phone,
-      } : null,
-      school: emp.tenant ? {
-        id: emp.tenant.id,
-        name: emp.tenant.name,
-        slug: emp.tenant.slug,
-        primaryColor: emp.tenant.primaryColor,
-      } : null,
+      user: emp.user
+        ? {
+            id: emp.user.id,
+            fullName: emp.user.fullName,
+            email: emp.user.email,
+            phone: emp.user.phone,
+          }
+        : null,
+      school: emp.tenant
+        ? {
+            id: emp.tenant.id,
+            name: emp.tenant.name,
+            slug: emp.tenant.slug,
+            primaryColor: emp.tenant.primaryColor,
+          }
+        : null,
       department: emp.department ? emp.department.name : null,
       branch: emp.branch ? emp.branch.name : null,
       shift: emp.shift ? emp.shift.name : null,
@@ -2337,19 +2456,26 @@ export class SaasAdminService implements OnModuleInit {
   }
 
   /** Update an employee's status globally */
-  async updateGlobalEmployeeStatus(id: string, status: string, adminUser: User): Promise<any> {
-    const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user', 'tenant'] });
+  async updateGlobalEmployeeStatus(
+    id: string,
+    status: string,
+    adminUser: User,
+  ): Promise<any> {
+    const emp = await this.employeeRepo.findOne({
+      where: { id },
+      relations: ['user', 'tenant'],
+    });
     if (!emp) {
       throw new NotFoundException(`Employee with ID "${id}" not found.`);
     }
-    
+
     emp.status = status as any;
     emp.statusChangeDate = new Date();
     await this.employeeRepo.save(emp);
 
     // Also update the underlying User isActive flag
     if (emp.user) {
-      const isActive = (status === 'active' || status === 'ACTIVE');
+      const isActive = status === 'active' || status === 'ACTIVE';
       const userRepo = this.connection.getRepository(User);
       await userRepo.update(emp.user.id, { isActive });
     }
@@ -2357,9 +2483,10 @@ export class SaasAdminService implements OnModuleInit {
     // Notify the school admin via a targeted System Bulletin
     if (emp.tenantId) {
       const action = status === 'ACTIVE' ? 'Reactivated' : 'Suspended';
-      const bType = status === 'ACTIVE' ? BulletinType.SUCCESS : BulletinType.WARNING;
+      const bType =
+        status === 'ACTIVE' ? BulletinType.SUCCESS : BulletinType.WARNING;
       const empName = emp.user?.fullName || emp.employeeCode;
-      
+
       const bulletin = this.bulletinRepo.create({
         title: `System Admin Action: Staff Member ${action}`,
         content: `Please be informed that the staff member **${empName}** (${emp.employeeCode}) has been **${action.toLowerCase()}** by the System Administrator.\n\nHis/Her access and permissions have been updated accordingly. Contact support if you require further details.`,
@@ -2369,33 +2496,52 @@ export class SaasAdminService implements OnModuleInit {
       });
       await this.bulletinRepo.save(bulletin);
     }
-    
+
     await this.auditService.log({
       user: adminUser,
       action: 'UPDATE_EMPLOYEE_STATUS',
       module: 'EMPLOYEES',
       targetId: emp.id,
-      newValues: { status, employeeName: emp.user?.fullName, employeeCode: emp.employeeCode, schoolName: emp.tenant?.name },
+      newValues: {
+        status,
+        employeeName: emp.user?.fullName,
+        employeeCode: emp.employeeCode,
+        schoolName: emp.tenant?.name,
+      },
     });
 
     return { success: true, message: 'Employee status updated.' };
   }
 
   /** Archive (soft-delete) an employee with Super Admin password confirmation */
-  async archiveGlobalEmployee(id: string, adminUser: User, password: string): Promise<void> {
+  async archiveGlobalEmployee(
+    id: string,
+    adminUser: User,
+    password: string,
+  ): Promise<void> {
     // Reload user with passwordHash from the database
-    const fullAdmin = await this.userRepo.findOne({ where: { id: adminUser.id } });
+    const fullAdmin = await this.userRepo.findOne({
+      where: { id: adminUser.id },
+    });
     if (!fullAdmin) {
       throw new NotFoundException('Admin user not found.');
     }
 
     // bcrypt password verification
-    const isPasswordValid = await bcrypt.compare(password, fullAdmin.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      fullAdmin.passwordHash,
+    );
     if (!isPasswordValid) {
-      throw new ForbiddenException('Incorrect password. Archive operation was denied.');
+      throw new ForbiddenException(
+        'Incorrect password. Archive operation was denied.',
+      );
     }
 
-    const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user', 'tenant'] });
+    const emp = await this.employeeRepo.findOne({
+      where: { id },
+      relations: ['user', 'tenant'],
+    });
     if (!emp) {
       throw new NotFoundException(`Employee with ID "${id}" not found.`);
     }
@@ -2429,7 +2575,13 @@ export class SaasAdminService implements OnModuleInit {
       action: 'ARCHIVE_EMPLOYEE',
       module: 'EMPLOYEES',
       targetId: emp.id,
-      newValues: { status: emp.status, isArchived: emp.isArchived, employeeName: emp.user?.fullName, employeeCode: emp.employeeCode, schoolName: emp.tenant?.name },
+      newValues: {
+        status: emp.status,
+        isArchived: emp.isArchived,
+        employeeName: emp.user?.fullName,
+        employeeCode: emp.employeeCode,
+        schoolName: emp.tenant?.name,
+      },
     });
   }
 
@@ -2439,7 +2591,10 @@ export class SaasAdminService implements OnModuleInit {
    * explicitly set the status to Active before the employee can log in.
    */
   async unarchiveGlobalEmployee(id: string, adminUser: User): Promise<void> {
-    const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user', 'tenant'] });
+    const emp = await this.employeeRepo.findOne({
+      where: { id },
+      relations: ['user', 'tenant'],
+    });
     if (!emp) {
       throw new NotFoundException(`Employee with ID "${id}" not found.`);
     }
@@ -2477,7 +2632,13 @@ export class SaasAdminService implements OnModuleInit {
       action: 'UNARCHIVE_EMPLOYEE',
       module: 'EMPLOYEES',
       targetId: emp.id,
-      newValues: { status: emp.status, isArchived: emp.isArchived, employeeName: emp.user?.fullName, employeeCode: emp.employeeCode, schoolName: emp.tenant?.name },
+      newValues: {
+        status: emp.status,
+        isArchived: emp.isArchived,
+        employeeName: emp.user?.fullName,
+        employeeCode: emp.employeeCode,
+        schoolName: emp.tenant?.name,
+      },
     });
   }
 
@@ -2485,20 +2646,34 @@ export class SaasAdminService implements OnModuleInit {
    * Permanently delete an employee and their associated user account.
    * This is irreversible and requires the global super admin password.
    */
-  async permanentlyDeleteEmployee(id: string, adminUser: User, password: string): Promise<void> {
+  async permanentlyDeleteEmployee(
+    id: string,
+    adminUser: User,
+    password: string,
+  ): Promise<void> {
     // Reload user with passwordHash from the database
-    const fullAdmin = await this.userRepo.findOne({ where: { id: adminUser.id } });
+    const fullAdmin = await this.userRepo.findOne({
+      where: { id: adminUser.id },
+    });
     if (!fullAdmin) {
       throw new NotFoundException('Admin user not found.');
     }
 
     // bcrypt password verification
-    const isPasswordValid = await bcrypt.compare(password, fullAdmin.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      fullAdmin.passwordHash,
+    );
     if (!isPasswordValid) {
-      throw new ForbiddenException('Incorrect password. Delete operation was denied.');
+      throw new ForbiddenException(
+        'Incorrect password. Delete operation was denied.',
+      );
     }
 
-    const emp = await this.employeeRepo.findOne({ where: { id }, relations: ['user', 'tenant'] });
+    const emp = await this.employeeRepo.findOne({
+      where: { id },
+      relations: ['user', 'tenant'],
+    });
     if (!emp) {
       throw new NotFoundException(`Employee with ID "${id}" not found.`);
     }

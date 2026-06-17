@@ -47,10 +47,13 @@ export class HolidaysService {
     const tenantId = getCurrentTenantId();
     // Delete using a conditional WHERE so we don't need to load the entity first.
     // This matches the unit tests which mock `repo.delete(...).mockResolvedValue({ affected })`.
-    const whereCondition = tenantId ? { id, tenantId } : { id, tenantId: IsNull() as any };
-    const result = await this.repo.delete(whereCondition as any);
+    const whereCondition = tenantId
+      ? { id, tenantId }
+      : { id, tenantId: IsNull() as any };
+    const result = await this.repo.delete(whereCondition);
 
-    if (!result || !result.affected) throw new NotFoundException('Holiday not found');
+    if (!result || !result.affected)
+      throw new NotFoundException('Holiday not found');
   }
 
   async update(id: string, data: Partial<Holiday>): Promise<Holiday> {

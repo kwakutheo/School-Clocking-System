@@ -12,6 +12,8 @@ import { Branch } from '../branches/branch.entity';
 import { AttendanceType } from '../../common/enums';
 import { TenantBaseEntity } from '../../common/entities/tenant-base.entity';
 
+import { User } from '../users/user.entity';
+
 @Entity('attendance_logs')
 @Index(['employee', 'timestamp'])
 @Index(['employee', 'type', 'timestamp'])
@@ -52,6 +54,29 @@ export class AttendanceLog extends TenantBaseEntity {
 
   @Column({ name: 'is_late', default: false })
   isLate: boolean;
+
+  @Column({ name: 'is_excused_late', default: false })
+  isExcusedLate: boolean;
+
+  @Column({ name: 'excuse_reason', type: 'text', nullable: true })
+  excuseReason: string | null;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'excused_by_id' })
+  excusedBy: User | null;
+
+  @Column({ name: 'is_early_out', default: false })
+  isEarlyOut: boolean;
+
+  @Column({ name: 'is_excused_early_out', default: false })
+  isExcusedEarlyOut: boolean;
+
+  @Column({ name: 'excuse_early_out_reason', type: 'text', nullable: true })
+  excuseEarlyOutReason: string | null;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'early_out_excused_by_id' })
+  earlyOutExcusedBy: User | null;
 
   @Column({ name: 'is_offline_sync', default: false })
   isOfflineSync: boolean;

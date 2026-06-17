@@ -17,6 +17,8 @@ export class AddTenantInitialsUnique1696149450000 implements MigrationInterface 
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE tenants DROP CONSTRAINT IF EXISTS tenants_initials_unique;`);
+    await queryRunner.query(
+      `ALTER TABLE tenants DROP CONSTRAINT IF EXISTS tenants_initials_unique;`,
+    );
   }
 }

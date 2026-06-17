@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { AttendanceLog } from '../attendance/attendance-log.entity';
@@ -168,7 +172,8 @@ export class AttendanceReportService {
     academicYear: string,
     preloadedLogs?: EmployeeStatusLog[],
   ) {
-    const terms = await this.academicCalendarService.findTermsByAcademicYear(academicYear);
+    const terms =
+      await this.academicCalendarService.findTermsByAcademicYear(academicYear);
     if (terms.length === 0) {
       throw new BadRequestException('No terms found for this academic year');
     }
@@ -365,7 +370,8 @@ export class AttendanceReportService {
     if (branchId) query.branch = { id: branchId };
     const employees = await this.employeeRepo.find({ where: query });
 
-    const terms = await this.academicCalendarService.findTermsByAcademicYear(academicYear);
+    const terms =
+      await this.academicCalendarService.findTermsByAcademicYear(academicYear);
     if (terms.length === 0) {
       throw new BadRequestException('No terms found for this academic year');
     }
@@ -401,7 +407,11 @@ export class AttendanceReportService {
         if (!wasEverActive && emp.status === EmployeeStatus.INACTIVE)
           return null;
 
-        const report = await this.getAcademicYearReport(emp.id, academicYear, empLogs);
+        const report = await this.getAcademicYearReport(
+          emp.id,
+          academicYear,
+          empLogs,
+        );
         if (
           emp.status === EmployeeStatus.INACTIVE &&
           report.summary.daysWorked === 0
@@ -507,8 +517,12 @@ export class AttendanceReportService {
       let lateMinutes = 0;
       let isEarlyOut = false;
       let earlyOutMinutes = 0;
+      let isExcusedEarlyOut = false;
+      let excuseEarlyOutReason: string | null = null;
       let missingClockIn = false;
       let missingClockOut = false;
+      let isExcusedLate = false;
+      let excuseReason: string | null = null;
 
       if (employee.shift) {
         const shiftStart = this._timeToMinutes(employee.shift.startTime);
@@ -520,6 +534,8 @@ export class AttendanceReportService {
             clockIn.timestamp.getHours() * 60 + clockIn.timestamp.getMinutes();
           if (actualIn > shiftStart + grace) {
             isLate = true;
+            isExcusedLate = clockIn.isExcusedLate || false;
+            excuseReason = clockIn.excuseReason;
             lateMinutes = actualIn - shiftStart;
             daysLate++;
             totalLateMinutes += lateMinutes;
@@ -532,6 +548,8 @@ export class AttendanceReportService {
             clockOut.timestamp.getMinutes();
           if (actualOut < shiftEnd) {
             isEarlyOut = true;
+            isExcusedEarlyOut = clockOut.isExcusedEarlyOut || false;
+            excuseEarlyOutReason = clockOut.excuseEarlyOutReason;
             earlyOutMinutes = shiftEnd - actualOut;
             daysEarlyDeparture++;
             totalEarlyOutMinutes += earlyOutMinutes;
@@ -659,8 +677,12 @@ export class AttendanceReportService {
         clockOut: clockOut?.timestamp,
         hours: Number(hours.toFixed(2)),
         isLate,
+        isExcusedLate,
+        excuseReason,
         lateMinutes,
         isEarlyOut,
+        isExcusedEarlyOut,
+        excuseEarlyOutReason,
         earlyOutMinutes,
         missingClockIn,
         missingClockOut,
@@ -669,7 +691,9 @@ export class AttendanceReportService {
 
     return {
       employee: {
-        fullName: employee.isArchived ? `${employee.user.fullName} (Archived)` : employee.user.fullName,
+        fullName: employee.isArchived
+          ? `${employee.user.fullName} (Archived)`
+          : employee.user.fullName,
         code: employee.employeeCode,
         shift: employee.shift
           ? `${employee.shift.startTime} - ${employee.shift.endTime}`

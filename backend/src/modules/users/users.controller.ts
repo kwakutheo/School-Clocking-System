@@ -11,7 +11,9 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('check-username')
-  @ApiOperation({ summary: 'Check if a username is available, get suggestions if taken' })
+  @ApiOperation({
+    summary: 'Check if a username is available, get suggestions if taken',
+  })
   async checkUsername(
     @Query('username') username: string,
     @Query('fullName') fullName?: string,

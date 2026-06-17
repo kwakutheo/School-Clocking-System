@@ -23,7 +23,6 @@ import {
 export class AttendanceSummaryJob {
   private readonly logger = new Logger(AttendanceSummaryJob.name);
 
-
   private readonly BACKFILL_DAYS = 90;
 
   constructor(
@@ -62,7 +61,6 @@ export class AttendanceSummaryJob {
 
     this.logger.log(`Attendance summary job finished in ${Date.now() - t0}ms`);
   }
-
 
   async recompute(start: Date, end: Date): Promise<void> {
     const tenants = await this.tenantRepo.find({ where: { isActive: true } });

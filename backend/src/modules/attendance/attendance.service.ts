@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -22,8 +23,12 @@ import { User } from '../users/user.entity';
 import { getCurrentTenantId } from '../../common/tenant/tenant-filter.helper';
 import { SaasAdminService } from '../saas-admin/saas-admin.service';
 
+import { format } from 'date-fns';
+
 @Injectable()
 export class AttendanceService {
+  private readonly logger = new Logger(AttendanceService.name);
+
   constructor(
     @InjectRepository(AttendanceLog)
     private readonly repo: Repository<AttendanceLog>,
@@ -567,6 +572,7 @@ export class AttendanceService {
 
     // ── Determine isLate for CLOCK_IN ────────────────────────────────────────
     let isLate = false;
+    let isEarlyOut = false;
     if (dto.type === AttendanceType.CLOCK_IN && targetEmployee.shift) {
       const [sHours, sMins] = targetEmployee.shift.startTime
         .split(':')
@@ -579,6 +585,15 @@ export class AttendanceService {
         0,
       );
       isLate = now > shiftStart;
+    }
+
+    if (dto.type === AttendanceType.CLOCK_OUT && targetEmployee.shift) {
+      const [eHours, eMins] = targetEmployee.shift.endTime
+        .split(':')
+        .map(Number);
+      const shiftEnd = new Date(now);
+      shiftEnd.setHours(eHours, eMins, 0, 0);
+      isEarlyOut = now < shiftEnd;
     }
 
     // ── Persist the log ──────────────────────────────────────────────────────
@@ -596,6 +611,7 @@ export class AttendanceService {
       type: dto.type,
       timestamp: now,
       isLate,
+      isEarlyOut,
       isOfflineSync: false,
       isAdminOverride: true,
       adminNote: dto.note,
@@ -635,7 +651,9 @@ export class AttendanceService {
     const branch = await this.branches.findByQrCode(dto.qrCode);
     if (!branch) {
       // Do an unscoped lookup to identify which school this QR code belongs to.
-      const foreignBranch = await this.branches.findUnscopedByQrCode(dto.qrCode);
+      const foreignBranch = await this.branches.findUnscopedByQrCode(
+        dto.qrCode,
+      );
       const mySchoolName = employee.user?.tenant?.name;
       if (foreignBranch?.tenant?.name) {
         const mySchoolSuffix = mySchoolName ? `, "${mySchoolName}"` : '';
@@ -902,6 +920,8 @@ export class AttendanceService {
     }
 
     let isLate = false;
+    let isEarlyOut = false;
+
     if (dto.type === AttendanceType.CLOCK_IN && employee.shift) {
       const [sHours, sMins] = employee.shift.startTime.split(':').map(Number);
       const shiftStart = new Date(now);
@@ -914,6 +934,13 @@ export class AttendanceService {
       isLate = now > shiftStart;
     }
 
+    if (dto.type === AttendanceType.CLOCK_OUT && employee.shift) {
+      const [eHours, eMins] = employee.shift.endTime.split(':').map(Number);
+      const shiftEnd = new Date(now);
+      shiftEnd.setHours(eHours, eMins, 0, 0);
+      isEarlyOut = now < shiftEnd;
+    }
+
     const log = this.repo.create({
       employee,
       branch,
@@ -923,11 +950,110 @@ export class AttendanceService {
       longitude: dto.longitude,
       isOfflineSync: false,
       isLate,
+      isEarlyOut,
     });
 
     const saved = await this.repo.save(log);
     // Bust the rankings cache so the dashboard reflects QR clockings immediately.
     this.saasAdminService.clearEmployeeRankingsCache();
+    return saved;
+  }
+
+  /**
+   * Excuse an employee's lateness.
+   * Updates the attendance log to mark lateness as excused.
+   */
+  async excuseLateness(
+    logId: string,
+    reason: string,
+    adminUser: User,
+  ): Promise<AttendanceLog> {
+    const log = await this.repo.findOne({
+      where: { id: logId },
+      relations: ['employee'],
+    });
+
+    if (!log) {
+      throw new NotFoundException('Attendance log not found.');
+    }
+
+    if (log.type !== AttendanceType.CLOCK_IN) {
+      throw new BadRequestException(
+        'Only clock-in records can be excused for lateness.',
+      );
+    }
+
+    if (!log.isLate) {
+      throw new BadRequestException(
+        'This attendance record is not marked as late.',
+      );
+    }
+
+    log.isExcusedLate = true;
+    log.excuseReason = reason;
+    log.excusedBy = adminUser;
+
+    const saved = await this.repo.save(log);
+
+    // If backdated (not today), trigger the daily summary recomputation
+    // for the affected date
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const logDateStr = format(log.timestamp, 'yyyy-MM-dd');
+    if (todayStr !== logDateStr && log.tenantId) {
+      // Background async update (We trigger the cron job directly or skip it for excused lateness since it doesn't affect counts, just lateness metrics)
+      // For excused lateness, we just clear the cache.
+      this.saasAdminService.clearEmployeeRankingsCache();
+    } else {
+      this.saasAdminService.clearEmployeeRankingsCache();
+    }
+
+    return saved;
+  }
+
+  /**
+   * Excuse an employee's early out.
+   * Updates the attendance log to mark early out as excused.
+   */
+  async excuseEarlyOut(
+    logId: string,
+    reason: string,
+    adminUser: User,
+  ): Promise<AttendanceLog> {
+    const log = await this.repo.findOne({
+      where: { id: logId },
+      relations: ['employee'],
+    });
+
+    if (!log) {
+      throw new NotFoundException('Attendance log not found.');
+    }
+
+    if (log.type !== AttendanceType.CLOCK_OUT) {
+      throw new BadRequestException(
+        'Only clock-out records can be excused for early departure.',
+      );
+    }
+
+    if (!log.isEarlyOut) {
+      throw new BadRequestException(
+        'This attendance record is not marked as early out.',
+      );
+    }
+
+    log.isExcusedEarlyOut = true;
+    log.excuseEarlyOutReason = reason;
+    log.earlyOutExcusedBy = adminUser;
+
+    const saved = await this.repo.save(log);
+
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const logDateStr = format(log.timestamp, 'yyyy-MM-dd');
+    if (todayStr !== logDateStr && log.tenantId) {
+      this.saasAdminService.clearEmployeeRankingsCache();
+    } else {
+      this.saasAdminService.clearEmployeeRankingsCache();
+    }
+
     return saved;
   }
 

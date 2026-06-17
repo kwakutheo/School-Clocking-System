@@ -803,7 +803,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .form-input::placeholder { color: var(--text-muted); }
 
 /* Fix for dark select dropdown options */
-select.form-input option {
+select.form-input option,
+select.input-field option {
   background-color: var(--bg-surface);
   color: var(--text-primary);
 }

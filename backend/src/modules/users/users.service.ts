@@ -123,7 +123,7 @@ export class UsersService {
         for (const candidate of candidates) {
           if (candidate === username.toLowerCase()) continue;
           if (suggestions.includes(candidate)) continue;
-          
+
           const candidateTaken = await this.repo
             .createQueryBuilder('user')
             .where('TRIM(user.username) = :candidate', { candidate })
@@ -141,7 +141,9 @@ export class UsersService {
       const randomCandidate = `${username}${Math.floor(10 + Math.random() * 90)}`;
       const candidateTaken = await this.repo
         .createQueryBuilder('user')
-        .where('TRIM(user.username) = :candidate', { candidate: randomCandidate })
+        .where('TRIM(user.username) = :candidate', {
+          candidate: randomCandidate,
+        })
         .getOne();
       if (!candidateTaken && !suggestions.includes(randomCandidate)) {
         suggestions.push(randomCandidate);

@@ -591,7 +591,7 @@ export default function AttendanceReportPage() {
                       <td>
                         {!isFuture ? (
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                          {day.isLate && (
+                          {day.isLate && !day.isExcusedLate && (
                             <span
                               title={`Late by ${formatMinutes(day.lateMinutes)}`}
                               className="badge badge-amber"
@@ -601,7 +601,17 @@ export default function AttendanceReportPage() {
                               Late ({formatMinutes(day.lateMinutes)})
                             </span>
                           )}
-                          {day.isEarlyOut && (
+                          {day.isLate && day.isExcusedLate && (
+                            <span
+                              title={`Excused: ${day.excuseReason}`}
+                              className="badge badge-green"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            >
+                              <CheckCircle size={14} />
+                              Excused Lateness
+                            </span>
+                          )}
+                          {day.isEarlyOut && !day.isExcusedEarlyOut && (
                             <span
                               title={`Early out by ${formatMinutes(day.earlyOutMinutes)}`}
                               className="badge badge-orange"
@@ -609,6 +619,16 @@ export default function AttendanceReportPage() {
                             >
                               <Clock size={14} />
                               Early Out ({formatMinutes(day.earlyOutMinutes)})
+                            </span>
+                          )}
+                          {day.isEarlyOut && day.isExcusedEarlyOut && (
+                            <span
+                              title={`Excused: ${day.excuseEarlyOutReason}`}
+                              className="badge badge-green"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            >
+                              <CheckCircle size={14} />
+                              Excused Early Out
                             </span>
                           )}
                           {day.missingClockIn && (

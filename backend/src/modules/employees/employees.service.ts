@@ -202,7 +202,7 @@ export class EmployeesService implements OnModuleInit {
       qb.andWhere('branch.id = :branchId', { branchId: opts.branchId });
     }
     if (opts.roles) {
-      const rolesArray = opts.roles.split(',').map(r => r.trim());
+      const rolesArray = opts.roles.split(',').map((r) => r.trim());
       qb.andWhere('user.role IN (:...roles)', { roles: rolesArray });
     }
 
@@ -233,7 +233,7 @@ export class EmployeesService implements OnModuleInit {
       cqb.andWhere('branchC.id = :branchId', { branchId: opts.branchId });
     }
     if (opts.roles) {
-      const rolesArray = opts.roles.split(',').map(r => r.trim());
+      const rolesArray = opts.roles.split(',').map((r) => r.trim());
       cqb.andWhere('userC.role IN (:...roles)', { roles: rolesArray });
     }
 
@@ -257,7 +257,9 @@ export class EmployeesService implements OnModuleInit {
 
   async findById(id: string): Promise<Employee> {
     const tenantId = getCurrentTenantId();
-    const where: any = tenantId ? { id, tenantId, isArchived: false } : { id, isArchived: false };
+    const where: any = tenantId
+      ? { id, tenantId, isArchived: false }
+      : { id, isArchived: false };
     const emp = await this.repo.findOne({
       where,
       relations: ['user', 'department', 'branch', 'shift'],
@@ -291,7 +293,9 @@ export class EmployeesService implements OnModuleInit {
    * Used exclusively by auth guards so we can detect and block archived users
    * with a specific "you have been removed from the system" message.
    */
-  async findByUserIdIncludingArchived(userId: string): Promise<Employee | null> {
+  async findByUserIdIncludingArchived(
+    userId: string,
+  ): Promise<Employee | null> {
     return this.repo
       .createQueryBuilder('emp')
       .leftJoinAndSelect('emp.user', 'user')
@@ -340,11 +344,11 @@ export class EmployeesService implements OnModuleInit {
 
     if (tenant) {
       let currentMax = tenant.lastEmployeeSerial || 0;
-      
+
       if (currentMax === 0) {
-        const allEmps = await this.repo.find({ 
+        const allEmps = await this.repo.find({
           where: { tenantId: tenant.id },
-          select: ['employeeCode']
+          select: ['employeeCode'],
         });
         for (const e of allEmps) {
           if (!e.employeeCode) continue;
@@ -352,7 +356,7 @@ export class EmployeesService implements OnModuleInit {
           if (parts.length === 3) {
             const serial = parseInt(parts[2], 10);
             if (!isNaN(serial) && serial > currentMax) {
-               currentMax = serial;
+              currentMax = serial;
             }
           }
         }
@@ -365,7 +369,7 @@ export class EmployeesService implements OnModuleInit {
 
       await this.dataSource.query(
         `UPDATE tenants SET last_employee_serial = $1 WHERE id = $2`,
-        [nextSerial, tenant.id]
+        [nextSerial, tenant.id],
       );
     } else {
       const highestEmp = await this.repo
@@ -421,11 +425,15 @@ export class EmployeesService implements OnModuleInit {
 
     if (tenantId) {
       if (payload.branchId) {
-        const branchExists = await this.dataSource.getRepository(Branch).findOne({
-          where: { id: payload.branchId, tenantId },
-        });
+        const branchExists = await this.dataSource
+          .getRepository(Branch)
+          .findOne({
+            where: { id: payload.branchId, tenantId },
+          });
         if (!branchExists) {
-          throw new BadRequestException('The selected branch does not exist or does not belong to your school.');
+          throw new BadRequestException(
+            'The selected branch does not exist or does not belong to your school.',
+          );
         }
       }
 
@@ -434,16 +442,22 @@ export class EmployeesService implements OnModuleInit {
           where: { id: payload.shiftId, tenantId },
         });
         if (!shiftExists) {
-          throw new BadRequestException('The selected shift does not exist or does not belong to your school.');
+          throw new BadRequestException(
+            'The selected shift does not exist or does not belong to your school.',
+          );
         }
       }
 
       if (payload.departmentId) {
-        const deptExists = await this.dataSource.getRepository(Department).findOne({
-          where: { id: payload.departmentId, tenantId },
-        });
+        const deptExists = await this.dataSource
+          .getRepository(Department)
+          .findOne({
+            where: { id: payload.departmentId, tenantId },
+          });
         if (!deptExists) {
-          throw new BadRequestException('The selected department does not exist or does not belong to your school.');
+          throw new BadRequestException(
+            'The selected department does not exist or does not belong to your school.',
+          );
         }
       }
     }
@@ -684,27 +698,40 @@ export class EmployeesService implements OnModuleInit {
         emp.statusChangeDate = today;
 
         // ── Real-time SaaS Summary Sync ─────────────────────────────────────
-        // If an employee is deactivated today, we must immediately decrease the 
-        // expected count for today (and future days) so SaaS presence rates don't 
+        // If an employee is deactivated today, we must immediately decrease the
+        // expected count for today (and future days) so SaaS presence rates don't
         // look bad before the nightly cron job runs.
-        const isActivating = data.status !== EmployeeStatus.INACTIVE && emp.status === EmployeeStatus.INACTIVE;
-        const isDeactivating = data.status === EmployeeStatus.INACTIVE && emp.status !== EmployeeStatus.INACTIVE;
+        const isActivating =
+          data.status !== EmployeeStatus.INACTIVE &&
+          emp.status === EmployeeStatus.INACTIVE;
+        const isDeactivating =
+          data.status === EmployeeStatus.INACTIVE &&
+          emp.status !== EmployeeStatus.INACTIVE;
         if ((isActivating || isDeactivating) && emp.tenantId) {
           const diff = isActivating ? 1 : -1;
           const todayStr = today.toISOString().split('T')[0];
           // Use expected_count > 0 as a quick heuristic to avoid adding counts on weekends/holidays
-          await this.dataSource.query(
-            `UPDATE attendance_daily_summaries 
+          await this.dataSource
+            .query(
+              `UPDATE attendance_daily_summaries 
              SET expected_count = GREATEST(0, expected_count + $1) 
              WHERE tenant_id = $2 AND date >= $3 AND expected_count > 0`,
-            [diff, emp.tenantId, todayStr]
-          ).catch(e => this.logger.error('Failed to sync daily summary expected count', e));
+              [diff, emp.tenantId, todayStr],
+            )
+            .catch((e) =>
+              this.logger.error(
+                'Failed to sync daily summary expected count',
+                e,
+              ),
+            );
         }
 
         // ── User account activation sync ─────────────────────────────────────
         // Ensure that changing status back to ACTIVE allows the user to log in again
         if (emp.user) {
-          const isActive = (data.status === EmployeeStatus.ACTIVE || data.status === 'active' as any);
+          const isActive =
+            data.status === EmployeeStatus.ACTIVE ||
+            data.status === ('active' as any);
           await this.userRepo.update(emp.user.id, { isActive });
         }
       }
@@ -873,10 +900,15 @@ export class EmployeesService implements OnModuleInit {
     adminUser: User,
   ): Promise<void> {
     if (!adminPassword) {
-      throw new UnauthorizedException('Administrator password is required to confirm this action.');
+      throw new UnauthorizedException(
+        'Administrator password is required to confirm this action.',
+      );
     }
 
-    const isPasswordValid = await bcrypt.compare(adminPassword, adminUser.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      adminPassword,
+      adminUser.passwordHash,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid administrator password.');
     }
@@ -884,11 +916,18 @@ export class EmployeesService implements OnModuleInit {
     const emp = await this.findById(id);
 
     if (emp.user.role === UserRole.SUPER_ADMIN) {
-      throw new ForbiddenException('Super admins cannot be blocked from the dashboard.');
+      throw new ForbiddenException(
+        'Super admins cannot be blocked from the dashboard.',
+      );
     }
 
-    if (emp.user.role !== UserRole.HR_ADMIN && emp.user.role !== UserRole.SUPERVISOR) {
-      throw new BadRequestException('Dashboard blocking is only applicable to HR Admins and Supervisors.');
+    if (
+      emp.user.role !== UserRole.HR_ADMIN &&
+      emp.user.role !== UserRole.SUPERVISOR
+    ) {
+      throw new BadRequestException(
+        'Dashboard blocking is only applicable to HR Admins and Supervisors.',
+      );
     }
 
     const oldValues = {

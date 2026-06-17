@@ -26,6 +26,7 @@ import { RecordAttendanceDto } from './dto/record-attendance.dto';
 import { SyncOfflineDto } from './dto/sync-offline.dto';
 import { QrClockDto } from './dto/qr-clock.dto';
 import { AdminManualClockDto } from './dto/admin-manual-clock.dto';
+import { ExcuseLatenessDto } from './dto/excuse-lateness.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
@@ -90,7 +91,10 @@ export class AttendanceController {
     const employee = await this.employeesService.findByUserId(user.id);
     if (!employee) throw new NotFoundException('Employee not found');
     // academicYear can contain slashes, so in URL it should be encoded, e.g. 2025%2F2026
-    return this.reportService.getAcademicYearReport(employee.id, decodeURIComponent(academicYear));
+    return this.reportService.getAcademicYearReport(
+      employee.id,
+      decodeURIComponent(academicYear),
+    );
   }
 
   @Get('report/:employeeId')
@@ -130,7 +134,10 @@ export class AttendanceController {
     @Param('employeeId') employeeId: string,
     @Param('academicYear') academicYear: string,
   ) {
-    return this.reportService.getAcademicYearReport(employeeId, decodeURIComponent(academicYear));
+    return this.reportService.getAcademicYearReport(
+      employeeId,
+      decodeURIComponent(academicYear),
+    );
   }
 
   @Get('export/pdf/monthly/:employeeId')
@@ -252,7 +259,9 @@ export class AttendanceController {
   @Get('export/bulk/pdf/academic-year/:academicYear')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('attendance.export')
-  @ApiOperation({ summary: 'Export bulk academic year attendance summary as PDF' })
+  @ApiOperation({
+    summary: 'Export bulk academic year attendance summary as PDF',
+  })
   async exportBulkAcademicYearPdf(
     @Param('academicYear') academicYear: string,
     @Query('branchId') branchId: string,
@@ -323,6 +332,30 @@ export class AttendanceController {
       user.fullName,
       dto,
     );
+  }
+
+  @Post('excuse-lateness/:logId')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('attendance.admin_clock') // Reusing admin_clock permission for now
+  @ApiOperation({ summary: "Excuse an employee's lateness" })
+  excuseLateness(
+    @CurrentUser() user: User,
+    @Param('logId') logId: string,
+    @Body() dto: ExcuseLatenessDto,
+  ) {
+    return this.service.excuseLateness(logId, dto.reason, user);
+  }
+
+  @Post('excuse-early-out/:logId')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('attendance.admin_clock') // Reusing admin_clock permission for now
+  @ApiOperation({ summary: "Excuse an employee's early departure" })
+  excuseEarlyOut(
+    @CurrentUser() user: User,
+    @Param('logId') logId: string,
+    @Body() dto: ExcuseLatenessDto, // Reusing the same dto shape (just a reason)
+  ) {
+    return this.service.excuseEarlyOut(logId, dto.reason, user);
   }
 
   @Get('home-data')

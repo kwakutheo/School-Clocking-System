@@ -124,6 +124,10 @@ export const attendanceApi = {
     timestamp?: string;
     note: string;
   }) => api.post("/attendance/admin-clock", data),
+  excuseLateness: (logId: string, reason: string) =>
+    api.post(`/attendance/excuse-lateness/${logId}`, { reason }),
+  excuseEarlyOut: (logId: string, reason: string) =>
+    api.post(`/attendance/excuse-early-out/${logId}`, { reason }),
   exportMonthlyPdf: (employeeId: string, month: number, year: number) =>
     api.get(`/attendance/export/pdf/monthly/${employeeId}`, {
       params: { month, year },

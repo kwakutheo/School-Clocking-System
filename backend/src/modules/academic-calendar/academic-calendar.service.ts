@@ -141,9 +141,7 @@ export class AcademicCalendarService {
 
   async findTermsByAcademicYear(academicYear: string): Promise<AcademicTerm[]> {
     const tenantId = getCurrentTenantId();
-    const where: any = tenantId
-      ? { academicYear, tenantId }
-      : { academicYear };
+    const where: any = tenantId ? { academicYear, tenantId } : { academicYear };
 
     return this.termRepo.find({
       where,

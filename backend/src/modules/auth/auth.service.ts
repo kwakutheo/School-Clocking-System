@@ -69,8 +69,10 @@ export class AuthService {
 
       if (user.isDashboardBlocked) {
         throw new UnauthorizedException(
-          'DASHBOARD_ACCESS_BLOCKED: Your access to the admin dashboard has been restricted by the school super administrator.'
-          + (user.dashboardBlockReason ? ` Reason: ${user.dashboardBlockReason}` : '')
+          'DASHBOARD_ACCESS_BLOCKED: Your access to the admin dashboard has been restricted by the school super administrator.' +
+            (user.dashboardBlockReason
+              ? ` Reason: ${user.dashboardBlockReason}`
+              : ''),
         );
       }
     }
@@ -161,7 +163,7 @@ export class AuthService {
       (publicUser as any).employeeId = employee.id;
     }
 
-    await this.users.update(user.id, { lastLoginAt: new Date() } as any);
+    await this.users.update(user.id, { lastLoginAt: new Date() });
 
     return {
       access_token: accessToken,
@@ -268,7 +270,7 @@ export class AuthService {
     // Generate 6-digit PIN
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedPin = await bcrypt.hash(pin, SALT_ROUNDS);
-    
+
     // Expires in 15 minutes
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 15);
@@ -287,15 +289,23 @@ export class AuthService {
           });
 
           // Send email
-          const hasSmtpConfig = !!(process.env.SMTP_USER && process.env.SMTP_PASS);
+          const hasSmtpConfig = !!(
+            process.env.SMTP_USER && process.env.SMTP_PASS
+          );
 
           if (!hasSmtpConfig) {
             // For local development or when SMTP is not configured, log the PIN
-            console.warn('\n========================================================');
-            console.warn(`\u26A0\uFE0F SMTP credentials not configured in .env file!`);
+            console.warn(
+              '\n========================================================',
+            );
+            console.warn(
+              `\u26A0\uFE0F SMTP credentials not configured in .env file!`,
+            );
             console.warn(`Email would have been sent to: ${user.email}`);
             console.warn(`Password Reset PIN is: ${pin}`);
-            console.warn('========================================================\n');
+            console.warn(
+              '========================================================\n',
+            );
           } else if (process.env.SMTP_HOST === 'smtp.resend.com') {
             // Use Resend HTTP API directly to bypass cloud outbound SMTP port restrictions
             try {
@@ -303,7 +313,7 @@ export class AuthService {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${process.env.SMTP_PASS}`,
+                  Authorization: `Bearer ${process.env.SMTP_PASS}`,
                 },
                 body: JSON.stringify({
                   from: 'TK Clocking <noreply@tkclocking.online>',
@@ -370,11 +380,15 @@ export class AuthService {
   // ── Complete Password Reset ────────────────────────────────────────────────
   async completePasswordReset(dto: CompletePasswordResetDto) {
     const user = await this.users.findByUsername(dto.username);
-    const genericErrorMessage = 'Invalid username or PIN, or reset not requested.';
+    const genericErrorMessage =
+      'Invalid username or PIN, or reset not requested.';
 
     if (!user) {
       // Simulate bcrypt delay to prevent timing attacks for username enumeration
-      await bcrypt.compare(dto.pin, '$2b$12$invalidhashinvalidhashinvalidhashinvalidhashinvalidhas');
+      await bcrypt.compare(
+        dto.pin,
+        '$2b$12$invalidhashinvalidhashinvalidhashinvalidhashinvalidhas',
+      );
       throw new UnauthorizedException(genericErrorMessage);
     }
 
@@ -384,7 +398,11 @@ export class AuthService {
     return await new Promise<any>((resolve, reject) => {
       tenantLocalStorage.run(user.tenantId, async () => {
         try {
-          if (!user.requiresPasswordChange || !user.resetPin || !user.resetPinExpiresAt) {
+          if (
+            !user.requiresPasswordChange ||
+            !user.resetPin ||
+            !user.resetPinExpiresAt
+          ) {
             reject(new UnauthorizedException(genericErrorMessage));
             return;
           }
@@ -397,7 +415,11 @@ export class AuthService {
               resetPinAttempts: 0,
               requiresPasswordChange: false,
             });
-            reject(new UnauthorizedException('PIN has expired. Please request a new one.'));
+            reject(
+              new UnauthorizedException(
+                'PIN has expired. Please request a new one.',
+              ),
+            );
             return;
           }
 
@@ -409,7 +431,11 @@ export class AuthService {
               resetPinAttempts: 0,
               requiresPasswordChange: false,
             });
-            reject(new UnauthorizedException('Maximum attempts exceeded. Please request a new PIN.'));
+            reject(
+              new UnauthorizedException(
+                'Maximum attempts exceeded. Please request a new PIN.',
+              ),
+            );
             return;
           }
 

@@ -15,7 +15,16 @@ function resolveLogoPath(): string | null {
   const candidates = [
     path.join(process.cwd(), '..', 'dashboard', 'public', 'logo.png'),
     path.join(process.cwd(), 'public', 'logo.png'),
-    path.join(__dirname, '..', '..', '..', '..', 'dashboard', 'public', 'logo.png'),
+    path.join(
+      __dirname,
+      '..',
+      '..',
+      '..',
+      '..',
+      'dashboard',
+      'public',
+      'logo.png',
+    ),
   ];
   for (const candidate of candidates) {
     if (fs.existsSync(candidate)) return candidate;
@@ -41,10 +50,14 @@ export class AttendanceExportService {
     pdfmake.setFonts(fonts);
   }
 
-  private async getTenantBrandInfo(): Promise<{ name: string; logoUrl: string | null }> {
+  private async getTenantBrandInfo(): Promise<{
+    name: string;
+    logoUrl: string | null;
+  }> {
     const tenantId = tenantLocalStorage.getStore();
-    if (!tenantId) return { name: 'TK Clocking System', logoUrl: resolveLogoPath() };
-    
+    if (!tenantId)
+      return { name: 'TK Clocking System', logoUrl: resolveLogoPath() };
+
     try {
       const tenant = await this.tenantsService.findById(tenantId);
       let finalLogo = resolveLogoPath();
@@ -71,7 +84,13 @@ export class AttendanceExportService {
       year,
     );
     const brand = await this.getTenantBrandInfo();
-    const docDefinition = this.buildMonthlyDocDefinition(report, month, year, brand.name, brand.logoUrl);
+    const docDefinition = this.buildMonthlyDocDefinition(
+      report,
+      month,
+      year,
+      brand.name,
+      brand.logoUrl,
+    );
     const pdfDoc = pdfmake.createPdf(docDefinition);
     return await pdfDoc.getBuffer();
   }
@@ -79,15 +98,29 @@ export class AttendanceExportService {
   async exportTermPdf(employeeId: string, termId: string): Promise<Buffer> {
     const report = await this.reportService.getTermReport(employeeId, termId);
     const brand = await this.getTenantBrandInfo();
-    const docDefinition = this.buildTermDocDefinition(report, brand.name, brand.logoUrl);
+    const docDefinition = this.buildTermDocDefinition(
+      report,
+      brand.name,
+      brand.logoUrl,
+    );
     const pdfDoc = pdfmake.createPdf(docDefinition);
     return await pdfDoc.getBuffer();
   }
 
-  async exportAcademicYearPdf(employeeId: string, academicYear: string): Promise<Buffer> {
-    const report = await this.reportService.getAcademicYearReport(employeeId, academicYear);
+  async exportAcademicYearPdf(
+    employeeId: string,
+    academicYear: string,
+  ): Promise<Buffer> {
+    const report = await this.reportService.getAcademicYearReport(
+      employeeId,
+      academicYear,
+    );
     const brand = await this.getTenantBrandInfo();
-    const docDefinition = this.buildAcademicYearDocDefinition(report, brand.name, brand.logoUrl);
+    const docDefinition = this.buildAcademicYearDocDefinition(
+      report,
+      brand.name,
+      brand.logoUrl,
+    );
     const pdfDoc = pdfmake.createPdf(docDefinition);
     return await pdfDoc.getBuffer();
   }
@@ -199,30 +232,15 @@ export class AttendanceExportService {
     const generatedStr = `${dd}/${mm}/${yyyy} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
     const footerFn = function (currentPage: number, pageCount: number) {
-      const logoColumns: any[] = logoPath
-        ? [
-            {
-              image: logoPath,
-              width: 20,
-              margin: [0, -2, 5, 0],
-            },
-            {
-              text: tenantName,
-              alignment: 'left',
-              margin: [0, 2, 0, 0],
-              color: '#6b7280',
-              fontSize: 9,
-            },
-          ]
-        : [
-            {
-              text: tenantName,
-              alignment: 'left',
-              margin: [0, 2, 0, 0],
-              color: '#6b7280',
-              fontSize: 9,
-            },
-          ];
+      const logoColumns: any[] = [
+        {
+          text: tenantName,
+          alignment: 'left',
+          margin: [0, 2, 0, 0],
+          color: '#6b7280',
+          fontSize: 9,
+        },
+      ];
       return {
         columns: [
           { width: '*', columns: logoColumns },
@@ -391,30 +409,15 @@ export class AttendanceExportService {
     const generatedStr = `${dd}/${mm}/${yyyy} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
     const footerFn = function (currentPage: number, pageCount: number) {
-      const logoColumns: any[] = logoPath
-        ? [
-            {
-              image: logoPath,
-              width: 20,
-              margin: [0, -2, 5, 0],
-            },
-            {
-              text: tenantName,
-              alignment: 'left',
-              margin: [0, 2, 0, 0],
-              color: '#6b7280',
-              fontSize: 9,
-            },
-          ]
-        : [
-            {
-              text: tenantName,
-              alignment: 'left',
-              margin: [0, 2, 0, 0],
-              color: '#6b7280',
-              fontSize: 9,
-            },
-          ];
+      const logoColumns: any[] = [
+        {
+          text: tenantName,
+          alignment: 'left',
+          margin: [0, 2, 0, 0],
+          color: '#6b7280',
+          fontSize: 9,
+        },
+      ];
       return {
         columns: [
           { width: '*', columns: logoColumns },
@@ -453,8 +456,17 @@ export class AttendanceExportService {
               },
             ]
           : []),
-        { text: 'Monthly Attendance Report', style: 'header', alignment: 'center' },
-        { text: tenantName, style: 'subheader', alignment: 'center', margin: [0, 0, 0, 15] },
+        {
+          text: 'Monthly Attendance Report',
+          style: 'header',
+          alignment: 'center',
+        },
+        {
+          text: tenantName,
+          style: 'subheader',
+          alignment: 'center',
+          margin: [0, 0, 0, 15],
+        },
         { text: `Employee: ${report.employee.fullName}`, style: 'subheader' },
         {
           text: `Period: ${monthName} ${year}`,
@@ -474,7 +486,11 @@ export class AttendanceExportService {
     };
   }
 
-  private buildTermDocDefinition(report: any, tenantName: string, logoPath: string | null): any {
+  private buildTermDocDefinition(
+    report: any,
+    tenantName: string,
+    logoPath: string | null,
+  ): any {
     const content: any[] = [
       ...(logoPath
         ? [
@@ -561,30 +577,15 @@ export class AttendanceExportService {
     const generatedStr = `${dd}/${mm}/${yyyy} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
     const footerFn = function (currentPage: number, pageCount: number) {
-      const logoColumns: any[] = logoPath
-        ? [
-            {
-              image: logoPath,
-              width: 20,
-              margin: [0, -2, 5, 0],
-            },
-            {
-              text: tenantName,
-              alignment: 'left',
-              margin: [0, 2, 0, 0],
-              color: '#6b7280',
-              fontSize: 9,
-            },
-          ]
-        : [
-            {
-              text: tenantName,
-              alignment: 'left',
-              margin: [0, 2, 0, 0],
-              color: '#6b7280',
-              fontSize: 9,
-            },
-          ];
+      const logoColumns: any[] = [
+        {
+          text: tenantName,
+          alignment: 'left',
+          margin: [0, 2, 0, 0],
+          color: '#6b7280',
+          fontSize: 9,
+        },
+      ];
       return {
         columns: [
           { width: '*', columns: logoColumns },
@@ -626,7 +627,11 @@ export class AttendanceExportService {
     };
   }
 
-  private buildAcademicYearDocDefinition(report: any, tenantName: string, logoPath: string | null): any {
+  private buildAcademicYearDocDefinition(
+    report: any,
+    tenantName: string,
+    logoPath: string | null,
+  ): any {
     const content: any[] = [
       ...(logoPath
         ? [
@@ -708,30 +713,15 @@ export class AttendanceExportService {
     const generatedStr = `${dd}/${mm}/${yyyy} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
     const footerFn = function (currentPage: number, pageCount: number) {
-      const logoColumns: any[] = logoPath
-        ? [
-            {
-              image: logoPath,
-              width: 20,
-              margin: [0, -2, 5, 0],
-            },
-            {
-              text: tenantName,
-              alignment: 'left',
-              margin: [0, 2, 0, 0],
-              color: '#6b7280',
-              fontSize: 9,
-            },
-          ]
-        : [
-            {
-              text: tenantName,
-              alignment: 'left',
-              margin: [0, 2, 0, 0],
-              color: '#6b7280',
-              fontSize: 9,
-            },
-          ];
+      const logoColumns: any[] = [
+        {
+          text: tenantName,
+          alignment: 'left',
+          margin: [0, 2, 0, 0],
+          color: '#6b7280',
+          fontSize: 9,
+        },
+      ];
       return {
         columns: [
           { width: '*', columns: logoColumns },
@@ -875,6 +865,8 @@ export class AttendanceExportService {
         statusColor = '#059669'; // Green
       else if (d.status.includes('LEAVE')) statusColor = '#0284c7'; // Blue
 
+      const hasAttendance = d.clockIn || d.clockOut;
+
       return [
         formatDate(d.date),
         {
@@ -894,9 +886,21 @@ export class AttendanceExportService {
               minute: '2-digit',
             })
           : '-',
-        `${d.hours}h`,
-        d.isLate ? `Yes (${this.formatMinutes(d.lateMinutes)})` : 'No',
-        d.isEarlyOut ? `Yes (${this.formatMinutes(d.earlyOutMinutes)})` : 'No',
+        hasAttendance ? `${d.hours}h` : '-',
+        hasAttendance
+          ? d.isLate
+            ? d.isExcusedLate
+              ? `Excused (${this.formatMinutes(d.lateMinutes)})`
+              : `Yes (${this.formatMinutes(d.lateMinutes)})`
+            : 'No'
+          : '-',
+        hasAttendance
+          ? d.isEarlyOut
+            ? d.isExcusedEarlyOut
+              ? `Excused (${this.formatMinutes(d.earlyOutMinutes)})`
+              : `Yes (${this.formatMinutes(d.earlyOutMinutes)})`
+            : 'No'
+          : '-',
       ];
     });
 

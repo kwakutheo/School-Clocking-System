@@ -114,7 +114,9 @@ export class SaasAdminController {
   }
 
   @Post('admin-users/:id/restore')
-  @ApiOperation({ summary: 'Restore an archived central dashboard admin account' })
+  @ApiOperation({
+    summary: 'Restore an archived central dashboard admin account',
+  })
   async restoreGlobalAdmin(@Req() req: any, @Param('id') id: string) {
     this.verifyGlobalSuperAdmin(req);
     await this.adminService.restoreGlobalAdmin(id, req.user as User);
@@ -182,7 +184,10 @@ export class SaasAdminController {
   }
 
   @Get('tenants/check-unique')
-  @ApiOperation({ summary: 'Check tenant subdomain slug and initials for uniqueness/conflicts' })
+  @ApiOperation({
+    summary:
+      'Check tenant subdomain slug and initials for uniqueness/conflicts',
+  })
   async checkTenantUnique(
     @Req() req: any,
     @Query('slug') slug?: string,
@@ -201,11 +206,22 @@ export class SaasAdminController {
 
   // Controller-level helpers mirror the service normalizers but avoid importing them.
   private normalizeSlug(v: string) {
-    return v.toString().trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+    return v
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
   }
 
   private normalizeInitials(v: string) {
-    return v.toString().trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    return v
+      .toString()
+      .trim()
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .toUpperCase();
   }
 
   @Put('tenants/:id')
@@ -238,7 +254,11 @@ export class SaasAdminController {
     @Body() body: { isActive: boolean },
   ) {
     this.verifyGlobalSuperAdmin(req);
-    return this.adminService.toggleTenantStatus(id, body.isActive, req.user as User);
+    return this.adminService.toggleTenantStatus(
+      id,
+      body.isActive,
+      req.user as User,
+    );
   }
 
   @Get('stats')
@@ -246,7 +266,7 @@ export class SaasAdminController {
     summary: 'Fetch system-wide billing, MRR and health statistics',
   })
   async getStats(
-    @Req() req: any, 
+    @Req() req: any,
     @Query('timeframe') timeframe?: string,
     @Query('academicYear') academicYear?: string,
     @Query('termName') termName?: string,
@@ -380,8 +400,14 @@ export class SaasAdminController {
   ) {
     this.verifyGlobalAdmin(req);
     // Parse comma-separated status values: e.g. "ACTIVE,SUSPENDED" or "INACTIVE"
-    const statuses = status ? status.split(',').map(s => s.trim()).filter(Boolean) : undefined;
-    const isArchivedBool = isArchived === 'true' ? true : isArchived === 'false' ? false : undefined;
+    const statuses = status
+      ? status
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : undefined;
+    const isArchivedBool =
+      isArchived === 'true' ? true : isArchived === 'false' ? false : undefined;
     const result = await this.adminService.getAllGlobalEmployees(
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 50,
@@ -396,19 +422,28 @@ export class SaasAdminController {
   }
 
   @Put('employees/:id/status')
-  @ApiOperation({ summary: 'Toggle an employee status globally (Suspend/Reactivate)' })
+  @ApiOperation({
+    summary: 'Toggle an employee status globally (Suspend/Reactivate)',
+  })
   async updateGlobalEmployeeStatus(
     @Req() req: any,
     @Param('id') id: string,
     @Body() body: { status: string },
   ) {
     this.verifyGlobalSuperAdmin(req);
-    return this.adminService.updateGlobalEmployeeStatus(id, body.status, req.user as User);
+    return this.adminService.updateGlobalEmployeeStatus(
+      id,
+      body.status,
+      req.user as User,
+    );
   }
 
   @Post('employees/:id/archive')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Archive (soft-delete) an employee with Super Admin password confirmation' })
+  @ApiOperation({
+    summary:
+      'Archive (soft-delete) an employee with Super Admin password confirmation',
+  })
   async archiveGlobalEmployee(
     @Req() req: any,
     @Param('id') id: string,
@@ -416,29 +451,39 @@ export class SaasAdminController {
   ) {
     this.verifyGlobalSuperAdmin(req);
     if (!body.password) {
-      throw new ForbiddenException('Password confirmation is required to archive an employee.');
+      throw new ForbiddenException(
+        'Password confirmation is required to archive an employee.',
+      );
     }
-    await this.adminService.archiveGlobalEmployee(id, req.user as User, body.password);
+    await this.adminService.archiveGlobalEmployee(
+      id,
+      req.user as User,
+      body.password,
+    );
     return { success: true, message: 'Employee archived successfully.' };
   }
 
   @Post('employees/:id/unarchive')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Un-archive an employee, returning them to the school admin as INACTIVE. The school admin must manually activate them.' })
-  async unarchiveGlobalEmployee(
-    @Req() req: any,
-    @Param('id') id: string,
-  ) {
+  @ApiOperation({
+    summary:
+      'Un-archive an employee, returning them to the school admin as INACTIVE. The school admin must manually activate them.',
+  })
+  async unarchiveGlobalEmployee(@Req() req: any, @Param('id') id: string) {
     this.verifyGlobalSuperAdmin(req);
     await this.adminService.unarchiveGlobalEmployee(id, req.user as User);
     return {
       success: true,
-      message: 'Employee has been returned to the school dashboard as Inactive. The school administrator must now manually activate their account.',
+      message:
+        'Employee has been returned to the school dashboard as Inactive. The school administrator must now manually activate their account.',
     };
   }
 
   @Delete('employees/:id/permanently')
-  @ApiOperation({ summary: 'Permanently delete an employee and their user account with Super Admin password confirmation' })
+  @ApiOperation({
+    summary:
+      'Permanently delete an employee and their user account with Super Admin password confirmation',
+  })
   async permanentlyDeleteEmployee(
     @Req() req: any,
     @Param('id') id: string,
@@ -446,9 +491,18 @@ export class SaasAdminController {
   ) {
     this.verifyGlobalSuperAdmin(req);
     if (!body.adminPassword) {
-      throw new ForbiddenException('Password confirmation is required to permanently delete an employee.');
+      throw new ForbiddenException(
+        'Password confirmation is required to permanently delete an employee.',
+      );
     }
-    await this.adminService.permanentlyDeleteEmployee(id, req.user as User, body.adminPassword);
-    return { success: true, message: 'Employee permanently deleted from the system.' };
+    await this.adminService.permanentlyDeleteEmployee(
+      id,
+      req.user as User,
+      body.adminPassword,
+    );
+    return {
+      success: true,
+      message: 'Employee permanently deleted from the system.',
+    };
   }
 }

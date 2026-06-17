@@ -94,7 +94,13 @@ export class LeavesService {
       );
     }
 
-    await this._validatePermissionsRules(employee.id, data.leaveType, data.reason, data.startDate, data.endDate);
+    await this._validatePermissionsRules(
+      employee.id,
+      data.leaveType,
+      data.reason,
+      data.startDate,
+      data.endDate,
+    );
 
     const leave = this.leaveRepo.create({
       employee,
@@ -344,7 +350,13 @@ export class LeavesService {
       );
     }
 
-    await this._validatePermissionsRules(employee.id, data.leaveType, data.reason, data.startDate, data.endDate);
+    await this._validatePermissionsRules(
+      employee.id,
+      data.leaveType,
+      data.reason,
+      data.startDate,
+      data.endDate,
+    );
 
     const targetStatus = data.status || LeaveStatus.APPROVED;
 
@@ -385,11 +397,13 @@ export class LeavesService {
         employee.user.fcmToken,
         'refresh_dashboard',
       );
-      
+
       const typeDisplay = this._getLeaveTypeDisplay(leave.leaveType);
-      const notifTitle = leave.leaveType === LeaveType.EXCUSED || leave.leaveType === LeaveType.ERRAND 
-        ? 'New Permission Registered' 
-        : 'New Leave Registered';
+      const notifTitle =
+        leave.leaveType === LeaveType.EXCUSED ||
+        leave.leaveType === LeaveType.ERRAND
+          ? 'New Permission Registered'
+          : 'New Leave Registered';
 
       await this.notificationsService.sendPushToToken(
         employee.user.fcmToken,
@@ -423,16 +437,19 @@ export class LeavesService {
     startDateStr: string,
     endDateStr: string,
   ): Promise<void> {
-    if (leaveType !== LeaveType.EXCUSED && leaveType !== LeaveType.ERRAND) return;
+    if (leaveType !== LeaveType.EXCUSED && leaveType !== LeaveType.ERRAND)
+      return;
 
     if (!reason || reason.trim().length < 3) {
-      throw new BadRequestException('A detailed reason is required for errands and excused absences.');
+      throw new BadRequestException(
+        'A detailed reason is required for errands and excused absences.',
+      );
     }
 
     if (leaveType === LeaveType.EXCUSED) {
       const startDate = new Date(startDateStr);
       const endDate = new Date(endDateStr);
-      
+
       const term = await this.academicCalendarService.getTermForDate(startDate);
       if (!term) return; // If no active term, we can't accurately enforce term limits, so bypass.
 
@@ -441,7 +458,9 @@ export class LeavesService {
         .createQueryBuilder('leave')
         .where('leave.employee_id = :empId', { empId: employeeId })
         .andWhere('leave.leave_type = :type', { type: LeaveType.EXCUSED })
-        .andWhere('leave.status IN (:...statuses)', { statuses: [LeaveStatus.PENDING, LeaveStatus.APPROVED] })
+        .andWhere('leave.status IN (:...statuses)', {
+          statuses: [LeaveStatus.PENDING, LeaveStatus.APPROVED],
+        })
         .andWhere('leave.start_date <= :termEnd', { termEnd: term.endDate })
         .andWhere('leave.end_date >= :termStart', { termStart: term.startDate })
         .getMany();
@@ -449,15 +468,25 @@ export class LeavesService {
       let daysUsed = 0;
       for (const leave of leavesInTerm) {
         // Only count days that actually fall within the term
-        const lStart = new Date(leave.startDate) < new Date(term.startDate) ? new Date(term.startDate) : new Date(leave.startDate);
-        const lEnd = new Date(leave.endDate) > new Date(term.endDate) ? new Date(term.endDate) : new Date(leave.endDate);
-        daysUsed += Math.round((lEnd.getTime() - lStart.getTime()) / 86400000) + 1;
+        const lStart =
+          new Date(leave.startDate) < new Date(term.startDate)
+            ? new Date(term.startDate)
+            : new Date(leave.startDate);
+        const lEnd =
+          new Date(leave.endDate) > new Date(term.endDate)
+            ? new Date(term.endDate)
+            : new Date(leave.endDate);
+        daysUsed +=
+          Math.round((lEnd.getTime() - lStart.getTime()) / 86400000) + 1;
       }
 
-      const currentRequestDays = Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
+      const currentRequestDays =
+        Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
 
       if (daysUsed + currentRequestDays > 3) {
-        throw new BadRequestException(`Request denied. You only have ${Math.max(0, 3 - daysUsed)} excused absence day(s) remaining for this term.`);
+        throw new BadRequestException(
+          `Request denied. You only have ${Math.max(0, 3 - daysUsed)} excused absence day(s) remaining for this term.`,
+        );
       }
     }
   }

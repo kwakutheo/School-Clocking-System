@@ -59,7 +59,14 @@ export class EmployeesController {
     @Query('branchId') branchId?: string,
     @Query('roles') roles?: string,
   ) {
-    return this.service.findAll({ page, limit, search, status, branchId, roles });
+    return this.service.findAll({
+      page,
+      limit,
+      search,
+      status,
+      branchId,
+      roles,
+    });
   }
 
   @Get('me')
@@ -146,13 +153,21 @@ export class EmployeesController {
   @Patch(':id/dashboard-access')
   @UseGuards(RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Block or restore dashboard access for HR/Supervisor' })
+  @ApiOperation({
+    summary: 'Block or restore dashboard access for HR/Supervisor',
+  })
   setDashboardAccess(
     @Param('id') id: string,
     @Body() body: { blocked: boolean; reason?: string; adminPassword: string },
     @CurrentUser() adminUser: User,
   ): Promise<void> {
-    return this.service.setDashboardBlock(id, body.blocked, body.reason, body.adminPassword, adminUser);
+    return this.service.setDashboardBlock(
+      id,
+      body.blocked,
+      body.reason,
+      body.adminPassword,
+      adminUser,
+    );
   }
 
   @Get(':id/history')

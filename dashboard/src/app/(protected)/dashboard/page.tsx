@@ -7,6 +7,7 @@ import { useAuthStore } from '@/lib/store';
 import { AttendanceChart } from '@/components/attendance-chart';
 import { StatCardSkeleton, TableSkeleton } from '@/components/skeleton';
 import { AdminManualClockModal } from '@/components/admin-manual-clock-modal';
+import { ExcuseLatenessModal } from '@/components/excuse-lateness-modal';
 import {
   TrendingUp, TrendingDown, Users, FileText, Building2, Clock, Calendar, AlertTriangle, UserCheck, X, ChevronLeft, ChevronRight, Plane, Megaphone, Bell, Trash2, CheckCircle
 } from 'lucide-react';
@@ -99,6 +100,7 @@ export default function DashboardPage() {
 
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [showManualClock, setShowManualClock] = useState(false);
+  const [excuseModalData, setExcuseModalData] = useState<{logId: string, employeeName: string, type: 'late' | 'early_out'} | null>(null);
   const [modalDetails, setModalDetails] = useState<{ title: string; type: string; data: any[] } | null>(null);
   const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd');
 
@@ -638,6 +640,7 @@ export default function DashboardPage() {
                   <th>Branch</th>
                   <th>Time</th>
                   <th>GPS</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -662,12 +665,48 @@ export default function DashboardPage() {
                             Admin Override
                           </span>
                         )}
+                        {log.isLate && !log.isExcusedLate && (
+                          <span className="badge badge-amber" style={{ fontSize: 10 }}>Late</span>
+                        )}
+                        {log.isExcusedLate && (
+                          <span className="badge badge-green" style={{ fontSize: 10 }} title={`Excused: ${log.excuseReason}`}>
+                            Excused Lateness
+                          </span>
+                        )}
+                        {log.isEarlyOut && !log.isExcusedEarlyOut && (
+                          <span className="badge badge-orange" style={{ fontSize: 10 }}>Early Out</span>
+                        )}
+                        {log.isExcusedEarlyOut && (
+                          <span className="badge badge-green" style={{ fontSize: 10 }} title={`Excused: ${log.excuseEarlyOutReason}`}>
+                            Excused Early Out
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{log.branch?.name ?? '—'}</td>
                     <td style={{ fontSize: 13 }}>{format(new Date(log.timestamp), 'HH:mm:ss')}</td>
                     <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                       {log.latitude ? `${Number(log.latitude).toFixed(4)}, ${Number(log.longitude).toFixed(4)}` : '—'}
+                    </td>
+                    <td>
+                      {log.isLate && !log.isExcusedLate && isAdmin && (
+                        <button
+                          className="btn btn-secondary"
+                          style={{ fontSize: 11, padding: '4px 8px' }}
+                          onClick={() => setExcuseModalData({ logId: log.id, employeeName: log.employee?.user?.fullName ?? 'Unknown', type: 'late' })}
+                        >
+                          Excuse Late
+                        </button>
+                      )}
+                      {log.isEarlyOut && !log.isExcusedEarlyOut && isAdmin && (
+                        <button
+                          className="btn btn-secondary"
+                          style={{ fontSize: 11, padding: '4px 8px', marginTop: log.isLate ? 4 : 0 }}
+                          onClick={() => setExcuseModalData({ logId: log.id, employeeName: log.employee?.user?.fullName ?? 'Unknown', type: 'early_out' })}
+                        >
+                          Excuse Early Out
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -683,6 +722,21 @@ export default function DashboardPage() {
           onClose={() => setShowManualClock(false)}
           selectedDate={selectedDate}
           onSuccess={() => {
+            mutate(['live', selectedDate]);
+            mutate(['attendance-stats', selectedDate]);
+          }}
+        />
+      )}
+
+      {/* Excuse Lateness Modal */}
+      {excuseModalData && (
+        <ExcuseLatenessModal
+          logId={excuseModalData.logId}
+          employeeName={excuseModalData.employeeName}
+          type={excuseModalData.type}
+          onClose={() => setExcuseModalData(null)}
+          onSuccess={() => {
+            setExcuseModalData(null);
             mutate(['live', selectedDate]);
             mutate(['attendance-stats', selectedDate]);
           }}

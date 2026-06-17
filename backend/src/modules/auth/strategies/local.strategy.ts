@@ -13,7 +13,11 @@ export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
     super({ usernameField: 'identifier', passReqToCallback: true });
   }
 
-  async validate(req: Request, identifier: string, password: string): Promise<User> {
+  async validate(
+    req: Request,
+    identifier: string,
+    password: string,
+  ): Promise<User> {
     // 'context' is sent by web dashboards as 'central_dashboard'.
     // Mobile app logins do not send this field, so it will be undefined.
     const context = req.body?.context as string | undefined;

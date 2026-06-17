@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TK Clocking System - Presentation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Dark Theme (Default) */
+        :root {
+            --primary: #10b981;
+            --secondary: #3b82f6;
+            --accent: #f59e0b;
+            --danger: #ef4444;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --bg-card-hover: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --border-color-hover: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Light Theme */
+        .light-theme {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-card: rgba(15, 23, 42, 0.03);
+            --bg-card-hover: rgba(15, 23, 42, 0.06);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border-color: rgba(15, 23, 42, 0.1);
+            --border-color-hover: rgba(15, 23, 42, 0.2);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .presentation-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slides-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            padding: 60px 80px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-top: 60px;
+            padding-bottom: 120px;
+        }
+
+        /* Custom scrollbar styling */
+        .slide::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .slide::-webkit-scrollbar-track {
+            background: var(--bg-card);
+            border-radius: 5px;
+        }
+
+        .slide::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 5px;
+        }
+
+        .slide::-webkit-scrollbar-thumb:hover {
+            background: #059669;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .slide-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .slide-subtitle {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            font-weight: 400;
+        }
+
+        .slide-content {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            background: var(--bg-card-hover);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(16, 185, 129, 0.2);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .card-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .list {
+            margin-top: 20px;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 1.1rem;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .check-icon {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-right: 20px;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .control-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--primary);
+        }
+
+        .control-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .slide-indicator {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            padding: 10px 20px;
+            background: var(--bg-card);
+            border-radius: 10px;
+        }
+
+        .title-slide {
+            text-align: center;
+        }
+
+        .title-main {
+            font-size: 4.5rem;
+            font-weight: 900;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #10b981 0%, #3b82f6 50%, #f59e0b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .title-sub {
+            font-size: 1.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 50px;
+        }
+
+        .feature-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 5px;
+        }
+
+        .problem-item {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid #ef4444;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        .problem-item span {
+            color: var(--text-secondary);
+        }
+
+        .solution-item {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid #10b981;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        .solution-item span {
+            color: var(--text-secondary);
+        }
+
+        .process-step {
+            position: relative;
+            padding-left: 80px;
+            margin: 30px 0;
+        }
+
+        .step-number {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .step-content {
+            background: var(--bg-card);
+            padding: 20px 25px;
+            border-radius: 12px;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 30px;
+            border-radius: 16px;
+            margin: 20px 0;
+        }
+
+        .highlight-box p {
+            color: var(--text-secondary);
+        }
+
+        .footer {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Progress Bar */
+        .progress-bar-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: var(--bg-card);
+            z-index: 1001;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.3s ease;
+            border-radius: 0 3px 3px 0;
+        }
+
+        /* Fullscreen Button */
+        .fullscreen-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .fullscreen-btn:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--primary);
+        }
+
+        /* Help Modal */
+        .help-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        .help-modal.active {
+            display: flex;
+        }
+
+        .help-content {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .help-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .help-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .help-item:last-child {
+            border-bottom: none;
+        }
+
+        .help-key {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            margin-right: 20px;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .help-desc {
+            color: var(--text-secondary);
+        }
+
+        /* Transition Effects */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(100px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .transition-fade {
+            animation: fadeIn 0.5s ease;
+        }
+
+        .transition-slide-left {
+            animation: slideInLeft 0.5s ease;
+        }
+
+        .transition-slide-right {
+            animation: slideInRight 0.5s ease;
+        }
+
+        .transition-slide-up {
+            animation: slideInUp 0.5s ease;
+        }
+
+        .transition-scale {
+            animation: scaleIn 0.5s ease;
+        }
+
+        .logo-area {
+            margin-bottom: 40px;
+        }
+
+        .logo-text {
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+
+        @media (max-width: 1200px) {
+            .slide {
+                padding: 40px;
+            }
+            .slide-title {
+                font-size: 2.5rem;
+            }
+            .grid-3 {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Progress Bar -->
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="presentation-container">
+        <div class="footer">TK Clocking System</div>
+        
+        <div class="slides-wrapper" id="slidesWrapper">
+            <!-- Slide 1: Title -->
+            <div class="slide active">
+                <div class="title-slide">
+                    <div class="logo-text">
+                        <span style="color: #10b981;">TK</span> <span style="color: #3b82f6;">CLOCKING</span>
+                    </div>
+                    <h1 class="title-main">Smart School Attendance<br>& Staff Management System</h1>
+                    <p class="title-sub">A complete guide to how the system works and how your school will use it every day</p>
+                    <div style="margin-top: 60px;">
+                        <span class="feature-badge">📱 Mobile App</span>
+                        <span class="feature-badge">💻 Dashboard</span>
+                        <span class="feature-badge">📊 Reports</span>
+                        <span class="feature-badge">🔒 Secure</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 2: The Problem -->
+            <div class="slide">
+                <h2 class="slide-title">The Problem We Solve</h2>
+                <p class="slide-subtitle">Common challenges schools face with manual attendance systems</p>
+                
+                <div class="grid-2">
+                    <div>
+                        <div class="problem-item">
+                            <strong>❌ Staff sign for each other</strong><br>
+                            <span>Easy to manipulate manual systems</span>
+                        </div>
+                        <div class="problem-item">
+                            <strong>❌ Incomplete records</strong><br>
+                            <span>Paper notebooks, WhatsApp, Excel - scattered data</span>
+                        </div>
+                        <div class="problem-item">
+                            <strong>❌ No real-time visibility</strong><br>
+                            <span>Hard to know who is in school right now</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="problem-item">
+                            <strong>❌ Time-consuming payroll prep</strong><br>
+                            <span>Hours spent compiling attendance</span>
+                        </div>
+                        <div class="problem-item">
+                            <strong>❌ Confusing leave records</strong><br>
+                            <span>Disputes about lateness and absences</span>
+                        </div>
+                        <div class="problem-item">
+                            <strong>❌ No single source of truth</strong><br>
+                            <span>Management lacks clear, reliable data</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3: What The System Includes -->
+            <div class="slide">
+                <h2 class="slide-title">What The System Includes</h2>
+                <p class="slide-subtitle">A complete, integrated platform for modern school management</p>
+                
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-icon">📱</div>
+                        <div class="card-title">Mobile App</div>
+                        <div class="card-desc">For staff members to clock in/out, manage breaks, request leave, and view reports</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">💻</div>
+                        <div class="card-title">Admin Dashboard</div>
+                        <div class="card-desc">For school management to monitor attendance, manage staff, and generate reports</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">☁️</div>
+                        <div class="card-title">Cloud Backend</div>
+                        <div class="card-desc">Secure, real-time synchronization between mobile and dashboard</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 4: Who Uses The System -->
+            <div class="slide">
+                <h2 class="slide-title">Who Uses The System</h2>
+                <p class="slide-subtitle">Designed for every role in your school</p>
+                
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-icon">👨‍🏫</div>
+                        <div class="card-title">Staff Members</div>
+                        <div class="card-desc">
+                            • Clock in/out<br>
+                            • Manage breaks<br>
+                            • Request leave<br>
+                            • View personal reports
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">👨‍💼</div>
+                        <div class="card-title">School Administrators</div>
+                        <div class="card-desc">
+                            • Live attendance<br>
+                            • Manage staff<br>
+                            • Approve leave<br>
+                            • Generate reports
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">🏢</div>
+                        <div class="card-title">Central Management</div>
+                        <div class="card-desc">
+                            • Multi-school oversight<br>
+                            • System-wide reports<br>
+                            • User management<br>
+                            • Bulletins
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 5: How It Works -->
+            <div class="slide">
+                <h2 class="slide-title">How The Full System Works</h2>
+                <p class="slide-subtitle">Simple, secure, and real-time workflow</p>
+                
+                <div class="process-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <strong>Staff arrives at school</strong><br>
+                        Opens mobile app and taps "Clock In"
+                    </div>
+                </div>
+                
+                <div class="process-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <strong>System verifies location</strong><br>
+                        Checks GPS or scans branch QR code to confirm presence
+                    </div>
+                </div>
+                
+                <div class="process-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <strong>Attendance recorded instantly</strong><br>
+                        Dashboard updates in real-time for management
+                    </div>
+                </div>
+                
+                <div class="process-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <strong>Reports generated automatically</strong><br>
+                        End-of-day, week, month, or term reports ready to export
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 6: Mobile App Overview -->
+            <div class="slide">
+                <h2 class="slide-title">Mobile App Overview</h2>
+                <p class="slide-subtitle">Everything a staff member needs in one place</p>
+                
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-icon">🏠</div>
+                        <div class="card-title">Home Screen</div>
+                        <div class="card-desc">Daily control center with quick access to all features</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📋</div>
+                        <div class="card-title">Attendance</div>
+                        <div class="card-desc">Clock in/out, manage breaks, QR scanning</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📊</div>
+                        <div class="card-title">History</div>
+                        <div class="card-desc">View personal attendance records</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📈</div>
+                        <div class="card-title">Reports</div>
+                        <div class="card-desc">Monthly, term, and academic year reports</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📅</div>
+                        <div class="card-title">Calendar</div>
+                        <div class="card-desc">View academic terms, holidays, and breaks</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">👤</div>
+                        <div class="card-title">Profile</div>
+                        <div class="card-desc">Manage personal information</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 7: Daily Attendance Workflow -->
+            <div class="slide">
+                <h2 class="slide-title">Staff Daily Attendance Workflow</h2>
+                <p class="slide-subtitle">Simple, intuitive process for everyday use</p>
+                
+                <div class="grid-2">
+                    <div class="highlight-box">
+                        <h3 style="margin-bottom: 20px; color: #10b981;">⏰ Morning</h3>
+                        <div class="list-item">
+                            <span class="check-icon">✓</span>
+                            Arrive at school
+                        </div>
+                        <div class="list-item">
+                            <span class="check-icon">✓</span>
+                            Open app and tap "Clock In"
+                        </div>
+                        <div class="list-item">
+                            <span class="check-icon">✓</span>
+                            System verifies location/QR
+                        </div>
+                    </div>
+                    
+                    <div class="highlight-box">
+                        <h3 style="margin-bottom: 20px; color: #3b82f6;">🌙 Afternoon/Evening</h3>
+                        <div class="list-item">
+                            <span class="check-icon">✓</span>
+                            Ready to leave
+                        </div>
+                        <div class="list-item">
+                            <span class="check-icon">✓</span>
+                            Tap "Clock Out"
+                        </div>
+                        <div class="list-item">
+                            <span class="check-icon">✓</span>
+                            Confirm if leaving early
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 8: GPS & QR Attendance -->
+            <div class="slide">
+                <h2 class="slide-title">GPS & QR Attendance Verification</h2>
+                <p class="slide-subtitle">Multiple methods to ensure accurate attendance</p>
+                
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-icon">📍</div>
+                        <div class="card-title">GPS Verification</div>
+                        <div class="card-desc">
+                            • Checks if staff is within allowed school radius<br>
+                            • Configurable radius per branch<br>
+                            • Prevents off-site clock-ins<br>
+                            • Fake GPS detection
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-icon">📱</div>
+                        <div class="card-title">QR Code Scanning</div>
+                        <div class="card-desc">
+                            • Each branch has unique QR code<br>
+                            • Perfect for areas with poor GPS<br>
+                            • Validates school ownership<br>
+                            • Quick and easy to use
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 9: Break Management -->
+            <div class="slide">
+                <h2 class="slide-title">Break Management</h2>
+                <p class="slide-subtitle">Complete visibility of staff movement during the day</p>
+                
+                <div class="solution-item">
+                    <strong>✓ Start Break</strong><br>
+                    <span>Staff can start a break whenever needed</span>
+                </div>
+
+                <div class="solution-item">
+                    <strong>✓ End Break</strong><br>
+                    <span>Mark when returning from break</span>
+                </div>
+
+                <div class="solution-item">
+                    <strong>✓ Complete Picture</strong><br>
+                    <span>Management sees full picture of staff activity</span>
+                </div>
+
+                <div class="solution-item">
+                    <strong>✓ Perfect for Schools</strong><br>
+                    <span>Especially useful with lunch periods and duty schedules</span>
+                </div>
+            </div>
+
+            <!-- Slide 10: Leave Requests -->
+            <div class="slide">
+                <h2 class="slide-title">Leave Requests</h2>
+                <p class="slide-subtitle">Streamlined process from request to approval</p>
+                
+                <div class="grid-2">
+                    <div>
+                        <h3 style="margin-bottom: 20px; color: #3b82f6;">📝 Staff Request</h3>
+                        <div class="list-item">
+                            <span class="check-icon">✓</span>
+                            Select leave type
+                        </div>
+                        <div class="list-item">
+                            <span class="check-icon">✓</span>
+                            Choose start/end dates
+                        </div>
+                        <div class="list-item">
+                            <span class="check-icon">✓</span>
+                            Add reason
+                        </div>
+                        <div class="list-item">
+                            <span class="check-icon">✓</span>
+                            Submit for approval
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 style="margin-bottom: 20px; color: #10b981;">✅ Admin Approval</h3>
+                        <div class="list-item">
+                            <span class="check-icon">✓</span>
+                            Review requests in dashboard
+                        </div>
+                        <div class="list-item">
+                            <span class="check-icon">✓</span>
+                            System checks for overlaps
+                        </div>
+                        <div class="list-item">
+                            <span class="check-icon">✓</span>
+                            Approve or reject
+                        </div>
+                        <div class="list-item">
+                            <span class="check-icon">✓</span>
+                            Staff gets notified
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 11: History & Reports -->
+            <div class="slide">
+                <h2 class="slide-title">Staff History & Reports</h2>
+                <p class="slide-subtitle">Transparency and self-management</p>
+                
+                <div class="card">
+                    <div class="card-icon">📋</div>
+                    <div class="card-title">Attendance History</div>
+                    <div class="card-desc">
+                        Staff can view their own records including clock in/out, breaks, sync status, and more. Reduces arguments through transparency.
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-top: 20px;">
+                    <div class="card-icon">📈</div>
+                    <div class="card-title">Personal Reports</div>
+                    <div class="card-desc">
+                        Monthly, term, and academic year reports available. Helps staff track their own performance and manage their time better.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 12: Dashboard Overview -->
+            <div class="slide">
+                <h2 class="slide-title">Dashboard Overview</h2>
+                <p class="slide-subtitle">The control center for school management</p>
+                
+                <div class="highlight-box">
+                    <p style="font-size: 1.3rem; margin-bottom: 20px;">
+                        <strong style="color: #10b981;">Live picture of staff attendance</strong>
+                    </p>
+                    <p style="color: #94a3b8; font-size: 1.1rem;">
+                        Instead of waiting until the end of the day or month, management can see what is happening right now. This is one of the system's biggest strengths!
+                    </p>
+                </div>
+            </div>
+
+            <!-- Slide 13: Live Attendance -->
+            <div class="slide">
+                <h2 class="slide-title">Live Attendance Monitoring</h2>
+                <p class="slide-subtitle">Real-time visibility of what's happening</p>
+                
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-icon">👀</div>
+                        <div class="card-title">Live Feed</div>
+                        <div class="card-desc">See attendance events as they happen</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📍</div>
+                        <div class="card-title">Branch Info</div>
+                        <div class="card-desc">Which branch attendance is from</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">⏰</div>
+                        <div class="card-title">Time Stamps</div>
+                        <div class="card-desc">Exact time of each action</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">🗺️</div>
+                        <div class="card-title">GPS Coords</div>
+                        <div class="card-desc">Location where available</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">⚠️</div>
+                        <div class="card-title">Flags</div>
+                        <div class="card-desc">Lateness, early out, overrides</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📊</div>
+                        <div class="card-title">Charts</div>
+                        <div class="card-desc">Summary statistics and graphs</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 14: Lateness & Early Leaving -->
+            <div class="slide">
+                <h2 class="slide-title">Handling Lateness & Early Leaving</h2>
+                <p class="slide-subtitle">Fair, transparent, and professional</p>
+                
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-icon">🚩</div>
+                        <div class="card-title">Automatic Detection</div>
+                        <div class="card-desc">
+                            System automatically flags lateness and early departure based on assigned shifts. No manual calculations needed!
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-icon">✅</div>
+                        <div class="card-title">Excusal Option</div>
+                        <div class="card-desc">
+                            Admins can excuse genuine cases. Records are updated to reflect that lateness/early departure was officially excused.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 15: Manual Admin Actions -->
+            <div class="slide">
+                <h2 class="slide-title">Manual Admin Actions</h2>
+                <p class="slide-subtitle">Flexibility for special circumstances</p>
+                
+                <div class="highlight-box">
+                    <h3 style="margin-bottom: 20px;">When to use manual clocking:</h3>
+                    <div class="list-item">
+                        <span class="check-icon">📱</span>
+                        Staff phone is dead or lost
+                    </div>
+                    <div class="list-item">
+                        <span class="check-icon">🔧</span>
+                        Technical issue prevented normal clocking
+                    </div>
+                    <div class="list-item">
+                        <span class="check-icon">📝</span>
+                        Valid reason for backdating
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-top: 20px;">
+                    <div class="card-icon">🔍</div>
+                    <div class="card-title">Full Transparency</div>
+                    <div class="card-desc">
+                        All manual actions are marked as "Admin Override" and recorded in audit trail for accountability
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 16: Employee Management -->
+            <div class="slide">
+                <h2 class="slide-title">Employee Management</h2>
+                <p class="slide-subtitle">Complete staff records and organization</p>
+                
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-icon">📄</div>
+                        <div class="card-title">Complete Records</div>
+                        <div class="card-desc">Name, code, branch, department, shift, status, and more</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">🔄</div>
+                        <div class="card-title">Status Tracking</div>
+                        <div class="card-desc">Active, inactive, suspended, archived</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">🔍</div>
+                        <div class="card-title">Search & Filter</div>
+                        <div class="card-desc">Find staff quickly by any criteria</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 17: Branches, Departments, Shifts -->
+            <div class="slide">
+                <h2 class="slide-title">Branches, Departments & Shifts</h2>
+                <p class="slide-subtitle">Organize your school exactly how you need it</p>
+                
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-icon">🏢</div>
+                        <div class="card-title">Branches</div>
+                        <div class="card-desc">
+                            • Multiple campuses/locations<br>
+                            • GPS radius settings<br>
+                            • Unique QR codes
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📁</div>
+                        <div class="card-title">Departments</div>
+                        <div class="card-desc">
+                            • Teaching, Admin, Accounts<br>
+                            • Security, Maintenance<br>
+                            • Better organization
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">⏰</div>
+                        <div class="card-title">Shifts</div>
+                        <div class="card-desc">
+                            • Different schedules<br>
+                            • Fair attendance judging<br>
+                            • Grace periods
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 18: Academic Calendar & Holidays -->
+            <div class="slide">
+                <h2 class="slide-title">Academic Calendar & Holidays</h2>
+                <p class="slide-subtitle">Built specifically for schools, not just offices</p>
+                
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-icon">📚</div>
+                        <div class="card-title">Academic Terms</div>
+                        <div class="card-desc">
+                            Define teaching periods and breaks. System knows difference between term time and holidays!
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-icon">🎉</div>
+                        <div class="card-title">Holiday Management</div>
+                        <div class="card-desc">
+                            One-time and recurring holidays supported. Prevents false absence records!
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 19: Reports & Exports -->
+            <div class="slide">
+                <h2 class="slide-title">Reports & Exports</h2>
+                <p class="slide-subtitle">Professional documents at the click of a button</p>
+                
+                <div class="grid-2">
+                    <div>
+                        <h3 style="margin-bottom: 20px; color: #3b82f6;">📊 Report Types</h3>
+                        <div class="list-item">
+                            <span class="check-icon">📅</span>
+                            Monthly attendance reports
+                        </div>
+                        <div class="list-item">
+                            <span class="check-icon">📚</span>
+                            Term attendance reports
+                        </div>
+                        <div class="list-item">
+                            <span class="check-icon">🎓</span>
+                            Academic year reports
+                        </div>
+                        <div class="list-item">
+                            <span class="check-icon">📁</span>
+                            Bulk reports for multiple staff
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 style="margin-bottom: 20px; color: #10b981;">📄 What's Included</h3>
+                        <div class="list-item">
+                            <span class="check-icon">⏱️</span>
+                            Total hours & days worked
+                        </div>
+                        <div class="list-item">
+                            <span class="check-icon">❌</span>
+                            Absences & lateness
+                        </div>
+                        <div class="list-item">
+                            <span class="check-icon">🚪</span>
+                            Early departures
+                        </div>
+                        <div class="list-item">
+                            <span class="check-icon">✅</span>
+                            Excused records
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 20: Permissions & Accountability -->
+            <div class="slide">
+                <h2 class="slide-title">Permissions & Accountability</h2>
+                <p class="slide-subtitle">Safety, order, and proper delegation</p>
+                
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-icon">🔐</div>
+                        <div class="card-title">Role-Based Access</div>
+                        <div class="card-desc">
+                            • View-only access<br>
+                            • Attendance management<br>
+                            • Permission management<br>
+                            • Full administration
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-icon">📝</div>
+                        <div class="card-title">Audit Trail</div>
+                        <div class="card-desc">
+                            • Who changed something<br>
+                            • What they changed<br>
+                            • When they changed it<br>
+                            • Which area affected
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 21: Security & Anti-Abuse -->
+            <div class="slide">
+                <h2 class="slide-title">Security & Anti-Abuse Features</h2>
+                <p class="slide-subtitle">Multiple layers of protection</p>
+                
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-icon">🔑</div>
+                        <div class="card-title">Login Protection</div>
+                        <div class="card-desc">Secure credentials for every user</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📍</div>
+                        <div class="card-title">GPS Boundaries</div>
+                        <div class="card-desc">Prevents off-site clock-ins</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📱</div>
+                        <div class="card-title">QR Validation</div>
+                        <div class="card-desc">Only valid school QR codes work</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">🚫</div>
+                        <div class="card-title">Fake GPS Detection</div>
+                        <div class="card-desc">Blocks mocked locations</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">⏰</div>
+                        <div class="card-title">Time Tampering</div>
+                        <div class="card-desc">Protects against phone time changes</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">🏛️</div>
+                        <div class="card-title">Tenant Isolation</div>
+                        <div class="card-desc">Schools' data kept separate</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 22: Multi-School Support -->
+            <div class="slide">
+                <h2 class="slide-title">Multi-School & Growth Potential</h2>
+                <p class="slide-subtitle">Ready for expansion and group-level management</p>
+                
+                <div class="highlight-box">
+                    <h3 style="margin-bottom: 20px; color: #10b981;">🏢 Multi-School Support</h3>
+                    <p style="color: #94a3b8; font-size: 1.1rem;">
+                        Each school can have its own branches, staff, records, and settings. One system, multiple schools!
+                    </p>
+                </div>
+                
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-icon">👑</div>
+                        <div class="card-title">Central Admin</div>
+                        <div class="card-desc">Manage the wider system</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📢</div>
+                        <div class="card-title">Bulletins</div>
+                        <div class="card-desc">System-wide announcements</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📊</div>
+                        <div class="card-title">Broader Reports</div>
+                        <div class="card-desc">Cross-school analytics</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 23: Why This System Is Valuable -->
+            <div class="slide">
+                <h2 class="slide-title">Why This System Is Valuable</h2>
+                <p class="slide-subtitle">Real business benefits for your school</p>
+                
+                <div class="grid-2">
+                    <div class="solution-item">
+                        <strong>⏱️ It Saves Time</strong><br>
+                        <span>No more manual compilation of attendance</span>
+                    </div>
+                    <div class="solution-item">
+                        <strong>✅ It Improves Accuracy</strong><br>
+                        <span>Consistent handling of all attendance events</span>
+                    </div>
+                    <div class="solution-item">
+                        <strong>⚖️ It Increases Fairness</strong><br>
+                        <span>Judged by actual records, not hearsay</span>
+                    </div>
+                    <div class="solution-item">
+                        <strong>👀 It Improves Transparency</strong><br>
+                        <span>Everybody sees the same data</span>
+                    </div>
+                    <div class="solution-item">
+                        <strong>📊 Better Decision-Making</strong><br>
+                        <span>Records, not guesses</span>
+                    </div>
+                    <div class="solution-item">
+                        <strong>🔒 Reduces Fraud</strong><br>
+                        <span>Multiple layers of protection</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 24: Daily Usage - Staff -->
+            <div class="slide">
+                <h2 class="slide-title">Recommended Daily Usage - Staff</h2>
+                <p class="slide-subtitle">Simple routine for everyday success</p>
+                
+                <div class="process-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <strong>Clock In when arriving</strong><br>
+                        First thing at school
+                    </div>
+                </div>
+                
+                <div class="process-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <strong>Use break features</strong><br>
+                        Start/End breaks properly
+                    </div>
+                </div>
+                
+                <div class="process-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <strong>Clock Out when leaving</strong><br>
+                        Confirm if leaving early
+                    </div>
+                </div>
+                
+                <div class="process-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <strong>Check history regularly</strong><br>
+                        Stay informed about your attendance
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 25: Daily Usage - Admins -->
+            <div class="slide">
+                <h2 class="slide-title">Recommended Daily Usage - Admins</h2>
+                <p class="slide-subtitle">Effective management routine</p>
+                
+                <div class="process-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <strong>Check live dashboard</strong><br>
+                        First thing in the morning
+                    </div>
+                </div>
+                
+                <div class="process-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <strong>Review attendance</strong><br>
+                        Address any issues promptly
+                    </div>
+                </div>
+                
+                <div class="process-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <strong>Handle leave requests</strong><br>
+                        Approve/reject in a timely manner
+                    </div>
+                </div>
+                
+                <div class="process-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <strong>Excuse genuine cases</strong><br>
+                        Keep records fair and accurate
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 26: Final Summary -->
+            <div class="slide">
+                <div class="title-slide">
+                    <h2 class="slide-title">Final Summary</h2>
+                    
+                    <div class="highlight-box" style="margin-top: 40px;">
+                        <p style="font-size: 1.4rem; line-height: 1.8;">
+                            What makes this system strong is that it is <strong style="color: #10b981;">not just a clock-in tool</strong>.<br><br>
+                            It is a <strong style="color: #3b82f6;">complete operational system</strong> for managing attendance, staff structure, leave, school time planning, live monitoring, and professional reporting.<br><br>
+                            It improves trust, saves time, reduces confusion, strengthens accountability, and gives leadership a <strong style="color: #f59e0b;">clear picture</strong> of what is happening.
+                        </p>
+                    </div>
+                    
+                    <p class="title-sub" style="margin-top: 50px;">
+                        In short: It helps the school run in a more <strong style="color: #10b981;">organized</strong>, <strong style="color: #3b82f6;">fair</strong>, and <strong style="color: #f59e0b;">modern way</strong>.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Slide 27: Questions -->
+            <div class="slide">
+                <div class="title-slide">
+                    <h1 class="title-main">Questions & Discussion</h1>
+                    <p class="title-sub">Let's talk about how this system can work for your school</p>
+                    
+                    <div style="margin-top: 80px;">
+                        <div style="font-size: 8rem;">💬</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" id="prevBtn" onclick="prevSlide()">← Previous</button>
+            <div class="slide-indicator" id="slideIndicator">1 / 27</div>
+            <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</button>
+            <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()">⛶</button>
+            <button class="theme-toggle" id="helpBtn" onclick="toggleHelp()">❓</button>
+            <button class="control-btn" id="nextBtn" onclick="nextSlide()">Next →</button>
+        </div>
+
+        <!-- Help Modal -->
+        <div class="help-modal" id="helpModal" onclick="if(event.target === this) toggleHelp()">
+            <div class="help-content">
+                <h2 class="help-title">Keyboard Shortcuts</h2>
+                <div class="help-item">
+                    <span class="help-key">→ / Space</span>
+                    <span class="help-desc">Next slide</span>
+                </div>
+                <div class="help-item">
+                    <span class="help-key">←</span>
+                    <span class="help-desc">Previous slide</span>
+                </div>
+                <div class="help-item">
+                    <span class="help-key">T</span>
+                    <span class="help-desc">Toggle theme (light/dark)</span>
+                </div>
+                <div class="help-item">
+                    <span class="help-key">F</span>
+                    <span class="help-desc">Toggle fullscreen</span>
+                </div>
+                <div class="help-item">
+                    <span class="help-key">H</span>
+                    <span class="help-desc">Show this help</span>
+                </div>
+                <div class="help-item">
+                    <span class="help-key">1-9</span>
+                    <span class="help-desc">Jump to slide 1-9</span>
+                </div>
+                <div class="help-item">
+                    <span class="help-key">Esc</span>
+                    <span class="help-desc">Close help or exit fullscreen</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        let isDarkTheme = true;
+        const transitions = ['transition-fade', 'transition-slide-right', 'transition-slide-up', 'transition-scale'];
+        let currentTransitionIndex = 0;
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active');
+                // Remove all transition classes
+                transitions.forEach(t => slide.classList.remove(t));
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                    // Add a random transition
+                    slide.classList.add(transitions[currentTransitionIndex]);
+                    currentTransitionIndex = (currentTransitionIndex + 1) % transitions.length;
+                }
+            });
+            
+            document.getElementById('slideIndicator').textContent = `${currentSlide + 1} / ${totalSlides}`;
+            updateProgressBar();
+            
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        function updateProgressBar() {
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+                // Scroll to top of slide
+                slides[currentSlide].scrollTop = 0;
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+                // Scroll to top of slide
+                slides[currentSlide].scrollTop = 0;
+            }
+        }
+
+        function goToSlide(index) {
+            if (index >= 0 && index < totalSlides) {
+                currentSlide = index;
+                updateSlide();
+                slides[currentSlide].scrollTop = 0;
+            }
+        }
+
+        function toggleTheme() {
+            isDarkTheme = !isDarkTheme;
+            document.body.classList.toggle('light-theme');
+            document.getElementById('themeToggle').textContent = isDarkTheme ? '🌙' : '☀️';
+            
+            localStorage.setItem('presentation-theme', isDarkTheme ? 'dark' : 'light');
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+                document.getElementById('fullscreenBtn').textContent = '⛶';
+            } else {
+                document.exitFullscreen();
+                document.getElementById('fullscreenBtn').textContent = '⛶';
+            }
+        }
+
+        function toggleHelp() {
+            const helpModal = document.getElementById('helpModal');
+            helpModal.classList.toggle('active');
+        }
+
+        function loadThemePreference() {
+            const savedTheme = localStorage.getItem('presentation-theme');
+            if (savedTheme === 'light') {
+                isDarkTheme = false;
+                document.body.classList.add('light-theme');
+                document.getElementById('themeToggle').textContent = '☀️';
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            // Close help modal with Escape
+            if (e.key === 'Escape') {
+                const helpModal = document.getElementById('helpModal');
+                if (helpModal.classList.contains('active')) {
+                    toggleHelp();
+                }
+                return;
+            }
+
+            // Don't process other shortcuts if help modal is open
+            const helpModal = document.getElementById('helpModal');
+            if (helpModal.classList.contains('active')) {
+                return;
+            }
+
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevSlide();
+            } else if (e.key === 't' || e.key === 'T') {
+                toggleTheme();
+            } else if (e.key === 'f' || e.key === 'F') {
+                toggleFullscreen();
+            } else if (e.key === 'h' || e.key === 'H') {
+                toggleHelp();
+            } else if (e.key >= '1' && e.key <= '9') {
+                const slideIndex = parseInt(e.key) - 1;
+                goToSlide(slideIndex);
+            }
+        });
+
+        // Initialize
+        loadThemePreference();
+        updateSlide();
+    </script>
+</body>
+</html>

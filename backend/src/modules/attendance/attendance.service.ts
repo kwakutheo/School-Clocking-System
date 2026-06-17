@@ -143,7 +143,7 @@ export class AttendanceService {
         // Rule: Must clock in within assigned working hours.
         if (!this._isWithinShiftHours(now, employee.shift)) {
           throw new BadRequestException(
-            `Action denied: Please try again when it is two hours prior to your assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
+            `Action denied: Please try again when it is two hours prior to your next assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
           );
         }
         break;
@@ -758,7 +758,7 @@ export class AttendanceService {
         }
         if (!this._isWithinShiftHours(now, employee.shift)) {
           throw new BadRequestException(
-            `Action denied: Please try again when it is two hours prior to your assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
+            `Action denied: Please try again when it is two hours prior to your next assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
           );
         }
         break;

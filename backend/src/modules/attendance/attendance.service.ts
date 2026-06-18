@@ -1875,7 +1875,7 @@ export class AttendanceService {
 
     if (deviceClaimedByOther) {
       const claimedByName =
-        deviceClaimedByOther.employee?.user?.fullName ?? 'another employee';
+        (deviceClaimedByOther.employee?.user?.fullName ?? 'ANOTHER EMPLOYEE').toUpperCase();
       throw new BadRequestException(
         `This device has already been used to record attendance today by ${claimedByName}. Each phone may only be used for one person's attendance per day. Please use your own device or contact your administrator if you need assistance.`,
       );

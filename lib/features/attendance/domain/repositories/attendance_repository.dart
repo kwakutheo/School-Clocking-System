@@ -40,5 +40,6 @@ abstract interface class AttendanceRepository {
     required double latitude,
     required double longitude,
     bool forceEarlyOut = false,
+    String? deviceId,
   });
 }

@@ -49,11 +49,13 @@ class AttendanceQrRecordEvent extends AttendanceEvent {
     required this.qrCode,
     required this.type,
     this.forceEarlyOut = false,
+    this.deviceId,
   });
 
   final String qrCode;
   final AttendanceType type;
   final bool forceEarlyOut;
+  final String? deviceId;
 
   @override
   List<Object?> get props => [qrCode, type, forceEarlyOut];

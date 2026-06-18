@@ -16,6 +16,7 @@ class QrClockUseCase {
     required double latitude,
     required double longitude,
     bool forceEarlyOut = false,
+    String? deviceId,
   }) =>
       _repository.recordViaQr(
         qrCode: qrCode,
@@ -23,5 +24,6 @@ class QrClockUseCase {
         latitude: latitude,
         longitude: longitude,
         forceEarlyOut: forceEarlyOut,
+        deviceId: deviceId,
       );
 }

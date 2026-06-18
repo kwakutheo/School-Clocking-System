@@ -39,12 +39,12 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { href: '/dashboard',   icon: LayoutDashboard, label: 'Overview'    },
-  { href: '/attendance',  icon: Clock,            label: 'Attendance Report',        permission: 'attendance.view'    },
-  { href: '/employees',   icon: Users,            label: 'Staff',                    permission: 'employees.view'     },
-  { href: '/leaves',      icon: FileText,         label: 'Permissions & Leaves'                                       },
-  { href: '/shifts',      icon: Clock,            label: 'Shifts',                   permission: 'shifts.manage'      },
-  { href: '/holidays',    icon: Calendar,         label: 'Holidays',                 permission: 'holidays.manage'    },
-  { href: '/calendar',    icon: Calendar,         label: 'Academic Calendar',        permission: 'calendar.view'      },
+  { href: '/attendance',  icon: Clock,            label: 'Attendance Report',          permission: 'attendance.view'    },
+  { href: '/employees',   icon: Users,            label: 'Staff Registry',             permission: 'employees.view'     },
+  { href: '/leaves',      icon: FileText,         label: 'Permissions & Leaves',       permission: 'leaves.manage'      },
+  { href: '/shifts',      icon: Clock,            label: 'Shifts (Working hours)',     permission: 'shifts.manage'      },
+  { href: '/holidays',    icon: Calendar,         label: 'Holidays',                   permission: 'holidays.manage'    },
+  { href: '/calendar',    icon: Calendar,         label: 'Academic Calendar',          permission: 'calendar.view'      },
   { href: '/departments', icon: Building2,        label: 'Departments',                permission: 'departments.manage' },
   { href: '/branches',    icon: MapPin,           label: 'Branches',                   permission: 'branches.manage'    },
   { href: '/mobile-app',  icon: Smartphone,       label: 'Mobile App',                 permission: 'employees.view'     },

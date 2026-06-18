@@ -87,6 +87,9 @@ export class AttendanceService {
       );
     }
 
+    // ── Device restriction guard ──────────────────────────────────────────
+    await this._checkDeviceUsageRestriction(dto.deviceId, now, employee.id);
+
     // ── Individual Leave guard ────────────────────────────────────────────
     const dateStr = now.toISOString().split('T')[0];
     const approvedLeaves = await this.leavesService.findApprovedInRange(
@@ -381,6 +384,24 @@ export class AttendanceService {
   }
 
   // ── Batch offline sync ────────────────────────────────────────────────────
+  /**
+   * Syncs a batch of offline-queued attendance records submitted by the mobile
+   * app when it regains connectivity.
+   *
+   * ⚠️  OFFLINE SYNC & DEVICE RESTRICTION — IMPORTANT NOTE FOR MAINTAINERS:
+   * Each record delegates to record(), which calls _checkDeviceUsageRestriction
+   * using `now = new Date(dto.timestamp)` — the ORIGINAL clock time, not the
+   * current wall-clock time at sync. This is intentional:
+   *
+   *   Example: Kofi clocked in offline on Monday at 07:30 on Phone X.
+   *   He syncs on Tuesday morning. The device restriction checks Monday's
+   *   date range (not Tuesday's), so:
+   *     - It correctly validates against Monday's other logs.
+   *     - It does NOT interfere with Tuesday's clocking on a fresh device.
+   *
+   * Do NOT change this to use the current date/time — it would break offline
+   * sync for employees who clock across midnight or sync the next day.
+   */
   async syncOffline(
     userId: string,
     dto: SyncOfflineDto,
@@ -706,6 +727,9 @@ export class AttendanceService {
         `Action denied: Today is a ${dayStatus.name}. Clocking is not allowed on non-working days.`,
       );
     }
+
+    // ── Device restriction guard ──────────────────────────────────────────
+    await this._checkDeviceUsageRestriction(dto.deviceId, now, employee.id);
 
     // ── Individual Leave guard ────────────────────────────────────────────
     const dateStr = now.toISOString().split('T')[0];
@@ -1802,6 +1826,78 @@ export class AttendanceService {
       forgotOutEmployees,
       dayStatus,
     };
+  }
+
+  // ── Device Usage Restriction ─────────────────────────────────────────────
+  /**
+   * Enforces a two-way device lock for the current calendar day:
+   *
+   * Rule 1 — Device → Employee lock:
+   *   If Phone X was already used by Employee A today, no other employee
+   *   may use Phone X for any clocking action for the rest of the day.
+   *
+   * Rule 2 — Employee → Device lock:
+   *   If Employee A already clocked on Phone X today, Employee A may not
+   *   use any other phone for subsequent actions (break, clock-out, etc.)
+   *   for the rest of the day. The error message tells them exactly when
+   *   they first clocked in and on which session, without exposing IDs.
+   *
+   * ⚠️  OFFLINE SYNC BEHAVIOUR:
+   *   `now` is derived from dto.timestamp (original clock time), so the
+   *   day range is computed from the ORIGINAL event date, not the sync date.
+   *   This is correct — do not replace `now` with `new Date()` here.
+   *
+   * Skipped entirely when deviceId is null/undefined (backward compat).
+   * NOT called from adminManualClock() — admin overrides are always exempt.
+   */
+  private async _checkDeviceUsageRestriction(
+    deviceId: string | undefined,
+    now: Date,
+    employeeId: string,
+  ): Promise<void> {
+    if (!deviceId) return;
+
+    const dayStart = new Date(now);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(now);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    // ── Rule 1: Is this device already claimed by a different employee today? ─
+    const deviceClaimedByOther = await this.repo
+      .createQueryBuilder('log')
+      .innerJoin('log.employee', 'emp')
+      .where('log.deviceId = :deviceId', { deviceId })
+      .andWhere('log.timestamp >= :dayStart', { dayStart })
+      .andWhere('log.timestamp <= :dayEnd', { dayEnd })
+      .andWhere('emp.id != :employeeId', { employeeId })
+      .getOne();
+
+    if (deviceClaimedByOther) {
+      throw new BadRequestException(
+        "This device has already been used to record attendance today. Each phone may only be used for one person's attendance per day. Please use your own device or contact your administrator if you need assistance.",
+      );
+    }
+
+    // ── Rule 2: Has this employee already clocked on a different device today? ─
+    const employeeOnOtherDevice = await this.repo
+      .createQueryBuilder('log')
+      .innerJoin('log.employee', 'emp')
+      .where('emp.id = :employeeId', { employeeId })
+      .andWhere('log.timestamp >= :dayStart', { dayStart })
+      .andWhere('log.timestamp <= :dayEnd', { dayEnd })
+      .andWhere('log.deviceId IS NOT NULL')
+      .andWhere('log.deviceId != :deviceId', { deviceId })
+      .orderBy('log.timestamp', 'ASC') // earliest log = first clock-in
+      .getOne();
+
+    if (employeeOnOtherDevice) {
+      // Format the time of the first clocking on the original device so the
+      // employee knows exactly when they were locked to that phone.
+      const lockedAt = format(employeeOnOtherDevice.timestamp, 'hh:mm a');
+      throw new BadRequestException(
+        `You already recorded attendance today at ${lockedAt}. All clocking actions for the day must be done on the same device you used to start. Please use your original device or contact your administrator if you need assistance.`,
+      );
+    }
   }
 
   // ── Haversine distance (meters) ───────────────────────────────────────────

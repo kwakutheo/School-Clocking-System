@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tk_clocking_system/core/errors/exceptions.dart';
 import 'package:tk_clocking_system/core/errors/failures.dart';
+import 'package:tk_clocking_system/core/services/device_id_service.dart';
 import 'package:tk_clocking_system/core/services/location_service.dart';
 import 'package:tk_clocking_system/features/attendance/domain/usecases/get_attendance_history_usecase.dart';
 import 'package:tk_clocking_system/features/attendance/domain/usecases/qr_clock_usecase.dart';
@@ -17,11 +18,13 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     required SyncPendingAttendanceUseCase syncPending,
     required QrClockUseCase qrClock,
     required LocationService locationService,
+    required DeviceIdService deviceIdService,
   })  : _record = recordAttendance,
         _history = getHistory,
         _sync = syncPending,
         _qrClock = qrClock,
         _location = locationService,
+        _deviceId = deviceIdService,
         super(const AttendanceInitial()) {
     on<AttendanceRecordEvent>(_onRecord);
     on<AttendanceLoadHistoryEvent>(_onLoadHistory);
@@ -34,6 +37,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
   final SyncPendingAttendanceUseCase _sync;
   final QrClockUseCase _qrClock;
   final LocationService _location;
+  final DeviceIdService _deviceId;
 
   // ── Record attendance ─────────────────────────────────────────────────────
   Future<void> _onRecord(
@@ -59,14 +63,17 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       return;
     }
 
-    // 2. Record the attendance event.
+    // 2. Resolve the stable device ID.
+    final deviceId = event.deviceId ?? await _deviceId.getDeviceId();
+
+    // 3. Record the attendance event.
     final result = await _record(
       employeeId: event.employeeId,
       type: event.type,
       latitude: lat,
       longitude: lng,
       branchId: event.branchId,
-      deviceId: event.deviceId,
+      deviceId: deviceId,
       forceEarlyOut: event.forceEarlyOut,
     );
 
@@ -79,7 +86,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
             pendingEmployeeId: event.employeeId,
             pendingType: event.type,
             pendingBranchId: event.branchId,
-            pendingDeviceId: event.deviceId,
+            pendingDeviceId: deviceId,
             pendingLat: lat,
             pendingLng: lng,
           ));
@@ -144,6 +151,9 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       return;
     }
 
+    // 2. Resolve the stable device ID.
+    final deviceId = event.deviceId ?? await _deviceId.getDeviceId();
+
     try {
       final result = await _qrClock(
         qrCode: event.qrCode,
@@ -151,6 +161,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         latitude: lat,
         longitude: lng,
         forceEarlyOut: event.forceEarlyOut,
+        deviceId: deviceId,
       );
 
       result.fold(
@@ -164,6 +175,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
               pendingLat: lat,
               pendingLng: lng,
               pendingQrCode: event.qrCode,
+              pendingDeviceId: deviceId,
             ));
           } else {
             emit(AttendanceFailure(_mapFailure(failure)));

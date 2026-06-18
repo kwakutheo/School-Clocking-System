@@ -117,6 +117,7 @@ class _ClockInPageState extends State<ClockInPage> {
                           qrCode: state.pendingQrCode!,
                           type: state.pendingType,
                           forceEarlyOut: true,
+                          deviceId: state.pendingDeviceId,
                         ),
                       );
                 } else {

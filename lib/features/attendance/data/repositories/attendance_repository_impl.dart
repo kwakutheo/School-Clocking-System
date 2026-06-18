@@ -340,6 +340,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     required double latitude,
     required double longitude,
     bool forceEarlyOut = false,
+    String? deviceId,
   }) async {
     late DateTime safeTimestamp;
     try {
@@ -381,6 +382,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
           'latitude': latitude,
           'longitude': longitude,
           if (forceEarlyOut) 'forceEarlyOut': true,
+          if (deviceId != null) 'deviceId': deviceId,
         },
       );
       final synced = AttendanceModel.fromJson(

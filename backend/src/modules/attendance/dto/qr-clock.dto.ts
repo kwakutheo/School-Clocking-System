@@ -5,6 +5,7 @@ import {
   IsISO8601,
   IsNumber,
 } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { AttendanceType } from '../../../common/enums';
 
 export class QrClockDto {
@@ -26,4 +27,9 @@ export class QrClockDto {
 
   @IsOptional()
   forceEarlyOut?: boolean;
+
+  @ApiPropertyOptional({ description: 'Unique device identifier for restriction checks' })
+  @IsString()
+  @IsOptional()
+  deviceId?: string;
 }

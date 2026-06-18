@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tk_clocking_system/core/constants/app_constants.dart';
 import 'package:tk_clocking_system/core/network/api_client.dart';
 import 'package:tk_clocking_system/core/services/connectivity_service.dart';
+import 'package:tk_clocking_system/core/services/device_id_service.dart';
 import 'package:tk_clocking_system/core/services/location_service.dart';
 import 'package:tk_clocking_system/core/services/storage_service.dart';
 import 'package:tk_clocking_system/core/services/biometric_service.dart';
@@ -78,6 +79,10 @@ Future<void> init() async {
   sl.registerLazySingleton<LocationService>(() => LocationService());
   sl.registerLazySingleton<BiometricService>(() => BiometricService());
 
+  sl.registerLazySingleton<DeviceIdService>(
+    () => DeviceIdService(sl<SharedPreferences>()),
+  );
+
   sl.registerLazySingleton<UptimeService>(() => UptimeService());
 
   sl.registerLazySingleton<TimeService>(
@@ -142,6 +147,7 @@ Future<void> init() async {
       syncPending: sl<SyncPendingAttendanceUseCase>(),
       qrClock: sl<QrClockUseCase>(),
       locationService: sl<LocationService>(),
+      deviceIdService: sl<DeviceIdService>(),
     ),
   );
   // ── Leaves ─────────────────────────────────────────────────────────────────

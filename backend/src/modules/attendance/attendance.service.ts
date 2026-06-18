@@ -1898,7 +1898,7 @@ export class AttendanceService {
       // employee knows exactly when they were locked to that phone.
       const lockedAt = format(employeeOnOtherDevice.timestamp, 'hh:mm a');
       throw new BadRequestException(
-        `You already recorded attendance today at ${lockedAt}. All clocking actions for the day must be done on the same device you used to start. Please use your original device or contact your administrator if you need assistance.`,
+        `You already recorded attendance today at ${lockedAt} on another device. All clocking actions for the day must be done on the same device you used to start. Please use your original device or contact your administrator if you need assistance.`,
       );
     }
   }

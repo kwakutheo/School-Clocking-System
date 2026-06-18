@@ -1865,7 +1865,8 @@ export class AttendanceService {
     // ── Rule 1: Is this device already claimed by a different employee today? ─
     const deviceClaimedByOther = await this.repo
       .createQueryBuilder('log')
-      .innerJoin('log.employee', 'emp')
+      .innerJoinAndSelect('log.employee', 'emp')
+      .innerJoinAndSelect('emp.user', 'user')
       .where('log.deviceId = :deviceId', { deviceId })
       .andWhere('log.timestamp >= :dayStart', { dayStart })
       .andWhere('log.timestamp <= :dayEnd', { dayEnd })
@@ -1873,8 +1874,10 @@ export class AttendanceService {
       .getOne();
 
     if (deviceClaimedByOther) {
+      const claimedByName =
+        deviceClaimedByOther.employee?.user?.fullName ?? 'another employee';
       throw new BadRequestException(
-        "This device has already been used to record attendance today. Each phone may only be used for one person's attendance per day. Please use your own device or contact your administrator if you need assistance.",
+        `This device has already been used to record attendance today by ${claimedByName}. Each phone may only be used for one person's attendance per day. Please use your own device or contact your administrator if you need assistance.`,
       );
     }
 

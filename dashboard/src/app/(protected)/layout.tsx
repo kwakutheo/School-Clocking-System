@@ -26,7 +26,9 @@ import {
   Settings,
   ArrowUp,
   ArrowDown,
-  BarChart2
+  BarChart2,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 
 interface NavItem {
@@ -74,6 +76,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [bannerPosition, setBannerPosition] = useState<'top' | 'bottom'>('top');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const [permissionsTick, setPermissionsTick] = useState(0);
 
@@ -151,6 +154,32 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
   };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  // Sync isFullscreen state with browser fullscreen events
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  // F key shortcut — skip when focus is inside an input/textarea/select
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   useEffect(() => {
     if (isHydrated && !user) {
@@ -378,7 +407,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           style={{
             position: 'absolute',
             top: '24px',
-            right: '32px',
+            right: '80px',
             zIndex: 10,
             width: '40px',
             height: '40px',
@@ -397,6 +426,34 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-card)'}
         >
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+        {/* ── Fullscreen toggle (F key shortcut) ──────────────────────── */}
+        <button
+          className="theme-toggle-btn desktop-only"
+          onClick={toggleFullscreen}
+          title={isFullscreen ? 'Exit fullscreen (F)' : 'Enter fullscreen (F)'}
+          style={{
+            position: 'absolute',
+            top: '24px',
+            right: '32px',
+            zIndex: 10,
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            color: 'var(--text-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: 'var(--shadow)',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-card-hover)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-card)'}
+        >
+          {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
         </button>
         {children}
       </main>

@@ -412,17 +412,18 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             width: '40px',
             height: '40px',
             borderRadius: '50%',
-            background: 'transparent',
-            border: 'none',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
             color: 'var(--text-primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
+            boxShadow: 'var(--shadow)',
             transition: 'all 0.2s ease',
           }}
-          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(128,128,128,0.12)'}
-          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-card-hover)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-card)'}
         >
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
@@ -439,17 +440,18 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             width: '40px',
             height: '40px',
             borderRadius: '50%',
-            background: 'transparent',
-            border: 'none',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
             color: 'var(--text-primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
+            boxShadow: 'var(--shadow)',
             transition: 'all 0.2s ease',
           }}
-          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(128,128,128,0.12)'}
-          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-card-hover)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-card)'}
         >
           {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
         </button>

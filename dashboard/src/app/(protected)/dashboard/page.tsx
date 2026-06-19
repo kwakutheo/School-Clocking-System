@@ -503,7 +503,7 @@ export default function DashboardPage() {
                 borderRadius: 20, background: 'rgba(245,158,11,0.12)',
                 color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)',
               }}>
-                {dashboardStats.absentToday ?? 0} missing
+                {dashboardStats.absentToday ?? 0} absent
               </span>
             )}
           </div>

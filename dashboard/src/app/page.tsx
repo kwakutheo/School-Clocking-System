@@ -265,29 +265,17 @@ export default function WelcomePage() {
               </div>
             </div>
 
-            {/* Footer / Description & Action Row */}
+            {/* Footer / Action Row */}
             <div style={{
               display: 'flex',
               flexDirection: 'row',
               alignItems: 'center',
-              justifyContent: 'space-between',
+              justifyContent: 'flex-end',
               gap: '32px',
               flexWrap: 'wrap',
               padding: '0 32px',
               marginBottom: '64px'
             }}>
-              {/* Description Subtext */}
-              <p style={{
-                fontSize: 'clamp(18px, 2vw, 24px)',
-                color: 'var(--text-secondary)',
-                fontWeight: 500,
-                maxWidth: '600px',
-                margin: '0',
-                lineHeight: 1.5,
-                textAlign: 'left'
-              }}>
-                The complete and secure portal to manage your school's daily operations, attendance reporting, and staff dashboard.
-              </p>
 
               {/* Action Button */}
               <button 

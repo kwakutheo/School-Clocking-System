@@ -206,26 +206,11 @@ export default function WelcomePage() {
           <div style={{ animation: 'fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1)', width: '100%' }}>
             
             {/* Logo and Titles Wrapper as a Wide Elevated Card */}
-            <div style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '48px',
-              marginBottom: '48px',
-              flexWrap: 'wrap',
-              textAlign: 'left',
-              background: 'var(--bg-surface)',
-              padding: '64px',
-              borderRadius: '32px',
-              boxShadow: '0 24px 64px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04)',
-              border: '1px solid var(--border)',
-              width: '100%'
-            }}>
+            <div className="school-card">
               
               {/* Massive School Crest on the left */}
               {schoolData.logoUrl && (
-                <div style={{ flexShrink: 0 }}>
+                <div className="school-logo-container">
                   <Image
                     src={schoolData.logoUrl}
                     alt="School Crest"
@@ -237,30 +222,21 @@ export default function WelcomePage() {
               )}
 
               {/* Text Block */}
-              <div>
+              <div className="school-text-container">
                 {/* Dynamic School Name (Big and Bold) */}
                 <h1 
-                  style={{
-                    fontSize: 'clamp(48px, 6vw, 96px)',
-                    fontWeight: 900,
-                    lineHeight: 1.1,
-                    letterSpacing: '-0.03em',
-                    marginBottom: '16px',
-                    color: primaryColor,
-                  }}
+                  className="school-name"
+                  style={{ color: primaryColor }}
                 >
                   {schoolData.name.toUpperCase()}
                 </h1>
 
                 {/* Subtitle */}
-                <h2 style={{
-                  fontSize: 'clamp(32px, 4vw, 64px)',
-                  fontWeight: 400,
-                  lineHeight: 1.2,
-                  letterSpacing: '-0.02em',
-                  color: 'var(--text-primary)',
-                }}>
-                  Smart School Attendance <br/>&amp; Staff Management System
+                <h2 
+                  className="school-subtitle"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  Smart School Attendance <br className="desktop-br"/>&amp; Staff Management System
                 </h2>
               </div>
             </div>
@@ -319,6 +295,70 @@ export default function WelcomePage() {
         .action-pill:hover {
           transform: translateY(-2px);
           box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important;
+        }
+
+        /* Responsive Card Classes */
+        .school-card {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          justify-content: center;
+          gap: 48px;
+          margin-bottom: 48px;
+          text-align: left;
+          background: var(--bg-surface);
+          padding: 64px;
+          border-radius: 32px;
+          box-shadow: 0 24px 64px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04);
+          border: 1px solid var(--border);
+          width: 100%;
+          container-type: inline-size;
+          container-name: schoolCard;
+        }
+        .school-logo-container {
+          flex-shrink: 0;
+        }
+        .school-text-container {
+          min-width: 0;
+          flex: 1;
+        }
+        .school-name {
+          font-size: clamp(24px, 6cqw, 96px);
+          font-weight: 900;
+          line-height: 1.1;
+          letter-spacing: -0.03em;
+          margin-bottom: 16px;
+          word-wrap: break-word;
+        }
+        .school-subtitle {
+          font-size: clamp(16px, 3.5cqw, 64px);
+          font-weight: 400;
+          line-height: 1.2;
+          letter-spacing: -0.02em;
+        }
+        
+        /* Fallback for browsers that don't support container queries yet */
+        @supports not (container-type: inline-size) {
+          .school-name { font-size: clamp(24px, 5vw, 96px); }
+          .school-subtitle { font-size: clamp(16px, 3vw, 64px); }
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+          .school-card {
+            flex-direction: column;
+            text-align: center;
+            gap: 24px;
+            padding: 32px;
+          }
+          .school-text-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+          .desktop-br {
+            display: none;
+          }
         }
       `}} />
     </div>

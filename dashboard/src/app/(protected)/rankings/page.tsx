@@ -237,7 +237,7 @@ export default function RankingsPage() {
                         fontWeight: 700, fontSize: '14px',
                         background: row.localRank === 1 ? 'var(--primary-dim)' : row.localRank <= 3 ? 'var(--primary-dim)' : 'var(--bg-card-hover)',
                         color: row.localRank === 1 ? 'var(--primary)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--primary)',
-                        border: `1px solid ${row.localRank === 1 ? 'var(--accent)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--border)'}`
+                        border: `1px solid ${row.localRank === 1 ? 'var(--primary)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--primary)'}`
                       }}>
                         {row.localRank}
                       </div>

@@ -73,7 +73,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem('impersonated_tenant_id');
     localStorage.removeItem('impersonated_tenant');
     set({ user: null, token: null, impersonatedTenant: null });
-    window.location.href = '/login';
+    window.location.href = '/';
   },
 
   hydrate: () => {

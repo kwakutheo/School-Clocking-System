@@ -28,7 +28,8 @@ import {
   ArrowDown,
   BarChart2,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Trophy
 } from 'lucide-react';
 
 interface NavItem {
@@ -47,6 +48,7 @@ const NAV: NavItem[] = [
   { href: '/shifts',      icon: Clock,            label: 'Shifts (Working hours)',     permission: 'shifts.manage'      },
   { href: '/holidays',    icon: Calendar,         label: 'Holidays',                   permission: 'holidays.manage'    },
   { href: '/calendar',    icon: Calendar,         label: 'Academic Calendar',          permission: 'calendar.view'      },
+  { href: '/rankings',    icon: Trophy,           label: 'Performance Rankings',       permission: 'attendance.view'    },
   { href: '/departments', icon: Building2,        label: 'Departments',                permission: 'departments.manage' },
   { href: '/branches',    icon: MapPin,           label: 'Branches',                   permission: 'branches.manage'    },
   { href: '/mobile-app',  icon: Smartphone,       label: 'Mobile App',                 permission: 'employees.view'     },

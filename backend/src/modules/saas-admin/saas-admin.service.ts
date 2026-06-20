@@ -1868,7 +1868,7 @@ export class SaasAdminService implements OnModuleInit {
     };
   }
 
-  private async getEmployeeRankingRows(
+  async getEmployeeRankingRows(
     timeframe: string,
     academicYear?: string,
     termName?: string,

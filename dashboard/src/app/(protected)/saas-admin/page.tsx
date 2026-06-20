@@ -966,7 +966,7 @@ export default function SaasOverviewPage() {
     fetchEmpRankings(true);
   }, [timeframe, empSort, rankTab, fetchEmpRankings, empRankings.length]);
 
-  // Silent background poll: every 30 s when on "today" + "employees" tab.
+  // Silent background pull: every 30 s when on "today" + "employees" tab.
   useEffect(() => {
     if (timeframe !== "today" || rankTab !== "employees") return;
     const pollId = setInterval(() => fetchEmpRankings(false), 30_000);

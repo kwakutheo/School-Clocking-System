@@ -358,6 +358,31 @@ export class AttendanceController {
     return this.service.excuseEarlyOut(logId, dto.reason, user);
   }
 
+  @Get('rankings')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('attendance.view')
+  @ApiOperation({ summary: 'Get school performance rankings' })
+  async getRankings(
+    @CurrentUser() user: User,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('search') search?: string,
+    @Query('academicYear') academicYear?: string,
+    @Query('termName') termName?: string,
+  ) {
+    if (!user.tenantId) {
+      throw new NotFoundException('User does not belong to a school');
+    }
+    return this.service.getSchoolPerformanceRankings(
+      user.tenantId,
+      academicYear,
+      termName,
+      page,
+      limit,
+      search || '',
+    );
+  }
+
   @Get('home-data')
   @ApiOperation({ summary: 'Get aggregated data for mobile home screen' })
   getHomeData(@CurrentUser() user: User) {

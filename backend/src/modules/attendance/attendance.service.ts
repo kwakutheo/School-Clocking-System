@@ -1935,6 +1935,91 @@ export class AttendanceService {
     return (deg * Math.PI) / 180;
   }
 
+  // ── School Performance Rankings ───────────────────────────────────────────
+  async getSchoolPerformanceRankings(
+    tenantId: string,
+    academicYear?: string,
+    termName?: string,
+    page: number = 1,
+    limit: number = 10,
+    search: string = '',
+  ) {
+    const timeframe = termName ? 'term' : 'academic_year';
+    const allStaffRows = await this.saasAdminService.getEmployeeRankingRows(
+      timeframe,
+      academicYear,
+      termName,
+    );
+
+    const lowerSearch = search.toLowerCase();
+    
+    const staffWithGlobalRank = allStaffRows.map((row, index) => ({
+      ...row,
+      globalRank: index + 1,
+    }));
+
+    const schoolStaff = staffWithGlobalRank.filter(
+      (row) => row.school?.id === tenantId,
+    );
+
+    const filteredStaff = schoolStaff.filter((row) => {
+      const nameMatch = String(row.name ?? '').toLowerCase().includes(lowerSearch);
+      const codeMatch = String(row.employeeCode ?? '').toLowerCase().includes(lowerSearch);
+      return nameMatch || codeMatch;
+    });
+
+    const staffWithLocalRank = filteredStaff.map((row, index) => ({
+      ...row,
+      localRank: index + 1,
+    }));
+
+    const total = staffWithLocalRank.length;
+    const startIndex = (page - 1) * limit;
+    const paginatedStaff = staffWithLocalRank.slice(
+      startIndex,
+      startIndex + limit,
+    );
+
+    const allTenants = await this.saasAdminService.findAllTenants(
+      timeframe,
+      '',
+      undefined,
+      undefined,
+      'presenceRate:DESC',
+      undefined,
+      academicYear,
+      termName,
+      true,
+    );
+
+    const globalSchoolRankIndex = allTenants.results.findIndex(
+      (t) => t.id === tenantId,
+    );
+    
+    const schoolGlobalData =
+      globalSchoolRankIndex !== -1
+        ? allTenants.results[globalSchoolRankIndex]
+        : null;
+
+    return {
+      globalSchoolRank: schoolGlobalData
+        ? {
+            rank: globalSchoolRankIndex + 1,
+            totalSchools: allTenants.total,
+            presenceRate: schoolGlobalData.presenceRate,
+            schoolName: schoolGlobalData.name,
+          }
+        : null,
+      staff: {
+        data: paginatedStaff,
+        total,
+        page,
+        limit,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+    };
+  }
+
   // ── Non-Working Day Checker ───────────────────────────────────────────────
   private async _checkNonWorkingDay(date: Date): Promise<{
     isNonWorking: boolean;

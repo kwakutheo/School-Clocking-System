@@ -255,7 +255,7 @@ export default function WelcomePage() {
                 {/* Subtitle */}
                 <h2 style={{
                   fontSize: 'clamp(32px, 4vw, 64px)',
-                  fontWeight: 800,
+                  fontWeight: 600,
                   lineHeight: 1.2,
                   letterSpacing: '-0.02em',
                   color: 'var(--text-primary)',

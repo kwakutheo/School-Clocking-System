@@ -105,9 +105,9 @@ export const PERMISSION_GROUPS: { label: string; icon: string; permissions: Perm
 ];
 
 export const ROLES: { key: Role; label: string; color: string }[] = [
-  { key: 'super_admin', label: 'Super Admin', color: 'var(--text-primary)' },
-  { key: 'hr_admin',    label: 'HR Admin',    color: 'var(--text-primary)' },
-  { key: 'supervisor',  label: 'Supervisor',  color: 'var(--text-primary)' },
+  { key: 'super_admin', label: 'Super Admin', color: 'var(--primary)' },
+  { key: 'hr_admin',    label: 'HR Admin',    color: 'var(--primary)' },
+  { key: 'supervisor',  label: 'Supervisor',  color: 'var(--primary)' },
 ];
 
 // ── Default Permissions ────────────────────────────────────────────────────

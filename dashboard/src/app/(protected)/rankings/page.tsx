@@ -271,7 +271,7 @@ export default function RankingsPage() {
                     </td>
                     <td style={{ padding: '16px 20px', textAlign: 'right' }}>
                       <div style={{ fontSize: '18px', fontWeight: 800, color: rateColor(row.metrics?.score || 0) }}>
-                        {row.metrics?.score?.toFixed(1) || '0.0'}
+                        {formatPct(row.metrics?.score || 0)}%
                       </div>
                       <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
                         <button
@@ -582,7 +582,7 @@ export default function RankingsPage() {
                 Final Score
               </div>
               <div
-                style={{ fontSize: "24px", fontWeight: 900, color: "var(--text-primary)" }}
+                style={{ fontSize: "24px", fontWeight: 900, color: rateColor(explainEmpModal.metrics.score) }}
               >
                 {formatPct(explainEmpModal.metrics.score)}%
               </div>

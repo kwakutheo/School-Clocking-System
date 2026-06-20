@@ -67,7 +67,7 @@ export default function RankingsPage() {
         limit,
         search: debouncedSearch,
         academicYear: selectedYear || undefined,
-        termName: selectedTerm === 'Full Year' ? undefined : (selectedTerm || undefined),
+        termName: selectedTerm || undefined,
       });
       setData(res.data);
     } catch (err) {
@@ -95,13 +95,15 @@ export default function RankingsPage() {
             value={selectedYear} 
             onChange={(e) => {
               setSelectedYear(e.target.value);
-              setSelectedTerm('Full Year');
+              const available = terms.filter(t => t.academicYear === e.target.value);
+              if (available.length > 0) {
+                setSelectedTerm(available[0].name);
+              }
             }}
             aria-label="Filter by Academic Year"
             className="form-input"
             style={{ minWidth: '160px', width: 'auto', padding: '8px 12px' }}
           >
-            <option value="">All Time</option>
             {academicYears.map(year => (
               <option key={year} value={year}>{year}</option>
             ))}
@@ -114,7 +116,6 @@ export default function RankingsPage() {
             className="form-input"
             style={{ minWidth: '200px', width: 'auto', padding: '8px 12px' }}
           >
-            <option value="Full Year">Full Academic Year</option>
             {availableTermsForYear.map(t => (
               <option key={t.id} value={t.name}>{t.name}</option>
             ))}

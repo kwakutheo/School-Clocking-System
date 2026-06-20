@@ -22,6 +22,7 @@ import { LeavesService } from '../leaves/leaves.service';
 import { User } from '../users/user.entity';
 import { getCurrentTenantId } from '../../common/tenant/tenant-filter.helper';
 import { SaasAdminService } from '../saas-admin/saas-admin.service';
+import { tenantLocalStorage } from '../../common/tenant/tenant.context';
 
 import { format } from 'date-fns';
 
@@ -1945,10 +1946,12 @@ export class AttendanceService {
     search: string = '',
   ) {
     const timeframe = termName ? 'term' : 'academic_year';
-    const allStaffRows = await this.saasAdminService.getEmployeeRankingRows(
-      timeframe,
-      academicYear,
-      termName,
+    const allStaffRows = await tenantLocalStorage.run(null, () =>
+      this.saasAdminService.getEmployeeRankingRows(
+        timeframe,
+        academicYear,
+        termName,
+      ),
     );
 
     const lowerSearch = search.toLowerCase();
@@ -1980,16 +1983,18 @@ export class AttendanceService {
       startIndex + limit,
     );
 
-    const allTenants = await this.saasAdminService.findAllTenants(
-      timeframe,
-      '',
-      undefined,
-      undefined,
-      'presenceRate:DESC',
-      undefined,
-      academicYear,
-      termName,
-      true,
+    const allTenants = await tenantLocalStorage.run(null, () =>
+      this.saasAdminService.findAllTenants(
+        timeframe,
+        '',
+        undefined,
+        undefined,
+        'presenceRate:DESC',
+        undefined,
+        academicYear,
+        termName,
+        true,
+      ),
     );
 
     const globalSchoolRankIndex = allTenants.results.findIndex(

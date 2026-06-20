@@ -191,7 +191,7 @@ export default function RankingsPage() {
                 <th style={{ padding: '12px 20px', width: '120px' }}>Overall Rank</th>
                 <th style={{ padding: '12px 20px', width: '100px' }}>Local Rank</th>
                 <th style={{ padding: '12px 20px' }}>Badges</th>
-                <th style={{ padding: '12px 20px', textAlign: 'right' }}>Composite Score</th>
+                <th style={{ padding: '12px 20px', textAlign: 'right' }}>Score</th>
               </tr>
             </thead>
             <tbody>
@@ -235,9 +235,9 @@ export default function RankingsPage() {
                         width: '36px', height: '36px', borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontWeight: 700, fontSize: '14px',
-                        background: row.localRank === 1 ? 'var(--accent-dim)' : row.localRank <= 3 ? 'var(--primary-dim)' : 'var(--bg-card-hover)',
-                        color: row.localRank === 1 ? 'var(--accent)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--text-secondary)',
-                        border: `1px solid ${row.localRank === 1 ? 'var(--accent)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--border)'}`
+                        background: row.localRank === 1 ? 'var(--primary-dim)' : row.localRank <= 3 ? 'var(--primary-dim)' : 'var(--bg-card-hover)',
+                        color: row.localRank === 1 ? 'var(--primary)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--text-secondary)',
+                        border: `1px solid ${row.localRank === 1 ? 'var(--primary)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--border)'}`
                       }}>
                         {row.localRank}
                       </div>

@@ -3,6 +3,12 @@ import { useState, useEffect } from 'react';
 import { Trophy, Search, ChevronLeft, ChevronRight, Award, Clock, Medal, Zap, Star } from 'lucide-react';
 import { attendanceApi, calendarApi } from '@/lib/api';
 
+function rateColor(rate: number) {
+  if (rate >= 90) return "#22c55e";
+  if (rate >= 75) return "#f59e0b";
+  return "#ef4444";
+}
+
 export default function RankingsPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -221,7 +227,7 @@ export default function RankingsPage() {
                     </td>
                     <td style={{ padding: '16px 20px' }}>
                       <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 800 }}>
-                        #{row.globalRank}
+                        {row.globalRank}
                       </div>
                     </td>
                     <td style={{ padding: '16px 20px' }}>
@@ -233,7 +239,7 @@ export default function RankingsPage() {
                         color: row.localRank === 1 ? 'var(--accent)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--text-secondary)',
                         border: `1px solid ${row.localRank === 1 ? 'var(--accent)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--border)'}`
                       }}>
-                        #{row.localRank}
+                        {row.localRank}
                       </div>
                     </td>
                     <td style={{ padding: '16px 20px' }}>
@@ -259,7 +265,7 @@ export default function RankingsPage() {
                       </div>
                     </td>
                     <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                      <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      <div style={{ fontSize: '18px', fontWeight: 800, color: rateColor(row.metrics?.score || 0) }}>
                         {row.metrics?.score?.toFixed(1) || '0.0'}
                       </div>
                       <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>

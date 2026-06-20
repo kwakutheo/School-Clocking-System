@@ -2081,7 +2081,7 @@ export class SaasAdminService implements OnModuleInit {
         // For all other timeframes: use the global startDate / endOfToday.
         let timeframeStart: Date;
         let timeframeEnd: Date;
-        if (timeframe === 'term') {
+        if (timeframe === 'term' || timeframe === 'academic_year') {
           const termStart = tenantTermStartMap.get(emp.tenantId);
           const termEnd = tenantTermEndMap.get(emp.tenantId);
           if (termStart && termEnd) {

@@ -141,7 +141,7 @@ export default function RankingsPage() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--success)', fontWeight: 600 }}>
                 <Star size={18} fill="currentColor" />
-                {data.globalSchoolRank.presenceRate}% Average Presence Rate
+                {data.globalSchoolRank.presenceRate}% Average Attendance
               </div>
             </div>
 

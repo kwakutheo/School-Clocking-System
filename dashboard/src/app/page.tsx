@@ -3,11 +3,13 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { tenantsApi } from '@/lib/api';
-import { Monitor, Smartphone, BarChart3, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Monitor, ArrowRight, Sun, Moon, Maximize, Minimize } from 'lucide-react';
 
 export default function WelcomePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [schoolData, setSchoolData] = useState<{
     name: string;
     logoUrl?: string;
@@ -16,6 +18,44 @@ export default function WelcomePage() {
     name: 'TK Clocking System',
   });
 
+  // Handle Theme and Fullscreen Logic
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+      if (savedTheme) {
+        setTheme(savedTheme);
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      } else {
+        // Start with light theme by default as requested
+        setTheme('light');
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      }
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  // Fetch Branding
   useEffect(() => {
     async function fetchBranding() {
       try {
@@ -47,17 +87,8 @@ export default function WelcomePage() {
     fetchBranding();
   }, []);
 
-  const primaryColor = schoolData.primaryColor || '#3b82f6';
-  
-  // Create gradient variations based on primary color
-  const gradientStart = primaryColor;
-  // To create a gradient effect, we'll use a complementary or slightly shifted hue 
-  // For default (#3b82f6 blue), the end could be a teal or green. We'll use a generic bright gradient mix if primary is default,
-  // or a variation of the custom primary color.
-  const isDefaultPrimary = primaryColor === '#3b82f6';
-  const textGradient = isDefaultPrimary 
-    ? 'linear-gradient(90deg, #10b981 0%, #3b82f6 50%, #f59e0b 100%)' // Green to Blue to Gold
-    : `linear-gradient(90deg, ${primaryColor} 0%, ${primaryColor}80 100%)`; // Custom color gradient
+  // Use system primary if not configured
+  const primaryColor = schoolData.primaryColor || 'var(--primary)';
 
   return (
     <div 
@@ -80,7 +111,7 @@ export default function WelcomePage() {
         left: '-10%',
         width: '50vw',
         height: '50vw',
-        background: `radial-gradient(circle, ${primaryColor}15 0%, transparent 70%)`,
+        background: schoolData.primaryColor ? `radial-gradient(circle, ${primaryColor}15 0%, transparent 70%)` : 'radial-gradient(circle, var(--primary-dim) 0%, transparent 70%)',
         filter: 'blur(100px)',
         zIndex: 0
       }} />
@@ -94,23 +125,69 @@ export default function WelcomePage() {
         position: 'relative',
         zIndex: 10
       }}>
+        {/* Top Left: Welcome Text & Crest */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {schoolData.logoUrl && !loading ? (
+          <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            Welcome to
+          </div>
+          {schoolData.logoUrl && !loading && (
             <Image
               src={schoolData.logoUrl}
               alt="School Crest"
-              width={48}
-              height={48}
+              width={32}
+              height={32}
               style={{ objectFit: 'contain' }}
             />
-          ) : (
-             <div style={{ width: 48, height: 48, borderRadius: '12px', background: 'var(--bg-surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-               <Monitor size={24} color={primaryColor} />
-             </div>
           )}
         </div>
-        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-          TK Clocking System
+
+        {/* Top Right: Theme & Fullscreen Toggles */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button 
+            onClick={toggleTheme}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: theme === 'light' ? 'transparent' : 'var(--bg-card)',
+              border: theme === 'light' ? 'none' : '1px solid var(--border)',
+              color: 'var(--text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: theme === 'light' ? 'none' : 'var(--shadow)',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = theme === 'light' ? 'rgba(128,128,128,0.12)' : 'var(--bg-card-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = theme === 'light' ? 'transparent' : 'var(--bg-card)'}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          
+          <button
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Exit fullscreen (F)' : 'Enter fullscreen (F)'}
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: theme === 'light' ? 'transparent' : 'var(--bg-card)',
+              border: theme === 'light' ? 'none' : '1px solid var(--border)',
+              color: 'var(--text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: theme === 'light' ? 'none' : 'var(--shadow)',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = theme === 'light' ? 'rgba(128,128,128,0.12)' : 'var(--bg-card-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = theme === 'light' ? 'transparent' : 'var(--bg-card)'}
+          >
+            {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+          </button>
         </div>
       </header>
 
@@ -146,10 +223,7 @@ export default function WelcomePage() {
                 lineHeight: 1.1,
                 letterSpacing: '-0.03em',
                 marginBottom: '16px',
-                background: textGradient,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                display: 'inline-block'
+                color: primaryColor,
               }}
             >
               {schoolData.name.toUpperCase()}
@@ -179,7 +253,7 @@ export default function WelcomePage() {
               The complete and secure portal to manage your school's daily operations, attendance reporting, and staff dashboard.
             </p>
 
-            {/* Pills / Action Row */}
+            {/* Action Row */}
             <div style={{
               display: 'flex',
               flexWrap: 'wrap',
@@ -187,33 +261,29 @@ export default function WelcomePage() {
               gap: '16px',
               marginBottom: '64px'
             }}>
-              <div className="feature-pill">
-                <Smartphone size={18} color="#10b981" /> Mobile App
-              </div>
-              
-              {/* This is the primary action button masquerading as a pill */}
               <button 
                 onClick={() => router.push('/login')}
-                className="feature-pill action-pill"
+                className="action-pill"
                 style={{
-                  background: `${primaryColor}15`,
-                  borderColor: `${primaryColor}40`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  background: schoolData.primaryColor ? `${primaryColor}15` : 'var(--primary-dim)',
+                  border: `1px solid ${schoolData.primaryColor ? `${primaryColor}40` : 'var(--primary)'}`,
                   color: primaryColor,
                   cursor: 'pointer',
-                  padding: '12px 32px'
+                  padding: '16px 40px',
+                  borderRadius: '100px',
+                  fontSize: '18px',
+                  fontWeight: 700,
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
                 }}
               >
-                <Monitor size={18} color={primaryColor} /> 
-                <span style={{ fontWeight: 700 }}>Admin Dashboard</span>
-                <ArrowRight size={18} style={{ marginLeft: 8 }} />
+                <Monitor size={20} color={primaryColor} /> 
+                <span>Click Here to Sign In</span>
+                <ArrowRight size={20} style={{ marginLeft: 8 }} />
               </button>
-
-              <div className="feature-pill">
-                <BarChart3 size={18} color="#f59e0b" /> Reports
-              </div>
-              <div className="feature-pill">
-                <ShieldCheck size={18} color="#3b82f6" /> Secure
-              </div>
             </div>
           </div>
         )}
@@ -229,23 +299,9 @@ export default function WelcomePage() {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
         }
-        .feature-pill {
-          display: flex;
-          alignItems: center;
-          gap: 10px;
-          padding: 12px 24px;
-          border-radius: 100px;
-          background: var(--bg-surface);
-          border: 1px solid var(--border);
-          font-weight: 600;
-          font-size: 16px;
-          color: var(--text-primary);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-          transition: all 0.2s ease;
-        }
         .action-pill:hover {
           transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+          box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important;
         }
       `}} />
     </div>

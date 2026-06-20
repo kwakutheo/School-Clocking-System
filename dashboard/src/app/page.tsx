@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { tenantsApi } from '@/lib/api';
-import { Monitor, ArrowRight, Sun, Moon, Maximize, Minimize } from 'lucide-react';
+import { ArrowRight, Sun, Moon, Maximize, Minimize } from 'lucide-react';
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -298,7 +298,6 @@ export default function WelcomePage() {
                   flexShrink: 0
                 }}
               >
-                <Monitor size={20} color={primaryColor} /> 
                 <span>Click Here to Sign In</span>
                 <ArrowRight size={20} style={{ marginLeft: 8 }} />
               </button>

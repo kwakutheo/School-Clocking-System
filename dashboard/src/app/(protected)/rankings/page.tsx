@@ -226,7 +226,11 @@ export default function RankingsPage() {
                       </div>
                     </td>
                     <td style={{ padding: '16px 20px' }}>
-                      <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 800 }}>
+                      <div style={{
+                        width: '36px', height: '36px', borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 700, fontSize: '14px',
+                        background: 'var(--primary-dim)', color: 'var(--primary)', border: `1px solid var(--primary)`                      }}>
                         {row.globalRank}
                       </div>
                     </td>

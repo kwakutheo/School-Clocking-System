@@ -45,9 +45,13 @@ export class PermissionsGuard implements CanActivate {
 
     // Check if the user's role has ALL the required permissions
     const userPermissions: string[] = matrix[user.role] || [];
-    const hasPermission = requiredPermissions.every((perm) =>
-      userPermissions.includes(perm),
-    );
+    const hasPermission = requiredPermissions.every((perm) => {
+      // Hardcode protection: Only SUPER_ADMIN can ever have permissions.manage
+      if (perm === 'permissions.manage' && user.role !== UserRole.SUPER_ADMIN) {
+        return false;
+      }
+      return userPermissions.includes(perm);
+    });
 
     if (!hasPermission) {
       throw new ForbiddenException('Insufficient permissions.');

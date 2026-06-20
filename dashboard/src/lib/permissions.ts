@@ -100,7 +100,6 @@ export const PERMISSION_GROUPS: { label: string; icon: string; permissions: Perm
       'holidays.manage',
       'leaves.manage',
       'audit.view',
-      'permissions.manage',
     ],
   },
 ];
@@ -184,6 +183,10 @@ export async function fetchAndCachePermissions(): Promise<PermissionMatrix> {
 export function can(role: Role | string | undefined, permission: Permission): boolean {
   if (!role) return false;
   if (role === 'super_admin') return true;
+  
+  // Hardcode protection: Only super_admin can ever manage permissions/branding
+  if (permission === 'permissions.manage') return false;
+
   const matrix = loadPermissions();
   const rolePerms = matrix[role as Role] ?? [];
   return rolePerms.includes(permission);

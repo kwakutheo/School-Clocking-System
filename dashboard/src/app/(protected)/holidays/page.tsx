@@ -3,7 +3,8 @@ import useSWR from 'swr';
 import { useState } from 'react';
 import { holidaysApi } from '@/lib/api';
 import { format, parseISO } from 'date-fns';
-import { Calendar, Plus, Trash2, Edit, ShieldAlert, DownloadCloud } from 'lucide-react';
+import { Calendar, Plus, Trash2, Edit, ShieldAlert, DownloadCloud, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import { can } from '@/lib/permissions';
 import { useAuthStore } from '@/lib/store';
 import { useMemo } from 'react';
@@ -235,6 +236,10 @@ export default function HolidaysPage() {
 
   return (
     <>
+      <Link href="/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', textDecoration: 'none', marginBottom: '24px', fontSize: '14px', fontWeight: 500, transition: 'color 0.2s' }} className="hover-primary">
+        <ArrowLeft size={16} /> Back to Settings
+      </Link>
+
       <div className="page-header">
         <div>
           <h1 className="page-title">Public Holidays</h1>

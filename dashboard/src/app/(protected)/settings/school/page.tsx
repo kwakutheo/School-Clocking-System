@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { authApi } from '@/lib/api';
 import { useAuthStore, initials as getInitials, type AuthUser } from '@/lib/store';
 
-import { Palette, Sparkles, Upload, X, Link, Pencil } from 'lucide-react';
+import { Palette, Sparkles, Upload, X, Link as LinkIcon, Pencil, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export default function SettingsPage() {
   const { user, setAuth } = useAuthStore();
@@ -170,6 +171,10 @@ export default function SettingsPage() {
 
   return (
     <>
+      <Link href="/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', textDecoration: 'none', marginBottom: '24px', fontSize: '14px', fontWeight: 500, transition: 'color 0.2s' }} className="hover-primary">
+        <ArrowLeft size={16} /> Back to Settings
+      </Link>
+
       <div className="page-header">
         <div>
           <h1 className="page-title">School Settings</h1>
@@ -374,7 +379,7 @@ export default function SettingsPage() {
                         gap: '4px'
                       }}
                     >
-                      <Link size={12} /> Image URL
+                      <LinkIcon size={12} /> Image URL
                     </button>
                   </div>
                 )}

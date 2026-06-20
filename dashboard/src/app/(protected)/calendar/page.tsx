@@ -3,7 +3,8 @@ import useSWR from 'swr';
 import { useState, useMemo, useEffect } from 'react';
 import { calendarApi } from '@/lib/api';
 import { format, parseISO } from 'date-fns';
-import { Calendar, Plus, Trash2, Edit2, Coffee, ChevronRight, ChevronDown, GraduationCap, ShieldAlert } from 'lucide-react';
+import { Calendar, Plus, Trash2, Edit2, Coffee, ChevronRight, ChevronDown, GraduationCap, ShieldAlert, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import { can } from '@/lib/permissions';
 
 const fetcher = () => calendarApi.listTerms().then((r) => r.data);
@@ -372,6 +373,10 @@ export default function AcademicCalendarPage() {
 
   return (
     <>
+      <Link href="/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', textDecoration: 'none', marginBottom: '24px', fontSize: '14px', fontWeight: 500, transition: 'color 0.2s' }} className="hover-primary">
+        <ArrowLeft size={16} /> Back to Settings
+      </Link>
+
       <div className="page-header">
         <div>
           <h1 className="page-title">Academic Calendar</h1>

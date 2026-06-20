@@ -3,6 +3,8 @@ import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { departmentsApi } from '@/lib/api';
 import { can } from '@/lib/permissions';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 const fetcher = () => departmentsApi.list().then((r) => r.data);
 
@@ -84,6 +86,10 @@ export default function DepartmentsPage() {
 
   return (
     <>
+      <Link href="/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', textDecoration: 'none', marginBottom: '24px', fontSize: '14px', fontWeight: 500, transition: 'color 0.2s' }} className="hover-primary">
+        <ArrowLeft size={16} /> Back to Settings
+      </Link>
+
       <div className="page-header">
         <div>
           <h1 className="page-title">Departments</h1>

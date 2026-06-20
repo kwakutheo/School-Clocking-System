@@ -3,7 +3,8 @@ import useSWR from 'swr';
 import { useState } from 'react';
 import { shiftsApi, calendarApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
-import { Clock, Plus, Trash2, Save, Edit, ShieldAlert } from 'lucide-react';
+import { Clock, Plus, Trash2, Save, Edit, ShieldAlert, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import { can } from '@/lib/permissions';
 
 const fetcher = () => shiftsApi.list().then((r) => r.data);
@@ -88,6 +89,10 @@ export default function ShiftsPage() {
 
   return (
     <>
+      <Link href="/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', textDecoration: 'none', marginBottom: '24px', fontSize: '14px', fontWeight: 500, transition: 'color 0.2s' }} className="hover-primary">
+        <ArrowLeft size={16} /> Back to Settings
+      </Link>
+
       <div className="page-header">
         <div>
           <h1 className="page-title">Shift Management</h1>

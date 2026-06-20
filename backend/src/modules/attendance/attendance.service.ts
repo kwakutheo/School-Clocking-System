@@ -353,6 +353,8 @@ export class AttendanceService {
     }
 
     let isLate = false;
+    let isEarlyOut = false;
+
     if (dto.type === AttendanceType.CLOCK_IN && employee.shift) {
       const [sHours, sMins] = employee.shift.startTime.split(':').map(Number);
       const shiftStart = new Date(now);
@@ -365,6 +367,13 @@ export class AttendanceService {
       isLate = now > shiftStart;
     }
 
+    if (dto.type === AttendanceType.CLOCK_OUT && employee.shift) {
+      const [eHours, eMins] = employee.shift.endTime.split(':').map(Number);
+      const shiftEnd = new Date(now);
+      shiftEnd.setHours(eHours, eMins, 0, 0);
+      isEarlyOut = now < shiftEnd;
+    }
+
     const log = this.repo.create({
       employee,
       branch,
@@ -375,6 +384,7 @@ export class AttendanceService {
       deviceId: dto.deviceId,
       isOfflineSync: dto.isOfflineSync ?? false,
       isLate,
+      isEarlyOut,
     });
 
     const saved = await this.repo.save(log);

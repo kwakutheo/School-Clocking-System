@@ -330,14 +330,11 @@ export default function WelcomePage() {
           margin-bottom: 16px;
           word-wrap: break-word;
           text-shadow: 
-            1px 1px 0px color-mix(in srgb, currentColor 40%, black),
-            2px 2px 0px color-mix(in srgb, currentColor 40%, black),
-            3px 3px 0px color-mix(in srgb, currentColor 40%, black),
-            4px 4px 0px color-mix(in srgb, currentColor 40%, black),
-            5px 5px 0px color-mix(in srgb, currentColor 40%, black),
-            6px 6px 0px color-mix(in srgb, currentColor 40%, black),
-            7px 7px 0px color-mix(in srgb, currentColor 40%, black),
-            8px 8px 15px rgba(0, 0, 0, 0.4);
+            1px 1px 0px rgba(0, 0, 0, 0.1),
+            2px 2px 0px rgba(0, 0, 0, 0.08),
+            3px 3px 0px rgba(0, 0, 0, 0.06),
+            4px 4px 0px rgba(0, 0, 0, 0.05),
+            5px 5px 12px rgba(0, 0, 0, 0.15);
         }
         .school-subtitle {
           font-size: clamp(16px, 3.5cqw, 64px);

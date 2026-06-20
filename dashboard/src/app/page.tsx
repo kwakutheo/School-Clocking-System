@@ -203,18 +203,24 @@ export default function WelcomePage() {
             <div style={{ width: '80%', height: '60px', borderRadius: '12px', background: 'var(--bg-card)', animation: 'pulse 2s infinite' }} />
           </div>
         ) : (
-          <div style={{ animation: 'fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+          <div style={{ animation: 'fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1)', width: '100%' }}>
             
-            {/* Logo and Titles Wrapper */}
+            {/* Logo and Titles Wrapper as a Wide Elevated Card */}
             <div style={{
               display: 'flex',
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '48px',
-              marginBottom: '32px',
+              marginBottom: '48px',
               flexWrap: 'wrap',
-              textAlign: 'left'
+              textAlign: 'left',
+              background: 'var(--bg-surface)',
+              padding: '64px',
+              borderRadius: '32px',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04)',
+              border: '1px solid var(--border)',
+              width: '100%'
             }}>
               
               {/* Massive School Crest on the left */}

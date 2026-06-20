@@ -5,8 +5,8 @@ import { useAuthStore } from '@/lib/store';
 import { can } from '@/lib/permissions';
 
 const SETTINGS_CARDS = [
-  { href: '/settings/school', icon: Palette,  label: 'School Branding',        description: 'Configure your school configurations and brand identity', permission: 'permissions.manage' },
-  { href: '/calendar',        icon: Calendar,  label: 'Academic Calendar',      description: 'Configure academic years, terms, and session dates.',     permission: 'calendar.view' },
+  { href: '/settings/school', icon: Palette,  label: 'School Branding',        description: 'Configure your school configurations and brand identity',  permission: 'permissions.manage' },
+  { href: '/calendar',        icon: Calendar,  label: 'Academic Calendar',      description: 'Configure academic years, terms, and breaks.',            permission: 'calendar.view' },
   { href: '/holidays',        icon: Calendar,  label: 'Holidays',               description: 'Set up public and school holidays.',                      permission: 'holidays.manage' },
   { href: '/shifts',          icon: Clock,     label: 'Shifts (Working hours)', description: 'Define staff working schedules and shifts.',              permission: 'shifts.manage' },
   { href: '/departments',     icon: Building2, label: 'Departments',            description: 'Manage school departments and faculties.',                permission: 'departments.manage' },

@@ -147,8 +147,8 @@ export default function RankingsPage() {
                 School Position
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '8px' }}>
-                <span style={{ fontSize: '42px', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
-                  #{data.globalSchoolRank.rank}
+                <span style={{ fontSize: '42px', fontWeight: 900, color: 'var(--primary)', lineHeight: 1 }}>
+                  {data.globalSchoolRank.rank}
                 </span>
                 <span style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-secondary)' }}>
                   out of {data.globalSchoolRank.totalSchools} Schools

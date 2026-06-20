@@ -67,7 +67,7 @@ export default function RankingsPage() {
         limit,
         search: debouncedSearch,
         academicYear: selectedYear || undefined,
-        termName: selectedTerm || undefined,
+        termName: selectedTerm === 'Entire Academic Year' ? undefined : (selectedTerm || undefined),
       });
       setData(res.data);
     } catch (err) {
@@ -95,10 +95,7 @@ export default function RankingsPage() {
             value={selectedYear} 
             onChange={(e) => {
               setSelectedYear(e.target.value);
-              const available = terms.filter(t => t.academicYear === e.target.value);
-              if (available.length > 0) {
-                setSelectedTerm(available[0].name);
-              }
+              setSelectedTerm('Entire Academic Year');
             }}
             aria-label="Filter by Academic Year"
             className="form-input"
@@ -116,6 +113,7 @@ export default function RankingsPage() {
             className="form-input"
             style={{ minWidth: '200px', width: 'auto', padding: '8px 12px' }}
           >
+            <option value="Entire Academic Year">Entire Academic Year</option>
             {availableTermsForYear.map(t => (
               <option key={t.id} value={t.name}>{t.name}</option>
             ))}
@@ -131,14 +129,14 @@ export default function RankingsPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '24px', position: 'relative', zIndex: 1 }}>
             <div>
               <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
-                Global School Position
+                School Position
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '8px' }}>
                 <span style={{ fontSize: '42px', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
                   #{data.globalSchoolRank.rank}
                 </span>
                 <span style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  of {data.globalSchoolRank.totalSchools} Schools
+                  out of {data.globalSchoolRank.totalSchools} Schools
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--success)', fontWeight: 600 }}>

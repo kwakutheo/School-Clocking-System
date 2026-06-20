@@ -36,7 +36,7 @@ interface NavItem {
   href: string;
   icon: any;
   label: string;
-  permission?: Permission;
+  permission?: Permission | Permission[];
   globalRoles?: string[];
 }
 
@@ -47,7 +47,14 @@ const NAV: NavItem[] = [
   { href: '/leaves',      icon: FileText,         label: 'Permissions & Leaves',       permission: 'leaves.manage'      },
   { href: '/rankings',    icon: Trophy,           label: 'Performance Rankings',       permission: 'attendance.view'    },
   { href: '/mobile-app',  icon: Smartphone,       label: 'Mobile App',                 permission: 'employees.view'     },
-  { href: '/settings',    icon: Settings,         label: 'Settings',                   permission: 'permissions.manage' },
+  { href: '/settings',    icon: Settings,         label: 'Settings',                   permission: [
+    'permissions.manage',
+    'calendar.view',
+    'holidays.manage',
+    'shifts.manage',
+    'departments.manage',
+    'branches.manage'
+  ] },
   { href: '/permissions', icon: ShieldAlert,      label: 'Permissions',                permission: 'permissions.manage' },
   { href: '/audit',       icon: ShieldCheck,      label: 'Audit Logs',                 permission: 'audit.view'         },
 ];
@@ -330,7 +337,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           <nav>
             {(user?.tenantId === null && !impersonatedTenant ? DEVELOPER_NAV : NAV).filter(item => {
               if (item.globalRoles && !item.globalRoles.includes(user?.role ?? '')) return false;
-              return !item.permission || can(user?.role, item.permission);
+              if (!item.permission) return true;
+              if (Array.isArray(item.permission)) {
+                return item.permission.some(p => can(user?.role, p));
+              }
+              return can(user?.role, item.permission);
             }).map((item) => {
               const Icon = item.icon;
               

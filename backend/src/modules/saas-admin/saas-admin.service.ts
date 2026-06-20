@@ -592,13 +592,13 @@ export class SaasAdminService implements OnModuleInit {
       defaultEnd.setTime(sunday.getTime());
     } else if (timeframe === '30d') {
       defaultStart.setDate(defaultStart.getDate() - 29);
-    } else if (timeframe === 'term') {
+    } else if (timeframe === 'term' || timeframe === 'academic_year') {
       defaultStart.setDate(defaultStart.getDate() - 89);
     }
 
     const defaultWeekdays = this.countWeekdays(defaultStart, defaultEnd);
 
-    if (timeframe !== 'term') {
+    if (timeframe !== 'term' && timeframe !== 'academic_year') {
       for (const tenant of tenants) {
         tenantRangesMap.set(tenant.id, {
           start: defaultStart,
@@ -700,7 +700,7 @@ export class SaasAdminService implements OnModuleInit {
         } else {
           // No terms found for this tenant
           if (
-            timeframe === 'term' &&
+            (timeframe === 'term' || timeframe === 'academic_year') &&
             (academicYear || (termName && termName !== 'all'))
           ) {
             // If explicit academicYear/term was requested but tenant has no matching terms,
@@ -786,7 +786,7 @@ export class SaasAdminService implements OnModuleInit {
     );
 
     let employeeStats: Array<{ tenantId: string; count: number }> = [];
-    if (timeframe === 'term') {
+    if (timeframe === 'term' || timeframe === 'academic_year') {
       const employeeCountPromises = tenants.map(async (tenant) => {
         const range = tenantRangesMap.get(tenant.id);
         if (!range) return { tenantId: tenant.id, count: 0 };
@@ -826,7 +826,7 @@ export class SaasAdminService implements OnModuleInit {
     endOfToday.setHours(23, 59, 59, 999);
 
     let checkinStats: any[] = [];
-    if (timeframe !== 'term') {
+    if (timeframe !== 'term' && timeframe !== 'academic_year') {
       const firstTenantRange = tenantRangesMap.get(tenants[0].id) || {
         start: new Date(),
         end: endOfToday,
@@ -1961,9 +1961,9 @@ export class SaasAdminService implements OnModuleInit {
       // filtering narrows the logs to the tenant's exact term window.
       const tenantTermStartMap = new Map<string, Date>();
       const tenantTermEndMap = new Map<string, Date>();
-      let queryStart = startDate; // overridden below for 'term'
+      let queryStart = startDate; // overridden below for 'term' or 'academic_year'
 
-      if (timeframe === 'term') {
+      if (timeframe === 'term' || timeframe === 'academic_year') {
         const ranges = await this.getTenantRanges(
           tenants,
           timeframe,

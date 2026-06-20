@@ -441,3 +441,8 @@ export const saasAdminApi = {
   permanentlyDeleteEmployee: (id: string, adminPassword: string) =>
     api.delete(`/saas-admin/employees/${id}/permanently`, { data: { adminPassword } }),
 };
+
+// ── Tenants / Public ────────────────────────────────────────────────────────
+export const tenantsApi = {
+  getBrandingBySlug: (slug: string) => api.get(`/tenants/brand/${slug}`),
+};

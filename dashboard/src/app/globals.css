@@ -1541,9 +1541,7 @@ input::-webkit-credentials-auto-fill-button {
 /* ── Rankings Page Mobile Responsiveness ───────────────────────────────────── */
 /* Hide less-essential columns on small screens */
 @media (max-width: 640px) {
-  /* Hide Overall Rank, Local Rank and Badges columns */
-  .rank-col-overall,
-  .rank-col-local,
+  /* Hide Badges column */
   .rank-col-badges {
     display: none !important;
   }
@@ -1573,12 +1571,7 @@ input::-webkit-credentials-auto-fill-button {
   -webkit-overflow-scrolling: touch;
 }
 
-/* On medium screens hide Local Rank only */
-@media (min-width: 641px) and (max-width: 900px) {
-  .rank-col-local {
-    display: none !important;
-  }
-}
+/* Hide Badges on medium screens as well if needed, or leave everything visible. We'll leave them visible. */
 
 /* ── Responsive Dropdown ─────────────────────────────────────────────────── */
 .responsive-dropdown {

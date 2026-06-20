@@ -265,27 +265,31 @@ export default function WelcomePage() {
               </div>
             </div>
 
-            {/* Description Subtext */}
-            <p style={{
-              fontSize: 'clamp(18px, 2vw, 24px)',
-              color: 'var(--text-secondary)',
-              fontWeight: 500,
-              maxWidth: '800px',
-              margin: '0 auto 64px auto',
-              lineHeight: 1.5,
-              textAlign: 'center'
-            }}>
-              The complete and secure portal to manage your school's daily operations, attendance reporting, and staff dashboard.
-            </p>
-
-            {/* Action Row */}
+            {/* Footer / Description & Action Row */}
             <div style={{
               display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '32px',
               flexWrap: 'wrap',
-              justifyContent: 'center',
-              gap: '16px',
+              padding: '0 32px',
               marginBottom: '64px'
             }}>
+              {/* Description Subtext */}
+              <p style={{
+                fontSize: 'clamp(18px, 2vw, 24px)',
+                color: 'var(--text-secondary)',
+                fontWeight: 500,
+                maxWidth: '600px',
+                margin: '0',
+                lineHeight: 1.5,
+                textAlign: 'left'
+              }}>
+                The complete and secure portal to manage your school's daily operations, attendance reporting, and staff dashboard.
+              </p>
+
+              {/* Action Button */}
               <button 
                 onClick={() => router.push('/login')}
                 className="action-pill"
@@ -302,7 +306,8 @@ export default function WelcomePage() {
                   fontSize: '18px',
                   fontWeight: 700,
                   transition: 'all 0.2s ease',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                  flexShrink: 0
                 }}
               >
                 <Monitor size={20} color={primaryColor} /> 

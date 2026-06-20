@@ -11,6 +11,12 @@ function rateColor(rate: number) {
 
 const formatPct = (val: number) => parseFloat((val || 0).toFixed(2));
 
+function ordinalSuffix(n: number) {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
 export default function RankingsPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -159,7 +165,7 @@ export default function RankingsPage() {
                 Percentile
               </div>
               <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--primary)' }}>
-                {Math.round(((data.globalSchoolRank.totalSchools - data.globalSchoolRank.rank) / data.globalSchoolRank.totalSchools) * 100)}th
+                {ordinalSuffix(Math.round(((data.globalSchoolRank.totalSchools - data.globalSchoolRank.rank) / data.globalSchoolRank.totalSchools) * 100))}
               </div>
             </div>
           </div>

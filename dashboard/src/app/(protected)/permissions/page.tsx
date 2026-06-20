@@ -245,7 +245,7 @@ export default function PermissionsPage() {
                     {ROLES.map(r => {
                       const granted =
                         r.key === 'super_admin' || (matrix[r.key] ?? []).includes(perm);
-                      const locked = r.key === 'super_admin';
+                      const locked = r.key === 'super_admin' || perm === 'permissions.manage';
 
                       return (
                         <td

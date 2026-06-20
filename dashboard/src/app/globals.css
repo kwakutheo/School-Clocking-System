@@ -1566,6 +1566,13 @@ input::-webkit-credentials-auto-fill-button {
   }
 }
 
+/* Ensure tables can be horizontally scrolled instead of getting cut off */
+.table-container {
+  overflow-x: auto;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* On medium screens hide Local Rank only */
 @media (min-width: 641px) and (max-width: 900px) {
   .rank-col-local {

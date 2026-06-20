@@ -235,9 +235,7 @@ export default function RankingsPage() {
                         width: '36px', height: '36px', borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontWeight: 700, fontSize: '14px',
-                        background: row.localRank === 1 ? 'var(--primary-dim)' : row.localRank <= 3 ? 'var(--primary-dim)' : 'var(--bg-card-hover)',
-                        color: row.localRank === 1 ? 'var(--primary)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--primary)',
-                        border: `1px solid ${row.localRank === 1 ? 'var(--primary)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--primary)'}`
+                        background: 'var(--primary-dim)', color: 'var(--primary)', border: `1px solid var(--primary)`
                       }}>
                         {row.localRank}
                       </div>

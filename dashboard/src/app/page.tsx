@@ -125,20 +125,11 @@ export default function WelcomePage() {
         position: 'relative',
         zIndex: 10
       }}>
-        {/* Top Left: Welcome Text & Crest */}
+        {/* Top Left: Welcome Text */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
             Welcome to
           </div>
-          {schoolData.logoUrl && !loading && (
-            <Image
-              src={schoolData.logoUrl}
-              alt="School Crest"
-              width={32}
-              height={32}
-              style={{ objectFit: 'contain' }}
-            />
-          )}
         </div>
 
         {/* Top Right: Theme & Fullscreen Toggles */}
@@ -198,7 +189,6 @@ export default function WelcomePage() {
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        textAlign: 'center',
         padding: '0 24px',
         position: 'relative',
         zIndex: 10,
@@ -215,31 +205,59 @@ export default function WelcomePage() {
         ) : (
           <div style={{ animation: 'fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }}>
             
-            {/* Dynamic School Name (Big and Bold) */}
-            <h1 
-              style={{
-                fontSize: 'clamp(48px, 6vw, 96px)',
-                fontWeight: 900,
-                lineHeight: 1.1,
-                letterSpacing: '-0.03em',
-                marginBottom: '16px',
-                color: primaryColor,
-              }}
-            >
-              {schoolData.name.toUpperCase()}
-            </h1>
-
-            {/* Subtitle */}
-            <h2 style={{
-              fontSize: 'clamp(32px, 4vw, 64px)',
-              fontWeight: 800,
-              lineHeight: 1.2,
-              letterSpacing: '-0.02em',
-              color: 'var(--text-primary)',
-              marginBottom: '32px'
+            {/* Logo and Titles Wrapper */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '48px',
+              marginBottom: '32px',
+              flexWrap: 'wrap',
+              textAlign: 'left'
             }}>
-              Smart School Attendance <br/>&amp; Staff Management System
-            </h2>
+              
+              {/* Massive School Crest on the left */}
+              {schoolData.logoUrl && (
+                <div style={{ flexShrink: 0 }}>
+                  <Image
+                    src={schoolData.logoUrl}
+                    alt="School Crest"
+                    width={180}
+                    height={180}
+                    style={{ objectFit: 'contain', filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.15))' }}
+                  />
+                </div>
+              )}
+
+              {/* Text Block */}
+              <div>
+                {/* Dynamic School Name (Big and Bold) */}
+                <h1 
+                  style={{
+                    fontSize: 'clamp(48px, 6vw, 96px)',
+                    fontWeight: 900,
+                    lineHeight: 1.1,
+                    letterSpacing: '-0.03em',
+                    marginBottom: '16px',
+                    color: primaryColor,
+                  }}
+                >
+                  {schoolData.name.toUpperCase()}
+                </h1>
+
+                {/* Subtitle */}
+                <h2 style={{
+                  fontSize: 'clamp(32px, 4vw, 64px)',
+                  fontWeight: 800,
+                  lineHeight: 1.2,
+                  letterSpacing: '-0.02em',
+                  color: 'var(--text-primary)',
+                }}>
+                  Smart School Attendance <br/>&amp; Staff Management System
+                </h2>
+              </div>
+            </div>
 
             {/* Description Subtext */}
             <p style={{
@@ -248,7 +266,8 @@ export default function WelcomePage() {
               fontWeight: 500,
               maxWidth: '800px',
               margin: '0 auto 64px auto',
-              lineHeight: 1.5
+              lineHeight: 1.5,
+              textAlign: 'center'
             }}>
               The complete and secure portal to manage your school's daily operations, attendance reporting, and staff dashboard.
             </p>

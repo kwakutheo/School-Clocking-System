@@ -127,8 +127,8 @@ export default function WelcomePage() {
       }}>
         {/* Top Left: Welcome Text */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
-            Welcome to
+          <div style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            Welcome to TK Clocking; the Time Keeper.
           </div>
         </div>
 

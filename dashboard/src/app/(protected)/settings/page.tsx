@@ -1,11 +1,11 @@
 'use client';
 import Link from 'next/link';
-import { Calendar, Clock, Building2, MapPin, Settings } from 'lucide-react';
+import { Calendar, Clock, Building2, MapPin, Palette } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { can } from '@/lib/permissions';
 
 const SETTINGS_CARDS = [
-  { href: '/settings/school', icon: Settings,  label: 'School Branding',        description: 'Manage core school information, branding, and policies.', permission: 'permissions.manage' },
+  { href: '/settings/school', icon: Palette,  label: 'School Branding',        description: 'Configure your school configurations and brand identity', permission: 'permissions.manage' },
   { href: '/calendar',        icon: Calendar,  label: 'Academic Calendar',      description: 'Configure academic years, terms, and session dates.',     permission: 'calendar.view' },
   { href: '/holidays',        icon: Calendar,  label: 'Holidays',               description: 'Set up public and school holidays.',                      permission: 'holidays.manage' },
   { href: '/shifts',          icon: Clock,     label: 'Shifts (Working hours)', description: 'Define staff working schedules and shifts.',              permission: 'shifts.manage' },
@@ -21,7 +21,7 @@ export default function SettingsHubPage() {
       <div className="page-header" style={{ marginBottom: '32px' }}>
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-            <Settings size={28} style={{ color: 'var(--primary)' }} />
+            <Palette size={28} style={{ color: 'var(--primary)' }} />
             Settings
           </h1>
           <p className="page-subtitle" style={{ margin: 0 }}>Central configuration for your school's operating parameters.</p>

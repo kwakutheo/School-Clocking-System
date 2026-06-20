@@ -3341,7 +3341,7 @@ export default function SaasOverviewPage() {
                     gap: "8px",
                   }}
                 >
-                  Performance Report Card
+                  Performance Report Details
                 </h2>
                 <p
                   style={{

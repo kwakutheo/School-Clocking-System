@@ -156,10 +156,10 @@ export default function RankingsPage() {
 
             <div style={{ background: 'var(--bg-card-hover)', borderRadius: '12px', padding: '16px 24px', border: '1px solid var(--border)', textAlign: 'center' }}>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
-                Top Tier
+                Percentile
               </div>
               <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--primary)' }}>
-                {Math.round((data.globalSchoolRank.rank / data.globalSchoolRank.totalSchools) * 100)}%
+                {Math.round(((data.globalSchoolRank.totalSchools - data.globalSchoolRank.rank) / data.globalSchoolRank.totalSchools) * 100)}th
               </div>
             </div>
           </div>

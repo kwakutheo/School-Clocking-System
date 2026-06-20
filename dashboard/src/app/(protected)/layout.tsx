@@ -407,10 +407,10 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           onClick={toggleTheme}
           title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
           style={{
-            position: 'absolute',
-            top: '24px',
+            position: 'fixed',
+            top: '16px',
             right: '80px',
-            zIndex: 10,
+            zIndex: 1000,
             width: '40px',
             height: '40px',
             borderRadius: '50%',
@@ -435,10 +435,10 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           onClick={toggleFullscreen}
           title={isFullscreen ? 'Exit fullscreen (F)' : 'Enter fullscreen (F)'}
           style={{
-            position: 'absolute',
-            top: '24px',
+            position: 'fixed',
+            top: '16px',
             right: '32px',
-            zIndex: 10,
+            zIndex: 1000,
             width: '40px',
             height: '40px',
             borderRadius: '50%',

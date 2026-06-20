@@ -407,63 +407,61 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* ── Main ───────────────────────────────────────────────────────── */}
-      <main className="main-content" style={{ position: 'relative' }}>
-        <button 
-          className="theme-toggle-btn desktop-only"
-          onClick={toggleTheme}
-          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-          style={{
-            position: 'absolute',
-            top: '24px',
-            right: '80px',
-            zIndex: 10,
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            background: theme === 'light' ? 'transparent' : 'var(--bg-card)',
-            border: theme === 'light' ? 'none' : '1px solid var(--border)',
-            color: 'var(--text-primary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: theme === 'light' ? 'none' : 'var(--shadow)',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.background = theme === 'light' ? 'rgba(128,128,128,0.12)' : 'var(--bg-card-hover)'}
-          onMouseLeave={(e) => e.currentTarget.style.background = theme === 'light' ? 'transparent' : 'var(--bg-card)'}
-        >
-          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-        {/* ── Fullscreen toggle (F key shortcut) ──────────────────────── */}
-        <button
-          className="theme-toggle-btn desktop-only"
-          onClick={toggleFullscreen}
-          title={isFullscreen ? 'Exit fullscreen (F)' : 'Enter fullscreen (F)'}
-          style={{
-            position: 'absolute',
-            top: '24px',
-            right: '32px',
-            zIndex: 10,
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            background: theme === 'light' ? 'transparent' : 'var(--bg-card)',
-            border: theme === 'light' ? 'none' : '1px solid var(--border)',
-            color: 'var(--text-primary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: theme === 'light' ? 'none' : 'var(--shadow)',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.background = theme === 'light' ? 'rgba(128,128,128,0.12)' : 'var(--bg-card-hover)'}
-          onMouseLeave={(e) => e.currentTarget.style.background = theme === 'light' ? 'transparent' : 'var(--bg-card)'}
-        >
-          {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-        </button>
-        {children}
+      <main className="main-content" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginBottom: '24px' }}>
+          <button 
+            className="theme-toggle-btn desktop-only"
+            onClick={toggleTheme}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: theme === 'light' ? 'transparent' : 'var(--bg-card)',
+              border: theme === 'light' ? 'none' : '1px solid var(--border)',
+              color: 'var(--text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: theme === 'light' ? 'none' : 'var(--shadow)',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = theme === 'light' ? 'rgba(128,128,128,0.12)' : 'var(--bg-card-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = theme === 'light' ? 'transparent' : 'var(--bg-card)'}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          
+          {/* ── Fullscreen toggle (F key shortcut) ──────────────────────── */}
+          <button
+            className="theme-toggle-btn desktop-only"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Exit fullscreen (F)' : 'Enter fullscreen (F)'}
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: theme === 'light' ? 'transparent' : 'var(--bg-card)',
+              border: theme === 'light' ? 'none' : '1px solid var(--border)',
+              color: 'var(--text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: theme === 'light' ? 'none' : 'var(--shadow)',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = theme === 'light' ? 'rgba(128,128,128,0.12)' : 'var(--bg-card-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = theme === 'light' ? 'transparent' : 'var(--bg-card)'}
+          >
+            {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+          </button>
+        </div>
+
+        <div style={{ flex: 1 }}>
+          {children}
+        </div>
       </main>
 
       {/* ── Logout Confirmation Modal ────────────────────────────────────── */}

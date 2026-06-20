@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Trophy, Search, ChevronLeft, ChevronRight, Award, Clock, Medal, Zap, Star } from 'lucide-react';
+import { Trophy, Search, ChevronLeft, ChevronRight, Award, Clock, Medal, Zap, Star, X } from 'lucide-react';
 import { attendanceApi, calendarApi } from '@/lib/api';
 
 function rateColor(rate: number) {
@@ -9,6 +9,8 @@ function rateColor(rate: number) {
   return "#ef4444";
 }
 
+const formatPct = (val: number) => parseFloat((val || 0).toFixed(2));
+
 export default function RankingsPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -16,6 +18,7 @@ export default function RankingsPage() {
   const [limit] = useState(10);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [explainEmpModal, setExplainEmpModal] = useState<any>(null);
 
   const [terms, setTerms] = useState<any[]>([]);
   const [academicYears, setAcademicYears] = useState<string[]>([]);
@@ -270,9 +273,25 @@ export default function RankingsPage() {
                       <div style={{ fontSize: '18px', fontWeight: 800, color: rateColor(row.metrics?.score || 0) }}>
                         {row.metrics?.score?.toFixed(1) || '0.0'}
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>
-                        <span title="Presence Rate">Pr: {row.metrics?.presenceRate}%</span>
-                        <span title="Punctuality Rate">Pu: {row.metrics?.punctualityRate}%</span>
+                      <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
+                        <button
+                          onClick={() => setExplainEmpModal(row)}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            background: 'var(--primary-dim)',
+                            color: 'var(--primary)',
+                            border: 'none',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'opacity 0.2s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+                          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                        >
+                          View Details
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -306,6 +325,271 @@ export default function RankingsPage() {
           </div>
         )}
       </div>
+
+      {explainEmpModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.4)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 99999,
+            padding: "20px",
+            animation: "fadeIn 0.2s ease-out",
+          }}
+          onClick={() => setExplainEmpModal(null)}
+        >
+          <div
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "16px",
+              width: "100%",
+              maxWidth: "500px",
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "0 24px 50px rgba(0,0,0,0.5)",
+              overflowY: "auto",
+              maxHeight: "85vh",
+              animation: "slideUp 0.3s ease-out",
+              padding: "24px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginBottom: "20px",
+              }}
+            >
+              <div>
+                <h2
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: 800,
+                    margin: 0,
+                    color: "var(--text-primary)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  Performance Report Details
+                </h2>
+                <p
+                  style={{
+                    fontSize: "13px",
+                    color: "var(--text-secondary)",
+                    margin: "4px 0 0",
+                  }}
+                >
+                  Detailed breakdown for <strong>{explainEmpModal.name}</strong>
+                </p>
+              </div>
+              <button
+                onClick={() => setExplainEmpModal(null)}
+                title="Close"
+                aria-label="Close modal"
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "8px",
+                  background: "var(--bg-card-hover)",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--text-secondary)",
+                  transition: "all 0.2s",
+                  flexShrink: 0,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--text-primary)";
+                  e.currentTarget.style.background = "var(--border)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.background = "var(--bg-card-hover)";
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div
+              style={{
+                fontSize: "14px",
+                color: "var(--text-secondary)",
+                lineHeight: 1.5,
+                marginBottom: "24px",
+              }}
+            >
+              Overall score is a composite grade combining four different
+              habits. Some habits are worth more points than others.
+            </div>
+
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+            >
+              {[
+                {
+                  label: "Showing Up (Presence)",
+                  weight: 40,
+                  weightMult: 0.4,
+                  val: explainEmpModal.metrics.presenceRate,
+                  desc: `Showed up for expected workdays.`,
+                },
+                {
+                  label: "Being on Time (Punctuality)",
+                  weight: 30,
+                  weightMult: 0.3,
+                  val: explainEmpModal.metrics.punctualityRate,
+                  desc: `Clocked in and out on time.`,
+                },
+                {
+                  label: "Putting in the Hours (Hours)",
+                  weight: 20,
+                  weightMult: 0.2,
+                  val: explainEmpModal.metrics.hoursCompletionRate,
+                  desc: `Completed required shift hours.`,
+                },
+                {
+                  label: "Remembering to Sign Out",
+                  weight: 10,
+                  weightMult: 0.1,
+                  val: explainEmpModal.metrics.forgotOutRate,
+                  desc: `Successfully signed out when leaving.`,
+                },
+              ].map((metric) => {
+                const points = (metric.val * metric.weightMult).toFixed(2);
+                return (
+                  <div
+                    key={metric.label}
+                    style={{
+                      background: "var(--bg-card-hover)",
+                      padding: "16px",
+                      borderRadius: "12px",
+                      border: "1px solid var(--border)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          fontSize: "14px",
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        {metric.label}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 800,
+                          color: "var(--text-secondary)",
+                          background: "var(--bg-dashboard)",
+                          padding: "4px 8px",
+                          borderRadius: "6px",
+                        }}
+                      >
+                        Worth {metric.weight}%
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "13px",
+                        color: "var(--text-secondary)",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      {metric.desc} Rate:{" "}
+                      <strong style={{ color: rateColor(metric.val) }}>
+                        {formatPct(metric.val)}%
+                      </strong>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          flex: 1,
+                          height: "6px",
+                          borderRadius: "6px",
+                          background: "var(--border)",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div
+                          style={{
+                            height: "100%",
+                            width: `${metric.val}%`,
+                            background: rateColor(metric.val),
+                            borderRadius: "6px",
+                          }}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: 800,
+                          color: "var(--text-primary)",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        +{points} pts
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div
+              style={{
+                marginTop: "24px",
+                padding: "16px",
+                borderRadius: "12px",
+                background: "rgba(139,92,246,0.08)",
+                border: "1px solid rgba(139,92,246,0.2)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div
+                style={{ fontWeight: 700, fontSize: "14px", color: "var(--text-primary)" }}
+              >
+                Final Score
+              </div>
+              <div
+                style={{ fontSize: "24px", fontWeight: 900, color: "var(--text-primary)" }}
+              >
+                {formatPct(explainEmpModal.metrics.score)}%
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

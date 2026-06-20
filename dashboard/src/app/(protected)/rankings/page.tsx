@@ -181,8 +181,9 @@ export default function RankingsPage() {
           <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'var(--bg-card-hover)', color: 'var(--text-secondary)', textAlign: 'left', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                <th style={{ padding: '12px 20px', width: '100px' }}>Rank</th>
                 <th style={{ padding: '12px 20px' }}>Staff Member</th>
+                <th style={{ padding: '12px 20px', width: '120px' }}>Overall Rank</th>
+                <th style={{ padding: '12px 20px', width: '100px' }}>Local Rank</th>
                 <th style={{ padding: '12px 20px' }}>Badges</th>
                 <th style={{ padding: '12px 20px', textAlign: 'right' }}>Composite Score</th>
               </tr>
@@ -190,36 +191,19 @@ export default function RankingsPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <td colSpan={5} style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-secondary)' }}>
                     Loading rankings...
                   </td>
                 </tr>
               ) : data?.staff?.data?.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <td colSpan={5} style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-secondary)' }}>
                     No staff rankings found for this period.
                   </td>
                 </tr>
               ) : (
                 data?.staff?.data?.map((row: any) => (
                   <tr key={row.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '16px 20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{
-                          width: '36px', height: '36px', borderRadius: '50%',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontWeight: 700, fontSize: '14px',
-                          background: row.localRank === 1 ? 'var(--accent-dim)' : row.localRank <= 3 ? 'var(--primary-dim)' : 'var(--bg-card-hover)',
-                          color: row.localRank === 1 ? 'var(--accent)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--text-secondary)',
-                          border: `1px solid ${row.localRank === 1 ? 'var(--accent)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--border)'}`
-                        }}>
-                          #{row.localRank}
-                        </div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                          Global: #{row.globalRank}
-                        </div>
-                      </div>
-                    </td>
                     <td style={{ padding: '16px 20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         {row.photoUrl ? (
@@ -233,6 +217,23 @@ export default function RankingsPage() {
                           <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{row.name}</div>
                           <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{row.position || 'Staff'} • {row.employeeCode}</div>
                         </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px 20px' }}>
+                      <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 800 }}>
+                        #{row.globalRank}
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px 20px' }}>
+                      <div style={{
+                        width: '36px', height: '36px', borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 700, fontSize: '14px',
+                        background: row.localRank === 1 ? 'var(--accent-dim)' : row.localRank <= 3 ? 'var(--primary-dim)' : 'var(--bg-card-hover)',
+                        color: row.localRank === 1 ? 'var(--accent)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--text-secondary)',
+                        border: `1px solid ${row.localRank === 1 ? 'var(--accent)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--border)'}`
+                      }}>
+                        #{row.localRank}
                       </div>
                     </td>
                     <td style={{ padding: '16px 20px' }}>

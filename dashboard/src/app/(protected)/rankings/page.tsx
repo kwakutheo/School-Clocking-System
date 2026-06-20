@@ -21,7 +21,6 @@ export default function RankingsPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Initial load: fetch terms to get current academic year/term
   useEffect(() => {
     const init = async () => {
       try {
@@ -32,7 +31,6 @@ export default function RankingsPage() {
         const years = Array.from(new Set(allTerms.map((t: any) => t.academicYear))) as string[];
         setAcademicYears(years);
 
-        // Find active or most recent
         const now = new Date();
         const activeTerm = allTerms.find((t: any) => {
            const start = new Date(t.startDate);
@@ -44,7 +42,6 @@ export default function RankingsPage() {
            setSelectedYear(activeTerm.academicYear);
            setSelectedTerm(activeTerm.name);
         } else if (allTerms.length > 0) {
-           // fallback to newest term
            const newest = allTerms.sort((a: any, b: any) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime())[0];
            setSelectedYear(newest.academicYear);
            setSelectedTerm(newest.name);
@@ -57,7 +54,6 @@ export default function RankingsPage() {
   }, []);
 
   useEffect(() => {
-    // Only fetch rankings if we have either determined there are no terms, or we have selected a year
     if (selectedYear || terms.length === 0) {
       fetchRankings();
     }
@@ -84,17 +80,17 @@ export default function RankingsPage() {
   const availableTermsForYear = terms.filter(t => t.academicYear === selectedYear);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="dashboard-container">
+      <div className="page-header" style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-2">
-            <Trophy className="w-8 h-8 text-violet-600" />
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Trophy size={28} style={{ color: 'var(--primary)' }} />
             Performance Rankings
           </h1>
-          <p className="text-muted-foreground mt-1">View staff rankings and your school's global position.</p>
+          <p className="page-subtitle">View staff rankings and your school's global position.</p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-3">
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <select 
             value={selectedYear} 
             onChange={(e) => {
@@ -102,7 +98,8 @@ export default function RankingsPage() {
               setSelectedTerm('Full Year');
             }}
             aria-label="Filter by Academic Year"
-            className="px-4 py-2 bg-card border rounded-xl shadow-sm focus:ring-2 focus:ring-violet-500 outline-none w-full sm:w-auto"
+            className="form-input"
+            style={{ minWidth: '160px', width: 'auto', padding: '8px 12px' }}
           >
             <option value="">All Time</option>
             {academicYears.map(year => (
@@ -114,7 +111,8 @@ export default function RankingsPage() {
             onChange={(e) => setSelectedTerm(e.target.value)}
             disabled={!selectedYear}
             aria-label="Filter by Term"
-            className="px-4 py-2 bg-card border rounded-xl shadow-sm focus:ring-2 focus:ring-violet-500 outline-none disabled:opacity-50 w-full sm:w-auto"
+            className="form-input"
+            style={{ minWidth: '200px', width: 'auto', padding: '8px 12px' }}
           >
             <option value="Full Year">Full Academic Year</option>
             {availableTermsForYear.map(t => (
@@ -124,140 +122,147 @@ export default function RankingsPage() {
         </div>
       </div>
 
-      {/* Global Position Card */}
       {data?.globalSchoolRank && (
-        <div className="bg-gradient-to-br from-violet-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-            <Trophy className="w-48 h-48" />
+        <div className="card" style={{ marginBottom: '24px', padding: '24px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: '-20px', right: '-20px', opacity: 0.05, pointerEvents: 'none' }}>
+            <Trophy size={200} />
           </div>
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '24px', position: 'relative', zIndex: 1 }}>
             <div>
-              <p className="text-violet-200 font-medium tracking-wider uppercase text-sm mb-2">Global School Position</p>
-              <h2 className="text-5xl font-black mb-2 flex items-baseline gap-2">
-                #{data.globalSchoolRank.rank} 
-                <span className="text-2xl text-violet-200 font-medium whitespace-nowrap">of {data.globalSchoolRank.totalSchools} Schools</span>
-              </h2>
-              <p className="text-violet-100 flex items-center gap-2 mt-4 text-lg">
-                <Star className="w-5 h-5 text-yellow-400 fill-current" />
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                Global School Position
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '8px' }}>
+                <span style={{ fontSize: '42px', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+                  #{data.globalSchoolRank.rank}
+                </span>
+                <span style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  of {data.globalSchoolRank.totalSchools} Schools
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--success)', fontWeight: 600 }}>
+                <Star size={18} fill="currentColor" />
                 {data.globalSchoolRank.presenceRate}% Average Presence Rate
-              </p>
+              </div>
             </div>
-            
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 self-stretch flex items-center">
-              <div className="text-center">
-                <div className="text-sm text-violet-200 font-medium uppercase tracking-wider mb-1">Top Tier</div>
-                <div className="text-3xl font-bold text-white">
-                  {Math.round((data.globalSchoolRank.rank / data.globalSchoolRank.totalSchools) * 100)}%
-                </div>
+
+            <div style={{ background: 'var(--bg-card-hover)', borderRadius: '12px', padding: '16px 24px', border: '1px solid var(--border)', textAlign: 'center' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+                Top Tier
+              </div>
+              <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--primary)' }}>
+                {Math.round((data.globalSchoolRank.rank / data.globalSchoolRank.totalSchools) * 100)}%
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Staff Leaderboard */}
-      <div className="bg-card rounded-3xl shadow-sm border overflow-hidden">
-        <div className="p-6 border-b flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h3 className="text-xl font-bold flex items-center gap-2">
-            <Award className="w-6 h-6 text-violet-600" />
+      <div className="card">
+        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', padding: '20px', borderBottom: '1px solid var(--border)' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Award size={20} style={{ color: 'var(--primary)' }} />
             Staff Leaderboard
-          </h3>
-          <div className="relative w-full md:w-72">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          </h2>
+          <div style={{ position: 'relative', minWidth: '260px' }}>
+            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input 
               type="text" 
               placeholder="Search staff..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Search staff"
-              className="w-full pl-9 pr-4 py-2 bg-muted/50 border-transparent rounded-full focus:ring-2 focus:ring-violet-500 outline-none transition-all"
+              className="form-input"
+              style={{ width: '100%', paddingLeft: '36px', borderRadius: '20px' }}
             />
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-muted/30 text-muted-foreground uppercase tracking-wider text-xs">
-              <tr>
-                <th className="px-6 py-4 font-semibold whitespace-nowrap">Rank</th>
-                <th className="px-6 py-4 font-semibold">Staff Member</th>
-                <th className="px-6 py-4 font-semibold hidden md:table-cell">Badges</th>
-                <th className="px-6 py-4 font-semibold text-right whitespace-nowrap">Composite Score</th>
+        <div className="table-container">
+          <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: 'var(--bg-card-hover)', color: 'var(--text-secondary)', textAlign: 'left', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <th style={{ padding: '12px 20px', width: '100px' }}>Rank</th>
+                <th style={{ padding: '12px 20px' }}>Staff Member</th>
+                <th style={{ padding: '12px 20px' }}>Badges</th>
+                <th style={{ padding: '12px 20px', textAlign: 'right' }}>Composite Score</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground">
-                    <div className="w-8 h-8 border-4 border-violet-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <td colSpan={4} style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-secondary)' }}>
                     Loading rankings...
                   </td>
                 </tr>
               ) : data?.staff?.data?.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground">
+                  <td colSpan={4} style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-secondary)' }}>
                     No staff rankings found for this period.
                   </td>
                 </tr>
               ) : (
                 data?.staff?.data?.map((row: any) => (
-                  <tr key={row.id} className="hover:bg-muted/20 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg
-                          ${row.localRank === 1 ? 'bg-gradient-to-br from-yellow-200 to-yellow-400 text-yellow-900 shadow-sm border border-yellow-300' : 
-                            row.localRank === 2 ? 'bg-gradient-to-br from-slate-200 to-slate-400 text-slate-900 shadow-sm border border-slate-300' :
-                            row.localRank === 3 ? 'bg-gradient-to-br from-orange-200 to-orange-400 text-orange-900 shadow-sm border border-orange-300' :
-                            'bg-muted text-muted-foreground border'}`}>
+                  <tr key={row.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '16px 20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{
+                          width: '36px', height: '36px', borderRadius: '50%',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontWeight: 700, fontSize: '14px',
+                          background: row.localRank === 1 ? 'var(--accent-dim)' : row.localRank <= 3 ? 'var(--primary-dim)' : 'var(--bg-card-hover)',
+                          color: row.localRank === 1 ? 'var(--accent)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--text-secondary)',
+                          border: `1px solid ${row.localRank === 1 ? 'var(--accent)' : row.localRank <= 3 ? 'var(--primary)' : 'var(--border)'}`
+                        }}>
                           #{row.localRank}
                         </div>
-                        <div className="flex flex-col">
-                          <span className="text-xs font-medium text-violet-600 bg-violet-100 px-2 py-0.5 rounded-full whitespace-nowrap">Global: #{row.globalRank}</span>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                          Global: #{row.globalRank}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
+                    <td style={{ padding: '16px 20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         {row.photoUrl ? (
-                          <img src={row.photoUrl} alt="" className="w-10 h-10 rounded-full object-cover border" />
+                          <img src={row.photoUrl} alt="" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border)' }} />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center font-bold shrink-0">
+                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary-dim)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>
                             {row.name?.charAt(0) || '?'}
                           </div>
                         )}
                         <div>
-                          <div className="font-semibold text-foreground group-hover:text-violet-600 transition-colors whitespace-nowrap">{row.name}</div>
-                          <div className="text-xs text-muted-foreground">{row.position || 'Staff'} • {row.employeeCode}</div>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{row.name}</div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{row.position || 'Staff'} • {row.employeeCode}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 hidden md:table-cell">
-                      <div className="flex gap-2 flex-wrap">
+                    <td style={{ padding: '16px 20px' }}>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         {row.metrics?.presenceRate >= 95 && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium border border-blue-200 shadow-sm" title="Presence >= 95%">
-                            <Medal className="w-3 h-3" /> Pillar
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '100px', background: 'var(--success-dim)', color: 'var(--success)', border: '1px solid var(--success)', fontSize: '11px', fontWeight: 700 }} title="Presence >= 95%">
+                            <Medal size={12} /> Pillar
                           </span>
                         )}
                         {row.metrics?.punctualityRate >= 95 && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium border border-emerald-200 shadow-sm" title="Punctuality >= 95%">
-                            <Zap className="w-3 h-3" /> Early Bird
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '100px', background: 'var(--warning-dim)', color: 'var(--warning)', border: '1px solid var(--warning)', fontSize: '11px', fontWeight: 700 }} title="Punctuality >= 95%">
+                            <Zap size={12} /> Early Bird
                           </span>
                         )}
                         {row.metrics?.hoursCompletionRate >= 95 && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-medium border border-purple-200 shadow-sm" title="Hours Completion >= 95%">
-                            <Clock className="w-3 h-3" /> Diligent
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '100px', background: 'var(--primary-dim)', color: 'var(--primary)', border: '1px solid var(--primary)', fontSize: '11px', fontWeight: 700 }} title="Hours Completion >= 95%">
+                            <Clock size={12} /> Diligent
                           </span>
                         )}
                         {(!row.metrics || (row.metrics.presenceRate < 95 && row.metrics.punctualityRate < 95 && row.metrics.hoursCompletionRate < 95)) && (
-                          <span className="text-xs text-muted-foreground italic px-2 py-1">-</span>
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>—</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="text-2xl font-black text-foreground">
+                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                      <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
                         {row.metrics?.score?.toFixed(1) || '0.0'}
                       </div>
-                      <div className="text-xs text-muted-foreground flex flex-col items-end gap-1 mt-1">
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>
                         <span title="Presence Rate">Pr: {row.metrics?.presenceRate}%</span>
                         <span title="Punctuality Rate">Pu: {row.metrics?.punctualityRate}%</span>
                       </div>
@@ -269,26 +274,25 @@ export default function RankingsPage() {
           </table>
         </div>
 
-        {/* Pagination */}
         {data?.staff?.totalPages > 1 && (
-          <div className="p-4 border-t flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/10">
-            <div className="text-sm text-muted-foreground">
-              Showing page <span className="font-medium text-foreground">{data.staff.page}</span> of <span className="font-medium text-foreground">{data.staff.totalPages}</span>
+          <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+              Showing page <strong style={{ color: 'var(--text-primary)' }}>{data.staff.page}</strong> of <strong style={{ color: 'var(--text-primary)' }}>{data.staff.totalPages}</strong>
             </div>
-            <div className="flex items-center gap-2">
+            <div style={{ display: 'flex', gap: '8px' }}>
               <button 
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-2 rounded-lg border bg-card hover:bg-muted disabled:opacity-50 transition-colors flex items-center gap-1 text-sm font-medium"
+                style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px', opacity: page === 1 ? 0.5 : 1, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-primary)', cursor: page === 1 ? 'not-allowed' : 'pointer' }}
               >
-                <ChevronLeft className="w-4 h-4" /> Prev
+                <ChevronLeft size={16} /> Prev
               </button>
               <button 
                 onClick={() => setPage(p => Math.min(data.staff.totalPages, p + 1))}
                 disabled={page === data.staff.totalPages}
-                className="px-3 py-2 rounded-lg border bg-card hover:bg-muted disabled:opacity-50 transition-colors flex items-center gap-1 text-sm font-medium"
+                style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px', opacity: page === data.staff.totalPages ? 0.5 : 1, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text-primary)', cursor: page === data.staff.totalPages ? 'not-allowed' : 'pointer' }}
               >
-                Next <ChevronRight className="w-4 h-4" />
+                Next <ChevronRight size={16} />
               </button>
             </div>
           </div>

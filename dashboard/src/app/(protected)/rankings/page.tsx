@@ -256,17 +256,17 @@ export default function RankingsPage() {
                     <td style={{ padding: '16px 20px' }}>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         {row.metrics?.presenceRate >= 95 && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '100px', background: 'var(--success-dim)', color: 'var(--success)', border: '1px solid var(--success)', fontSize: '11px', fontWeight: 700 }} title="Presence >= 95%">
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '100px', background: 'var(--success-dim)', color: 'var(--success)', border: '1px solid var(--success)', fontSize: '11px', fontWeight: 700 }} title="Awarded for maintaining a presence rate of 95% or higher">
                             <Medal size={12} /> Pillar
                           </span>
                         )}
                         {row.metrics?.punctualityRate >= 95 && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '100px', background: 'var(--warning-dim)', color: 'var(--warning)', border: '1px solid var(--warning)', fontSize: '11px', fontWeight: 700 }} title="Punctuality >= 95%">
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '100px', background: 'var(--warning-dim)', color: 'var(--warning)', border: '1px solid var(--warning)', fontSize: '11px', fontWeight: 700 }} title="Awarded for maintaining a punctuality rate of 95% or higher (clocking in/out on time)">
                             <Zap size={12} /> Early Bird
                           </span>
                         )}
                         {row.metrics?.hoursCompletionRate >= 95 && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '100px', background: 'var(--primary-dim)', color: 'var(--primary)', border: '1px solid var(--primary)', fontSize: '11px', fontWeight: 700 }} title="Hours Completion >= 95%">
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '100px', background: 'var(--primary-dim)', color: 'var(--primary)', border: '1px solid var(--primary)', fontSize: '11px', fontWeight: 700 }} title="Awarded for completing 95% or more of required working hours">
                             <Clock size={12} /> Diligent
                           </span>
                         )}

@@ -93,7 +93,7 @@ export default function RankingsPage() {
             <Trophy size={28} style={{ color: 'var(--primary)' }} />
             Performance Rankings
           </h1>
-          <p className="page-subtitle">View staff rankings and your school's global position.</p>
+          <p className="page-subtitle">View staff rankings and your school's position.</p>
         </div>
 
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>

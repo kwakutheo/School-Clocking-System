@@ -2011,7 +2011,7 @@ export class AttendanceService {
         ? {
             rank: globalSchoolRankIndex + 1,
             totalSchools: allTenants.total,
-            presenceRate: schoolGlobalData.presenceRate,
+            presenceRate: schoolGlobalData.metrics?.presenceRate || 0,
             schoolName: schoolGlobalData.name,
           }
         : null,

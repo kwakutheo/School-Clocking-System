@@ -207,7 +207,7 @@ export default function RankingsPage() {
             <Award size={20} style={{ color: 'var(--primary)' }} />
             Staff Leaderboard
           </h2>
-          <div style={{ position: 'relative', minWidth: '260px' }}>
+          <div style={{ position: 'relative', minWidth: '200px', flex: 1 }}>
             <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input 
               type="text" 
@@ -226,9 +226,9 @@ export default function RankingsPage() {
             <thead>
               <tr style={{ background: 'var(--bg-card-hover)', color: 'var(--text-secondary)', textAlign: 'left', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 <th style={{ padding: '12px 20px' }}>Staff Member</th>
-                <th style={{ padding: '12px 20px', width: '120px' }}>Overall Rank</th>
-                <th style={{ padding: '12px 20px', width: '100px' }}>Local Rank</th>
-                <th style={{ padding: '12px 20px' }}>Badges</th>
+                <th className="rank-col-overall" style={{ padding: '12px 20px', width: '120px' }}>Overall Rank</th>
+                <th className="rank-col-local" style={{ padding: '12px 20px', width: '100px' }}>Local Rank</th>
+                <th className="rank-col-badges" style={{ padding: '12px 20px' }}>Badges</th>
                 <th style={{ padding: '12px 20px', textAlign: 'right' }}>Score</th>
               </tr>
             </thead>
@@ -265,7 +265,7 @@ export default function RankingsPage() {
                         </div>
                       </div>
                     </td>
-                    <td style={{ padding: '16px 20px' }}>
+                    <td className="rank-col-overall" style={{ padding: '16px 20px' }}>
                       <div style={{
                         width: '36px', height: '36px', borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -274,7 +274,7 @@ export default function RankingsPage() {
                         {row.globalRank}
                       </div>
                     </td>
-                    <td style={{ padding: '16px 20px' }}>
+                    <td className="rank-col-local" style={{ padding: '16px 20px' }}>
                       <div style={{
                         width: '36px', height: '36px', borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -284,7 +284,7 @@ export default function RankingsPage() {
                         {row.localRank}
                       </div>
                     </td>
-                    <td style={{ padding: '16px 20px' }}>
+                    <td className="rank-col-badges" style={{ padding: '16px 20px' }}>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         {row.metrics?.presenceRate >= 95 && (
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '100px', background: 'var(--success-dim)', color: 'var(--success)', border: '1px solid var(--success)', fontSize: '11px', fontWeight: 700 }} title="Awarded for maintaining a presence rate of 95% or higher">
@@ -307,7 +307,7 @@ export default function RankingsPage() {
                       </div>
                     </td>
                     <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                      <div style={{ fontSize: '18px', fontWeight: 800, color: rateColor(row.metrics?.score || 0) }}>
+                      <div className="rank-score-cell" style={{ fontSize: '18px', fontWeight: 800, color: rateColor(row.metrics?.score || 0) }}>
                         {formatPct(row.metrics?.score || 0)}%
                       </div>
                       <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>

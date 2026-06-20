@@ -1538,6 +1538,41 @@ input::-webkit-credentials-auto-fill-button {
   }
 }
 
+/* ── Rankings Page Mobile Responsiveness ───────────────────────────────────── */
+/* Hide less-essential columns on small screens */
+@media (max-width: 640px) {
+  /* Hide Overall Rank, Local Rank and Badges columns */
+  .rank-col-overall,
+  .rank-col-local,
+  .rank-col-badges {
+    display: none !important;
+  }
+
+  /* Tighten up remaining cells */
+  .table th,
+  .table td {
+    padding: 10px 12px !important;
+  }
+
+  /* Stack the leaderboard card header vertically */
+  .card-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  /* Make score text slightly smaller on mobile */
+  .rank-score-cell {
+    font-size: 15px !important;
+  }
+}
+
+/* On medium screens hide Local Rank only */
+@media (min-width: 641px) and (max-width: 900px) {
+  .rank-col-local {
+    display: none !important;
+  }
+}
+
 /* ── Responsive Dropdown ─────────────────────────────────────────────────── */
 .responsive-dropdown {
   position: absolute;

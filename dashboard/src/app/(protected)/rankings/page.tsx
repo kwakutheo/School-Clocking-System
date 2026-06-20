@@ -94,6 +94,21 @@ export default function RankingsPage() {
 
   const availableTermsForYear = terms.filter(t => t.academicYear === selectedYear);
 
+  // Determine if the selected period is entirely in the future
+  const isFuturePeriod = (() => {
+    const now = new Date();
+    if (selectedTerm && selectedTerm !== 'Entire Academic Year') {
+      const term = availableTermsForYear.find(t => t.name === selectedTerm);
+      return term ? new Date(term.startDate) > now : false;
+    }
+    // For entire academic year, check if ALL terms start in the future
+    if (availableTermsForYear.length === 0) return false;
+    const earliest = availableTermsForYear.reduce((a, b) =>
+      new Date(a.startDate) < new Date(b.startDate) ? a : b
+    );
+    return new Date(earliest.startDate) > now;
+  })();
+
   return (
     <div className="dashboard-container">
       <div className="page-header" style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
@@ -136,7 +151,21 @@ export default function RankingsPage() {
         </div>
       </div>
 
-      {data?.globalSchoolRank && (
+      {isFuturePeriod && (
+        <div className="card" style={{ marginBottom: '24px', padding: '24px', borderLeft: '4px solid var(--primary)', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Trophy size={32} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', marginBottom: '4px' }}>
+              This period hasn't started yet
+            </div>
+            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+              Rankings and attendance data for <strong>{selectedYear}{selectedTerm !== 'Entire Academic Year' ? ` — ${selectedTerm}` : ''}</strong> will appear here once the period begins.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!isFuturePeriod && data?.globalSchoolRank && (
         <div className="card" style={{ marginBottom: '24px', padding: '24px', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: '-20px', right: '-20px', opacity: 0.05, pointerEvents: 'none' }}>
             <Trophy size={200} />
@@ -213,7 +242,9 @@ export default function RankingsPage() {
               ) : data?.staff?.data?.length === 0 ? (
                 <tr>
                   <td colSpan={5} style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                    No staff rankings found for this period.
+                    {isFuturePeriod
+                      ? 'No rankings yet — this period has not started. Data will appear here once attendance is recorded.'
+                      : 'No staff rankings found for this period.'}
                   </td>
                 </tr>
               ) : (

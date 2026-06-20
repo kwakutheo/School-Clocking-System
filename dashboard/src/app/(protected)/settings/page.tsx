@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { Calendar, Clock, Building2, MapPin, Palette } from 'lucide-react';
+import { Calendar, Clock, Building2, MapPin, Palette, Settings } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { can } from '@/lib/permissions';
 
@@ -21,7 +21,7 @@ export default function SettingsHubPage() {
       <div className="page-header" style={{ marginBottom: '32px' }}>
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-            <Palette size={28} style={{ color: 'var(--primary)' }} />
+            <Settings size={28} style={{ color: 'var(--primary)' }} />
             Settings
           </h1>
           <p className="page-subtitle" style={{ margin: 0 }}>Central configuration for your school's operating parameters.</p>

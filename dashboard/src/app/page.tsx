@@ -329,6 +329,12 @@ export default function WelcomePage() {
           letter-spacing: -0.03em;
           margin-bottom: 16px;
           word-wrap: break-word;
+          text-shadow: 
+            1px 1px 0px rgba(0, 0, 0, 0.1),
+            2px 2px 0px rgba(0, 0, 0, 0.08),
+            3px 3px 0px rgba(0, 0, 0, 0.06),
+            4px 4px 0px rgba(0, 0, 0, 0.05),
+            5px 5px 12px rgba(0, 0, 0, 0.15);
         }
         .school-subtitle {
           font-size: clamp(16px, 3.5cqw, 64px);

@@ -57,7 +57,7 @@ const NAV: NavItem[] = [
     'branches.manage'
   ] },
   { href: '/permissions', icon: ShieldAlert,      label: 'Permissions',                permission: 'permissions.manage' },
-  { href: '/audit',       icon: ShieldCheck,      label: 'Audit Logs',                 permission: 'audit.view'         },
+  { href: '/audit',       icon: BookOpen,      label: 'Audit Logs',                 permission: 'audit.view'         },
 ];
 
 const DEVELOPER_NAV: NavItem[] = [

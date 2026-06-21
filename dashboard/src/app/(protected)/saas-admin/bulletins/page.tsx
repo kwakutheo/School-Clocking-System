@@ -222,12 +222,13 @@ export default function BulletinsManagerPage() {
   return (
     <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
       {/* Header */}
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+      <div className="page-header" style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
         <div>
-          <h1 className="page-title" style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px' }}>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
+            <Megaphone size={28} color='var(--primary)' />
             Announcements
           </h1>
-          <p className="page-sub" style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
+          <p className="page-subtitle">
             Broadcast platform announcements globally or target specific schools.
           </p>
         </div>

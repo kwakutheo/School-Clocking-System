@@ -1385,7 +1385,7 @@ input::-webkit-credentials-auto-fill-button {
 .banner-exit-btn {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: white;
   background: var(--primary-dim);
   border: 1px solid var(--primary);
   padding: 6px 14px;
@@ -1399,7 +1399,7 @@ input::-webkit-credentials-auto-fill-button {
 .banner-exit-btn:hover {
   background: var(--primary);
   border-color: var(--primary);
-  box-shadow: 0 4px 12px rgb(255, 255, 255);
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.35);
   transform: translateY(-0.5px);
 }
 
@@ -1415,8 +1415,8 @@ input::-webkit-credentials-auto-fill-button {
   align-items: center;
   justify-content: center;
   color: white;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--primary-dim);
+  border: 1px solid var(--primary);
   cursor: pointer;
   transition: all 0.2s ease;
 }

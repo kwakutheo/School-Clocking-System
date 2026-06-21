@@ -341,8 +341,9 @@ export default function LeavesPage() {
     <div className="page-container">
       <div className="page-header">
         <div>
-          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <FileText size={26} /> Permissions & Leaves
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--primary)' }}>
+            <FileText size={28} style={{ color: 'var(--primary)' }} /> 
+            Permissions & Leaves
           </h1>
           <p className="page-subtitle">
             {isAdmin ? 'Review and manage staff leave requests' : 'Submit and track your personal leave requests'}

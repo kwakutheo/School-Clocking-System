@@ -236,7 +236,7 @@ export default function WelcomePage() {
                   className="school-subtitle"
                   style={{ color: 'var(--text-primary)' }}
                 >
-                  Smart School Attendance <br className="desktop-br"/>&amp; Staff Management System
+                  Digital Attendance Tracking Platform for Schools
                 </h2>
               </div>
             </div>

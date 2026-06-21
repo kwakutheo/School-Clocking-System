@@ -374,13 +374,16 @@ export default function AcademicCalendarPage() {
   return (
     <>
       <Link href="/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', textDecoration: 'none', marginBottom: '24px', fontSize: '14px', fontWeight: 500, transition: 'color 0.2s' }} className="hover-primary">
-        <ArrowLeft size={16} /> Back to Settings
+        <ArrowLeft size={16} /> Back
       </Link>
 
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }} >
         <div>
-          <h1 className="page-title">Academic Calendar</h1>
-          <p className="page-subtitle">Manage school terms, mid-term breaks, and vacations</p>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
+            <Calendar size={28} style={{ color: 'var(--primary)' }} />
+            Academic Calendar</h1>
+          <p className="page-subtitle">
+            Manage school terms, mid-term breaks, and vacations</p>
         </div>
         {can(userRole, 'calendar.create') && (
           <div style={{ display: 'flex', gap: 12 }}>

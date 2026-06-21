@@ -136,7 +136,7 @@ export default function SettingsPage() {
       const token = localStorage.getItem('access_token') ?? '';
       setAuth(updatedUser, token);
 
-      setBrandingSuccess('School branding updated successfully. Your new theme colors and crest are now active!');
+      setBrandingSuccess('School branding updated successfully.');
       setIsEditing(false); // Switch back to Read-Only mode on success
     } catch (err: any) {
       const msg = err.response?.data?.message;

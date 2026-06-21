@@ -90,10 +90,15 @@ export default function MobileAppPage() {
   if (!isHydrated || !user) return null;
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>Mobile App Distribution</h1>
-        <p className={styles.subtitle}>
+    <div className="dashboard-container">
+      <div className="page-header" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+        <div>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--primary)' }}>
+            <Smartphone size={28} style={{ color: 'var(--primary)' }} /> 
+            Mobile App Distribution
+          </h1>
+        </div>
+        <p className="page-subtitle">
           Distribute the TK Clocking mobile application to your staff (Android Only, iOS will be available soon)
         </p>
       </div>

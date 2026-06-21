@@ -678,8 +678,8 @@ export default function SchoolsRegistryPage() {
                               alignItems: 'center',
                               gap: '6px',
                               borderColor: 'rgba(236, 72, 153, 0.3)',
-                              color: '#ec4899',
-                              background: 'rgba(236, 72, 153, 0.05)',
+                              color: 'var(--primary)',
+                              background: 'var(--primary-dim)',
                               transition: 'all 0.2s',
                               cursor: 'pointer'
                             }}

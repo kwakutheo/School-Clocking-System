@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { json, urlencoded } from 'express';
 
 // Force the Node process to a specific timezone to prevent cloud deployment bugs.
 // Defaults to Africa/Accra (Ghana) as per project requirements unless overridden.
@@ -21,6 +22,8 @@ async function bootstrap() {
 
   // ── Security ────────────────────────────────────────────────────────────────
   app.use(helmet());
+  app.use(json({ limit: '5mb' }));
+  app.use(urlencoded({ extended: true, limit: '5mb' }));
 
   // ── CORS ────────────────────────────────────────────────────────────────────
   const nodeEnv = config.get<string>('NODE_ENV', 'development');

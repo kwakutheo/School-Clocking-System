@@ -302,11 +302,14 @@ export default function GlobalCalendarTemplatesPage() {
   };
 
   return (
-    <>
-      <div className="page-header">
+    <div className="dashboard-container">
+      <div className="page-header" style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
         <div>
-          <h1 className="page-title">Global Calendar Templates</h1>
-          <p className="page-subtitle">Configure the master academic calendar terms and breaks cloned automatically by schools during onboarding</p>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
+            <Calendar size={28} color='var(--primary)' />
+            Academic Calendar Templates</h1>
+          <p className="page-subtitle">
+            Configure the master academic calendar terms and breaks cloned automatically by schools during onboarding</p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowYearModal(true)}>
           <Plus size={18} /> Create Academic Year Template
@@ -687,6 +690,6 @@ export default function GlobalCalendarTemplatesPage() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

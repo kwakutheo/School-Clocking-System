@@ -1385,7 +1385,7 @@ input::-webkit-credentials-auto-fill-button {
 .banner-exit-btn {
   font-size: 12px;
   font-weight: 600;
-  color: white;
+  color: var(--text-primary);
   background: var(--primary-dim);
   border: 1px solid var(--primary);
   padding: 6px 14px;

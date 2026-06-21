@@ -18,13 +18,14 @@ export default function SettingsHubPage() {
 
   return (
     <div className="dashboard-container">
-      <div className="page-header" style={{ marginBottom: '32px' }}>
+      <div className="page-header" style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
         <div>
-          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', color: 'var(--primary)' }}>
             <Settings size={28} style={{ color: 'var(--primary)' }} />
             Settings
           </h1>
-          <p className="page-subtitle" style={{ margin: 0 }}>Central configuration for your school's operating parameters.</p>
+          <p className="page-subtitle">
+            Central configuration for your school's operating parameters.</p>
         </div>
       </div>
 

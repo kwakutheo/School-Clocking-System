@@ -484,7 +484,8 @@ function SchoolRankRow({
           e.currentTarget.style.background = "var(--primary-dim)";
         }}
       >
-        <Eye size={11} /> View
+        <Eye size={11} />
+         View
       </button>
     </div>
   );
@@ -797,8 +798,8 @@ function EmployeeRankRow({
                   borderRadius: "6px",
                   fontSize: "11px",
                   fontWeight: 700,
-                  background: "rgba(139,92,246,0.1)",
-                  color: "#8b5cf6",
+                  background: "var(--primary-dim)",
+                  color: "var(--primary)",
                   border: "1px solid rgba(139,92,246,0.2)",
                   cursor: "pointer",
                   display: "flex",

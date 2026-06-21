@@ -320,7 +320,7 @@ export default function RankingsPage() {
                             borderRadius: '6px',
                             background: 'var(--primary-dim)',
                             color: 'var(--primary)',
-                            border: 'none',
+                            border: '1px solid var(--primary)',
                             fontSize: '12px',
                             fontWeight: 700,
                             cursor: 'pointer',

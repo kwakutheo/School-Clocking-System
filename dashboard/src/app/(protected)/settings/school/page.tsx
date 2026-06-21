@@ -80,10 +80,10 @@ export default function SettingsPage() {
     reader.onload = (event) => {
       const img = new window.Image();
       img.onload = () => {
-        // Create canvas to downscale the image to an optimized size (max 128x128)
+        // Create canvas to downscale the image to an optimized size (max 512x512)
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 128;
-        const MAX_HEIGHT = 128;
+        const MAX_WIDTH = 512;
+        const MAX_HEIGHT = 512;
         let width = img.width;
         let height = img.height;
 

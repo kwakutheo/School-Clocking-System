@@ -1177,13 +1177,11 @@ export default function SaasOverviewPage() {
     <div style={{ animation: "fadeIn 0.4s ease-out", paddingBottom: "48px" }}>
       {/* ── Page Header ──────────────────────────────────────────────────── */}
       <div style={{ marginBottom: "32px" }}>
-        <div
-          style={{display: "flex",justifyContent: "space-between",alignItems: "flex-start",flexWrap: "wrap",gap: "16px",}}>
+        <div className='page-header' style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
           <div>
-            <h1
-              style={{fontSize: "28px",fontWeight: 800,letterSpacing: "-0.5px",color: "var(--primary)",margin: 0,}}>
-                <LayoutDashboard size={28} style={{ color: "var(--primary)" }} />
-                Platform Overview
+            <h1 className='page-title' style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
+              <LayoutDashboard size={28} style={{ color: "var(--primary)" }} />
+              Platform Overview
             </h1>
             <p
               style={{

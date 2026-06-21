@@ -470,18 +470,18 @@ function SchoolRankRow({
           display: "flex",
           alignItems: "center",
           gap: "5px",
-          background: "rgba(236,72,153,0.08)",
+          background: "var(--primary-dim)",
           color: "var(--primary)",
-          border: "1px solid rgba(236,72,153,0.25)",
+          border: "1px solid rgba(59, 130, 246, 0.25)",
           cursor: "pointer",
           transition: "all 0.2s",
           flexShrink: 0,
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = "rgba(236,72,153,0.16)";
+          e.currentTarget.style.background = "rgba(59, 130, 246, 0.16)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = "rgba(236,72,153,0.08)";
+          e.currentTarget.style.background = "var(--primary-dim)";
         }}
       >
         <Eye size={11} /> View

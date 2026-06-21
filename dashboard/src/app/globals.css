@@ -1306,9 +1306,9 @@ input::-webkit-credentials-auto-fill-button {
 }
 
 [data-theme="light"] .banner-exit-btn {
-  color: var(--text-primary);
-  background: rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: white;
+  background: var(--primary);
+  border: 1px solid var(--primary);
 }
 
 [data-theme="light"] .banner-exit-btn:hover {

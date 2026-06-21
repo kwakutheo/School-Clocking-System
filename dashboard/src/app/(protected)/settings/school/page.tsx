@@ -63,7 +63,7 @@ export default function SettingsPage() {
     if (!file) return;
 
     setBrandingError('');
-    setBrandingSuccess('');
+    setBrandingSuccess('#03c430ff');
 
     // Limit initial file size to 2MB before processing
     if (file.size > 2 * 1024 * 1024) {

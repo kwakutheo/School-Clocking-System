@@ -471,7 +471,7 @@ function SchoolRankRow({
           alignItems: "center",
           gap: "5px",
           background: "rgba(236,72,153,0.08)",
-          color: "#ec4899",
+          color: "var(--primary)",
           border: "1px solid rgba(236,72,153,0.25)",
           cursor: "pointer",
           transition: "all 0.2s",

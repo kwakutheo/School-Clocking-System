@@ -1357,7 +1357,7 @@ input::-webkit-credentials-auto-fill-button {
   letter-spacing: 0.8px;
   text-transform: uppercase;
   color: white;
-  background: linear-gradient(135deg, #ec4899, #d946ef);
+  background: var(--primary);
   padding: 4px 8px;
   border-radius: 9999px;
   box-shadow: 0 2px 8px rgba(236, 72, 153, 0.4);
@@ -1486,7 +1486,7 @@ input::-webkit-credentials-auto-fill-button {
   letter-spacing: 0.8px;
   text-transform: uppercase;
   color: white;
-  background: linear-gradient(135deg, #f59e0b, #eab308); /* Amber warning gradient */
+  background: var(--primary);
   padding: 4px 8px;
   border-radius: 9999px;
   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);

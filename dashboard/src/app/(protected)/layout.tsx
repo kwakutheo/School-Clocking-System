@@ -81,6 +81,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const [bannerPosition, setBannerPosition] = useState<'top' | 'bottom'>('top');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
 
   const [permissionsTick, setPermissionsTick] = useState(0);
 
@@ -255,7 +256,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         >
           <Menu size={20} />
         </button>
-        <div className="mobile-logo">
+        <div className="mobile-logo" onClick={() => setShowWelcomePopup(true)} style={{ cursor: 'pointer' }}>
           {activeTenant?.logoUrl ? (
             <img
               src={activeTenant.logoUrl}
@@ -294,7 +295,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       {/* ── Sidebar ────────────────────────────────────────────────────── */}
       <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-header">
-          <div className="sidebar-logo">
+          <div className="sidebar-logo" onClick={() => setShowWelcomePopup(true)} style={{ cursor: 'pointer' }}>
             {activeTenant?.logoUrl ? (
               <img
                 src={activeTenant.logoUrl}
@@ -493,6 +494,119 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                 Sign Out
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* ── Welcome Modal ─────────────────────────────────────────────────── */}
+      {showWelcomePopup && (
+        <div className="modal-overlay" onClick={() => setShowWelcomePopup(false)} style={{ zIndex: 9999, backdropFilter: 'blur(8px)', background: 'rgba(0,0,0,0.6)' }}>
+          <div 
+            onClick={(e) => e.stopPropagation()} 
+            style={{
+              position: 'relative',
+              width: '90%',
+              maxWidth: '800px',
+              animation: 'fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+          >
+            {/* Close button */}
+            <button 
+              onClick={() => setShowWelcomePopup(false)}
+              style={{
+                position: 'absolute',
+                top: '-40px',
+                right: '0',
+                background: 'transparent',
+                border: 'none',
+                color: 'white',
+                fontSize: '18px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontWeight: 500
+              }}
+            >
+              Close ✕
+            </button>
+
+            {/* School Card embedded */}
+            <div 
+              style={{ 
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '48px',
+                textAlign: 'center',
+                background: 'var(--bg-surface)',
+                padding: '64px',
+                borderRadius: '32px',
+                boxShadow: '0 24px 64px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.1)',
+                border: '1px solid var(--border)',
+                width: '100%',
+                containerType: 'inline-size',
+                containerName: 'schoolCardPopup'
+              }}
+            >
+              {activeTenant?.logoUrl && (
+                <div style={{ flexShrink: 0 }}>
+                  <img
+                    src={activeTenant.logoUrl}
+                    alt="School Crest"
+                    width={180}
+                    height={180}
+                    style={{ objectFit: 'contain', filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.15))' }}
+                  />
+                </div>
+              )}
+
+              <div style={{ minWidth: 0, flex: 1, textAlign: 'center' }}>
+                <h1 
+                  style={{ 
+                    color: 'var(--primary)',
+                    fontSize: 'clamp(24px, 5vw, 64px)',
+                    fontWeight: 900,
+                    lineHeight: 1.1,
+                    letterSpacing: '-0.03em',
+                    marginBottom: '16px',
+                    wordWrap: 'break-word',
+                    textShadow: `
+                      1px 1px 0px rgba(0, 0, 0, 0.1),
+                      2px 2px 0px rgba(0, 0, 0, 0.08),
+                      3px 3px 0px rgba(0, 0, 0, 0.06),
+                      4px 4px 0px rgba(0, 0, 0, 0.05),
+                      5px 5px 12px rgba(0, 0, 0, 0.15)
+                    `
+                  }}
+                >
+                  {(activeTenant?.name ?? 'TK Clocking System').toUpperCase()}
+                </h1>
+
+                <h2 
+                  style={{ 
+                    color: 'var(--text-primary)',
+                    fontSize: 'clamp(16px, 2vw, 32px)',
+                    fontWeight: 400,
+                    lineHeight: 1.2,
+                    letterSpacing: '-0.02em'
+                  }}
+                >
+                  Digital Attendance Tracking Platform for Schools
+                </h2>
+              </div>
+            </div>
+            
+            {/* Embedded styles for mobile layout */}
+            <style dangerouslySetInnerHTML={{__html: `
+              @container schoolCardPopup (max-width: 600px) {
+                div[style*="containerType"] {
+                  flex-direction: column !important;
+                  gap: 24px !important;
+                  padding: 32px !important;
+                }
+              }
+            `}} />
           </div>
         </div>
       )}

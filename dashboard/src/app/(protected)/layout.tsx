@@ -274,7 +274,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
               style={{ borderRadius: '6px' }}
             />
           )}
-          <span>{activeTenant?.name ?? 'TK Clocking'}</span>
+          <span style={{ color: 'var(--primary)' }}>{activeTenant?.name ?? 'TK Clocking'}</span>
         </div>
         <button 
           className="mobile-theme-btn"
@@ -315,7 +315,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
               />
             )}
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, paddingRight: '8px' }}>
-              <div className="sidebar-logo-text">
+              <div className="sidebar-logo-text" style={{ color: 'var(--primary)' }}>
                 {activeTenant?.name ?? 'TK Clocking'}
               </div>
               <div className="sidebar-logo-sub">
@@ -593,7 +593,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                     letterSpacing: '-0.02em'
                   }}
                 >
-                  Digital Attendance Tracking Platform for Schools
+                  Digital Attendance Tracking Platform
                 </h2>
               </div>
             </div>

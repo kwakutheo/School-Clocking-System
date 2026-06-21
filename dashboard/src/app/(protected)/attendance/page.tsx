@@ -254,7 +254,9 @@ export default function AttendanceReportPage() {
     <>
       <div className="page-header">
         <div>
-        <h1 className="page-title">Attendance Reports</h1>
+        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
+          Attendance Reports
+        </h1>
         <p className="page-subtitle">Detailed tracking of days worked, absences, lateness, and early departures</p>
         </div>
       </div>

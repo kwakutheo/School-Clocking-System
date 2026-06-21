@@ -1393,7 +1393,7 @@ export default function ReportsPage() {
               Reports &amp; Export
             </h1>
             <p className="page-subtitle" >
-              Generate pixel-perfect PDF reports across all supervised institutions
+              Generate PDF reports across all supervised institutions
             </p>
           </div>
           <button

@@ -139,7 +139,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   // Dynamically apply multi-tenant whitelabel primary brand colors
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const primaryColor = activeTenant?.primaryColor || (user?.role === 'super_admin' ? '#ec4899' : '#3b82f6');
+      const primaryColor = activeTenant?.primaryColor || '#3b82f6';
       document.documentElement.style.setProperty('--primary', primaryColor);
       
       // Calculate active dark/light hover variations safely

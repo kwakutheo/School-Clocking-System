@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { employeesApi, branchesApi, departmentsApi, shiftsApi, usersApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import { can } from '@/lib/permissions';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Users } from 'lucide-react';
 
 const LIMIT = 50;
 
@@ -257,7 +257,10 @@ export default function EmployeesPage() {
       {/* Page header */}
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <h1 className="page-title">Employees</h1>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
+            <Users size={28} style={{ color: 'var(--primary)' }} />
+            Staff Registry
+          </h1>
           <p className="page-subtitle">
             Manage your workforce — {total} total{debouncedSearch ? ` · searching "${debouncedSearch}"` : ''}
           </p>

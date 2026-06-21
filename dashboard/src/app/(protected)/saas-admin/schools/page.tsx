@@ -427,7 +427,7 @@ export default function SchoolsRegistryPage() {
             <Building2 size={28} style={{ color: "var(--primary)" }} />
             Schools Registry
           </h1>
-          <p className="page-sub" style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
+          <p className="page-subtitle">
             Monitor supervised institutions, update branding details, map subdomains, and toggle global portal access.
           </p>
         </div>

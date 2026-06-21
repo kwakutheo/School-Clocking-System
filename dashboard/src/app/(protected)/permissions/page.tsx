@@ -118,7 +118,8 @@ export default function PermissionsPage() {
             <ShieldCheck size={28} style={{ color: 'var(--primary)' }} />
             Roles &amp; Permissions
           </h1>
-          <p className="page-subtitle">Define exactly what each role can and cannot do in the system.</p>
+          <p className="page-subtitle">
+            Define exactly what each role can and cannot do in the system.</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost" onClick={handleReset} disabled={saving}>

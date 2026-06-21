@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { authApi, usersApi } from '@/lib/api';
 import { useAuthStore, type AuthUser } from '@/lib/store';
 
-import { Pencil, X } from 'lucide-react';
+import { Pencil, X, UserPen } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, setAuth } = useAuthStore();
@@ -156,10 +156,13 @@ export default function ProfilePage() {
   }
 
   return (
-    <>
-      <div className="page-header">
-        <h1 className="page-title">My Profile</h1>
-        <p className="page-subtitle">Update your account details</p>
+    <div className="dashboard-container">
+      <div className="page-header" style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
+          <UserPen size={28} style={{ color: 'var(--primary)' }} />
+          My Profile</h1>
+        <p className="page-subtitle">
+          Update your account details</p>
       </div>
 
       <div className="card" style={{ maxWidth: 520 }}>
@@ -363,6 +366,6 @@ export default function ProfilePage() {
       </div>
 
 
-    </>
+    </div>
   );
 }

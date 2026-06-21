@@ -1299,7 +1299,7 @@ input::-webkit-credentials-auto-fill-button {
 
 [data-theme="light"] .impersonation-banner {
   background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(236, 72, 153, 0.3);
+  border: 1px solid var(--primary);
   box-shadow: 
     0 10px 30px rgba(236, 72, 153, 0.08), 
     0 1px 3px rgba(0, 0, 0, 0.05);

@@ -128,7 +128,7 @@ export default function WelcomePage() {
         {/* Top Left: Welcome Text */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)' }}>
-            TK Clocking - the Time Keeper.
+            TK Clocking - Your Digital <br/> Time Keeper.
           </div>
         </div>
 

@@ -177,7 +177,8 @@ export default function AuditLogsPage() {
             <ShieldCheck size={28} style={{ color: 'var(--primary)' }} />
             System Audit Logs
           </h1>
-          <p className="page-subtitle">Compliance tracking of all administrative changes</p>
+          <p className="page-subtitle">
+            Compliance tracking of all administrative changes</p>
         </div>
       </div>
 

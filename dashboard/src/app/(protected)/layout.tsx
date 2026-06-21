@@ -504,8 +504,9 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             onClick={(e) => e.stopPropagation()} 
             style={{
               position: 'relative',
-              width: '90%',
-              maxWidth: '800px',
+              width: '100%',
+              maxWidth: '1200px',
+              padding: '0 24px',
               animation: 'fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
           >

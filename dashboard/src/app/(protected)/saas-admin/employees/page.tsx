@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { saasAdminApi } from '@/lib/api';
-import { Search, Building2, UserCircle, UserX, UserCheck, ShieldAlert, X, Eye, Archive } from 'lucide-react';
+import { Search, User, Building2, UserCircle, UserX, UserCheck, ShieldAlert, X, Eye, Archive } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface EmployeeGlobal {
@@ -179,12 +179,13 @@ export default function GlobalEmployeeRegistryPage() {
   return (
     <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
       {/* ── Header ── */}
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '12px' }}>
+      <div className="page-header" style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
         <div>
-          <h1 className="page-title" style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px' }}>
-            Employee Registry
+          <h1 className='page-title' style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
+            <User size={28} style={{ color: 'var(--primary)' }} />
+            Staff Registry
           </h1>
-          <p className="page-sub" style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
+          <p className="page-subtitle">
             Active and suspended staff registered across all onboarded schools.
           </p>
         </div>

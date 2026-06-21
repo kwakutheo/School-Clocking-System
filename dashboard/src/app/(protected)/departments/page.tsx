@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { departmentsApi } from '@/lib/api';
 import { can } from '@/lib/permissions';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Building } from 'lucide-react';
 import Link from 'next/link';
 
 const fetcher = () => departmentsApi.list().then((r) => r.data);
@@ -87,12 +87,14 @@ export default function DepartmentsPage() {
   return (
     <>
       <Link href="/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', textDecoration: 'none', marginBottom: '24px', fontSize: '14px', fontWeight: 500, transition: 'color 0.2s' }} className="hover-primary">
-        <ArrowLeft size={16} /> Back to Settings
+        <ArrowLeft size={16} /> Back
       </Link>
 
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
         <div>
-          <h1 className="page-title">Departments</h1>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
+            <Building size={28} style={{ color: 'var(--primary)' }} />
+            Departments</h1>
           <p className="page-subtitle">Manage your school departments</p>
         </div>
         {can(userRole, 'departments.manage') && (

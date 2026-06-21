@@ -172,13 +172,16 @@ export default function SettingsPage() {
   return (
     <>
       <Link href="/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', textDecoration: 'none', marginBottom: '24px', fontSize: '14px', fontWeight: 500, transition: 'color 0.2s' }} className="hover-primary">
-        <ArrowLeft size={16} /> Back to Settings
+        <ArrowLeft size={16} /> Back
       </Link>
 
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <h1 className="page-title">School Branding</h1>
-          <p className="page-subtitle">Configure your school configurations and brand identity</p>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--primary)' }}>
+            <Palette size={28} style={{ color: 'var(--primary)' }} />
+            School Branding</h1>
+          <p className="page-subtitle">
+            Configure your school configurations and brand identity</p>
         </div>
       </div>
 

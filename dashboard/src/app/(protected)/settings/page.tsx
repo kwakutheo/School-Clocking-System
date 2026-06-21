@@ -50,7 +50,7 @@ export default function SettingsHubPage() {
                   cursor: 'pointer'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border-focus)';
+                  e.currentTarget.style.borderColor = 'var(--primary)';
                   e.currentTarget.style.transform = 'translateY(-2px)';
                 }}
                 onMouseLeave={(e) => {

@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { 
   ShieldCheck, ShieldAlert, Search, Filter, 
   Users, Building, Clock, MapPin, Settings, Key, 
-  FileJson, ArrowRight, LayoutDashboard, CalendarDays
+  FileJson, ArrowRight, LayoutDashboard, CalendarDays, BookOpen
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 
@@ -218,10 +218,15 @@ export default function SaasAuditLogsPage() {
 
   return (
     <>
-      <div className="page-header" style={{ marginBottom: 32 }}>
+      <div className="page-header" style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
         <div>
-          <h1 className="page-title text-gradient">Global Audit Logs</h1>
-          <p className="page-subtitle">Platform-wide compliance tracking and Central administration events</p>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
+            <BookOpen size={28} color='var(--primary)' />
+            Global Audit Logs
+          </h1>
+          <p className="page-subtitle">
+            Platform-wide compliance tracking and Central administration events
+          </p>
         </div>
       </div>
 

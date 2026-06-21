@@ -1312,8 +1312,8 @@ input::-webkit-credentials-auto-fill-button {
 }
 
 [data-theme="light"] .banner-exit-btn:hover {
-  background: #ec4899;
-  border-color: #ec4899;
+  background: var(--primary);
+  border-color: var(--primary);
   color: white;
 }
 

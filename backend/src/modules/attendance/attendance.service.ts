@@ -983,6 +983,7 @@ export class AttendanceService {
       timestamp: now,
       latitude: dto.latitude,
       longitude: dto.longitude,
+      deviceId: dto.deviceId,
       isOfflineSync: false,
       isLate,
       isEarlyOut,

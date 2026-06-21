@@ -1434,7 +1434,7 @@ input::-webkit-credentials-auto-fill-button {
 
 [data-theme="light"] .banner-toggle-pos-btn {
   color: var(--text-primary);
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--primary-dim);
   border: 1px solid var(--primary);
 }
 

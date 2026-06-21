@@ -120,8 +120,8 @@ export default function SettingsPage() {
     e.preventDefault();
     if (!user) return;
     setIsBrandingSaving(true);
-    setBrandingError('#ff0303ff');
-    setBrandingSuccess('#03c430ff');
+    setBrandingError('');
+    setBrandingSuccess('');
 
     try {
       const res = await authApi.updateMyBranding({

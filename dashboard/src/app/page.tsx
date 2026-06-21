@@ -236,7 +236,7 @@ export default function WelcomePage() {
                   className="school-subtitle"
                   style={{ color: 'var(--text-primary)' }}
                 >
-                  Digital Attendance Tracking Platform
+                  Digital Attendance Tracking System
                 </h2>
               </div>
             </div>

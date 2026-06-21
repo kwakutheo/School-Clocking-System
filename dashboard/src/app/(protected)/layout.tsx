@@ -593,7 +593,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                     letterSpacing: '-0.02em'
                   }}
                 >
-                  Digital Attendance Tracking Platform
+                  Digital Attendance Tracking System
                 </h2>
               </div>
             </div>

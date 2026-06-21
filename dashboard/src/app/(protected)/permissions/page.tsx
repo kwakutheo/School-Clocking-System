@@ -111,11 +111,13 @@ export default function PermissionsPage() {
       : (matrix[role] ?? []).length;
 
   return (
-    <>
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
+    <div className="dashboard-container">
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <h1 className="page-title">Roles &amp; Permissions</h1>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--primary)' }}>
+            <ShieldCheck size={28} style={{ color: 'var(--primary)' }} />
+            Roles &amp; Permissions
+          </h1>
           <p className="page-subtitle">Define exactly what each role can and cannot do in the system.</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -338,6 +340,6 @@ export default function PermissionsPage() {
       {showAccessModal && (
         <DashboardAccessModal onClose={() => setShowAccessModal(false)} />
       )}
-    </>
+    </div>
   );
 }

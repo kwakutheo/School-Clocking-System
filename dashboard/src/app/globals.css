@@ -1379,7 +1379,7 @@ input::-webkit-credentials-auto-fill-button {
 
 .banner-text strong {
   font-weight: 700;
-  color: var(--primary);
+  color: var(--text-primary);
 }
 
 .banner-exit-btn {

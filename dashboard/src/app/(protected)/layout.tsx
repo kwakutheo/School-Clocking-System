@@ -242,7 +242,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                 router.push('/saas-admin');
               }}
             >
-              Return to Central Management Dashboard
+              Return
             </button>
           </div>
         </div>

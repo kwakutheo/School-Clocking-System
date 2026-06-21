@@ -310,17 +310,11 @@ export default function CentralAdminsPage() {
   return (
     <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
       <div
-        className="page-header"
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 16,
-          marginBottom: 28,
-        }}
+        className="page-header" style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}
       >
         <div>
-          <h1 className="page-title" style={{ fontSize: 28, fontWeight: 800 }}>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
+            <ShieldCheck size={28} color='var(--primary)' />
             Admin Users
           </h1>
           <p className="page-sub" style={{ color: 'var(--text-secondary)', marginTop: 4 }}>

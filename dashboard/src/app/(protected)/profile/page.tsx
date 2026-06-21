@@ -158,11 +158,15 @@ export default function ProfilePage() {
   return (
     <div className="dashboard-container">
       <div className="page-header" style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+        <div>
         <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
           <UserPen size={28} style={{ color: 'var(--primary)' }} />
-          My Profile</h1>
+          My Profile
+        </h1>
         <p className="page-subtitle">
-          Update your account details</p>
+          Update your account details
+          </p>
+        </div>
       </div>
 
       <div className="card" style={{ maxWidth: 520 }}>

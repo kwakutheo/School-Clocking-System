@@ -118,7 +118,8 @@ export default function RankingsPage() {
             Performance Rankings
           </h1>
           <p className="page-subtitle">
-            View staff rankings and your school's position.</p>
+            View staff rankings and your school's position.
+          </p>
         </div>
 
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>

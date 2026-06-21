@@ -310,7 +310,7 @@ export default function WelcomePage() {
           justify-content: center;
           gap: 48px;
           margin-bottom: 48px;
-          text-align: left;
+          text-align: center;
           background: var(--bg-surface);
           padding: 64px;
           border-radius: 32px;
@@ -326,6 +326,7 @@ export default function WelcomePage() {
         .school-text-container {
           min-width: 0;
           flex: 1;
+          text-align: center;
         }
         .school-name {
           font-size: clamp(24px, 6cqw, 96px);

@@ -229,8 +229,8 @@ export default function SettingsPage() {
         </div>
 
         <form onSubmit={handleBrandingSubmit}>
-          {brandingError && <div className="alert alert-danger">{brandingError}</div>}
-          {brandingSuccess && <div className="alert alert-success">{brandingSuccess}</div>}
+          {brandingError && <div className="alert alert-danger" style={{ color: 'var(--danger)' }}>{brandingError}</div>}
+          {brandingSuccess && <div className="alert alert-success" style={{ color: 'var(--success)' }}>{brandingSuccess}</div>}
 
           <div className="form-grid">
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>

@@ -1309,7 +1309,7 @@ input::-webkit-credentials-auto-fill-button {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--primary-dim);
   border: 1px solid var(--primary);
   padding: 6px 14px;
   border-radius: 9999px;
@@ -1435,7 +1435,7 @@ input::-webkit-credentials-auto-fill-button {
 [data-theme="light"] .banner-toggle-pos-btn {
   color: var(--text-primary);
   background: rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--primary);
 }
 
 [data-theme="light"] .banner-toggle-pos-btn:hover {

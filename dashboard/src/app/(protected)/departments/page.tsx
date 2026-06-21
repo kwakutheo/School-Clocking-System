@@ -95,7 +95,8 @@ export default function DepartmentsPage() {
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
             <Building size={28} style={{ color: 'var(--primary)' }} />
             Departments</h1>
-          <p className="page-subtitle">Manage your school departments</p>
+          <p className="page-subtitle">
+            Manage your school departments</p>
         </div>
         {can(userRole, 'departments.manage') && (
           <button className="btn btn-primary" onClick={openCreate}>+ Add Department</button>

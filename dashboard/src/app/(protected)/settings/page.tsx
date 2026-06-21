@@ -10,7 +10,7 @@ const SETTINGS_CARDS = [
   { href: '/holidays',        icon: Calendar,  label: 'Holidays',               description: 'Set up public and school holidays.',                      permission: 'holidays.manage' },
   { href: '/shifts',          icon: Clock,     label: 'Shifts (Working hours)', description: 'Define staff working schedules and shifts.',              permission: 'shifts.manage' },
   { href: '/departments',     icon: Building2, label: 'Departments',            description: 'Manage school departments and faculties.',                permission: 'departments.manage' },
-  { href: '/branches',        icon: MapPin,    label: 'Branches',               description: 'Configure multi-campus or branch locations.',             permission: 'branches.manage' },
+  { href: '/branches',        icon: MapPin,    label: 'Geofence Settings',      description: 'Configure multi-campus or branch locations.',             permission: 'branches.manage' },
 ];
 
 export default function SettingsHubPage() {

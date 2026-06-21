@@ -1388,10 +1388,11 @@ export default function ReportsPage() {
       <div style={{ marginBottom: '28px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <h1 style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px', color: 'var(--text-primary)', margin: 0 }}>
+            <h1 className='page-title' style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
+              <BarChart2 size={28} color='var(--primary)'/>
               Reports &amp; Export
             </h1>
-            <p style={{ color: 'var(--text-secondary)', marginTop: '6px', fontSize: '14px', margin: '6px 0 0' }}>
+            <p className="page-subtitle" >
               Generate pixel-perfect PDF reports across all supervised institutions
             </p>
           </div>

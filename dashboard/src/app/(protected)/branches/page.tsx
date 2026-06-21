@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 import { branchesApi } from '@/lib/api';
 import { can } from '@/lib/permissions';
 import { useAuthStore } from '@/lib/store';
-import { ArrowLeft, MapPin, Plus } from 'lucide-react';
+import { ArrowLeft, MapPin,} from 'lucide-react';
 import Link from 'next/link';
 
 const fetcher = () => branchesApi.list().then((r) => r.data);
@@ -512,9 +512,9 @@ export default function BranchesPage() {
             <MapPin size={28} style={{ color: 'var(--primary)' }} />
             Geofence Settings</h1>
           <p className="page-subtitle">
-            Manage physical attendance locations and geofence settings</p>
+            Configure locations and geofence settings</p>
         </div>
-        <button className="btn btn-primary" onClick={openCreate}>+ Add Branch</button>
+        <button className="btn btn-primary" onClick={openCreate}>+ Add Location</button>
       </div>
 
       {isLoading ? (

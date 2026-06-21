@@ -62,8 +62,8 @@ export default function SettingsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setBrandingError('#ff0303ff');
-    setBrandingSuccess('#05ef24ff');
+    setBrandingError('');
+    setBrandingSuccess('');
 
     // Limit initial file size to 2MB before processing
     if (file.size > 2 * 1024 * 1024) {

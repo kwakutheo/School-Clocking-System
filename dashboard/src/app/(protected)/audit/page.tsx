@@ -170,10 +170,13 @@ export default function AuditLogsPage() {
   };
 
   return (
-    <>
-      <div className="page-header" style={{ marginBottom: 32 }}>
+    <div className="dashboard-container">
+      <div className="page-header" style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <h1 className="page-title">System Audit Logs</h1>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--primary)' }}>
+            <ShieldCheck size={28} style={{ color: 'var(--primary)' }} />
+            System Audit Logs
+          </h1>
           <p className="page-subtitle">Compliance tracking of all administrative changes</p>
         </div>
       </div>
@@ -350,6 +353,6 @@ export default function AuditLogsPage() {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }

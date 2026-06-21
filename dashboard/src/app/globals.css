@@ -394,7 +394,7 @@ input, select, textarea { font-family: inherit; }
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, var(--primary), #a855f7);
+  background: linear-gradient(135deg, var(--primary), var(--primary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

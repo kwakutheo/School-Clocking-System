@@ -12,11 +12,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  RadialBarChart,
-  RadialBar,
-  Cell,
-  BarChart,
-  Bar,
   ReferenceLine,
 } from "recharts";
 import {
@@ -48,6 +43,7 @@ import {
   CalendarCheck,
   Trophy,
   AlertOctagon,
+  LayoutDashboard,
 } from "lucide-react";
 
 const formatPct = (val: number) => parseFloat((val || 0).toFixed(2));
@@ -1182,25 +1178,12 @@ export default function SaasOverviewPage() {
       {/* ── Page Header ──────────────────────────────────────────────────── */}
       <div style={{ marginBottom: "32px" }}>
         <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            flexWrap: "wrap",
-            gap: "16px",
-          }}
-        >
+          style={{display: "flex",justifyContent: "space-between",alignItems: "flex-start",flexWrap: "wrap",gap: "16px",}}>
           <div>
             <h1
-              style={{
-                fontSize: "28px",
-                fontWeight: 800,
-                letterSpacing: "-0.5px",
-                color: "var(--text-primary)",
-                margin: 0,
-              }}
-            >
-              Platform Overview
+              style={{fontSize: "28px",fontWeight: 800,letterSpacing: "-0.5px",color: "var(--primary)",margin: 0,}}>
+                <LayoutDashboard size={28} style={{ color: "var(--primary)" }} />
+                Platform Overview
             </h1>
             <p
               style={{

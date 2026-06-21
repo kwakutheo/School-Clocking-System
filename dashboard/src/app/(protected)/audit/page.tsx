@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { 
   ShieldCheck, ShieldAlert, Search, Filter, 
   Users, Building, Clock, MapPin, Settings, Key, 
-  FileJson, ArrowRight, LayoutDashboard, CalendarDays
+  FileJson, ArrowRight, LayoutDashboard, CalendarDays, BookOpen
 } from 'lucide-react';
 import { can } from '@/lib/permissions';
 import { useAuthStore } from '@/lib/store';
@@ -174,7 +174,7 @@ export default function AuditLogsPage() {
       <div className="page-header" style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--primary)' }}>
-            <ShieldCheck size={28} style={{ color: 'var(--primary)' }} />
+            <BookOpen size={28} style={{ color: 'var(--primary)' }} />
             System Audit Logs
           </h1>
           <p className="page-subtitle">

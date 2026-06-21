@@ -1271,7 +1271,7 @@ input::-webkit-credentials-auto-fill-button {
   gap: 16px;
   padding: 8px 16px;
   background: rgba(15, 20, 32, 0.7);
-  border: 1px solid rgba(236, 72, 153, 0.4); /* Pink glow to signal super admin power */
+  border: 1px solid var(--primary); /* Pink glow to signal super admin power */
   box-shadow: 
     0 4px 30px rgba(0, 0, 0, 0.4), 
     inset 0 1px 1px rgba(255, 255, 255, 0.1),

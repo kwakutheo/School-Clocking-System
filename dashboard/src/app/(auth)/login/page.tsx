@@ -16,6 +16,15 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      const fromWelcome = sessionStorage.getItem('from_welcome');
+      if (!fromWelcome) {
+        router.replace('/');
+      }
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
       if (savedTheme) {
         setTheme(savedTheme);

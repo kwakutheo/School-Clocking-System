@@ -255,7 +255,12 @@ export default function WelcomePage() {
 
               {/* Action Button */}
               <button 
-                onClick={() => router.push('/login')}
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    sessionStorage.setItem('from_welcome', 'true');
+                  }
+                  router.push('/login');
+                }}
                 className="action-pill"
                 style={{
                   display: 'flex',

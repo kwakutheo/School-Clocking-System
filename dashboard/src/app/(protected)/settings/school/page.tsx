@@ -63,7 +63,7 @@ export default function SettingsPage() {
     if (!file) return;
 
     setBrandingError('');
-    setBrandingSuccess('#03c430ff');
+    setBrandingSuccess('');
 
     // Limit initial file size to 2MB before processing
     if (file.size > 2 * 1024 * 1024) {
@@ -120,8 +120,8 @@ export default function SettingsPage() {
     e.preventDefault();
     if (!user) return;
     setIsBrandingSaving(true);
-    setBrandingError('');
-    setBrandingSuccess('');
+    setBrandingError('#ff0303ff');
+    setBrandingSuccess('#03c430ff');
 
     try {
       const res = await authApi.updateMyBranding({

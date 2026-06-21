@@ -231,11 +231,15 @@ export default function GlobalHolidaysPage() {
   };
 
   return (
-    <>
-      <div className="page-header">
+    <div className="dashboard-container">
+      <div className="page-header" style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
         <div>
-          <h1 className="page-title">Public Holidays</h1>
-          <p className="page-subtitle">Manage system-wide public holidays that apply to ALL schools on the platform</p>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
+            <Calendar size={28} color='var(--primary)' />
+            Public Holidays</h1>
+          <p className="page-subtitle">
+            Manage system-wide public holidays that apply to ALL schools on the platform
+            </p>
         </div>
         {isSuperAdmin && (
           <div style={{ display: 'flex', gap: 12 }}>
@@ -446,6 +450,6 @@ export default function GlobalHolidaysPage() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

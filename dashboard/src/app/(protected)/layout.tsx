@@ -507,7 +507,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
               position: 'relative',
               width: '100%',
               maxWidth: '1200px',
-              padding: '0 24px',
+              padding: '0 12px',
               animation: 'fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
           >
@@ -607,7 +607,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                 .school-card-popup-container {
                   flex-direction: column !important;
                   gap: 24px !important;
-                  padding: 24px !important;
+                  padding: 24px 16px !important;
                 }
               }
             `}} />

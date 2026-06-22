@@ -272,7 +272,7 @@ export default function RankingsPage() {
                         width: '36px', height: '36px', borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontWeight: 700, fontSize: '14px',
-                        background: 'var(--primary-dim)', color: 'var(--primary)', border: `1px solid var(--primary)`                      }}>
+                        background: 'var(--primary-dim)', color: '#3b82f6', border: `1px solid #3b82f6`                      }}>
                         {row.globalRank}
                       </div>
                     </td>

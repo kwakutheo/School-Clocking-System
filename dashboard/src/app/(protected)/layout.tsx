@@ -534,6 +534,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
             {/* School Card embedded */}
             <div 
+              className="school-card-popup-container"
               style={{ 
                 display: 'flex',
                 flexDirection: 'row',
@@ -602,11 +603,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             
             {/* Embedded styles for mobile layout */}
             <style dangerouslySetInnerHTML={{__html: `
-              @container schoolCardPopup (max-width: 600px) {
-                div[style*="containerType"] {
+              @media (max-width: 768px) {
+                .school-card-popup-container {
                   flex-direction: column !important;
                   gap: 24px !important;
-                  padding: 32px !important;
+                  padding: 24px !important;
                 }
               }
             `}} />

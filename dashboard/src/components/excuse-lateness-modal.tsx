@@ -76,7 +76,7 @@ export function ExcuseLatenessModal({ logId, employeeName, type = 'late', onClos
               </p>
             </div>
           </div>
-          <button className="btn-icon" onClick={onClose} disabled={isSubmitting} style={{ alignSelf: 'flex-start', marginTop: -4, marginRight: -4 }}>
+          <button className="btn-icon" onClick={onClose} disabled={isSubmitting} title="Close" aria-label="Close modal" style={{ alignSelf: 'flex-start', marginTop: -4, marginRight: -4 }}>
             <X size={20} />
           </button>
         </div>
@@ -100,12 +100,15 @@ export function ExcuseLatenessModal({ logId, employeeName, type = 'late', onClos
           )}
 
           <div className="form-group" style={{ marginBottom: reason === 'Other' ? 16 : 24 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 8 }}>
+            <label htmlFor="reason-category" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 8 }}>
               <MessageSquare size={14} color="var(--text-secondary)" />
               Reason Category
             </label>
             <div style={{ position: 'relative' }}>
               <select
+                id="reason-category"
+                title="Reason Category"
+                aria-label="Reason Category"
                 className="input-field"
                 value={reason}
                 onChange={e => setReason(e.target.value)}
@@ -136,11 +139,14 @@ export function ExcuseLatenessModal({ logId, employeeName, type = 'late', onClos
 
           {reason === 'Other' && (
             <div className="form-group" style={{ marginBottom: 24, animation: 'fadeIn 0.2s ease-in-out' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 8 }}>
+              <label htmlFor="custom-reason" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 8 }}>
                 <FileText size={14} color="var(--text-secondary)" />
                 Specific Reason Details
               </label>
               <textarea
+                id="custom-reason"
+                title="Specific Reason Details"
+                aria-label="Specific Reason Details"
                 className="input-field"
                 value={customReason}
                 onChange={e => setCustomReason(e.target.value)}

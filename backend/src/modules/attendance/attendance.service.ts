@@ -333,7 +333,7 @@ export class AttendanceService {
       );
       if (dist > branch.allowedRadius) {
         throw new BadRequestException(
-          `You are about ${Math.round(dist)}m away from ${branch.name} in your school. You should be within ${branch.allowedRadius}m.`,
+          `You are about ${Math.round(dist)}m away from ${branch.name} department in your school. You should be within ${branch.allowedRadius}m.`,
         );
       }
     }

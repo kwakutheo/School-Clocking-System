@@ -1875,8 +1875,16 @@ export class AttendanceService {
     dayEnd.setHours(23, 59, 59, 999);
 
     // ── Rule 1: Is this device already claimed by a different employee today? ─
-    const deviceClaimedByOther = await this.repo
-      .createQueryBuilder('log')
+    // IMPORTANT: We intentionally use `this.repo.manager.createQueryBuilder`
+    // instead of `this.repo.createQueryBuilder` here. The Repository prototype
+    // is patched by tenant-query.patch.ts to automatically inject a
+    // `WHERE tenantId = <currentSchool>` filter on every query. That patch
+    // makes this query blind to records from other schools, allowing a phone
+    // used at School A to be freely reused at School B on the same day.
+    // The EntityManager's createQueryBuilder is NOT patched, so it correctly
+    // searches ALL tenants and enforces the one-phone-per-person rule globally.
+    const deviceClaimedByOther = await this.repo.manager
+      .createQueryBuilder(AttendanceLog, 'log')
       .innerJoinAndSelect('log.employee', 'emp')
       .innerJoinAndSelect('emp.user', 'user')
       .where('log.deviceId = :deviceId', { deviceId })

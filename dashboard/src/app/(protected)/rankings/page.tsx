@@ -228,9 +228,8 @@ export default function RankingsPage() {
             <thead>
               <tr style={{ background: 'var(--bg-card-hover)', color: 'var(--text-secondary)', textAlign: 'left', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 <th style={{ padding: '12px 20px' }}>Staff Member</th>
-                <th className="rank-col-overall" style={{ padding: '12px 20px', width: '120px' }}>Overall Rank</th>
                 <th className="rank-col-local" style={{ padding: '12px 20px', width: '100px' }}>Local Rank</th>
-                <th className="rank-col-badges" style={{ padding: '12px 20px' }}>Badges</th>
+                <th className="rank-col-overall" style={{ padding: '12px 20px', width: '120px' }}>Overall Rank</th>
                 <th style={{ padding: '12px 20px', textAlign: 'right' }}>Score</th>
               </tr>
             </thead>
@@ -267,15 +266,6 @@ export default function RankingsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="rank-col-overall" style={{ padding: '16px 20px' }}>
-                      <div style={{
-                        width: '36px', height: '36px', borderRadius: '50%',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontWeight: 700, fontSize: '14px',
-                        background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', border: `1px solid #3b82f6`                      }}>
-                        {row.globalRank}
-                      </div>
-                    </td>
                     <td className="rank-col-local" style={{ padding: '16px 20px' }}>
                       <div style={{
                         width: '36px', height: '36px', borderRadius: '50%',
@@ -286,26 +276,13 @@ export default function RankingsPage() {
                         {row.localRank}
                       </div>
                     </td>
-                    <td className="rank-col-badges" style={{ padding: '16px 20px' }}>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        {row.metrics?.presenceRate >= 95 && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '100px', background: 'var(--success-dim)', color: 'var(--success)', border: '1px solid var(--success)', fontSize: '11px', fontWeight: 700 }} title="Awarded for maintaining a presence rate of 95% or higher">
-                            <Medal size={12} /> Pillar
-                          </span>
-                        )}
-                        {row.metrics?.punctualityRate >= 95 && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '100px', background: 'var(--warning-dim)', color: 'var(--warning)', border: '1px solid var(--warning)', fontSize: '11px', fontWeight: 700 }} title="Awarded for maintaining a punctuality rate of 95% or higher (clocking in/out on time)">
-                            <Zap size={12} /> Early Bird
-                          </span>
-                        )}
-                        {row.metrics?.hoursCompletionRate >= 95 && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '100px', background: 'var(--primary-dim)', color: 'var(--primary)', border: '1px solid var(--primary)', fontSize: '11px', fontWeight: 700 }} title="Awarded for completing 95% or more of required working hours">
-                            <Clock size={12} /> Diligent
-                          </span>
-                        )}
-                        {(!row.metrics || (row.metrics.presenceRate < 95 && row.metrics.punctualityRate < 95 && row.metrics.hoursCompletionRate < 95)) && (
-                          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>—</span>
-                        )}
+                    <td className="rank-col-overall" style={{ padding: '16px 20px' }}>
+                      <div style={{
+                        width: '36px', height: '36px', borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 700, fontSize: '14px',
+                        background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', border: `1px solid #3b82f6`                      }}>
+                        {row.globalRank}
                       </div>
                     </td>
                     <td style={{ padding: '16px 20px', textAlign: 'right' }}>

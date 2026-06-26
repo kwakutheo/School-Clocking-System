@@ -474,7 +474,7 @@ export default function EmployeesPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay">
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingId ? 'Edit Employee' : 'Register New Employee'}</h3>

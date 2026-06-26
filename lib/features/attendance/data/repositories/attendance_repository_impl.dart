@@ -360,6 +360,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       latitude: latitude,
       longitude: longitude,
       timestamp: safeTimestamp,
+      deviceId: deviceId, // Preserved so device-lock rule is enforced on sync
       uptimeAtClockIn: currentUptime > 0 ? currentUptime : null,
       calculatedBootTime: calculatedBootTime,
     );

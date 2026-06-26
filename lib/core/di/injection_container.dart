@@ -80,7 +80,7 @@ Future<void> init() async {
   sl.registerLazySingleton<BiometricService>(() => BiometricService());
 
   sl.registerLazySingleton<DeviceIdService>(
-    () => DeviceIdService(sl<SharedPreferences>()),
+    () => DeviceIdService(sl<FlutterSecureStorage>()),
   );
 
   sl.registerLazySingleton<UptimeService>(() => UptimeService());

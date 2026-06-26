@@ -1,70 +1,89 @@
 import 'dart:io';
 
+import 'package:android_id/android_id.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
 
-/// Provides a stable device identifier for the attendance restriction system.
+/// Provides a stable, per-device identifier for the attendance restriction
+/// system.
 ///
-/// ## Strategy (most stable → least stable):
-/// 1. **Android**: Uses `ANDROID_ID` — a hardware-backed 64-bit identifier
-///    that survives app reinstalls and persists until a factory reset.
-/// 2. **iOS**: Uses `identifierForVendor` — a per-vendor UUID that persists
-///    unless ALL apps from this vendor are uninstalled simultaneously.
-/// 3. **Fallback**: If neither is available (emulators, unsupported platforms),
-///    generates a UUID v4 the first time and persists it in SharedPreferences.
-///    This fallback DOES reset on app reinstall, which is the known trade-off.
+/// ## ID Strategy (most stable → least stable)
 ///
-/// ## Why not use SharedPreferences UUID as primary?
-/// A UUID stored in SharedPreferences is cleared when the app is uninstalled.
-/// An employee could bypass the device restriction by reinstalling the app and
-/// getting a new UUID, effectively appearing as a "different device" each time.
-/// Hardware-backed IDs prevent this loophole.
+/// ### Android — `ANDROID_ID`
+/// Retrieved via the `android_id` package (`Settings.Secure.ANDROID_ID`).
+/// This is a 64-bit hex string that is:
+/// * ✅ Unique per physical device + app signing key (Android 8+)
+/// * ✅ **Survives app reinstalls**
+/// * ✅ **Survives clearing app data**  ← key advantage over SharedPrefs/SecureStorage
+/// * ✅ Survives logouts and account switches
+/// * ❌ Resets only on factory reset (acceptable — factory reset wipes everything)
 ///
-/// ## Offline sync note:
-/// `DeviceIdService` is synchronous after the first call. The deviceId is
-/// fetched once per clocking action in the bloc before the API call, so it
-/// adds no latency to the clocking UI.
+/// ### iOS — `identifierForVendor`
+/// Retrieved via `device_info_plus`. Per-vendor UUID that:
+/// * ✅ Unique per device + vendor bundle group
+/// * ✅ Survives app reinstalls in most cases
+/// * ❌ Resets if ALL apps from this vendor are uninstalled simultaneously
+///
+/// ### Fallback — UUID in `flutter_secure_storage`
+/// Used when the above are unavailable (emulators, unsupported platforms,
+/// permission denied). Survives restarts but resets on full app uninstall or
+/// data clear. This is the last resort and carries that known trade-off.
+///
+/// ## Daily device-lock rule
+/// The backend enforces a per-calendar-day rule: once a device is used by
+/// Employee A, it is locked to Employee A until midnight, and no other employee
+/// can use it on the same day. The rule resets at midnight automatically.
+///
+/// Because the ID is tied to the physical device and survives account switches,
+/// logging out and logging in as a different user on the same phone does NOT
+/// generate a new device ID — so the daily lock is correctly enforced across
+/// account switches.
 class DeviceIdService {
-  DeviceIdService(this._prefs);
+  DeviceIdService(this._secure);
 
-  final SharedPreferences _prefs;
+  final FlutterSecureStorage _secure;
+  final _androidId = const AndroidId();
   final _deviceInfo = DeviceInfoPlugin();
 
   static const _fallbackKey = 'device_install_id';
 
-  /// Returns the stable device ID.
+  /// Returns the stable device ID for this installation.
   ///
-  /// Tries hardware-backed ID first; falls back to a persisted UUID.
+  /// Tries hardware/OS-backed IDs first; falls back to a persisted UUID.
+  /// Never returns null or an empty string.
   Future<String> getDeviceId() async {
-    // 1. Try hardware-backed ID
-    final hardwareId = await _getHardwareId();
-    if (hardwareId != null && hardwareId.isNotEmpty) return hardwareId;
+    // 1. Try OS-backed ID (survives reinstalls + data clears on Android).
+    final osId = await _getOsBackedId();
+    if (osId != null && osId.isNotEmpty) return osId;
 
-    // 2. Fallback: persisted UUID (survives until app uninstall)
-    final existing = _prefs.getString(_fallbackKey);
+    // 2. Fallback: UUID in secure storage (survives restarts but not uninstalls).
+    final existing = await _secure.read(key: _fallbackKey);
     if (existing != null && existing.isNotEmpty) return existing;
 
     final newId = const Uuid().v4();
-    await _prefs.setString(_fallbackKey, newId);
+    await _secure.write(key: _fallbackKey, value: newId);
     return newId;
   }
 
-  /// Attempts to retrieve a hardware-backed device identifier.
-  /// Returns null if unavailable (e.g., emulator returning empty string,
-  /// unsupported platform, or permission denied).
-  Future<String?> _getHardwareId() async {
+  /// Attempts to retrieve an OS-backed device identifier.
+  ///
+  /// Returns null if unavailable (e.g. emulator, unsupported platform,
+  /// permission denied), so the caller can fall through to the UUID fallback.
+  Future<String?> _getOsBackedId() async {
     try {
       if (Platform.isAndroid) {
-        final info = await _deviceInfo.androidInfo;
-        // ANDROID_ID: 64-bit hex string, stable across reinstalls.
-        // May be null on rare Android forks; we guard with isEmpty.
-        final id = info.id;
-        return id.isNotEmpty ? id : null;
+        // ANDROID_ID: stored in the Android Settings database (not app data),
+        // so it survives both app reinstalls and "Clear App Data" from Settings.
+        // Scoped to app signing key on Android 8+, so it is unique per device.
+        final id = await _androidId.getId();
+        return (id != null && id.isNotEmpty) ? id : null;
       }
+
       if (Platform.isIOS) {
+        // identifierForVendor: stable per-vendor UUID stored by iOS.
+        // Resets only if all apps from this vendor bundle group are removed.
         final info = await _deviceInfo.iosInfo;
-        // identifierForVendor: stable unless all vendor apps are uninstalled.
         final id = info.identifierForVendor;
         return (id != null && id.isNotEmpty) ? id : null;
       }

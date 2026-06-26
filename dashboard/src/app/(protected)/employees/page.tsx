@@ -21,6 +21,10 @@ const statusBadge: Record<string, string> = {
   active: 'badge-green', inactive: 'badge-red', suspended: 'badge-amber',
 };
 
+/** Capitalises the first letter of every word in a string. */
+const toTitleCase = (val: string) =>
+  val.replace(/\b\w/g, (c) => c.toUpperCase());
+
 export default function EmployeesPage() {
   const { user, setAuth } = useAuthStore();
 
@@ -485,7 +489,7 @@ export default function EmployeesPage() {
                     id="firstName"
                     className="form-input"
                     value={form.firstName}
-                    onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                    onChange={(e) => setForm({ ...form, firstName: toTitleCase(e.target.value) })}
                     required
                   />
                 </div>
@@ -495,7 +499,7 @@ export default function EmployeesPage() {
                     id="lastName"
                     className="form-input"
                     value={form.lastName}
-                    onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                    onChange={(e) => setForm({ ...form, lastName: toTitleCase(e.target.value) })}
                     required
                   />
                 </div>
@@ -676,7 +680,7 @@ export default function EmployeesPage() {
                     id="position"
                     className="form-input"
                     value={form.position}
-                    onChange={(e) => setForm({ ...form, position: e.target.value })}
+                    onChange={(e) => setForm({ ...form, position: toTitleCase(e.target.value) })}
                   />
                 </div>
                 <div className="form-group">

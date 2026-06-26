@@ -228,8 +228,8 @@ export default function RankingsPage() {
             <thead>
               <tr style={{ background: 'var(--bg-card-hover)', color: 'var(--text-secondary)', textAlign: 'left', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 <th style={{ padding: '12px 20px' }}>Staff Member</th>
-                <th className="rank-col-local" style={{ padding: '12px 20px', width: '100px' }}>Local Rank</th>
-                <th className="rank-col-overall" style={{ padding: '12px 20px', width: '120px' }}>Overall Rank</th>
+                <th className="rank-col-local" style={{ padding: '12px 20px', width: '100px', textAlign: 'center' }}>Local Rank</th>
+                <th className="rank-col-overall" style={{ padding: '12px 20px', width: '120px', textAlign: 'center' }}>Overall Rank</th>
                 <th style={{ padding: '12px 20px', textAlign: 'right' }}>Score</th>
               </tr>
             </thead>
@@ -271,7 +271,8 @@ export default function RankingsPage() {
                         width: '36px', height: '36px', borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontWeight: 700, fontSize: '14px',
-                        background: 'var(--primary-dim)', color: 'var(--primary)', border: `1px solid var(--primary)`
+                        background: 'var(--primary-dim)', color: 'var(--primary)', border: `1px solid var(--primary)`,
+                        margin: '0 auto'
                       }}>
                         {row.localRank}
                       </div>
@@ -281,7 +282,9 @@ export default function RankingsPage() {
                         width: '36px', height: '36px', borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontWeight: 700, fontSize: '14px',
-                        background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', border: `1px solid #3b82f6`                      }}>
+                        background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', border: `1px solid #3b82f6`,
+                        margin: '0 auto'
+                      }}>
                         {row.globalRank}
                       </div>
                     </td>

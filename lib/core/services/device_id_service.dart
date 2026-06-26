@@ -66,8 +66,6 @@ class DeviceIdService {
     return newId;
   }
 
-  /// Attempts to retrieve an OS-backed device identifier.
-  ///
   /// Returns null if unavailable (e.g. emulator, unsupported platform,
   /// permission denied), so the caller can fall through to the UUID fallback.
   Future<String?> _getOsBackedId() async {

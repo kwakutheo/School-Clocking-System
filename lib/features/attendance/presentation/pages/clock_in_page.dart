@@ -35,7 +35,7 @@ class _ClockInPageState extends State<ClockInPage> {
   }
 
   Future<void> _checkBiometrics() async {
-    final available = await sl<BiometricService>().isBiometricAvailable();
+    final available = await sl<BiometricService>().isSecurityEnrolled();
     if (mounted) {
       setState(() => _biometricEnabled = available);
     }
@@ -581,7 +581,7 @@ class _ActionTile extends StatelessWidget {
                 HapticFeedback.mediumImpact();
                 // Biometric/PIN Verification
                 final biometricService = sl<BiometricService>();
-                if (await biometricService.isBiometricAvailable()) {
+                if (await biometricService.isSecurityEnrolled()) {
                   final authenticated = await biometricService.authenticate(
                     'Please verify your identity to $label',
                   );
@@ -743,7 +743,7 @@ class _QrScanButton extends StatelessWidget {
                     if (confirmed == true && context.mounted) {
                       // Biometric/PIN Verification
                       final biometricService = sl<BiometricService>();
-                      if (await biometricService.isBiometricAvailable()) {
+                      if (await biometricService.isSecurityEnrolled()) {
                         final authenticated =
                             await biometricService.authenticate(
                           'Please verify your identity to Clock In',
@@ -774,7 +774,7 @@ class _QrScanButton extends StatelessWidget {
                     if (confirmed == true && context.mounted) {
                       // Biometric/PIN Verification
                       final biometricService = sl<BiometricService>();
-                      if (await biometricService.isBiometricAvailable()) {
+                      if (await biometricService.isSecurityEnrolled()) {
                         final authenticated =
                             await biometricService.authenticate(
                           'Please verify your identity to Clock Out',
@@ -808,7 +808,7 @@ class _QrScanButton extends StatelessWidget {
                     if (confirmed == true && context.mounted) {
                       // Biometric/PIN Verification
                       final biometricService = sl<BiometricService>();
-                      if (await biometricService.isBiometricAvailable()) {
+                      if (await biometricService.isSecurityEnrolled()) {
                         final authenticated =
                             await biometricService.authenticate(
                           'Please verify your identity to record Break Start',
@@ -839,7 +839,7 @@ class _QrScanButton extends StatelessWidget {
                     if (confirmed == true && context.mounted) {
                       // Biometric/PIN Verification
                       final biometricService = sl<BiometricService>();
-                      if (await biometricService.isBiometricAvailable()) {
+                      if (await biometricService.isSecurityEnrolled()) {
                         final authenticated =
                             await biometricService.authenticate(
                           'Please verify your identity to record Break End',

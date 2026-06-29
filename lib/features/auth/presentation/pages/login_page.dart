@@ -44,7 +44,7 @@ class _LoginPageState extends State<LoginPage> {
 
     if (username != null && password != null) {
       final biometricService = sl<BiometricService>();
-      final available = await biometricService.isBiometricAvailable();
+      final available = await biometricService.isSecurityEnrolled();
       if (mounted) {
         setState(() {
           _canUseBiometrics = available;

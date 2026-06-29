@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:tk_clocking_system/core/di/injection_container.dart';
@@ -48,7 +50,12 @@ class NotificationService {
   // ── Initialisation ──────────────────────────────────────────────────────────
 
   Future<void> init() async {
+    // ── Bug Fix 3: Set local location AFTER initializing timezone data ─────────
+    // initializeTimeZones() loads the timezone database but does NOT set the
+    // local timezone. Without setLocalLocation(), zonedSchedule() has no base
+    // and fires at wrong times or is silently dropped.
     tz.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation(_kGhanaTz));
 
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings(
@@ -66,6 +73,14 @@ class NotificationService {
         debugPrint('[NOTIF] Tapped: ${details.payload}');
       },
     );
+
+    if (Platform.isAndroid) {
+      final notifStatus = await Permission.notification.status;
+      if (!notifStatus.isGranted) {
+        final result = await Permission.notification.request();
+        debugPrint('[NOTIF] POST_NOTIFICATIONS permission: $result');
+      }
+    }
 
     // Firebase Messaging setup
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
@@ -146,7 +161,8 @@ class NotificationService {
       final minute = int.tryParse(parts[1]);
       if (hour == null || minute == null) return null;
       if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
-      return tz.TZDateTime(ghanaZone, trueNow.year, trueNow.month, trueNow.day, hour, minute);
+      return tz.TZDateTime(
+          ghanaZone, trueNow.year, trueNow.month, trueNow.day, hour, minute);
     } catch (e) {
       debugPrint('[NOTIF] _todayAt parse error: $e');
       return null;
@@ -196,7 +212,7 @@ class NotificationService {
     }
 
     final ghanaZone = tz.getLocation(_kGhanaTz);
-    
+
     // Calculate the difference between device OS time and the app's True Time.
     // The OS scheduler ONLY understands the local OS clock. If the user tampers
     // with their phone clock, we must translate our True Time target into OS Time.
@@ -207,7 +223,8 @@ class NotificationService {
 
     final shiftStart = _todayAt(data.shiftStartTime!, trueNow);
     if (shiftStart == null) {
-      debugPrint('[NOTIF] Could not parse shiftStartTime: ${data.shiftStartTime}');
+      debugPrint(
+          '[NOTIF] Could not parse shiftStartTime: ${data.shiftStartTime}');
       return;
     }
 
@@ -230,7 +247,7 @@ class NotificationService {
         await _schedule(
           id: 201,
           title: '⏰ Shift Starting Soon',
-          body: 'Your shift starts in 30 minutes. Head to work now!',
+          body: 'Your shift starts in 30 minutes. Make sure you clock in.',
           scheduledDate: thirtyMinWarning.add(osOffset),
         );
       }
@@ -252,8 +269,7 @@ class NotificationService {
         await _schedule(
           id: 203,
           title: '🚨 Still Not Clocked In',
-          body:
-              'Your attendance is at risk. Please clock in immediately!',
+          body: 'Your attendance is at risk. Please clock in immediately!',
           scheduledDate: persistentLateTime.add(osOffset),
         );
       }
@@ -269,20 +285,20 @@ class NotificationService {
         (data.isClockedIn || data.forgotToClockOut)) {
       final shiftEnd = _todayAt(data.shiftEndTime!, trueNow);
       if (shiftEnd != null) {
-        final clockOutReminder = shiftEnd.add(const Duration(minutes: 10));
+        final clockOutReminder = shiftEnd.add(const Duration(minutes: 2));
 
         if (clockOutReminder.isAfter(trueNow)) {
-          // 10-minute mark is still in the future — schedule it normally.
           await _schedule(
             id: 204,
-            title: '❗ Did You Forget to Clock Out?',
-            body: 'It looks like you never clocked out. Please do so immediately.',
+            title: '⏰ Clock Out Reminder',
+            body: 'Your shift has ended. Make sure you clock out.',
             scheduledDate: clockOutReminder.add(osOffset),
           );
         } else {
           // 10-minute mark has already passed (forgotToClockOut == true or
           // app was opened late). Fire an immediate notification right now.
-          debugPrint('[NOTIF] Forgot-clock-out window already elapsed — showing immediately.');
+          debugPrint(
+              '[NOTIF] Forgot-clock-out window already elapsed — showing immediately.');
           await _notifications.show(
             204,
             '❗ Did You Forget to Clock Out?',
@@ -313,11 +329,28 @@ class NotificationService {
       final osNow = tz.TZDateTime.now(scheduledDate.location);
 
       if (!scheduledDate.isAfter(osNow)) {
-        // The OS-adjusted time is already in the past — fire immediately.
         debugPrint(
             '[NOTIF] #$id "$title" is in the past ($scheduledDate <= $osNow) — showing immediately.');
-        await _notifications.show(id, title, body, _reminderDetails, payload: payload);
+        await _notifications.show(id, title, body, _reminderDetails,
+            payload: payload);
         return;
+      }
+
+      AndroidScheduleMode scheduleMode =
+          AndroidScheduleMode.inexactAllowWhileIdle;
+      if (Platform.isAndroid) {
+        final androidPlugin =
+            _notifications.resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>();
+        final canExact =
+            await androidPlugin?.canScheduleExactNotifications() ?? false;
+        if (canExact) {
+          scheduleMode = AndroidScheduleMode.exactAllowWhileIdle;
+          debugPrint('[NOTIF] Using exact alarm scheduling for #$id.');
+        } else {
+          debugPrint(
+              '[NOTIF] Exact alarm not permitted — using inexact fallback for #$id.');
+        }
       }
 
       await _notifications.zonedSchedule(
@@ -326,12 +359,13 @@ class NotificationService {
         body,
         scheduledDate,
         _reminderDetails,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: scheduleMode,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         payload: payload,
       );
-      debugPrint('[NOTIF] Scheduled #$id "$title" at $scheduledDate (OS now: $osNow)');
+      debugPrint(
+          '[NOTIF] Scheduled #$id "$title" at $scheduledDate (OS now: $osNow)');
     } catch (e) {
       debugPrint('[NOTIF] Failed to schedule #$id: $e');
     }
@@ -349,16 +383,11 @@ class NotificationService {
     debugPrint('[NOTIF] Cancelled all shift reminders (IDs 200-204).');
   }
 
-  /// Cancels only the "forgot to clock out" notification (ID 204).
-  /// Call this after a successful Clock Out action.
   Future<void> cancelClockOutReminder() async {
     await _notifications.cancel(204);
     debugPrint('[NOTIF] Cancelled clock-out reminder (ID 204).');
   }
 
-  /// Cancels only the pre-shift and late reminders (IDs 200–203).
-  /// Call this immediately after a successful Clock In so the employee
-  /// is not nagged to clock in when they already have.
   Future<void> cancelPreShiftReminders() async {
     for (final id in [200, 201, 202, 203]) {
       await _notifications.cancel(id);

@@ -28,7 +28,8 @@ const clockableFetcher = () => attendanceApi.clockableEmployees().then((r) => r.
 const REASON_CATEGORIES = [
   'Forgot to clock in/out',
   'Device / Phone battery died',
-  'App sync error / offline',
+  'Network connectivity issues',
+  'No phone',
   'Biometric / QR scan failed',
   'Other'
 ];

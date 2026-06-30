@@ -75,10 +75,17 @@ class NotificationService {
     );
 
     if (Platform.isAndroid) {
+      // Request POST_NOTIFICATIONS (Android 13+)
       final notifStatus = await Permission.notification.status;
       if (!notifStatus.isGranted) {
-        final result = await Permission.notification.request();
-        debugPrint('[NOTIF] POST_NOTIFICATIONS permission: $result');
+        await Permission.notification.request();
+      }
+      
+      // Request SCHEDULE_EXACT_ALARM (Android 12+)
+      // Without this, exact alarms fallback to inexact and Doze mode delays them.
+      final exactStatus = await Permission.scheduleExactAlarm.status;
+      if (!exactStatus.isGranted) {
+        await Permission.scheduleExactAlarm.request();
       }
     }
 

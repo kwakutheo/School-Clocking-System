@@ -603,7 +603,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                         user.position != null ||
                                         user.hireDate != null)
                                       _InfoSection(
-                                        title: 'Work & Employment',
+                                        title: ' ',
                                         items: [
                                           if (user.branchName != null)
                                             _InfoItem(

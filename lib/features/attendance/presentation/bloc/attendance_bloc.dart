@@ -58,7 +58,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       return;
     } catch (_) {
       emit(const AttendanceFailure(
-        'Could not get your location. Please try again.',
+        'Couldn\'t detect your location. Try stepping outside or closer to a window for a stronger GPS signal.',
       ));
       return;
     }
@@ -146,7 +146,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       return;
     } catch (_) {
       emit(const AttendanceFailure(
-        'Could not get your location. Please try again.',
+        'Couldn\'t detect your location. Try stepping outside or closer to a window for a stronger GPS signal.',
       ));
       return;
     }

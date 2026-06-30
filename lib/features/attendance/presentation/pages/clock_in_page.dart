@@ -16,6 +16,12 @@ import 'package:tk_clocking_system/core/di/injection_container.dart';
 import 'package:tk_clocking_system/core/services/biometric_service.dart';
 import 'package:tk_clocking_system/core/services/notification_service.dart';
 import 'package:tk_clocking_system/core/services/time_service.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:tk_clocking_system/core/constants/app_constants.dart';
+import 'package:tk_clocking_system/features/dashboard/domain/entities/home_data_entity.dart';
+import 'package:tk_clocking_system/features/dashboard/data/models/home_data_model.dart';
+import 'package:tk_clocking_system/core/services/location_service.dart';
+import 'package:tk_clocking_system/core/services/geofence_service.dart';
 
 /// The main clock-in / clock-out screen for employees.
 class ClockInPage extends StatefulWidget {
@@ -32,6 +38,7 @@ class _ClockInPageState extends State<ClockInPage> {
   void initState() {
     super.initState();
     _checkBiometrics();
+    sl<GeofenceService>().initData();
   }
 
   Future<void> _checkBiometrics() async {
@@ -190,15 +197,7 @@ class _ClockInPageState extends State<ClockInPage> {
                         const SizedBox(height: 16),
                         _StaggeredEntry(
                           index: 3,
-                          child: Text(
-                            'Actions',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                          ),
+                          child: Center(child: _buildWorkZoneBadge()),
                         ),
                         const SizedBox(height: 10),
                         _StaggeredEntry(
@@ -236,6 +235,159 @@ class _ClockInPageState extends State<ClockInPage> {
         AttendanceType.breakIn => 'Break Start',
         AttendanceType.breakOut => 'Break End',
       };
+
+  Widget _buildWorkZoneBadge() {
+    return ListenableBuilder(
+      listenable: sl<GeofenceService>(),
+      builder: (context, _) {
+        final service = sl<GeofenceService>();
+        
+        if (service.checkingLocation) {
+          return const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 12,
+                height: 12,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 6),
+              Text('Checking location...',
+                  style: TextStyle(fontSize: 12, color: Colors.grey)),
+            ],
+          );
+        }
+
+        if (service.data?.branchLat == null ||
+            service.data?.branchLng == null ||
+            service.data?.branchRadius == null) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.location_disabled_rounded,
+                    size: 14, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  'No Work Zone Assigned',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (service.locationError != null && service.isInWorkZone == null) {
+          return GestureDetector(
+            onTap: () => service.checkGeofence(),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.gps_off_rounded, size: 14, color: Colors.orange),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${service.locationError} • Step outside to retry',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.orange.shade800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        if (service.isInWorkZone == null) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.help_outline_rounded,
+                    size: 14, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  'Location Unknown',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final isInside = service.isInWorkZone!;
+        return GestureDetector(
+          onTap: () => service.checkGeofence(),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: isInside
+                  ? Colors.green.withValues(alpha: 0.1)
+                  : Colors.red.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                  color: isInside
+                      ? Colors.green.withValues(alpha: 0.3)
+                      : Colors.red.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isInside ? Icons.location_on_rounded : Icons.location_off_rounded,
+                  size: 14,
+                  color: isInside ? Colors.green : Colors.red,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  isInside
+                      ? 'Inside Work Zone'
+                      : (service.locationError ?? 'Outside Work Zone'),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isInside ? Colors.green.shade700 : Colors.red.shade700,
+                  ),
+                ),
+                if (!isInside) ...[
+                  const SizedBox(width: 4),
+                  Icon(Icons.refresh_rounded, size: 12, color: Colors.red.shade700),
+                ]
+              ],
+            ),
+          ),
+        );
+      }
+    );
+  }
 }
 
 // ── Live clock display (Glassmorphism) ──────────────────────────────────────
@@ -469,7 +621,8 @@ class _StatusCard extends StatelessWidget {
                   stream: sl<TimeService>().trueTimeStream,
                   initialData: sl<TimeService>().currentGhanaTime,
                   builder: (context, snapshot) {
-                    final time = snapshot.data ?? sl<TimeService>().currentGhanaTime;
+                    final time =
+                        snapshot.data ?? sl<TimeService>().currentGhanaTime;
                     return Text(
                       _getGreeting(time),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(

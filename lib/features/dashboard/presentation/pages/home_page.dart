@@ -24,6 +24,7 @@ import 'package:tk_clocking_system/features/calendar/presentation/pages/calendar
 import 'package:tk_clocking_system/shared/enums/attendance_type.dart';
 import 'package:tk_clocking_system/shared/enums/sync_status.dart';
 import 'package:tk_clocking_system/core/services/location_service.dart';
+import 'package:tk_clocking_system/core/services/geofence_service.dart';
 import 'package:tk_clocking_system/core/services/notification_service.dart';
 import 'package:tk_clocking_system/core/services/time_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -162,9 +163,6 @@ class _DashboardTabState extends State<_DashboardTab> {
   int _pendingCount = 0;
   Timer? _autoRefreshTimer;
   bool _isRefetching = false;
-  bool _checkingLocation = false;
-  bool? _isInWorkZone;
-  String? _locationError;
   StreamSubscription? _syncSubscription;
 
   @override
@@ -224,7 +222,7 @@ class _DashboardTabState extends State<_DashboardTab> {
           _data = cachedData;
           _isLoading = false;
         });
-        _checkGeofence();
+        sl<GeofenceService>().initData();
         // Schedule reminders from cache immediately. If the network call
         // succeeds later, scheduleShiftReminders will be called again
         // (it cancels and re-schedules, so this is safe / idempotent).
@@ -264,8 +262,8 @@ class _DashboardTabState extends State<_DashboardTab> {
               _data = data;
               _isLoading = false;
             });
-            // Run geofence check before saving to cache
-            _checkGeofence(silent: silent);
+            sl<GeofenceService>().updateData(data);
+            sl<GeofenceService>().checkGeofence(silent: silent);
 
             // Re-schedule OS-level local notifications to mirror the banners.
             // This is idempotent — safe to call on every refresh.
@@ -297,53 +295,6 @@ class _DashboardTabState extends State<_DashboardTab> {
           .where((e) => e['sync_status'] == SyncStatus.pending.value)
           .length;
     });
-  }
-
-  Future<void> _checkGeofence({bool silent = false}) async {
-    if (_data == null ||
-        _data!.branchLat == null ||
-        _data!.branchLng == null ||
-        _data!.branchRadius == null) {
-      return;
-    }
-    if (mounted && !silent) {
-      setState(() {
-        _checkingLocation = true;
-        _locationError = null;
-      });
-    }
-    try {
-      final locService = sl<LocationService>();
-      final position = await locService.getCurrentPosition();
-      final isInside = locService.isWithinGeofence(
-        deviceLat: position.latitude,
-        deviceLng: position.longitude,
-        branchLat: _data!.branchLat!,
-        branchLng: _data!.branchLng!,
-        radiusMeters: _data!.branchRadius!.toInt(),
-      );
-      if (mounted) {
-        setState(() {
-          // If accuracy is > 40m and it says outside, assume a false negative due to being indoors.
-          if (!isInside && position.accuracy > 40) {
-            _isInWorkZone = null;
-            _locationError = 'Poor GPS Signal';
-          } else {
-            _isInWorkZone = isInside;
-            _locationError = null;
-          }
-          _checkingLocation = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _isInWorkZone = null;
-          _locationError = 'GPS Error';
-          _checkingLocation = false;
-        });
-      }
-    }
   }
 
   @override
@@ -543,9 +494,9 @@ class _DashboardTabState extends State<_DashboardTab> {
                       preferredSize:
                           const Size.fromHeight(36), // Increased from 32
                       child: Padding(
-                        padding: const EdgeInsets.only(left: 16, bottom: 2),
+                        padding: const EdgeInsets.only(bottom: 2),
                         child: Align(
-                          alignment: Alignment.centerLeft,
+                          alignment: Alignment.center,
                           child: _buildWorkZoneBadge(),
                         ),
                       ),
@@ -710,148 +661,155 @@ class _DashboardTabState extends State<_DashboardTab> {
   }
 
   Widget _buildWorkZoneBadge() {
-    if (_checkingLocation) {
-      return const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 12,
-            height: 12,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-          SizedBox(width: 6),
-          Text('Checking location...',
-              style: TextStyle(fontSize: 12, color: Colors.grey)),
-        ],
-      );
-    }
-
-    if (_data?.branchLat == null ||
-        _data?.branchLng == null ||
-        _data?.branchRadius == null) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.grey.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.location_disabled_rounded,
-                size: 14, color: Colors.grey),
-            const SizedBox(width: 4),
-            Text(
-              'No Work Zone Assigned',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade700,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (_locationError != null && _isInWorkZone == null) {
-      return GestureDetector(
-        onTap: _checkGeofence,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.orange.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
-          ),
-          child: Row(
+    return ListenableBuilder(
+      listenable: sl<GeofenceService>(),
+      builder: (context, _) {
+        final service = sl<GeofenceService>();
+        
+        if (service.checkingLocation) {
+          return const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.gps_off_rounded, size: 14, color: Colors.orange),
-              const SizedBox(width: 4),
-              Text(
-                '$_locationError • Step outside to retry',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.orange.shade800,
-                ),
+              SizedBox(
+                width: 12,
+                height: 12,
+                child: CircularProgressIndicator(strokeWidth: 2),
               ),
+              SizedBox(width: 6),
+              Text('Checking location...',
+                  style: TextStyle(fontSize: 12, color: Colors.grey)),
             ],
-          ),
-        ),
-      );
-    }
+          );
+        }
 
-    if (_isInWorkZone == null) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.grey.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.help_outline_rounded,
-                size: 14, color: Colors.grey),
-            const SizedBox(width: 4),
-            Text(
-              'Location Unknown',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade700,
+        if (service.data?.branchLat == null ||
+            service.data?.branchLng == null ||
+            service.data?.branchRadius == null) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.location_disabled_rounded,
+                    size: 14, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  'No Work Zone Assigned',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (service.locationError != null && service.isInWorkZone == null) {
+          return GestureDetector(
+            onTap: () => service.checkGeofence(),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.gps_off_rounded, size: 14, color: Colors.orange),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${service.locationError} • Step outside to retry',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.orange.shade800,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      );
-    }
+          );
+        }
 
-    final isInside = _isInWorkZone!;
-    return GestureDetector(
-      onTap: _checkGeofence,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: isInside
-              ? Colors.green.withValues(alpha: 0.1)
-              : Colors.red.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
+        if (service.isInWorkZone == null) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.help_outline_rounded,
+                    size: 14, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  'Location Unknown',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final isInside = service.isInWorkZone!;
+        return GestureDetector(
+          onTap: () => service.checkGeofence(),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
               color: isInside
-                  ? Colors.green.withValues(alpha: 0.3)
-                  : Colors.red.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isInside ? Icons.location_on_rounded : Icons.location_off_rounded,
-              size: 14,
-              color: isInside ? Colors.green : Colors.red,
+                  ? Colors.green.withValues(alpha: 0.1)
+                  : Colors.red.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                  color: isInside
+                      ? Colors.green.withValues(alpha: 0.3)
+                      : Colors.red.withValues(alpha: 0.3)),
             ),
-            const SizedBox(width: 4),
-            Text(
-              isInside
-                  ? 'Inside Work Zone'
-                  : (_locationError ?? 'Outside Work Zone'),
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isInside ? Colors.green.shade700 : Colors.red.shade700,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isInside ? Icons.location_on_rounded : Icons.location_off_rounded,
+                  size: 14,
+                  color: isInside ? Colors.green : Colors.red,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  isInside
+                      ? 'Inside Work Zone'
+                      : (service.locationError ?? 'Outside Work Zone'),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isInside ? Colors.green.shade700 : Colors.red.shade700,
+                  ),
+                ),
+                if (!isInside) ...[
+                  const SizedBox(width: 4),
+                  Icon(Icons.refresh_rounded, size: 12, color: Colors.red.shade700),
+                ]
+              ],
             ),
-            if (!isInside) ...[
-              const SizedBox(width: 4),
-              Icon(Icons.refresh_rounded, size: 12, color: Colors.red.shade700),
-            ]
-          ],
-        ),
-      ),
+          ),
+        );
+      }
     );
   }
 

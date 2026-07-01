@@ -51,7 +51,7 @@ export class AttendanceService {
     const allTerms = await this.academicCalendar.findAllTerms();
     if (!allTerms || allTerms.length === 0) {
       throw new BadRequestException(
-        'Action denied: Your school has no active academic calendar. Please contact your school administrator.',
+        'Your school has no active academic calendar. Please contact your school administrator.',
       );
     }
 
@@ -84,7 +84,7 @@ export class AttendanceService {
     const dayStatus = await this._checkNonWorkingDay(now);
     if (dayStatus.isNonWorking) {
       throw new BadRequestException(
-        `Action denied: Today is a ${dayStatus.name}. Clocking is not allowed on non-working days.`,
+        `Today is a ${dayStatus.name}. Clocking is not allowed on non-working days.`,
       );
     }
 
@@ -735,7 +735,7 @@ export class AttendanceService {
     const dayStatus = await this._checkNonWorkingDay(now);
     if (dayStatus.isNonWorking) {
       throw new BadRequestException(
-        `Action denied: Today is a ${dayStatus.name}. Clocking is not allowed on non-working days.`,
+        `Today is a ${dayStatus.name}. Clocking is not allowed on non-working days.`,
       );
     }
 

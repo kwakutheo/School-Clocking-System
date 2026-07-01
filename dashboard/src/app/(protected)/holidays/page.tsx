@@ -316,7 +316,7 @@ export default function HolidaysPage() {
             Manage public and custom holidays for your school. 
           </p>
           <p style={{ margin: '8px 0 0 0', color: 'var(--text-secondary)', fontSize: '14px', maxWidth: '600px', lineHeight: '1.5' }}>
-            <strong>Note:</strong> Recurring holidays will automatically move to the next working day if they fall on a weekend.
+            <strong>Note:</strong> Holidays that fall on weekends will automatically be shifted to the next working day.
           </p>
         </div>
         {can(userRole, 'holidays.manage') && (

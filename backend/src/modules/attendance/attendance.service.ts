@@ -83,9 +83,7 @@ export class AttendanceService {
     // ── Non-working day guard ─────────────────────────────────────────────
     const dayStatus = await this._checkNonWorkingDay(now);
     if (dayStatus.isNonWorking) {
-      throw new BadRequestException(
-        `Today is a ${dayStatus.name}. Clocking is not allowed on non-working days.`,
-      );
+      throw new BadRequestException(dayStatus.message);
     }
 
     // ── Device restriction guard ──────────────────────────────────────────
@@ -506,7 +504,7 @@ export class AttendanceService {
     const dayStatus = await this._checkNonWorkingDay(now);
     if (dayStatus.isNonWorking) {
       throw new BadRequestException(
-        `Action denied: The selected date is a ${dayStatus.name}. Manual clocking is not allowed on non-working days.`,
+        `Action denied: ${dayStatus.message}`,
       );
     }
 
@@ -734,9 +732,7 @@ export class AttendanceService {
 
     const dayStatus = await this._checkNonWorkingDay(now);
     if (dayStatus.isNonWorking) {
-      throw new BadRequestException(
-        `Today is a ${dayStatus.name}. Clocking is not allowed on non-working days.`,
-      );
+      throw new BadRequestException(dayStatus.message);
     }
 
     // ── Device restriction guard ──────────────────────────────────────────
@@ -2031,23 +2027,35 @@ export class AttendanceService {
     isNonWorking: boolean;
     type: string | null;
     name: string | null;
+    message: string | null;
   }> {
     // 1. Weekend
     const currentDay = date.getDay();
     if (currentDay === 0 || currentDay === 6) {
-      return { isNonWorking: true, type: 'weekend', name: 'Weekend' };
+      return { isNonWorking: true, type: 'weekend', name: 'Weekend', message: 'Today is a weekend. Clocking is not allowed on non-working days.' };
     }
 
     // 2. Public Holiday
-    const holiday = await this.holidays.getHolidayForDate(date);
-    if (holiday) {
-      return { isNonWorking: true, type: 'holiday', name: holiday.name };
+    const holidayResult = await this.holidays.getHolidayForDate(date);
+    if (holidayResult) {
+      const { holiday, isShifted, originalDate } = holidayResult;
+      let message: string;
+      if (isShifted) {
+        // Format the original date as a readable string e.g. "Wednesday, 01 July"
+        const orig = new Date(originalDate);
+        const dayName = orig.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' });
+        const formatted = orig.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', timeZone: 'UTC' });
+        message = `Today is the observed holiday for ${holiday.name} (postponed from ${dayName}, ${formatted}). Clocking is not allowed.`;
+      } else {
+        message = `Today is a public holiday (${holiday.name}). Clocking is not allowed on non-working days.`;
+      }
+      return { isNonWorking: true, type: 'holiday', name: holiday.name, message };
     }
 
     // 3. Academic Calendar Break
     const breakName = await this.academicCalendar.isBreak(date);
     if (breakName) {
-      return { isNonWorking: true, type: 'break', name: breakName };
+      return { isNonWorking: true, type: 'break', name: breakName, message: `Today falls within a school break (${breakName}). Clocking is not allowed.` };
     }
 
     // 4. Vacation (Outside any term)
@@ -2057,11 +2065,11 @@ export class AttendanceService {
     if (allTerms && allTerms.length > 0) {
       const term = await this.academicCalendar.getTermForDate(date);
       if (!term) {
-        return { isNonWorking: true, type: 'vacation', name: 'Vacation' };
+        return { isNonWorking: true, type: 'vacation', name: 'Vacation', message: 'Today is outside of the academic term (vacation period). Clocking is not allowed.' };
       }
     }
 
-    return { isNonWorking: false, type: null, name: null };
+    return { isNonWorking: false, type: null, name: null, message: null };
   }
 
   // ── Shift Hour Checker ──────────────────────────────────────────────────

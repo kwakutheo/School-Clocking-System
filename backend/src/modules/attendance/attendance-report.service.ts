@@ -507,7 +507,7 @@ export class AttendanceReportService {
           item.holiday.observedDate.substring(0, 4) === year.toString()
         ) {
           effDate = item.holiday.observedDate;
-        } else if (item.holiday.postponeIfWeekend) {
+        } else if (item.holiday.postponeIfWeekend || item.holiday.isRecurring) {
           const effDateObj = new Date(item.origDateStr);
           while (
             effDateObj.getUTCDay() === 0 ||

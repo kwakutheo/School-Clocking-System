@@ -109,7 +109,11 @@ export class HolidaysService {
     return this.repo.save(holiday);
   }
 
-  async getHolidayForDate(date: Date): Promise<Holiday | null> {
+  async getHolidayForDate(date: Date): Promise<{
+    holiday: Holiday;
+    isShifted: boolean;
+    originalDate: string;
+  } | null> {
     const dateStr = date.toISOString().split('T')[0];
     const year = parseInt(dateStr.substring(0, 4), 10);
 
@@ -129,7 +133,8 @@ export class HolidaysService {
       }))
       .sort((a, b) => a.origDateStr.localeCompare(b.origDateStr));
 
-    const observedDates = new Map<string, Holiday>();
+    // Map: effectiveDate → { holiday, originalDate }
+    const observedDates = new Map<string, { holiday: Holiday; originalDate: string }>();
 
     for (const item of computedHolidays) {
       let effDate = item.origDateStr;
@@ -139,7 +144,7 @@ export class HolidaysService {
         item.holiday.observedDate.substring(0, 4) === year.toString()
       ) {
         effDate = item.holiday.observedDate;
-      } else if (item.holiday.postponeIfWeekend) {
+      } else if (item.holiday.postponeIfWeekend || item.holiday.isRecurring) {
         const effDateObj = new Date(item.origDateStr);
         while (
           effDateObj.getUTCDay() === 0 ||
@@ -151,9 +156,16 @@ export class HolidaysService {
         effDate = effDateObj.toISOString().split('T')[0];
       }
 
-      observedDates.set(effDate, item.holiday);
+      observedDates.set(effDate, { holiday: item.holiday, originalDate: item.origDateStr });
     }
 
-    return observedDates.get(dateStr) || null;
+    const found = observedDates.get(dateStr);
+    if (!found) return null;
+
+    return {
+      holiday: found.holiday,
+      isShifted: found.originalDate !== dateStr,
+      originalDate: found.originalDate,
+    };
   }
 }

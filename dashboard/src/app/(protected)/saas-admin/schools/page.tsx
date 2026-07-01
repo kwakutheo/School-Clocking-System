@@ -1019,7 +1019,7 @@ export default function SchoolsRegistryPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <Globe size={22} style={{ color: 'var(--primary)' }} />
-                <h2 style={{ fontSize: '20px', fontWeight: 800 }}>Subdomain & Domain Settings</h2>
+                <h2 style={{ fontSize: '20px', fontWeight: 800 }}>School Name & Subdomain Settings</h2>
               </div>
               <button onClick={() => setEditModalOpen(false)} title="Close" aria-label="Close" style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}>
                 <X size={20} />

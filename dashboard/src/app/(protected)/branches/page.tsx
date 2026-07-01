@@ -258,6 +258,7 @@ function BranchCard({ branch, onEdit, onDelete, canDelete }: { branch: any; onEd
           <title>QR Code - ${branch.name}</title>
           <style>
             @page { size: A4; margin: 0; }
+            * { box-sizing: border-box; }
             body { 
               display: flex; 
               flex-direction: column; 
@@ -265,13 +266,13 @@ function BranchCard({ branch, onEdit, onDelete, canDelete }: { branch: any; onEd
               justify-content: center; 
               height: 100vh; 
               margin: 0; 
+              padding: 1in;
               font-family: system-ui, sans-serif; 
               background: #fff;
             }
             .container { 
               text-align: center; 
               width: 100%;
-              max-width: 800px;
             }
             .qr-image { 
               width: 500px; 

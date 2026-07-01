@@ -21,6 +21,12 @@ export class Holiday extends TenantBaseEntity {
   @Column({ default: true })
   isRecurring: boolean; // If true, repeats every year on same date
 
+  @Column({ default: false })
+  postponeIfWeekend: boolean; // If true, weekend holidays shift to Monday
+
+  @Column({ type: 'date', nullable: true })
+  observedDate: string | null; // Custom overriding observed date (YYYY-MM-DD)
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

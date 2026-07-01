@@ -49,7 +49,7 @@ export default function HolidaysPage() {
   const [selectedSyncDates, setSelectedSyncDates] = useState<Record<string, boolean>>({});
   const [isSyncing, setIsSyncing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', date: '', isRecurring: true });
+  const [form, setForm] = useState({ name: '', date: '', isRecurring: true, postponeIfWeekend: false, observedDate: '' });
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   const currentYearStr = new Date().getFullYear().toString();
@@ -92,11 +92,23 @@ export default function HolidaysPage() {
       }}
     >
       <td style={{ fontWeight: 600 }}>{h.name}</td>
-      <td>{format(parseISO(h.date), 'dd MMMM')} {h.isRecurring ? '' : format(parseISO(h.date), 'yyyy')}</td>
+      <td>
+        {format(parseISO(h.date), 'dd MMMM')} {h.isRecurring ? '' : format(parseISO(h.date), 'yyyy')}
+        {h.observedDate && (
+          <div style={{ fontSize: '0.85em', color: 'var(--primary)', marginTop: '4px', fontWeight: 500 }}>
+            Observed: {format(parseISO(h.observedDate), 'dd MMMM yyyy')}
+          </div>
+        )}
+      </td>
       <td>
         <span className={`badge ${h.isRecurring ? 'badge-blue' : 'badge-amber'}`}>
           {h.isRecurring ? 'Every Year' : 'One-time'}
         </span>
+        {h.postponeIfWeekend && (
+          <span className="badge" style={{ marginLeft: 6, background: 'var(--bg-accent)', color: 'var(--primary)' }}>
+            Shifts if Weekend
+          </span>
+        )}
       </td>
       <td style={{ textAlign: 'right' }}>
         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
@@ -127,15 +139,19 @@ export default function HolidaysPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...form,
+        observedDate: form.observedDate || null
+      };
       if (editingId) {
-        await holidaysApi.update(editingId, form);
+        await holidaysApi.update(editingId, payload);
       } else {
-        await holidaysApi.create(form);
+        await holidaysApi.create(payload);
       }
       mutate();
       setShowModal(false);
       setEditingId(null);
-      setForm({ name: '', date: '', isRecurring: true });
+      setForm({ name: '', date: '', isRecurring: true, postponeIfWeekend: false, observedDate: '' });
     } catch (err) {
       alert(editingId ? 'Failed to update holiday' : 'Failed to add holiday');
     }
@@ -152,13 +168,19 @@ export default function HolidaysPage() {
   };
 
   const openEdit = (h: any) => {
-    setForm({ name: h.name, date: h.date, isRecurring: h.isRecurring });
+    setForm({ 
+      name: h.name, 
+      date: h.date, 
+      isRecurring: h.isRecurring,
+      postponeIfWeekend: h.postponeIfWeekend || false,
+      observedDate: h.observedDate || ''
+    });
     setEditingId(h.id);
     setShowModal(true);
   };
 
   const openAdd = () => {
-    setForm({ name: '', date: '', isRecurring: true });
+    setForm({ name: '', date: '', isRecurring: true, postponeIfWeekend: false, observedDate: '' });
     setEditingId(null);
     setShowModal(true);
   };
@@ -220,7 +242,8 @@ export default function HolidaysPage() {
       await Promise.all(toAdd.map((ph: any) => holidaysApi.create({
         name: ph.name,
         date: ph.date,
-        isRecurring: ph.isFixed === true
+        isRecurring: ph.isFixed === true,
+        postponeIfWeekend: ph.isFixed === true // Ghana public holidays usually postpone
       })));
 
       mutate();
@@ -359,6 +382,15 @@ export default function HolidaysPage() {
               <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <input id="holidayRecurring" type="checkbox" checked={form.isRecurring} onChange={e => setForm({...form, isRecurring: e.target.checked})} />
                 <label htmlFor="holidayRecurring" style={{ marginBottom: 0 }}>Repeats every year</label>
+              </div>
+              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <input id="holidayPostpone" type="checkbox" checked={form.postponeIfWeekend} onChange={e => setForm({...form, postponeIfWeekend: e.target.checked})} />
+                <label htmlFor="holidayPostpone" style={{ marginBottom: 0 }}>Postpone to next weekday if on weekend</label>
+              </div>
+              <div className="form-group">
+                <label htmlFor="holidayObservedDate">Observe on a specific date (Optional)</label>
+                <input id="holidayObservedDate" type="date" className="form-input" value={form.observedDate} onChange={e => setForm({...form, observedDate: e.target.value})} />
+                <small style={{ color: 'var(--text-secondary)' }}>Overrides the calendar date. E.g., moving a Wednesday holiday to Friday.</small>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn" onClick={() => setShowModal(false)}>Cancel</button>

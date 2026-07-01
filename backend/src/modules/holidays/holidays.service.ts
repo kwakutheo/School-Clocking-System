@@ -47,7 +47,7 @@ export class HolidaysService {
       .sort((a, b) => a.origDateStr.localeCompare(b.origDateStr));
 
     const observedDates = new Map<string, Holiday>();
-    const results = [];
+    const results: any[] = [];
 
     for (const item of computedHolidays) {
       let effDate = item.origDateStr;

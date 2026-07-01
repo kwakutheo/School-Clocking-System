@@ -1,6 +1,6 @@
 'use client';
 import useSWR from 'swr';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { holidaysApi } from '@/lib/api';
 import { format, parseISO } from 'date-fns';
 import { Calendar, Plus, Trash2, Edit, ShieldAlert, DownloadCloud, ArrowLeft, Repeat, CalendarDays, Settings2, Info } from 'lucide-react';
@@ -51,6 +51,30 @@ export default function HolidaysPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', date: '', isRecurring: true, postponeIfWeekend: false, observedDate: '' });
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
+  const isDateWeekend = (dateStr: string) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    const day = d.getUTCDay();
+    return day === 0 || day === 6;
+  };
+
+  useEffect(() => {
+    setForm(prev => {
+      let newPostpone = prev.postponeIfWeekend;
+      if (prev.isRecurring) {
+        newPostpone = true;
+      } else {
+        const weekend = isDateWeekend(prev.date);
+        if (!weekend) newPostpone = false;
+        else if (!prev.postponeIfWeekend && isDateWeekend(prev.date)) newPostpone = true;
+      }
+      if (newPostpone !== prev.postponeIfWeekend) {
+        return { ...prev, postponeIfWeekend: newPostpone };
+      }
+      return prev;
+    });
+  }, [form.date, form.isRecurring]);
 
   const currentYearStr = new Date().getFullYear().toString();
 
@@ -104,11 +128,7 @@ export default function HolidaysPage() {
         <span className={`badge ${h.isRecurring ? 'badge-blue' : 'badge-amber'}`}>
           {h.isRecurring ? 'Every Year' : 'One-time'}
         </span>
-        {h.postponeIfWeekend && (
-          <span className="badge" style={{ marginLeft: 6, background: 'var(--bg-accent)', color: 'var(--primary)' }}>
-            Shifts if Weekend
-          </span>
-        )}
+
       </td>
       <td style={{ textAlign: 'right' }}>
         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
@@ -268,6 +288,12 @@ export default function HolidaysPage() {
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
             <Calendar size={28} style={{ color: 'var(--primary)' }} />
              Holidays</h1>
+          <p style={{ margin: '8px 0 0 0', color: 'var(--text-secondary)', fontSize: '14px', maxWidth: '600px', lineHeight: '1.5' }}>
+            Manage public and custom holidays for your school. 
+          </p>
+          <p style={{ margin: '8px 0 0 0', color: 'var(--text-secondary)', fontSize: '14px', maxWidth: '600px', lineHeight: '1.5' }}>
+            <strong>Note:</strong> Recurring holidays will automatically move to the next working day if they fall on a weekend.
+          </p>
         </div>
         {can(userRole, 'holidays.manage') && (
           <div style={{ display: 'flex', gap: 12 }}>
@@ -407,16 +433,20 @@ export default function HolidaysPage() {
                 </div>
 
                 {/* Rule: Postpone */}
-                <div style={{ padding: '16px', display: 'flex', alignItems: 'flex-start', gap: '16px', borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }} className="hover-bg-card-hover">
+                <div style={{ padding: '16px', display: 'flex', alignItems: 'flex-start', gap: '16px', borderBottom: '1px solid var(--border)', transition: 'background 0.2s', opacity: (form.isRecurring || !isDateWeekend(form.date)) ? 0.6 : 1 }} className="hover-bg-card-hover">
                   <div style={{ color: 'var(--success)', background: 'var(--success-dim)', padding: 8, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <CalendarDays size={18} />
                   </div>
                   <div style={{ flex: 1, marginTop: 2 }}>
-                    <label htmlFor="holidayPostpone" style={{ display: 'block', fontWeight: 600, cursor: 'pointer', marginBottom: '4px', fontSize: 15 }}>Shift to Weekday</label>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>Automatically observe on Monday or Tuesday if the calendar date falls on a weekend.</p>
+                    <label htmlFor="holidayPostpone" style={{ display: 'block', fontWeight: 600, cursor: (form.isRecurring || !isDateWeekend(form.date)) ? 'not-allowed' : 'pointer', marginBottom: '4px', fontSize: 15 }}>Shift to Weekday</label>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                      {form.isRecurring 
+                        ? 'Recurring holidays automatically shift to a weekday if they fall on a weekend.' 
+                        : 'Automatically observe on Monday or Tuesday if the calendar date falls on a weekend.'}
+                    </p>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', padding: '10px 0' }}>
-                    <input id="holidayPostpone" type="checkbox" checked={form.postponeIfWeekend} onChange={e => setForm({...form, postponeIfWeekend: e.target.checked})} style={{ width: 20, height: 20, accentColor: 'var(--primary)', cursor: 'pointer' }} />
+                    <input id="holidayPostpone" type="checkbox" checked={form.postponeIfWeekend} disabled={form.isRecurring || !isDateWeekend(form.date)} onChange={e => setForm({...form, postponeIfWeekend: e.target.checked})} style={{ width: 20, height: 20, accentColor: 'var(--primary)', cursor: (form.isRecurring || !isDateWeekend(form.date)) ? 'not-allowed' : 'pointer' }} />
                   </div>
                 </div>
 

@@ -323,7 +323,7 @@ function BranchCard({ branch, onEdit, onDelete, canDelete }: { branch: any; onEd
         <body>
           <div class="container">
             <div style="display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 60px; padding-top: 40px;">
-              <div style="font-size: 32px; font-weight: 800; letter-spacing: -1px; color: #111827;">${activeTenant?.name || 'TK Clocking System'}</div>
+              <div style="font-size: 48px; font-weight: 800; letter-spacing: -1px; color: #111827; text-align: center;">${activeTenant?.name || 'TK Clocking System'}</div>
             </div>
 
             <img src="${printRef.current.querySelector('img')?.src}" alt="QR Code" class="qr-image" />

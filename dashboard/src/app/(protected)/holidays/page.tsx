@@ -10,6 +10,7 @@ import { useAuthStore } from '@/lib/store';
 import { useMemo } from 'react';
 
 const fetcher = () => holidaysApi.list().then((r) => r.data);
+const fetcherCurrentYear = () => holidaysApi.listCurrentYear().then((r) => r.data);
 
 const GHANA_FIXED_DATES = new Set([
   '01-01', // New Year's Day
@@ -39,9 +40,11 @@ function isGhanaFixedHoliday(dateStr: string, name: string): boolean {
 }
 
 export default function HolidaysPage() {
-  const { data, isLoading, mutate } = useSWR('holidays-list', fetcher);
+  const { data: holidays = [], isLoading, mutate } = useSWR('/holidays', fetcher);
+  const { data: currentYearHolidays = [] } = useSWR('/holidays/current-year', fetcherCurrentYear);
   const { user } = useAuthStore();
-  const holidays: any[] = data ?? [];
+  
+  const currentYearStr = new Date().getFullYear().toString();
 
   const [showModal, setShowModal] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
@@ -76,13 +79,11 @@ export default function HolidaysPage() {
     });
   }, [form.date, form.isRecurring]);
 
-  const currentYearStr = new Date().getFullYear().toString();
-
   const { recurring, groupedByYear, sortedYears } = useMemo(() => {
     const recurring: any[] = [];
     const byYear: Record<string, any[]> = {};
 
-    holidays.forEach(h => {
+    holidays.forEach((h: any) => {
       if (h.isRecurring) {
         recurring.push(h);
       } else {
@@ -92,7 +93,6 @@ export default function HolidaysPage() {
       }
     });
 
-    // Sort years descending so newest is on top
     const sortedYears = Object.keys(byYear).sort((a, b) => b.localeCompare(a));
     return { recurring, groupedByYear: byYear, sortedYears };
   }, [holidays]);
@@ -103,10 +103,20 @@ export default function HolidaysPage() {
 
   const isGroupExpanded = (groupName: string, isPastYear: boolean = false) => {
     if (expandedGroups[groupName] !== undefined) return expandedGroups[groupName];
-    return !isPastYear; // Past years collapsed by default, others expanded
+    return !isPastYear;
   };
 
-  const renderHolidayRow = (h: any, index: number) => (
+  const currentYearMap = useMemo(() => {
+    const map = new Map<string, any>();
+    currentYearHolidays.forEach((h: any) => map.set(h.id, h));
+    return map;
+  }, [currentYearHolidays]);
+
+  const renderHolidayRow = (h: any, index: number) => {
+    const currentHoliday = currentYearMap.get(h.id);
+    const hasShifted = currentHoliday && !h.observedDate && currentHoliday.effectiveDate !== currentHoliday.originalDateThisYear;
+
+    return (
     <tr 
       key={h.id}
       className="emp-row-animate"
@@ -123,25 +133,29 @@ export default function HolidaysPage() {
             Observed: {format(parseISO(h.observedDate), 'dd MMMM yyyy')}
           </div>
         )}
+        {hasShifted && (
+          <div style={{ fontSize: '0.85em', color: 'var(--warning)', marginTop: '4px', fontWeight: 500 }}>
+            Moved to: {format(parseISO(currentHoliday.effectiveDate), 'dd MMMM yyyy')}
+          </div>
+        )}
       </td>
       <td>
         <span className={`badge ${h.isRecurring ? 'badge-blue' : 'badge-amber'}`}>
           {h.isRecurring ? 'Every Year' : 'One-time'}
         </span>
-
       </td>
       <td style={{ textAlign: 'right' }}>
         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
           <button className="btn btn-sm btn-ghost" onClick={() => openEdit(h)} aria-label="Edit Holiday">
             <Edit size={16} />
           </button>
-          <button className="btn btn-sm btn-ghost" style={{ color: 'var(--danger)' }} onClick={() => handleDelete(h.id)} aria-label="Delete Holiday">
+          <button className="btn btn-sm btn-ghost btn-danger" onClick={() => handleDelete(h.id)} aria-label="Delete Holiday">
             <Trash2 size={16} />
           </button>
         </div>
       </td>
     </tr>
-  );
+  )};
 
   const userRole = useMemo(() => user?.role, [user]);
 
@@ -218,7 +232,7 @@ export default function HolidaysPage() {
 
       // Build a set of existing dates/recurring rules to avoid duplicates
       const existingDates = new Set();
-      holidays.forEach(h => {
+      holidays.forEach((h: any) => {
         existingDates.add(h.date);
         if (h.isRecurring) existingDates.add(h.date.substring(5)); // MM-DD
       });
@@ -251,7 +265,7 @@ export default function HolidaysPage() {
   };
 
   const handleApproveSync = async () => {
-    const toAdd = syncResults.filter(h => selectedSyncDates[h.date]);
+    const toAdd = syncResults.filter((h: any) => selectedSyncDates[h.date]);
     if (toAdd.length === 0) {
       alert('Please select at least one holiday to import.');
       return;

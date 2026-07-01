@@ -177,6 +177,7 @@ export const attendanceApi = {
 // ── Holidays ───────────────────────────────────────────────────────────────
 export const holidaysApi = {
   list: () => api.get("/holidays"),
+  listCurrentYear: () => api.get("/holidays/current-year"),
   create: (data: any) => api.post("/holidays", data),
   update: (id: string, data: any) => api.patch(`/holidays/${id}`, data),
   delete: (id: string) => api.delete(`/holidays/${id}`),

@@ -1132,7 +1132,7 @@ export default function SchoolsRegistryPage() {
                       style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '8px', fontWeight: 600 }}
                     >
                       <Edit3 size={16} />
-                      Edit Settings
+                      Edit Details
                     </button>
                   </>
                 ) : (

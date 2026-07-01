@@ -51,15 +51,26 @@ function QrCodeImage({ text, size = 180, logoUrl }: { text: string; size?: numbe
             // White border/background for logo
             ctx.fillStyle = '#fff';
             const padding = HD_SIZE * 0.015;
-            ctx.fillRect(x - padding, y - padding, logoSize + padding * 2, logoSize + padding * 2);
+            const borderRadius = HD_SIZE * 0.02;
+            
+            ctx.beginPath();
+            ctx.roundRect(x - padding, y - padding, logoSize + padding * 2, logoSize + padding * 2, borderRadius);
+            ctx.fill();
 
             // Primary color border for logo
             const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#3b82f6';
             ctx.strokeStyle = primaryColor;
             ctx.lineWidth = HD_SIZE * 0.005;
-            ctx.strokeRect(x - padding, y - padding, logoSize + padding * 2, logoSize + padding * 2);
+            ctx.stroke();
 
+            // Clip the image to match the rounded border
+            ctx.save();
+            ctx.beginPath();
+            const innerRadius = Math.max(0, borderRadius - (HD_SIZE * 0.005));
+            ctx.roundRect(x, y, logoSize, logoSize, innerRadius);
+            ctx.clip();
             ctx.drawImage(logo, x, y, logoSize, logoSize);
+            ctx.restore();
           }
         }
         setDataUrl(canvas.toDataURL('image/png', 1.0));

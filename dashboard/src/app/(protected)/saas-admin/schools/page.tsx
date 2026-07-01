@@ -1112,7 +1112,6 @@ export default function SchoolsRegistryPage() {
                 </div>
                 {editSlugError && <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>{editSlugError}</div>}
 
-                {/* White-label custom domain removed — handled by ops only. */}
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
                 {!isModalEditing ? (

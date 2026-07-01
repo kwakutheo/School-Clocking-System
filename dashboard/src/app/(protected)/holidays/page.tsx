@@ -482,7 +482,25 @@ export default function HolidaysPage() {
                   <div style={{ flex: 1, marginTop: 2 }}>
                     <label htmlFor="holidayObservedDate" style={{ display: 'block', fontWeight: 600, cursor: 'pointer', marginBottom: '4px', fontSize: 15 }}>Custom Observed Date (Optional)</label>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 12px 0', lineHeight: 1.4 }}>Manually move this holiday to a specific date for the current year (e.g., from Wednesday to Friday).</p>
-                    <input id="holidayObservedDate" type="date" className="form-input" value={form.observedDate} onChange={e => setForm({...form, observedDate: e.target.value})} style={{ padding: '10px 14px', maxWidth: 200, fontSize: 14 }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input id="holidayObservedDate" type="date" className="form-input" value={form.observedDate} onChange={e => setForm({...form, observedDate: e.target.value})} style={{ padding: '10px 14px', maxWidth: 200, fontSize: 14 }} />
+                      {form.observedDate && (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-ghost btn-danger"
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to clear the custom observed date?')) {
+                              setForm({ ...form, observedDate: '' });
+                            }
+                          }}
+                          aria-label="Clear observed date"
+                          title="Clear observed date"
+                          style={{ padding: '8px' }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
                     {form.observedDate && (() => { const d = new Date(form.observedDate).getUTCDay(); return (d === 0 || d === 6); })() && (
                       <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 6, fontWeight: 500 }}>
                         ⚠ Weekend selected — holidays cannot be observed on weekends. Please choose a weekday.

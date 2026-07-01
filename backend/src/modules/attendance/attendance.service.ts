@@ -103,11 +103,11 @@ export class AttendanceService {
       const leave = approvedLeaves[0];
       let selfMsg: string;
       if (leave.leaveType === 'EXCUSED') {
-        selfMsg = `Action denied: Your absence today has an approved excuse (Absent with Permission). Clocking in is not allowed.`;
+        selfMsg = `Your absence today has an approved excuse (Absent with Permission). Clocking in is not allowed.`;
       } else if (leave.leaveType === 'ERRAND') {
-        selfMsg = `Action denied: You are on official duty (errand) today. Clocking in is not allowed.`;
+        selfMsg = `You are on official duty (errand) today. Clocking in is not allowed.`;
       } else {
-        selfMsg = `Action denied: You have an approved ${leave.leaveType} leave for today. Clocking is not allowed while on leave.`;
+        selfMsg = `You have an approved ${leave.leaveType} leave for today. Clocking is not allowed while on leave.`;
       }
       throw new BadRequestException(selfMsg);
     }
@@ -147,7 +147,7 @@ export class AttendanceService {
         // Rule: Must clock in within assigned working hours.
         if (!this._isWithinShiftHours(now, employee.shift)) {
           throw new BadRequestException(
-            `Action denied: Please try again when it is two hours prior to your next assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
+            `Please try again when it is two hours prior to your next assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
           );
         }
         break;
@@ -191,7 +191,7 @@ export class AttendanceService {
 
           if (now < shiftStart) {
             throw new BadRequestException(
-              `Action denied: Your shift starts at ${employee.shift.startTime}. You cannot clock out until the shift has officially started.`,
+              `Your shift starts at ${employee.shift.startTime}. You cannot clock out until the shift has officially started.`,
             );
           }
         }
@@ -238,7 +238,7 @@ export class AttendanceService {
         // Rule: Must be within working hours.
         if (!this._isWithinShiftHours(now, employee.shift)) {
           throw new BadRequestException(
-            `Action denied: Breaks can only be recorded within your assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
+            `Breaks can only be recorded within your assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
           );
         }
         // Rule: Cannot start a break if already on a break.
@@ -275,7 +275,7 @@ export class AttendanceService {
         // Rule: Must be within working hours.
         if (!this._isWithinShiftHours(now, employee.shift)) {
           throw new BadRequestException(
-            `Action denied: Breaks can only be recorded within your assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
+            `Breaks can only be recorded within your assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
           );
         }
         // Rule: Must be on a break to end one.
@@ -457,7 +457,7 @@ export class AttendanceService {
     const allTerms = await this.academicCalendar.findAllTerms();
     if (!allTerms || allTerms.length === 0) {
       throw new BadRequestException(
-        'Action denied: Your school has no academic calendar terms configured. Please configure your academic terms first.',
+        'Your school has no academic calendar terms configured. Please configure your academic terms first.',
       );
     }
 
@@ -708,7 +708,7 @@ export class AttendanceService {
     const allTerms = await this.academicCalendar.findAllTerms();
     if (!allTerms || allTerms.length === 0) {
       throw new BadRequestException(
-        'Action denied: Your school has no active academic calendar. Please contact your school administrator.',
+        'Your school has no active academic calendar. Please contact your school administrator.',
       );
     }
 
@@ -720,13 +720,13 @@ export class AttendanceService {
 
     if (employee.isArchived) {
       throw new BadRequestException(
-        'Action denied: Your account has been permanently removed from this system. Please contact the platform administrator.',
+        'Your account has been permanently removed from this system. Please contact the platform administrator.',
       );
     }
 
     if (employee.status !== 'active') {
       throw new BadRequestException(
-        `Action denied. Your account status is currently: ${employee.status.toUpperCase()}.`,
+        `Your account status is currently: ${employee.status.toUpperCase()}.`,
       );
     }
 
@@ -754,11 +754,11 @@ export class AttendanceService {
       const leave = approvedLeaves[0];
       let selfMsg2: string;
       if (leave.leaveType === 'EXCUSED') {
-        selfMsg2 = `Action denied: Your absence today has an approved excuse (Absent with Permission). Clocking in is not allowed.`;
+        selfMsg2 = `Your absence today has an approved excuse (Absent with Permission). Clocking in is not allowed.`;
       } else if (leave.leaveType === 'ERRAND') {
-        selfMsg2 = `Action denied: You are on official duty (errand) today. Clocking in is not allowed.`;
+        selfMsg2 = `You are on official duty (errand) today. Clocking in is not allowed.`;
       } else {
-        selfMsg2 = `Action denied: You have an approved ${leave.leaveType} leave for today. Clocking is not allowed while on leave.`;
+        selfMsg2 = `You have an approved ${leave.leaveType} leave for today. Clocking is not allowed while on leave.`;
       }
       throw new BadRequestException(selfMsg2);
     }
@@ -793,7 +793,7 @@ export class AttendanceService {
         }
         if (!this._isWithinShiftHours(now, employee.shift)) {
           throw new BadRequestException(
-            `Action denied: Please try again when it is two hours prior to your next assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
+            `Please try again when it is two hours prior to your next assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
           );
         }
         break;
@@ -830,7 +830,7 @@ export class AttendanceService {
 
           if (now < shiftStart) {
             throw new BadRequestException(
-              `Action denied: Your shift starts at ${employee.shift.startTime}. You cannot clock out until the shift has officially started.`,
+              `Your shift starts at ${employee.shift.startTime}. You cannot clock out until the shift has officially started.`,
             );
           }
         }
@@ -874,7 +874,7 @@ export class AttendanceService {
         // Rule: Must be within working hours.
         if (!this._isWithinShiftHours(now, employee.shift)) {
           throw new BadRequestException(
-            `Action denied: Breaks can only be recorded within your assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
+            `Breaks can only be recorded within your assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
           );
         }
         if (hasClockOutToday)
@@ -902,7 +902,7 @@ export class AttendanceService {
         // Rule: Must be within working hours.
         if (!this._isWithinShiftHours(now, employee.shift)) {
           throw new BadRequestException(
-            `Action denied: Breaks can only be recorded within your assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
+            `Breaks can only be recorded within your assigned working hours (${employee.shift.startTime} - ${employee.shift.endTime}).`,
           );
         }
         if (hasClockOutToday)
@@ -934,7 +934,7 @@ export class AttendanceService {
       );
       if (dist > branch.allowedRadius) {
         throw new BadRequestException(
-          `You are ${Math.round(dist)}m from ${branch.name} (limit: ${branch.allowedRadius}m).`,
+          `You are about ${Math.round(dist)}m away from ${branch.name} Department in your school. You should be within ${branch.allowedRadius}m.`,
         );
       }
     }

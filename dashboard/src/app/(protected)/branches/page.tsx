@@ -52,6 +52,13 @@ function QrCodeImage({ text, size = 180, logoUrl }: { text: string; size?: numbe
             ctx.fillStyle = '#fff';
             const padding = HD_SIZE * 0.015;
             ctx.fillRect(x - padding, y - padding, logoSize + padding * 2, logoSize + padding * 2);
+
+            // Primary color border for logo
+            const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#3b82f6';
+            ctx.strokeStyle = primaryColor;
+            ctx.lineWidth = HD_SIZE * 0.005;
+            ctx.strokeRect(x - padding, y - padding, logoSize + padding * 2, logoSize + padding * 2);
+
             ctx.drawImage(logo, x, y, logoSize, logoSize);
           }
         }
@@ -303,10 +310,6 @@ function BranchCard({ branch, onEdit, onDelete, canDelete }: { branch: any; onEd
         <body>
           <div class="container">
             <div style="display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 60px; padding-top: 40px;">
-              ${activeTenant?.logoUrl 
-                ? `<img src="${activeTenant.logoUrl}" class="tenant-logo" />` 
-                : `<img src="/logo.png" class="tenant-logo" />`
-              }
               <div style="font-size: 32px; font-weight: 800; letter-spacing: -1px; color: #111827;">${activeTenant?.name || 'TK Clocking System'}</div>
             </div>
 

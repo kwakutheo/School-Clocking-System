@@ -673,7 +673,7 @@ export default function SchoolsRegistryPage() {
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '6px',
-                              borderColor: 'rgba(236, 72, 153, 0.3)',
+                              borderColor: 'var(--primary)',
                               color: 'var(--primary)',
                               background: 'var(--primary-dim)',
                               transition: 'all 0.2s',

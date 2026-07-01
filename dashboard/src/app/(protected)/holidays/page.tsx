@@ -3,7 +3,7 @@ import useSWR from 'swr';
 import { useState } from 'react';
 import { holidaysApi } from '@/lib/api';
 import { format, parseISO } from 'date-fns';
-import { Calendar, Plus, Trash2, Edit, ShieldAlert, DownloadCloud, ArrowLeft } from 'lucide-react';
+import { Calendar, Plus, Trash2, Edit, ShieldAlert, DownloadCloud, ArrowLeft, Repeat, CalendarDays, Settings2, Info } from 'lucide-react';
 import Link from 'next/link';
 import { can } from '@/lib/permissions';
 import { useAuthStore } from '@/lib/store';
@@ -364,37 +364,78 @@ export default function HolidaysPage() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{editingId ? 'Edit Holiday' : 'Add New Holiday'}</h3>
-              <button className="modal-close" onClick={() => setShowModal(false)} aria-label="Close Modal">✕</button>
+        <div className="modal-overlay" onClick={() => setShowModal(false)} style={{ backdropFilter: 'blur(4px)' }}>
+          <div className="modal-content" style={{ maxWidth: 500, padding: '32px', borderRadius: '24px', boxShadow: '0 24px 48px rgba(0,0,0,0.2)' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: 24 }}>
+              <div>
+                <h3 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>{editingId ? 'Edit Holiday' : 'Add New Holiday'}</h3>
+                <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--text-secondary)' }}>Configure the date and observation rules.</p>
+              </div>
+              <button className="modal-close" onClick={() => setShowModal(false)} aria-label="Close Modal" style={{ background: 'var(--bg-card)', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border)' }}>✕</button>
             </div>
+            
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="holidayName">Holiday Name</label>
-                <input id="holidayName" className="form-input" required value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Independence Day" />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label htmlFor="holidayName" style={{ fontWeight: 600 }}>Holiday Name</label>
+                  <input id="holidayName" className="form-input" required value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Independence Day" style={{ padding: '12px 16px', fontSize: 15 }} />
+                </div>
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label htmlFor="holidayDate" style={{ fontWeight: 600 }}>Calendar Date</label>
+                  <input id="holidayDate" type="date" className="form-input" required value={form.date} onChange={e => setForm({...form, date: e.target.value})} style={{ padding: '12px 16px', fontSize: 15 }} />
+                </div>
               </div>
-              <div className="form-group">
-                <label htmlFor="holidayDate">Date</label>
-                <input id="holidayDate" type="date" className="form-input" required value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
+
+              <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <Settings2 size={14} /> Observation Rules
               </div>
-              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <input id="holidayRecurring" type="checkbox" checked={form.isRecurring} onChange={e => setForm({...form, isRecurring: e.target.checked})} />
-                <label htmlFor="holidayRecurring" style={{ marginBottom: 0 }}>Repeats every year</label>
+              
+              <div style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden', marginBottom: '32px' }}>
+                
+                {/* Rule: Recurring */}
+                <div style={{ padding: '16px', display: 'flex', alignItems: 'flex-start', gap: '16px', borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }} className="hover-bg-card-hover">
+                  <div style={{ color: 'var(--primary)', background: 'var(--primary-dim)', padding: 8, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Repeat size={18} />
+                  </div>
+                  <div style={{ flex: 1, marginTop: 2 }}>
+                    <label htmlFor="holidayRecurring" style={{ display: 'block', fontWeight: 600, cursor: 'pointer', marginBottom: '4px', fontSize: 15 }}>Repeats Every Year</label>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>Occurs on the same calendar date every year.</p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', padding: '10px 0' }}>
+                    <input id="holidayRecurring" type="checkbox" checked={form.isRecurring} onChange={e => setForm({...form, isRecurring: e.target.checked})} style={{ width: 20, height: 20, accentColor: 'var(--primary)', cursor: 'pointer' }} />
+                  </div>
+                </div>
+
+                {/* Rule: Postpone */}
+                <div style={{ padding: '16px', display: 'flex', alignItems: 'flex-start', gap: '16px', borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }} className="hover-bg-card-hover">
+                  <div style={{ color: 'var(--success)', background: 'var(--success-dim)', padding: 8, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <CalendarDays size={18} />
+                  </div>
+                  <div style={{ flex: 1, marginTop: 2 }}>
+                    <label htmlFor="holidayPostpone" style={{ display: 'block', fontWeight: 600, cursor: 'pointer', marginBottom: '4px', fontSize: 15 }}>Shift to Weekday</label>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>Automatically observe on Monday or Tuesday if the calendar date falls on a weekend.</p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', padding: '10px 0' }}>
+                    <input id="holidayPostpone" type="checkbox" checked={form.postponeIfWeekend} onChange={e => setForm({...form, postponeIfWeekend: e.target.checked})} style={{ width: 20, height: 20, accentColor: 'var(--primary)', cursor: 'pointer' }} />
+                  </div>
+                </div>
+
+                {/* Rule: Custom Date */}
+                <div style={{ padding: '16px', display: 'flex', alignItems: 'flex-start', gap: '16px', transition: 'background 0.2s', background: form.observedDate ? 'var(--bg-card-hover)' : 'transparent' }}>
+                  <div style={{ color: 'var(--warning)', background: 'var(--warning-dim)', padding: 8, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Info size={18} />
+                  </div>
+                  <div style={{ flex: 1, marginTop: 2 }}>
+                    <label htmlFor="holidayObservedDate" style={{ display: 'block', fontWeight: 600, cursor: 'pointer', marginBottom: '4px', fontSize: 15 }}>Custom Observed Date (Optional)</label>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 12px 0', lineHeight: 1.4 }}>Manually move this holiday to a specific date for the current year (e.g., from Wednesday to Friday).</p>
+                    <input id="holidayObservedDate" type="date" className="form-input" value={form.observedDate} onChange={e => setForm({...form, observedDate: e.target.value})} style={{ padding: '10px 14px', maxWidth: 200, fontSize: 14 }} />
+                  </div>
+                </div>
               </div>
-              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <input id="holidayPostpone" type="checkbox" checked={form.postponeIfWeekend} onChange={e => setForm({...form, postponeIfWeekend: e.target.checked})} />
-                <label htmlFor="holidayPostpone" style={{ marginBottom: 0 }}>Postpone to next weekday if on weekend</label>
-              </div>
-              <div className="form-group">
-                <label htmlFor="holidayObservedDate">Observe on a specific date (Optional)</label>
-                <input id="holidayObservedDate" type="date" className="form-input" value={form.observedDate} onChange={e => setForm({...form, observedDate: e.target.value})} />
-                <small style={{ color: 'var(--text-secondary)' }}>Overrides the calendar date. E.g., moving a Wednesday holiday to Friday.</small>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">{editingId ? 'Update' : 'Save Holiday'}</button>
+              
+              <div className="modal-footer" style={{ borderTop: 'none', padding: 0, gap: 12 }}>
+                <button type="button" className="btn" onClick={() => setShowModal(false)} style={{ flex: 1, padding: '12px', fontSize: 15, fontWeight: 600 }}>Cancel</button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '12px', fontSize: 15, fontWeight: 600 }}>{editingId ? 'Update Holiday' : 'Save Holiday'}</button>
               </div>
             </form>
           </div>

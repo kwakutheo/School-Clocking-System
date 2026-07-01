@@ -9,6 +9,7 @@ import { AttendanceLog } from '../attendance/attendance-log.entity';
 import { Employee } from '../employees/employee.entity';
 import { EmployeeStatusLog } from '../employees/employee-status-log.entity';
 import { HolidaysService } from '../holidays/holidays.service';
+import { Holiday } from '../holidays/holiday.entity';
 import { AcademicCalendarService } from '../academic-calendar/academic-calendar.service';
 import { LeavesService } from '../leaves/leaves.service';
 import { LeaveRequest } from '../leaves/leave-request.entity';
@@ -480,6 +481,48 @@ export class AttendanceReportService {
     let totalEarlyOutMinutes = 0;
     let daysForgotClockOut = 0;
 
+    const startYear = startDate.getFullYear();
+    const endYear = endDate.getFullYear();
+    const effectiveHolidaysMap = new Map<string, Holiday>();
+
+    for (let year = startYear; year <= endYear; year++) {
+      const activeHolidays = holidays.filter(
+        (h) => h.isRecurring || h.date.substring(0, 4) === year.toString()
+      );
+
+      const computedHolidays = activeHolidays
+        .map((h) => ({
+          holiday: h,
+          origDateStr: h.isRecurring
+            ? `${year}-${h.date.substring(5)}`
+            : h.date,
+        }))
+        .sort((a, b) => a.origDateStr.localeCompare(b.origDateStr));
+
+      for (const item of computedHolidays) {
+        let effDate = item.origDateStr;
+
+        if (
+          item.holiday.observedDate &&
+          item.holiday.observedDate.substring(0, 4) === year.toString()
+        ) {
+          effDate = item.holiday.observedDate;
+        } else if (item.holiday.postponeIfWeekend) {
+          const effDateObj = new Date(item.origDateStr);
+          while (
+            effDateObj.getUTCDay() === 0 ||
+            effDateObj.getUTCDay() === 6 ||
+            effectiveHolidaysMap.has(effDateObj.toISOString().split('T')[0])
+          ) {
+            effDateObj.setUTCDate(effDateObj.getUTCDate() + 1);
+          }
+          effDate = effDateObj.toISOString().split('T')[0];
+        }
+
+        effectiveHolidaysMap.set(effDate, item.holiday);
+      }
+    }
+
     const registrationDate = employee.hireDate
       ? new Date(employee.hireDate)
       : new Date(employee.createdAt);
@@ -490,13 +533,7 @@ export class AttendanceReportService {
       const dayLogs = logs.filter((l) => isSameDay(new Date(l.timestamp), day));
 
       const isWeekEnd = isWeekend(day);
-      const holiday = holidays.find((h) => {
-        const hDate = h.date;
-        if (h.isRecurring) {
-          return hDate.substring(5) === dayStr.substring(5);
-        }
-        return hDate === dayStr;
-      });
+      const holiday = effectiveHolidaysMap.get(dayStr);
 
       const term = terms.find(
         (t) => dayStr >= t.startDate && dayStr <= t.endDate,

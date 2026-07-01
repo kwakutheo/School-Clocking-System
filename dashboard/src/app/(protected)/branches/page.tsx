@@ -96,7 +96,7 @@ function QrCodeImage({ text, size = 180, logoUrl }: { text: string; size?: numbe
     <img
       src={dataUrl}
       alt="QR Code"
-      style={{ width: size, height: size, borderRadius: 8, border: '1px solid var(--border)' }}
+      style={{ width: size, height: size, borderRadius: 8, border: '2px solid var(--primary)' }}
     />
   );
 }
@@ -249,6 +249,8 @@ function BranchCard({ branch, onEdit, onDelete, canDelete }: { branch: any; onEd
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
+    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#3b82f6';
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -274,7 +276,7 @@ function BranchCard({ branch, onEdit, onDelete, canDelete }: { branch: any; onEd
             .qr-image { 
               width: 500px; 
               height: 500px; 
-              border: 4px solid #000; 
+              border: 4px solid ${primaryColor}; 
               border-radius: 24px; 
               padding: 20px;
               background: #fff;

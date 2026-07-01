@@ -3,9 +3,9 @@ import useSWR from 'swr';
 import { useState } from 'react';
 import { holidaysApi } from '@/lib/api';
 import { format, parseISO } from 'date-fns';
-import { Calendar, Plus, Trash2, Edit, ShieldAlert, DownloadCloud, Globe } from 'lucide-react';
+import { Calendar, Plus, Trash2, Edit, ShieldAlert, DownloadCloud, Globe, Repeat, CalendarDays, Settings2, Info } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 
 const fetcher = () => holidaysApi.list().then((r) => r.data);
 
@@ -47,10 +47,37 @@ export default function GlobalHolidaysPage() {
   const [selectedSyncDates, setSelectedSyncDates] = useState<Record<string, boolean>>({});
   const [isSyncing, setIsSyncing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', date: '', isRecurring: true });
+  const [form, setForm] = useState({ name: '', date: '', isRecurring: true, postponeIfWeekend: false, observedDate: '' });
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   const currentYearStr = new Date().getFullYear().toString();
+
+  // Parse YYYY-MM-DD directly to avoid UTC-to-local timezone shifts that can
+  // make getUTCDay() report the wrong weekday (e.g. Sunday becoming Saturday).
+  const isDateWeekend = (dateStr: string) => {
+    if (!dateStr) return false;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const d = new Date(year, month - 1, day); // local time – no UTC shift
+    const dow = d.getDay();
+    return dow === 0 || dow === 6;
+  };
+
+  useEffect(() => {
+    setForm(prev => {
+      let newPostpone = prev.postponeIfWeekend;
+      if (prev.isRecurring) {
+        newPostpone = true;
+      } else {
+        const weekend = isDateWeekend(prev.date);
+        if (!weekend) newPostpone = false;
+        else if (!prev.postponeIfWeekend && isDateWeekend(prev.date)) newPostpone = true;
+      }
+      if (newPostpone !== prev.postponeIfWeekend) {
+        return { ...prev, postponeIfWeekend: newPostpone };
+      }
+      return prev;
+    });
+  }, [form.date, form.isRecurring]);
 
   const { recurring, groupedByYear, sortedYears } = useMemo(() => {
     const recurring: any[] = [];
@@ -122,18 +149,42 @@ export default function GlobalHolidaysPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Frontend guard: prevent admin from setting observedDate on a weekend or backward
+    if (form.observedDate) {
+      if (isDateWeekend(form.observedDate)) {
+        alert('You cannot manually move a holiday to a weekend. Please select a valid working day (Monday–Friday).');
+        return;
+      }
+      const [y] = form.observedDate.split('-');
+      const origDateStr = form.isRecurring ? `${y}-${form.date.substring(5)}` : form.date;
+      if (form.observedDate <= origDateStr) {
+        alert('The custom observed date must be strictly after the original holiday date.');
+        return;
+      }
+    }
+
     try {
+      const payload = {
+        ...form,
+        observedDate: form.observedDate || null
+      };
       if (editingId) {
-        await holidaysApi.update(editingId, form);
+        await holidaysApi.update(editingId, payload);
       } else {
-        await holidaysApi.create(form);
+        await holidaysApi.create(payload);
       }
       mutate();
       setShowModal(false);
       setEditingId(null);
-      setForm({ name: '', date: '', isRecurring: true });
-    } catch (err) {
-      alert(editingId ? 'Failed to update holiday' : 'Failed to add holiday');
+      setForm({ name: '', date: '', isRecurring: true, postponeIfWeekend: false, observedDate: '' });
+    } catch (err: any) {
+      // Extract the most specific message available from the error chain
+      const serverMsg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message;
+      alert(serverMsg || (editingId ? 'Failed to update holiday' : 'Failed to add holiday'));
     }
   };
 
@@ -148,13 +199,19 @@ export default function GlobalHolidaysPage() {
   };
 
   const openEdit = (h: any) => {
-    setForm({ name: h.name, date: h.date, isRecurring: h.isRecurring });
+    setForm({ 
+      name: h.name, 
+      date: h.date, 
+      isRecurring: h.isRecurring,
+      postponeIfWeekend: h.postponeIfWeekend || false,
+      observedDate: h.observedDate || ''
+    });
     setEditingId(h.id);
     setShowModal(true);
   };
 
   const openAdd = () => {
-    setForm({ name: '', date: '', isRecurring: true });
+    setForm({ name: '', date: '', isRecurring: true, postponeIfWeekend: false, observedDate: '' });
     setEditingId(null);
     setShowModal(true);
   };
@@ -216,7 +273,8 @@ export default function GlobalHolidaysPage() {
       await Promise.all(toAdd.map((ph: any) => holidaysApi.create({
         name: ph.name,
         date: ph.date,
-        isRecurring: ph.isFixed === true
+        isRecurring: ph.isFixed === true,
+        postponeIfWeekend: ph.isFixed === true // Ghana public holidays usually postpone
       })));
 
       mutate();
@@ -353,28 +411,105 @@ export default function GlobalHolidaysPage() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{editingId ? 'Edit Global Holiday' : 'Add New Global Holiday'}</h3>
-              <button className="modal-close" onClick={() => setShowModal(false)} aria-label="Close Modal">✕</button>
+        <div className="modal-overlay" onClick={() => setShowModal(false)} style={{ backdropFilter: 'blur(4px)' }}>
+          <div className="modal-content" style={{ maxWidth: 500, padding: '32px', borderRadius: '24px', boxShadow: '0 24px 48px rgba(0,0,0,0.2)' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: 24 }}>
+              <div>
+                <h3 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>{editingId ? 'Edit Global Holiday' : 'Add New Global Holiday'}</h3>
+                <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--text-secondary)' }}>Configure the date and observation rules.</p>
+              </div>
+              <button className="modal-close" onClick={() => setShowModal(false)} aria-label="Close Modal" style={{ background: 'var(--bg-card)', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border)' }}>✕</button>
             </div>
+            
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="holidayName">Holiday Name</label>
-                <input id="holidayName" className="form-input" required value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Independence Day" />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label htmlFor="holidayName" style={{ fontWeight: 600 }}>Holiday Name</label>
+                  <input id="holidayName" className="form-input" required value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Independence Day" style={{ padding: '12px 16px', fontSize: 15 }} />
+                </div>
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label htmlFor="holidayDate" style={{ fontWeight: 600 }}>Calendar Date</label>
+                  <input id="holidayDate" type="date" className="form-input" required value={form.date} onChange={e => setForm({...form, date: e.target.value})} style={{ padding: '12px 16px', fontSize: 15 }} />
+                </div>
               </div>
-              <div className="form-group">
-                <label htmlFor="holidayDate">Date</label>
-                <input id="holidayDate" type="date" className="form-input" required value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
+
+              <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <Settings2 size={14} /> Observation Rules
               </div>
-              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <input id="holidayRecurring" type="checkbox" checked={form.isRecurring} onChange={e => setForm({...form, isRecurring: e.target.checked})} />
-                <label htmlFor="holidayRecurring" style={{ marginBottom: 0 }}>Repeats every year</label>
+              
+              <div style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden', marginBottom: '32px' }}>
+                
+                {/* Rule: Recurring */}
+                <div style={{ padding: '16px', display: 'flex', alignItems: 'flex-start', gap: '16px', borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }} className="hover-bg-card-hover">
+                  <div style={{ color: 'var(--primary)', background: 'var(--primary-dim)', padding: 8, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Repeat size={18} />
+                  </div>
+                  <div style={{ flex: 1, marginTop: 2 }}>
+                    <label htmlFor="holidayRecurring" style={{ display: 'block', fontWeight: 600, cursor: 'pointer', marginBottom: '4px', fontSize: 15 }}>Repeats Every Year</label>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>Occurs on the same calendar date every year.</p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', padding: '10px 0' }}>
+                    <input id="holidayRecurring" type="checkbox" checked={form.isRecurring} onChange={e => setForm({...form, isRecurring: e.target.checked})} style={{ width: 20, height: 20, accentColor: 'var(--primary)', cursor: 'pointer' }} />
+                  </div>
+                </div>
+
+                {/* Rule: Postpone */}
+                <div style={{ padding: '16px', display: 'flex', alignItems: 'flex-start', gap: '16px', borderBottom: '1px solid var(--border)', transition: 'background 0.2s', opacity: (form.isRecurring || !isDateWeekend(form.date)) ? 0.6 : 1 }} className="hover-bg-card-hover">
+                  <div style={{ color: 'var(--success)', background: 'var(--success-dim)', padding: 8, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <CalendarDays size={18} />
+                  </div>
+                  <div style={{ flex: 1, marginTop: 2 }}>
+                    <label htmlFor="holidayPostpone" style={{ display: 'block', fontWeight: 600, cursor: (form.isRecurring || !isDateWeekend(form.date)) ? 'not-allowed' : 'pointer', marginBottom: '4px', fontSize: 15 }}>Shift to Weekday</label>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                      {form.isRecurring 
+                        ? 'Recurring holidays automatically shift to a weekday if they fall on a weekend.' 
+                        : 'Automatically observe on Monday or Tuesday if the calendar date falls on a weekend.'}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', padding: '10px 0' }}>
+                    <input id="holidayPostpone" type="checkbox" checked={form.postponeIfWeekend} disabled={form.isRecurring || !isDateWeekend(form.date)} onChange={e => setForm({...form, postponeIfWeekend: e.target.checked})} style={{ width: 20, height: 20, accentColor: 'var(--primary)', cursor: (form.isRecurring || !isDateWeekend(form.date)) ? 'not-allowed' : 'pointer' }} />
+                  </div>
+                </div>
+
+                {/* Rule: Custom Date */}
+                <div style={{ padding: '16px', display: 'flex', alignItems: 'flex-start', gap: '16px', transition: 'background 0.2s', background: form.observedDate ? 'var(--bg-card-hover)' : 'transparent' }}>
+                  <div style={{ color: 'var(--warning)', background: 'var(--warning-dim)', padding: 8, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Info size={18} />
+                  </div>
+                  <div style={{ flex: 1, marginTop: 2 }}>
+                    <label htmlFor="holidayObservedDate" style={{ display: 'block', fontWeight: 600, cursor: 'pointer', marginBottom: '4px', fontSize: 15 }}>Custom Observed Date (Optional)</label>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 12px 0', lineHeight: 1.4 }}>Manually move this holiday to a specific date for the current year (e.g., from Wednesday to Friday).</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input id="holidayObservedDate" type="date" className="form-input" value={form.observedDate} onChange={e => setForm({...form, observedDate: e.target.value})} style={{ padding: '10px 14px', maxWidth: 200, fontSize: 14 }} />
+                      {form.observedDate && (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-ghost btn-danger"
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to clear the custom observed date?')) {
+                              setForm({ ...form, observedDate: '' });
+                            }
+                          }}
+                          aria-label="Clear observed date"
+                          title="Clear observed date"
+                          style={{ padding: '8px' }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                    {form.observedDate && isDateWeekend(form.observedDate) && (
+                      <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 6, fontWeight: 500 }}>
+                        ⚠ Weekend selected — holidays cannot be observed on weekends. Please choose a weekday.
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">{editingId ? 'Update' : 'Save Holiday'}</button>
+              
+              <div className="modal-footer" style={{ borderTop: 'none', padding: 0, gap: 12 }}>
+                <button type="button" className="btn" onClick={() => setShowModal(false)} style={{ flex: 1, padding: '12px', fontSize: 15, fontWeight: 600 }}>Cancel</button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '12px', fontSize: 15, fontWeight: 600 }}>{editingId ? 'Update Holiday' : 'Save Holiday'}</button>
               </div>
             </form>
           </div>

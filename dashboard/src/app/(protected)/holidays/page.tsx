@@ -55,11 +55,14 @@ export default function HolidaysPage() {
   const [form, setForm] = useState({ name: '', date: '', isRecurring: true, postponeIfWeekend: false, observedDate: '' });
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
+  // Parse YYYY-MM-DD directly to avoid UTC-to-local timezone shifts that can
+  // make getUTCDay() report the wrong weekday (e.g. Sunday becoming Saturday).
   const isDateWeekend = (dateStr: string) => {
     if (!dateStr) return false;
-    const d = new Date(dateStr);
-    const day = d.getUTCDay();
-    return day === 0 || day === 6;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const d = new Date(year, month - 1, day); // local time – no UTC shift
+    const dow = d.getDay();
+    return dow === 0 || dow === 6;
   };
 
   useEffect(() => {
@@ -173,11 +176,16 @@ export default function HolidaysPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Frontend guard: prevent admin from setting observedDate on a weekend
+    // Frontend guard: prevent admin from setting observedDate on a weekend or backward
     if (form.observedDate) {
-      const day = new Date(form.observedDate).getUTCDay();
-      if (day === 0 || day === 6) {
+      if (isDateWeekend(form.observedDate)) {
         alert('You cannot manually move a holiday to a weekend. Please select a valid working day (Monday–Friday).');
+        return;
+      }
+      const [y] = form.observedDate.split('-');
+      const origDateStr = form.isRecurring ? `${y}-${form.date.substring(5)}` : form.date;
+      if (form.observedDate <= origDateStr) {
+        alert('The custom observed date must be strictly after the original holiday date.');
         return;
       }
     }
@@ -197,7 +205,12 @@ export default function HolidaysPage() {
       setEditingId(null);
       setForm({ name: '', date: '', isRecurring: true, postponeIfWeekend: false, observedDate: '' });
     } catch (err: any) {
-      alert(err?.response?.data?.message || (editingId ? 'Failed to update holiday' : 'Failed to add holiday'));
+      // Extract the most specific message available from the error chain
+      const serverMsg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message;
+      alert(serverMsg || (editingId ? 'Failed to update holiday' : 'Failed to add holiday'));
     }
   };
 
@@ -501,7 +514,7 @@ export default function HolidaysPage() {
                         </button>
                       )}
                     </div>
-                    {form.observedDate && (() => { const d = new Date(form.observedDate).getUTCDay(); return (d === 0 || d === 6); })() && (
+                    {form.observedDate && isDateWeekend(form.observedDate) && (
                       <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 6, fontWeight: 500 }}>
                         ⚠ Weekend selected — holidays cannot be observed on weekends. Please choose a weekday.
                       </p>

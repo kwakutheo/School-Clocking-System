@@ -82,11 +82,22 @@ export class HolidaysService {
 
   async create(data: Partial<Holiday>): Promise<Holiday> {
     if (data.observedDate) {
-      const day = new Date(data.observedDate).getUTCDay();
+      const [y, m, d] = data.observedDate.split('-').map(Number);
+      const day = new Date(y, m - 1, d).getDay();
       if (day === 0 || day === 6) {
         throw new BadRequestException(
           'You cannot manually move a holiday to a weekend. Please select a valid working day (Monday–Friday).'
         );
+      }
+      if (data.date) {
+        const origDateStr = data.isRecurring
+          ? `${y}-${data.date.substring(5)}`
+          : data.date;
+        if (data.observedDate <= origDateStr) {
+          throw new BadRequestException(
+            'The custom observed date must be strictly after the original holiday date.'
+          );
+        }
       }
     }
     const holiday = this.repo.create(data);
@@ -107,23 +118,40 @@ export class HolidaysService {
   }
 
   async update(id: string, data: Partial<Holiday>): Promise<Holiday> {
-    if (data.observedDate) {
-      const day = new Date(data.observedDate).getUTCDay();
-      if (day === 0 || day === 6) {
-        throw new BadRequestException(
-          'You cannot manually move a holiday to a weekend. Please select a valid working day (Monday–Friday).'
-        );
-      }
-    }
     const tenantId = getCurrentTenantId();
     const holiday = tenantId
       ? await this.repo.findOne({ where: { id, tenantId } })
       : await this.repo.findOne({ where: { id, tenantId: IsNull() } });
 
     if (!holiday) throw new NotFoundException('Holiday not found');
+
+    if (data.observedDate) {
+      const [y, m, d] = data.observedDate.split('-').map(Number);
+      const day = new Date(y, m - 1, d).getDay();
+      if (day === 0 || day === 6) {
+        throw new BadRequestException(
+          'You cannot manually move a holiday to a weekend. Please select a valid working day (Monday–Friday).'
+        );
+      }
+
+      const isRecurring = data.isRecurring ?? holiday.isRecurring;
+      const baseDate = data.date ?? holiday.date;
+
+      const origDateStr = isRecurring
+        ? `${y}-${baseDate.substring(5)}`
+        : baseDate;
+
+      if (data.observedDate <= origDateStr) {
+        throw new BadRequestException(
+          'The custom observed date must be strictly after the original holiday date.'
+        );
+      }
+    }
+
     Object.assign(holiday, data);
     return this.repo.save(holiday);
   }
+
 
   async getHolidayForDate(date: Date): Promise<{
     holiday: Holiday;

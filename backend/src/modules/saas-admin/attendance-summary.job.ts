@@ -168,8 +168,7 @@ export class AttendanceSummaryJob {
     const globalSet = new Set<string>();
     for (const h of globalHolidays) {
       this.expandHolidayDates(
-        h.date,
-        h.isRecurring,
+        h,
         startYear,
         endYear,
         startStr,
@@ -182,8 +181,7 @@ export class AttendanceSummaryJob {
       const tSet = new Set<string>(globalSet);
       for (const h of schoolHolidays.filter((h) => h.tenantId === tenant.id)) {
         this.expandHolidayDates(
-          h.date,
-          h.isRecurring,
+          h,
           startYear,
           endYear,
           startStr,
@@ -301,7 +299,10 @@ export class AttendanceSummaryJob {
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
   private toDateStr(d: Date): string {
-    return d.toISOString().split('T')[0];
+    const yStr = d.getFullYear();
+    const mStr = String(d.getMonth() + 1).padStart(2, '0');
+    const dStr = String(d.getDate()).padStart(2, '0');
+    return `${yStr}-${mStr}-${dStr}`;
   }
 
   /**
@@ -350,22 +351,50 @@ export class AttendanceSummaryJob {
    * [startYear, endYear] range.
    */
   private expandHolidayDates(
-    date: string,
-    isRecurring: boolean,
+    h: Holiday,
     startYear: number,
     endYear: number,
     startStr: string,
     endStr: string,
     targetSet: Set<string>,
   ): void {
-    if (isRecurring) {
-      const mmdd = date.substring(5);
+    if (h.isRecurring) {
+      const mmdd = h.date.substring(5);
       for (let year = startYear; year <= endYear; year++) {
-        const d = `${year}-${mmdd}`;
+        let d = `${year}-${mmdd}`;
+        if (h.observedDate && h.observedDate.startsWith(`${year}-`)) {
+          d = h.observedDate;
+        } else if (h.postponeIfWeekend) {
+          const [y, m, day] = d.split('-').map(Number);
+          const dObj = new Date(y, m - 1, day);
+          while (
+            dObj.getDay() === 0 ||
+            dObj.getDay() === 6 ||
+            targetSet.has(this.toDateStr(dObj))
+          ) {
+            dObj.setDate(dObj.getDate() + 1);
+          }
+          d = this.toDateStr(dObj);
+        }
         if (d >= startStr && d <= endStr) targetSet.add(d);
       }
     } else {
-      if (date >= startStr && date <= endStr) targetSet.add(date);
+      let d = h.date;
+      if (h.observedDate) {
+        d = h.observedDate;
+      } else if (h.postponeIfWeekend) {
+        const [y, m, day] = d.split('-').map(Number);
+        const dObj = new Date(y, m - 1, day);
+        while (
+          dObj.getDay() === 0 ||
+          dObj.getDay() === 6 ||
+          targetSet.has(this.toDateStr(dObj))
+        ) {
+          dObj.setDate(dObj.getDate() + 1);
+        }
+        d = this.toDateStr(dObj);
+      }
+      if (d >= startStr && d <= endStr) targetSet.add(d);
     }
   }
 }

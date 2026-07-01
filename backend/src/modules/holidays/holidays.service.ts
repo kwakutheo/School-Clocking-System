@@ -27,15 +27,57 @@ export class HolidaysService {
    * - Recurring holidays (isRecurring = true) are always included (they apply every year).
    * - Non-recurring holidays are only included if their date falls in the current year.
    */
-  async findCurrentYear(): Promise<Holiday[]> {
+  async findCurrentYear(): Promise<any[]> {
     const currentYear = new Date().getFullYear();
     const all = await this.findAll(); // already tenant-scoped
-    return all.filter((h) => {
+    
+    const activeHolidays = all.filter((h) => {
       if (h.isRecurring) return true;
-      // date is stored as YYYY-MM-DD
       const year = parseInt(h.date.substring(0, 4), 10);
       return year === currentYear;
     });
+
+    const computedHolidays = activeHolidays
+      .map((h) => ({
+        holiday: h,
+        origDateStr: h.isRecurring
+          ? `${currentYear}-${h.date.substring(5)}`
+          : h.date,
+      }))
+      .sort((a, b) => a.origDateStr.localeCompare(b.origDateStr));
+
+    const observedDates = new Map<string, Holiday>();
+    const results = [];
+
+    for (const item of computedHolidays) {
+      let effDate = item.origDateStr;
+
+      if (
+        item.holiday.observedDate &&
+        item.holiday.observedDate.substring(0, 4) === currentYear.toString()
+      ) {
+        effDate = item.holiday.observedDate;
+      } else if (item.holiday.postponeIfWeekend) {
+        const effDateObj = new Date(item.origDateStr);
+        while (
+          effDateObj.getUTCDay() === 0 ||
+          effDateObj.getUTCDay() === 6 ||
+          observedDates.has(effDateObj.toISOString().split('T')[0])
+        ) {
+          effDateObj.setUTCDate(effDateObj.getUTCDate() + 1);
+        }
+        effDate = effDateObj.toISOString().split('T')[0];
+      }
+
+      observedDates.set(effDate, item.holiday);
+      results.push({
+        ...item.holiday,
+        effectiveDate: effDate,
+        originalDateThisYear: item.origDateStr,
+      });
+    }
+
+    return results;
   }
 
   async create(data: Partial<Holiday>): Promise<Holiday> {
@@ -69,16 +111,49 @@ export class HolidaysService {
 
   async getHolidayForDate(date: Date): Promise<Holiday | null> {
     const dateStr = date.toISOString().split('T')[0];
-    const monthDay = dateStr.substring(5); // MM-DD
+    const year = parseInt(dateStr.substring(0, 4), 10);
 
-    // Use tenant-scoped findAll — this is called internally during clock-in validation
     const holidays = await this.findAll();
-    return (
-      holidays.find((h) => {
-        if (h.date === dateStr) return true;
-        if (h.isRecurring && h.date.substring(5) === monthDay) return true;
-        return false;
-      }) || null
+
+    // Filter to holidays relevant for this year
+    const activeHolidays = holidays.filter(
+      (h) => h.isRecurring || h.date.substring(0, 4) === year.toString()
     );
+
+    const computedHolidays = activeHolidays
+      .map((h) => ({
+        holiday: h,
+        origDateStr: h.isRecurring
+          ? `${year}-${h.date.substring(5)}`
+          : h.date,
+      }))
+      .sort((a, b) => a.origDateStr.localeCompare(b.origDateStr));
+
+    const observedDates = new Map<string, Holiday>();
+
+    for (const item of computedHolidays) {
+      let effDate = item.origDateStr;
+
+      if (
+        item.holiday.observedDate &&
+        item.holiday.observedDate.substring(0, 4) === year.toString()
+      ) {
+        effDate = item.holiday.observedDate;
+      } else if (item.holiday.postponeIfWeekend) {
+        const effDateObj = new Date(item.origDateStr);
+        while (
+          effDateObj.getUTCDay() === 0 ||
+          effDateObj.getUTCDay() === 6 ||
+          observedDates.has(effDateObj.toISOString().split('T')[0])
+        ) {
+          effDateObj.setUTCDate(effDateObj.getUTCDate() + 1);
+        }
+        effDate = effDateObj.toISOString().split('T')[0];
+      }
+
+      observedDates.set(effDate, item.holiday);
+    }
+
+    return observedDates.get(dateStr) || null;
   }
 }

@@ -172,6 +172,16 @@ export default function HolidaysPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Frontend guard: prevent admin from setting observedDate on a weekend
+    if (form.observedDate) {
+      const day = new Date(form.observedDate).getUTCDay();
+      if (day === 0 || day === 6) {
+        alert('You cannot manually move a holiday to a weekend. Please select a valid working day (Monday–Friday).');
+        return;
+      }
+    }
+
     try {
       const payload = {
         ...form,
@@ -186,8 +196,8 @@ export default function HolidaysPage() {
       setShowModal(false);
       setEditingId(null);
       setForm({ name: '', date: '', isRecurring: true, postponeIfWeekend: false, observedDate: '' });
-    } catch (err) {
-      alert(editingId ? 'Failed to update holiday' : 'Failed to add holiday');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || (editingId ? 'Failed to update holiday' : 'Failed to add holiday'));
     }
   };
 
@@ -473,6 +483,11 @@ export default function HolidaysPage() {
                     <label htmlFor="holidayObservedDate" style={{ display: 'block', fontWeight: 600, cursor: 'pointer', marginBottom: '4px', fontSize: 15 }}>Custom Observed Date (Optional)</label>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 12px 0', lineHeight: 1.4 }}>Manually move this holiday to a specific date for the current year (e.g., from Wednesday to Friday).</p>
                     <input id="holidayObservedDate" type="date" className="form-input" value={form.observedDate} onChange={e => setForm({...form, observedDate: e.target.value})} style={{ padding: '10px 14px', maxWidth: 200, fontSize: 14 }} />
+                    {form.observedDate && (() => { const d = new Date(form.observedDate).getUTCDay(); return (d === 0 || d === 6); })() && (
+                      <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 6, fontWeight: 500 }}>
+                        ⚠ Weekend selected — holidays cannot be observed on weekends. Please choose a weekday.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

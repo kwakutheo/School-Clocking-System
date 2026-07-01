@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { Holiday } from './holiday.entity';
@@ -81,6 +81,14 @@ export class HolidaysService {
   }
 
   async create(data: Partial<Holiday>): Promise<Holiday> {
+    if (data.observedDate) {
+      const day = new Date(data.observedDate).getUTCDay();
+      if (day === 0 || day === 6) {
+        throw new BadRequestException(
+          'You cannot manually move a holiday to a weekend. Please select a valid working day (Monday–Friday).'
+        );
+      }
+    }
     const holiday = this.repo.create(data);
     return this.repo.save(holiday);
   }
@@ -99,6 +107,14 @@ export class HolidaysService {
   }
 
   async update(id: string, data: Partial<Holiday>): Promise<Holiday> {
+    if (data.observedDate) {
+      const day = new Date(data.observedDate).getUTCDay();
+      if (day === 0 || day === 6) {
+        throw new BadRequestException(
+          'You cannot manually move a holiday to a weekend. Please select a valid working day (Monday–Friday).'
+        );
+      }
+    }
     const tenantId = getCurrentTenantId();
     const holiday = tenantId
       ? await this.repo.findOne({ where: { id, tenantId } })

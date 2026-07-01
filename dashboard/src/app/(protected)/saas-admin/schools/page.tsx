@@ -680,12 +680,12 @@ export default function SchoolsRegistryPage() {
                               cursor: 'pointer'
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.background = 'var(--primary-dim)';
-                              e.currentTarget.style.borderColor = 'var(--primary)';
+                              e.currentTarget.style.background = 'rgba(236, 72, 153, 0.1)';
+                              e.currentTarget.style.borderColor = 'rgba(236, 72, 153, 0.5)';
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'var(--primary-dim)';
-                              e.currentTarget.style.borderColor = 'var(--primary)';
+                              e.currentTarget.style.background = 'rgba(236, 72, 153, 0.05)';
+                              e.currentTarget.style.borderColor = 'rgba(236, 72, 153, 0.3)';
                             }}
                           >
                             <Eye size={12} />

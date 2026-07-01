@@ -1160,10 +1160,10 @@ export default function SchoolsRegistryPage() {
                       className="btn btn-primary"
                       style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '8px', fontWeight: 600 }}
                     >
-                      {editSubmitting ? 'Saving Details...' : (
+                      {editSubmitting ? 'Saving Changes...' : (
                         <>
                           <Sparkles size={16} />
-                          Save Details
+                          Save Changes
                         </>
                       )}
                     </button>

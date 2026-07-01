@@ -27,8 +27,8 @@ export class HolidaysService {
    * - Recurring holidays (isRecurring = true) are always included (they apply every year).
    * - Non-recurring holidays are only included if their date falls in the current year.
    */
-  async findCurrentYear(): Promise<any[]> {
-    const currentYear = new Date().getFullYear();
+  async findCurrentYear(targetYear?: number): Promise<any[]> {
+    const currentYear = targetYear ?? new Date().getFullYear();
     const all = await this.findAll(); // already tenant-scoped
     
     const activeHolidays = all.filter((h) => {

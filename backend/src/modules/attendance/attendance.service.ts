@@ -1427,29 +1427,20 @@ export class AttendanceService {
     });
 
     // 4. Determine Upcoming Holiday
-    const allHolidays = await this.holidays.findAll();
     let upcomingHolidayName: string | null = null;
     let upcomingHolidayDate: string | null = null;
     const nowMs = today.getTime();
 
-    const futureHolidays = allHolidays
-      .map((h) => {
-        const parts = h.date.split('-');
-        const hDate = new Date(h.date);
-        if (h.isRecurring && hDate.getTime() < nowMs) {
-          hDate.setFullYear(today.getFullYear());
-          if (hDate.getTime() < nowMs) {
-            hDate.setFullYear(today.getFullYear() + 1);
-          }
-        }
-        return { ...h, parsedDate: hDate };
-      })
-      .filter((h) => h.parsedDate.getTime() > nowMs)
-      .sort((a, b) => a.parsedDate.getTime() - b.parsedDate.getTime());
+    const currentYearHolidays = await this.holidays.findCurrentYear(today.getFullYear());
+    const nextYearHolidays = await this.holidays.findCurrentYear(today.getFullYear() + 1);
+    
+    const futureHolidays = [...currentYearHolidays, ...nextYearHolidays]
+      .filter((h) => new Date(h.effectiveDate).getTime() > nowMs)
+      .sort((a, b) => new Date(a.effectiveDate).getTime() - new Date(b.effectiveDate).getTime());
 
     if (futureHolidays.length > 0) {
       upcomingHolidayName = futureHolidays[0].name;
-      upcomingHolidayDate = futureHolidays[0].parsedDate.toISOString();
+      upcomingHolidayDate = new Date(futureHolidays[0].effectiveDate).toISOString();
     }
 
     // 5. Determine Target Hours
@@ -1548,6 +1539,7 @@ export class AttendanceService {
       upcomingHolidayDate,
       targetDailyHours: Number(targetDailyHours.toFixed(2)),
       targetWeeklyHours: Number(targetWeeklyHours.toFixed(2)),
+      nonWorkingMessage: dayStatus.message,
       branchLat: branch?.latitude ? Number(branch.latitude) : null,
       branchLng: branch?.longitude ? Number(branch.longitude) : null,
       branchRadius: branch?.allowedRadius ? Number(branch.allowedRadius) : null,

@@ -10,16 +10,17 @@ import Link from 'next/link';
 
 const fetcher = () => branchesApi.list().then((r) => r.data);
 
-function QrCodeImage({ text, size = 180 }: { text: string; size?: number }) {
+function QrCodeImage({ text, size = 180, logoUrl }: { text: string; size?: number; logoUrl?: string | null }) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const generate = async () => {
       try {
         const canvas = document.createElement('canvas');
-        // Use High error correction to allow for logo overlay
+        // Use High resolution for crisp printing
+        const HD_SIZE = 2048;
         await QRCode.toCanvas(canvas, text, {
-          width: size * 4, // High resolution for printing
+          width: HD_SIZE,
           margin: 1,
           errorCorrectionLevel: 'H',
           color: { dark: '#000', light: '#fff' }
@@ -27,8 +28,15 @@ function QrCodeImage({ text, size = 180 }: { text: string; size?: number }) {
 
         const ctx = canvas.getContext('2d');
         if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+
           const logo = new Image();
-          logo.src = '/logo.png';
+          if (logoUrl) {
+            logo.crossOrigin = 'anonymous';
+          }
+          logo.src = logoUrl || '/logo.png';
+          
           await new Promise((resolve) => {
             logo.onload = resolve;
             logo.onerror = resolve;
@@ -42,19 +50,27 @@ function QrCodeImage({ text, size = 180 }: { text: string; size?: number }) {
 
             // White border/background for logo
             ctx.fillStyle = '#fff';
-            ctx.fillRect(x - 5, y - 5, logoSize + 10, logoSize + 10);
+            const padding = HD_SIZE * 0.015;
+            ctx.fillRect(x - padding, y - padding, logoSize + padding * 2, logoSize + padding * 2);
             ctx.drawImage(logo, x, y, logoSize, logoSize);
           }
         }
-        setDataUrl(canvas.toDataURL('image/png'));
+        setDataUrl(canvas.toDataURL('image/png', 1.0));
       } catch (err) {
         console.error('QR Generation Error:', err);
-        setDataUrl(null);
+        // Fallback without logo if canvas tainted or other error
+        try {
+          const fallbackCanvas = document.createElement('canvas');
+          await QRCode.toCanvas(fallbackCanvas, text, { width: 1024, margin: 1 });
+          setDataUrl(fallbackCanvas.toDataURL('image/png'));
+        } catch (e) {
+          setDataUrl(null);
+        }
       }
     };
 
     generate();
-  }, [text, size]);
+  }, [text, size, logoUrl]);
 
   if (!dataUrl) return <div style={{ width: size, height: size, background: 'rgba(0,0,0,0.1)', borderRadius: 8 }} />;
 
@@ -237,13 +253,26 @@ function BranchCard({ branch, onEdit, onDelete, canDelete }: { branch: any; onEd
               width: 100%;
               max-width: 800px;
             }
-            img { 
+            .qr-image { 
               width: 500px; 
               height: 500px; 
               border: 4px solid #000; 
               border-radius: 24px; 
               padding: 20px;
               background: #fff;
+              object-fit: contain;
+            }
+            .tenant-logo {
+              width: 80px; 
+              height: 80px; 
+              border-radius: 12px; 
+              object-fit: contain;
+            }
+            .footer-logo {
+              width: 24px; 
+              height: 24px; 
+              border-radius: 6px;
+              object-fit: contain;
             }
             h1 { 
               margin: 48px 0 12px; 
@@ -275,19 +304,19 @@ function BranchCard({ branch, onEdit, onDelete, canDelete }: { branch: any; onEd
           <div class="container">
             <div style="display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 60px; padding-top: 40px;">
               ${activeTenant?.logoUrl 
-                ? `<img src="${activeTenant.logoUrl}" style="width: 80px; height: 80px; border: none; padding: 0; border-radius: 12px; object-fit: contain;" />` 
-                : `<img src="/logo.png" style="width: 80px; height: 80px; border: none; padding: 0; border-radius: 12px;" />`
+                ? `<img src="${activeTenant.logoUrl}" class="tenant-logo" />` 
+                : `<img src="/logo.png" class="tenant-logo" />`
               }
               <div style="font-size: 32px; font-weight: 800; letter-spacing: -1px; color: #111827;">${activeTenant?.name || 'TK Clocking System'}</div>
             </div>
 
-            <img src="${printRef.current.querySelector('img')?.src}" alt="QR Code" />
+            <img src="${printRef.current.querySelector('img')?.src}" alt="QR Code" class="qr-image" />
             <h1>${branch.name}</h1>
             <p>Scan to clock</p>
             <div class="hint no-print">Print this page on A4 paper and paste it at the entrance.</div>
             
             <div style="margin-top: 80px; display: flex; align-items: center; justify-content: center; gap: 10px; opacity: 0.6;">
-              <img src="/logo.png" style="width: 24px; height: 24px; border: none; padding: 0; border-radius: 6px;" />
+              <img src="/logo.png" class="footer-logo" />
               <div style="font-size: 16px; font-weight: 700; letter-spacing: -0.5px; color: #111827;">TK Clocking System</div>
             </div>
           </div>
@@ -361,7 +390,7 @@ function BranchCard({ branch, onEdit, onDelete, canDelete }: { branch: any; onEd
         {qrCode ? (
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div ref={printRef} style={{ background: '#fff', padding: 12, borderRadius: 12, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-              <QrCodeImage text={qrCode} size={160} />
+              <QrCodeImage text={qrCode} size={160} logoUrl={activeTenant?.logoUrl} />
             </div>
             <div style={{ display: 'flex', gap: 8, width: '100%', marginTop: 20 }}>
               <button onClick={handlePrint} className="btn btn-sm btn-ghost" style={{ flex: 1, background: 'var(--bg-card)' }}>

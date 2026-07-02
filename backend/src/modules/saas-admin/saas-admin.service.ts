@@ -1007,8 +1007,16 @@ export class SaasAdminService implements OnModuleInit {
         end: boundingEnd,
         weekdays: 1,
       };
-      const expectedInTimeframe =
+      let expectedInTimeframe =
         expectedMap.get(tenant.id) ?? employeeCount * rangeParams.weekdays;
+
+      // If employees show up on a day with 0 expectations (e.g. holiday or weekend),
+      // we raise the expectation to match so they get a 100% rate, preventing >100% rates
+      // and div/0 issues.
+      if (presentCount > expectedInTimeframe) {
+        expectedInTimeframe = presentCount;
+      }
+      
       const approvedLeaveDays = leaveMap.get(tenant.id) || 0;
 
       // Use two-decimal precision for rates; keep values numeric so frontend can format as needed
@@ -1059,7 +1067,9 @@ export class SaasAdminService implements OnModuleInit {
     // ranked performance report.
     if (!includeAll) {
       results = results.filter(
-        (school) => school.metrics.expectedEmployeeDays > 0,
+        (school) =>
+          school.metrics.expectedEmployeeDays > 0 ||
+          school.metrics.employees > 0,
       );
     }
 

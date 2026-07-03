@@ -15,11 +15,13 @@ class MyReportPage extends StatefulWidget {
 
 class _MyReportPageState extends State<MyReportPage> {
   late Future<TermReportEntity> _reportFuture;
+  bool _hasLoadedOnce = false;
 
   @override
   void initState() {
     super.initState();
     _loadReport();
+    _hasLoadedOnce = true;
   }
 
   void _loadReport() {
@@ -40,9 +42,10 @@ class _MyReportPageState extends State<MyReportPage> {
       body: VisibilityDetector(
         key: const Key('my-report-page'),
         onVisibilityChanged: (info) {
-          if (info.visibleFraction > 0.5) {
+          if (info.visibleFraction > 0.5 && !_hasLoadedOnce) {
             setState(() {
               _loadReport();
+              _hasLoadedOnce = true;
             });
           }
         },
@@ -200,139 +203,154 @@ class _MonthCard extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
+      child: Card(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.4)),
           borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MonthlyDetailsPage(monthSummary: month),
-              ),
-            );
-          },
-          child: Card(
-            margin: EdgeInsets.zero,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              side: BorderSide(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.4)),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                // Header
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withValues(alpha: 0.5),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(16)),
-              border: Border(
-                bottom: BorderSide(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withValues(alpha: 0.5),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(16)),
+                border: Border(
+                  bottom: BorderSide(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                  ),
                 ),
               ),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.calendar_month_rounded,
-                    size: 20, color: colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(
-                  month.name,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurface,
+              child: Row(
+                children: [
+                  Icon(Icons.calendar_month_rounded,
+                      size: 20, color: colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    month.name,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          // Body
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left Column: Positive Stats
-                Expanded(
-                  child: Column(
-                    children: [
-                      _MonthStatRow(
-                        icon: Icons.work_history_rounded,
-                        color: Colors.green,
-                        label: 'Days Worked',
-                        value: '${summary.daysWorked}d',
+                  const Spacer(),
+                  FilledButton.tonal(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              MonthlyDetailsPage(monthSummary: month),
+                        ),
+                      );
+                    },
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text(
+                      'View Details',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(height: 16),
-                      _MonthStatRow(
-                        icon: Icons.warning_rounded,
-                        color: summary.daysLate > 0
-                            ? Colors.orange
-                            : Colors.grey.shade500,
-                        label: 'Lateness',
-                        value: '${summary.daysLate}d',
-                      ),
-                      const SizedBox(height: 16),
-                      _MonthStatRow(
-                        icon: Icons.timer_rounded,
-                        color: Colors.blue,
-                        label: 'Total Hours',
-                        value: '${summary.totalHours.toStringAsFixed(1)}h',
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-                Container(
-                  width: 1,
-                  height: 60,
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                ),
-                // Right Column: Negative Stats
-                Expanded(
-                  child: Column(
-                    children: [
-                      _MonthStatRow(
-                        icon: Icons.event_busy_rounded,
-                        color: summary.daysAbsent > 0
-                            ? Colors.red
-                            : Colors.grey.shade500,
-                        label: 'Absences',
-                        value: '${summary.daysAbsent}d',
-                      ),
-                      const SizedBox(height: 16),
-                      _MonthStatRow(
-                        icon: Icons.directions_run_rounded,
-                        color: summary.daysEarlyDeparture > 0
-                            ? Colors.purple
-                            : Colors.grey.shade500,
-                        label: 'Early Out',
-                        value: '${summary.daysEarlyDeparture}d',
-                      ),
-                      const SizedBox(height: 16),
-                      _MonthStatRow(
-                        icon: Icons.running_with_errors_rounded,
-                        color: summary.daysForgotClockOut > 0
-                            ? Colors.brown
-                            : Colors.grey.shade500,
-                        label: 'Forgot Out',
-                        value: '${summary.daysForgotClockOut}d',
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+            // Body
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Left Column: Positive Stats
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _MonthStatRow(
+                          icon: Icons.work_history_rounded,
+                          color: summary.daysWorked > 0
+                              ? Colors.green
+                              : Colors.grey.shade500,
+                          label: 'Days Worked',
+                          value: '${summary.daysWorked}d',
+                        ),
+                        const SizedBox(height: 16),
+                        _MonthStatRow(
+                          icon: Icons.warning_rounded,
+                          color: summary.daysLate > 0
+                              ? Colors.orange
+                              : Colors.grey.shade500,
+                          label: 'Lateness',
+                          value: '${summary.daysLate}d',
+                        ),
+                        const SizedBox(height: 16),
+                        _MonthStatRow(
+                          icon: Icons.timer_rounded,
+                          color: summary.totalHours > 0
+                              ? Colors.blue
+                              : Colors.grey.shade500,
+                          label: 'Total Hours',
+                          value: '${summary.totalHours.toStringAsFixed(1)}h',
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: 60,
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                  // Right Column: Negative Stats
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _MonthStatRow(
+                          icon: Icons.event_busy_rounded,
+                          color: summary.daysAbsent > 0
+                              ? Colors.red
+                              : Colors.grey.shade500,
+                          label: 'Absences',
+                          value: '${summary.daysAbsent}d',
+                        ),
+                        const SizedBox(height: 16),
+                        _MonthStatRow(
+                          icon: Icons.directions_run_rounded,
+                          color: summary.daysEarlyDeparture > 0
+                              ? Colors.purple
+                              : Colors.grey.shade500,
+                          label: 'Early Out',
+                          value: '${summary.daysEarlyDeparture}d',
+                        ),
+                        const SizedBox(height: 16),
+                        _MonthStatRow(
+                          icon: Icons.running_with_errors_rounded,
+                          color: summary.daysForgotClockOut > 0
+                              ? Colors.brown
+                              : Colors.grey.shade500,
+                          label: 'Forgot Out',
+                          value: '${summary.daysForgotClockOut}d',
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-    ),
-    ),
     );
   }
 }

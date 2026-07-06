@@ -186,7 +186,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(width: 16),
             Text(
-              'TK Clocking System',
+              'TK CLOCKING SYSTEM',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: colorScheme.primary,
@@ -196,17 +196,25 @@ class _LoginPageState extends State<LoginPage> {
           ],
         ),
         const SizedBox(height: 32),
-        Text(
-          'Welcome back',
-          style: theme.textTheme.headlineLarge?.copyWith(
-            fontWeight: FontWeight.w700,
+        SizedBox(
+          width: double.infinity,
+          child: Text(
+            'Welcome Back',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.headlineLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          'Sign in into your account',
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: colorScheme.onSurfaceVariant,
+        SizedBox(
+          width: double.infinity,
+          child: Text(
+            'Sign in into your account',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ],
@@ -284,7 +292,7 @@ class _LoginPageState extends State<LoginPage> {
             Expanded(
               child: PrimaryButton(
                 label: 'Sign In',
-                icon: Icons.arrow_forward_rounded,
+                icon: Icons.login_rounded,
                 isLoading: state is AuthLoading,
                 onPressed: _submit,
               ),
@@ -315,7 +323,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildFooter(ThemeData theme, ColorScheme colorScheme) {
     return Center(
       child: Text(
-        'TK Clocking System',
+        'TK Clocking - Your Digital Time Keeper',
         textAlign: TextAlign.center,
         style: theme.textTheme.labelSmall?.copyWith(
           color: colorScheme.onSurfaceVariant,

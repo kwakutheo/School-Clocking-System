@@ -33,23 +33,11 @@ api.interceptors.request.use((config) => {
       }
     }
 
-    // Dynamically extract tenant slug from subdomain and inject into headers.
-    // IMPORTANT: Auth endpoints (login, refresh, password-reset) must NOT carry
-    // an x-tenant-slug header. The SaaS admin user has tenantId = null, so
-    // injecting a subdomain slug on login would silently bind the request to a
-    // school tenant context and trigger "Access denied" for global admins.
-    const isAuthEndpoint =
-      config.url?.includes("/auth/login") ||
-      config.url?.includes("/auth/refresh") ||
-      config.url?.includes("/auth/request-password-reset") ||
-      config.url?.includes("/auth/complete-password-reset");
-
-    if (!isAuthEndpoint) {
-      const hostname = window.location.hostname;
-      const parts = hostname.split(".");
-      if (parts.length > 1 && parts[0] !== "www" && parts[0] !== "localhost") {
-        config.headers["x-tenant-slug"] = parts[0];
-      }
+    // Dynamically extract tenant slug from subdomain and inject into headers
+    const hostname = window.location.hostname;
+    const parts = hostname.split(".");
+    if (parts.length > 1 && parts[0] !== "www" && parts[0] !== "localhost") {
+      config.headers["x-tenant-slug"] = parts[0];
     }
   }
   return config;

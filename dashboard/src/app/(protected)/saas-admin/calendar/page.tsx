@@ -4,10 +4,12 @@ import { useState, useMemo, useEffect } from 'react';
 import { calendarApi } from '@/lib/api';
 import { format, parseISO } from 'date-fns';
 import { Calendar, Plus, Trash2, Edit2, Coffee, ChevronRight, ChevronDown, GraduationCap, ShieldAlert } from 'lucide-react';
+import { useServerTimeOffset } from '@/lib/useServerTimeOffset';
 
 const fetcher = () => calendarApi.listTerms().then((r) => r.data);
 
 export default function GlobalCalendarTemplatesPage() {
+  const offsetMs = useServerTimeOffset() ?? 0;
   const { data, isLoading, mutate } = useSWR('academic-calendar-templates', fetcher);
 
   const [showTermModal, setShowTermModal] = useState(false);
@@ -27,7 +29,7 @@ export default function GlobalCalendarTemplatesPage() {
   });
 
   const [yearForm, setYearForm] = useState({
-    academicYear: `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`,
+    academicYear: `${new Date(Date.now() + offsetMs).getFullYear()}/${new Date(Date.now() + offsetMs).getFullYear() + 1}`,
     terms: [
       { name: 'First Term', startDate: '', endDate: '' },
       { name: 'Second Term', startDate: '', endDate: '' },
@@ -56,7 +58,7 @@ export default function GlobalCalendarTemplatesPage() {
 
   const currentCalendarInfo = useMemo(() => {
     if (!terms.length) return { year: null, termId: null };
-    const now = new Date();
+    const now = new Date(Date.now() + offsetMs);
     let currentYear = null;
     let currentTermId = null;
 
@@ -151,7 +153,7 @@ export default function GlobalCalendarTemplatesPage() {
       mutate();
       setShowYearModal(false);
       setYearForm({
-        academicYear: `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`,
+        academicYear: `${new Date(Date.now() + offsetMs).getFullYear()}/${new Date(Date.now() + offsetMs).getFullYear() + 1}`,
         terms: [
           { name: 'First Term', startDate: '', endDate: '' },
           { name: 'Second Term', startDate: '', endDate: '' },

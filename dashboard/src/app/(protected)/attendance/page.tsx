@@ -6,6 +6,7 @@ import { format, parseISO, eachMonthOfInterval, isSameMonth, isAfter, startOfDay
 import { Clock, User, Calendar, AlertTriangle, CheckCircle, XCircle, FileText } from 'lucide-react';
 import { can } from '@/lib/permissions';
 import { useAuthStore } from '@/lib/store';
+import { useServerTimeOffset } from '@/lib/useServerTimeOffset';
 import { EmployeeCombobox } from '@/components/employee-combobox';
 
 const employeesFetcher = () => employeesApi.listAll().then(r => r.data);
@@ -40,6 +41,7 @@ export default function AttendanceReportPage() {
   const [exporting, setExporting] = useState(false);
 
   const { user } = useAuthStore();
+  const offsetMs = useServerTimeOffset() ?? 0;
 
   const termList: any[] = terms ?? [];
   const selectedTerm = termList.find((term: any) => term.id === selectedTermId);
@@ -71,7 +73,7 @@ export default function AttendanceReportPage() {
   useEffect(() => {
     if (!termList.length || selectedTermId) return;
 
-    const now = new Date();
+    const now = new Date(Date.now() + offsetMs);
     const currentTerm = termList.find((term: any) => {
       if (!term.startDate || !term.endDate) return false;
       const start = parseISO(term.startDate);
@@ -95,7 +97,7 @@ export default function AttendanceReportPage() {
     }
 
     const currentMonth = availableMonths.find((item) =>
-      isSameMonth(new Date(item.year, item.month - 1), new Date()),
+      isSameMonth(new Date(item.year, item.month - 1), new Date(Date.now() + offsetMs)),
     );
     const nextMonth = currentMonth ?? availableMonths[0];
     setMonth(nextMonth.month);
@@ -569,7 +571,7 @@ export default function AttendanceReportPage() {
                 </thead>
                 <tbody>
                   {filteredDays.map((day: any) => {
-                    const isFuture = isAfter(parseISO(day.date), startOfDay(new Date()));
+                    const isFuture = isAfter(parseISO(day.date), startOfDay(new Date(Date.now() + offsetMs)));
                     return (
                     <tr key={day.date} className={!isFuture && day.status === 'ABSENT' ? 'row-absent' : ''}>
                       <td style={{ fontWeight: 500 }}>{format(parseISO(day.date), 'EEE, dd MMM')}</td>

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { saasAdminApi, calendarApi } from '@/lib/api';
+import { useServerTimeOffset } from '@/lib/useServerTimeOffset';
 import {
   BarChart2,
   Building2,
@@ -413,6 +414,7 @@ async function generateSchoolsPdf(
   periodLabel: string,
   sortOrder: SortOrder,
   timestamp: string,
+  offsetMs: number = 0,
 ) {
   const { jsPDF } = await import('jspdf');
   const { default: autoTable } = await import('jspdf-autotable');
@@ -557,8 +559,7 @@ async function generateSchoolsPdf(
     if (p === 1) pdfDrawSummaryBar(doc, summaryStats, PDF_SUMMARY_BAR_Y);
     pdfDrawFooter(doc, subtitle, p, totalPages);
   }
-
-  doc.save(`schools-performance-term-${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`schools-performance-term-${new Date(Date.now() + offsetMs).toISOString().slice(0, 10)}.pdf`);
 }
 
 // ── Employee Rankings PDF ─────────────────────────────────────────────────────
@@ -567,6 +568,7 @@ async function generateEmployeesPdf(
   periodLabel: string,
   sortOrder: SortOrder,
   timestamp: string,
+  offsetMs: number = 0,
 ) {
   const { jsPDF } = await import('jspdf');
   const { default: autoTable } = await import('jspdf-autotable');
@@ -706,8 +708,7 @@ async function generateEmployeesPdf(
     if (p === 1) pdfDrawSummaryBar(doc, summaryStats, PDF_SUMMARY_BAR_Y);
     pdfDrawFooter(doc, subtitle, p, totalPages);
   }
-
-  doc.save(`employee-rankings-term-${sortOrder}-${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`employee-rankings-term-${sortOrder}-${new Date(Date.now() + offsetMs).toISOString().slice(0, 10)}.pdf`);
 }
 
 // ── Platform Summary PDF ──────────────────────────────────────────────────────
@@ -715,6 +716,7 @@ async function generateSummaryPdf(
   stats: PlatformStats,
   periodLabel: string,
   timestamp: string,
+  offsetMs: number = 0,
 ) {
   const { jsPDF } = await import('jspdf');
   const { default: autoTable } = await import('jspdf-autotable');
@@ -935,8 +937,7 @@ async function generateSummaryPdf(
     if (p === 1) pdfDrawSummaryBar(doc, summaryStats, PDF_SUMMARY_BAR_Y);
     pdfDrawFooter(doc, subtitle, p, totalPages);
   }
-
-  doc.save(`platform-summary-term-${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`platform-summary-term-${new Date(Date.now() + offsetMs).toISOString().slice(0, 10)}.pdf`);
 }
 
 // ── Preview table components ───────────────────────────────────────────────────
@@ -1222,6 +1223,8 @@ export default function ReportsPage() {
   const [generating, setGenerating] = useState(false);
   const timeframe: Timeframe = 'term';
 
+  const offsetMs = useServerTimeOffset() ?? 0;
+
   const [schools, setSchools] = useState<SchoolMetric[]>([]);
   const [employees, setEmployees] = useState<EmployeeRanking[]>([]);
   const [stats, setStats] = useState<PlatformStats | null>(null);
@@ -1245,7 +1248,7 @@ export default function ReportsPage() {
         years.sort((a, b) => b.localeCompare(a));
         setAvailableYears(years);
 
-        const now = new Date();
+        const now = new Date(Date.now() + offsetMs);
         const currentTerm = terms.find((term) => {
           if (!term.startDate || !term.endDate) return false;
           const start = new Date(term.startDate);
@@ -1361,16 +1364,16 @@ export default function ReportsPage() {
   const handleGeneratePdf = async () => {
     setGenerating(true);
     try {
-      const now = new Date();
+      const now = new Date(Date.now() + offsetMs);
       const timestamp = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) +
         ' at ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
       if (reportType === 'schools') {
-        await generateSchoolsPdf(filteredSchools, periodLabel, sortOrder, timestamp);
+        await generateSchoolsPdf(filteredSchools, periodLabel, sortOrder, timestamp, offsetMs);
       } else if (reportType === 'employees') {
-        await generateEmployeesPdf(filteredEmployees, periodLabel, sortOrder, timestamp);
+        await generateEmployeesPdf(filteredEmployees, periodLabel, sortOrder, timestamp, offsetMs);
       } else if (stats) {
-        await generateSummaryPdf(stats, periodLabel, timestamp);
+        await generateSummaryPdf(stats, periodLabel, timestamp, offsetMs);
       }
     } catch (err) {
       console.error('PDF generation error:', err);

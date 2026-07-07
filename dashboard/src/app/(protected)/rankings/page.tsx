@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Trophy, Search, ChevronLeft, ChevronRight, Award, Clock, Medal, Zap, Star, X } from 'lucide-react';
 import { attendanceApi, calendarApi } from '@/lib/api';
+import { useServerTimeOffset } from '@/lib/useServerTimeOffset';
 
 function rateColor(rate: number) {
   if (rate >= 90) return "#22c55e";
@@ -25,6 +26,7 @@ export default function RankingsPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [explainEmpModal, setExplainEmpModal] = useState<any>(null);
+  const offsetMs = useServerTimeOffset() ?? 0;
 
   const [terms, setTerms] = useState<any[]>([]);
   const [academicYears, setAcademicYears] = useState<string[]>([]);
@@ -46,7 +48,7 @@ export default function RankingsPage() {
         const years = Array.from(new Set(allTerms.map((t: any) => t.academicYear))) as string[];
         setAcademicYears(years);
 
-        const now = new Date();
+        const now = new Date(Date.now() + offsetMs);
         const activeTerm = allTerms.find((t: any) => {
            const start = new Date(t.startDate);
            const end = new Date(t.endDate);
@@ -96,7 +98,7 @@ export default function RankingsPage() {
 
   // Determine if the selected period is entirely in the future
   const isFuturePeriod = (() => {
-    const now = new Date();
+    const now = new Date(Date.now() + offsetMs);
     if (selectedTerm && selectedTerm !== 'Entire Academic Year') {
       const term = availableTermsForYear.find(t => t.name === selectedTerm);
       return term ? new Date(term.startDate) > now : false;

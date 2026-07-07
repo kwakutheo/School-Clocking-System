@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Search, ShieldAlert, Lock, Unlock, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { employeesApi } from '@/lib/api';
 import { initials } from '@/lib/store';
+import { useServerTimeOffset } from '@/lib/useServerTimeOffset';
 
 interface DashboardAccessModalProps {
   onClose: () => void;
@@ -12,6 +13,8 @@ export default function DashboardAccessModal({ onClose }: DashboardAccessModalPr
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   
+  const offsetMs = useServerTimeOffset() ?? 0;
+
   // State for the inner panels (Block / Restore)
   const [blockingEmployee, setBlockingEmployee] = useState<any | null>(null);
   const [restoringEmployee, setRestoringEmployee] = useState<any | null>(null);
@@ -45,10 +48,9 @@ export default function DashboardAccessModal({ onClose }: DashboardAccessModalPr
       setProcessingId(blockingEmployee.id);
       await employeesApi.setDashboardAccess(blockingEmployee.id, true, blockReason.trim() || undefined, adminPassword);
       
-      // Update local state
       setStaff(prev => prev.map(s => 
         s.id === blockingEmployee.id 
-          ? { ...s, user: { ...s.user, isDashboardBlocked: true, dashboardBlockReason: blockReason.trim() || null, dashboardBlockedAt: new Date().toISOString() } } 
+          ? { ...s, user: { ...s.user, isDashboardBlocked: true, dashboardBlockReason: blockReason.trim() || null, dashboardBlockedAt: new Date(Date.now() + offsetMs).toISOString() } } 
           : s
       ));
       

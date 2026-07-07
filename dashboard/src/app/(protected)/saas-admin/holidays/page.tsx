@@ -6,6 +6,7 @@ import { format, parseISO } from 'date-fns';
 import { Calendar, Plus, Trash2, Edit, ShieldAlert, DownloadCloud, Globe, Repeat, CalendarDays, Settings2, Info } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { useMemo, useEffect } from 'react';
+import { useServerTimeOffset } from '@/lib/useServerTimeOffset';
 
 const fetcher = () => holidaysApi.list().then((r) => r.data);
 
@@ -37,6 +38,7 @@ function isGhanaFixedHoliday(dateStr: string, name: string): boolean {
 }
 
 export default function GlobalHolidaysPage() {
+  const offsetMs = useServerTimeOffset() ?? 0;
   const { data, isLoading, mutate } = useSWR('global-holidays-list', fetcher);
   const { user } = useAuthStore();
   const holidays: any[] = data ?? [];
@@ -217,7 +219,7 @@ export default function GlobalHolidaysPage() {
   };
 
   const handleSyncPublicHolidays = async () => {
-    const nextYear = new Date().getFullYear() + 1;
+    const nextYear = new Date(Date.now() + offsetMs).getFullYear() + 1;
     const yearStr = prompt('Enter year to sync official holidays from Ghana (e.g. 2026, 2027):', nextYear.toString());
     if (!yearStr || isNaN(Number(yearStr))) return;
     

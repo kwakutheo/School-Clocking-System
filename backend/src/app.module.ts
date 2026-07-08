@@ -22,6 +22,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { ReadonlyImpersonationGuard } from './modules/auth/guards/readonly-impersonation.guard';
 import { TenantSubscriber } from './common/tenant/tenant.subscriber';
 import { TenantMiddleware } from './common/tenant/tenant.middleware';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -84,7 +86,9 @@ import { TenantMiddleware } from './common/tenant/tenant.middleware';
     SaasAdminModule,
     ScheduleModule.forRoot(),
   ],
+  controllers: [AppController],
   providers: [
+    AppService,
     TenantSubscriber,
     {
       provide: APP_GUARD,

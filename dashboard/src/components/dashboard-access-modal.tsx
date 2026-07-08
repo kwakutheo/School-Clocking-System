@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Search, ShieldAlert, Lock, Unlock, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { employeesApi } from '@/lib/api';
 import { initials } from '@/lib/store';
-import { useServerTimeOffset } from '@/lib/useServerTimeOffset';
+import { useTrueEpoch } from '@/lib/useServerTimeOffset';
 
 interface DashboardAccessModalProps {
   onClose: () => void;
@@ -13,7 +13,7 @@ export default function DashboardAccessModal({ onClose }: DashboardAccessModalPr
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   
-  const offsetMs = useServerTimeOffset() ?? 0;
+  const getTrueEpoch = useTrueEpoch();
 
   // State for the inner panels (Block / Restore)
   const [blockingEmployee, setBlockingEmployee] = useState<any | null>(null);
@@ -50,7 +50,7 @@ export default function DashboardAccessModal({ onClose }: DashboardAccessModalPr
       
       setStaff(prev => prev.map(s => 
         s.id === blockingEmployee.id 
-          ? { ...s, user: { ...s.user, isDashboardBlocked: true, dashboardBlockReason: blockReason.trim() || null, dashboardBlockedAt: new Date(Date.now() + offsetMs).toISOString() } } 
+          ? { ...s, user: { ...s.user, isDashboardBlocked: true, dashboardBlockReason: blockReason.trim() || null, dashboardBlockedAt: getTrueEpoch().toISOString() } } 
           : s
       ));
       

@@ -6,7 +6,7 @@ import { format, parseISO } from 'date-fns';
 import { Calendar, Plus, Trash2, Edit, ShieldAlert, DownloadCloud, Globe, Repeat, CalendarDays, Settings2, Info } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { useMemo, useEffect } from 'react';
-import { useServerTimeOffset } from '@/lib/useServerTimeOffset';
+import { useGhanaTime } from '@/lib/useServerTimeOffset';
 
 const fetcher = () => holidaysApi.list().then((r) => r.data);
 
@@ -37,8 +37,8 @@ function isGhanaFixedHoliday(dateStr: string, name: string): boolean {
   );
 }
 
-export default function GlobalHolidaysPage() {
-  const offsetMs = useServerTimeOffset() ?? 0;
+export default function SaasHolidaysPage() {
+  const getGhanaTime = useGhanaTime();
   const { data, isLoading, mutate } = useSWR('global-holidays-list', fetcher);
   const { user } = useAuthStore();
   const holidays: any[] = data ?? [];
@@ -52,7 +52,7 @@ export default function GlobalHolidaysPage() {
   const [form, setForm] = useState({ name: '', date: '', isRecurring: true, postponeIfWeekend: false, observedDate: '' });
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
-  const currentYearStr = new Date().getFullYear().toString();
+  const currentYearStr = getGhanaTime().getFullYear().toString();
 
   // Parse YYYY-MM-DD directly to avoid UTC-to-local timezone shifts that can
   // make getUTCDay() report the wrong weekday (e.g. Sunday becoming Saturday).
@@ -219,7 +219,7 @@ export default function GlobalHolidaysPage() {
   };
 
   const handleSyncPublicHolidays = async () => {
-    const nextYear = new Date(Date.now() + offsetMs).getFullYear() + 1;
+    const nextYear = getGhanaTime().getFullYear() + 1;
     const yearStr = prompt('Enter year to sync official holidays from Ghana (e.g. 2026, 2027):', nextYear.toString());
     if (!yearStr || isNaN(Number(yearStr))) return;
     

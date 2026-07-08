@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuthStore } from '@/lib/store';
 import { can } from '@/lib/permissions';
-import { useServerTimeOffset } from '@/lib/useServerTimeOffset';
+import { useGhanaTime } from '@/lib/useServerTimeOffset';
 import { employeesApi } from '@/lib/api';
 import { CheckCircle, XCircle, Clock, FileText, Plus, ChevronDown, ChevronUp, AlertTriangle, Search, Filter, ChevronLeft, ChevronRight, Calendar, Tag, AlignLeft } from 'lucide-react';
 
@@ -180,7 +180,7 @@ function LeaveCard({ leave, isAdmin, onReview, onCancel }: {
 
 export default function LeavesPage() {
   const { user } = useAuthStore();
-  const offsetMs = useServerTimeOffset() ?? 0;
+  const getGhanaTime = useGhanaTime();
   const isAdmin = can(user?.role, 'leaves.manage');
 
   const [myLeaves, setMyLeaves] = useState<any[]>([]);
@@ -335,7 +335,7 @@ export default function LeavesPage() {
   }, [debouncedSearchTerm, filterYear, filterStatus]);
 
   const availableYears = useMemo(() => {
-    const currentYear = new Date(Date.now() + offsetMs).getFullYear();
+    const currentYear = getGhanaTime().getFullYear();
     return Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
   }, []);
 

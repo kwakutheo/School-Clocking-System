@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { employeesApi, branchesApi, departmentsApi, shiftsApi, usersApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import { can } from '@/lib/permissions';
-import { useServerTimeOffset } from '@/lib/useServerTimeOffset';
+import { useGhanaTime } from '@/lib/useServerTimeOffset';
 import { Eye, EyeOff, Users } from 'lucide-react';
 
 const LIMIT = 50;
@@ -28,7 +28,7 @@ const toTitleCase = (val: string) =>
 
 export default function EmployeesPage() {
   const { user, setAuth } = useAuthStore();
-  const offsetMs = useServerTimeOffset() ?? 0;
+  const getGhanaTime = useGhanaTime();
 
   // ── Pagination & filter state ──────────────────────────────────────────────
   const [page, setPage] = useState(1);
@@ -144,7 +144,7 @@ export default function EmployeesPage() {
   const resetForm = useCallback(() => {
     setForm({ firstName: '', lastName: '', username: '', email: '', password: '', departmentId: '',
       branchId: '', shiftId: '', position: '', phone: '',
-      hireDate: format(new Date(Date.now() + offsetMs), 'yyyy-MM-dd'), role: 'employee', status: 'active' });
+      hireDate: format(getGhanaTime(), 'yyyy-MM-dd'), role: 'employee', status: 'active' });
     setEditingId(null); setError('');
     setUsernameStatus('idle'); setUsernameSuggestions([]);
     setConfirmPassword(''); setShowPassword(false); setShowConfirmPassword(false);
@@ -692,7 +692,7 @@ export default function EmployeesPage() {
                     className="form-input"
                     type="date"
                     value={form.hireDate}
-                    max={format(new Date(Date.now() + offsetMs), 'yyyy-MM-dd')}
+                    max={format(getGhanaTime(), 'yyyy-MM-dd')}
                     onChange={(e) => setForm({ ...form, hireDate: e.target.value })}
                     disabled={isTenantUser}
                     title={isTenantUser ? 'Hire date cannot be modified by school admins' : undefined}

@@ -7,13 +7,13 @@ import { Calendar, Plus, Trash2, Edit2, Coffee, ChevronRight, ChevronDown, Gradu
 import Link from 'next/link';
 import { can } from '@/lib/permissions';
 import { useAuthStore } from '@/lib/store';
-import { useServerTimeOffset } from '@/lib/useServerTimeOffset';
+import { useGhanaTime } from '@/lib/useServerTimeOffset';
 
 const fetcher = () => calendarApi.listTerms().then((r) => r.data);
 
 export default function AcademicCalendarPage() {
   const { user } = useAuthStore();
-  const offsetMs = useServerTimeOffset() ?? 0;
+  const getGhanaTime = useGhanaTime();
   const { data, isLoading, mutate } = useSWR('academic-calendar', fetcher);
 
   const userRole = useMemo(() =>
@@ -96,7 +96,7 @@ export default function AcademicCalendarPage() {
   });
 
   const [yearForm, setYearForm] = useState({
-    academicYear: `${new Date(Date.now() + offsetMs).getFullYear()}/${new Date(Date.now() + offsetMs).getFullYear() + 1}`,
+    academicYear: `${getGhanaTime().getFullYear()}/${getGhanaTime().getFullYear() + 1}`,
     terms: [
       { name: 'First Term', startDate: '', endDate: '' },
       { name: 'Second Term', startDate: '', endDate: '' },
@@ -125,7 +125,7 @@ export default function AcademicCalendarPage() {
 
   const currentAcademicYear = useMemo(() => {
     if (!terms.length) return null;
-    const now = new Date(Date.now() + offsetMs);
+    const now = getGhanaTime();
     let currentYear = null;
 
     // 1. Try to find the year that contains the current date
@@ -216,7 +216,7 @@ export default function AcademicCalendarPage() {
       mutate();
       setShowYearModal(false);
       setYearForm({
-        academicYear: `${new Date(Date.now() + offsetMs).getFullYear()}/${new Date(Date.now() + offsetMs).getFullYear() + 1}`,
+        academicYear: `${getGhanaTime().getFullYear()}/${getGhanaTime().getFullYear() + 1}`,
         terms: [
           { name: 'First Term', startDate: '', endDate: '' },
           { name: 'Second Term', startDate: '', endDate: '' },
@@ -478,7 +478,7 @@ export default function AcademicCalendarPage() {
                     <div style={{ padding: 20, background: 'var(--bg-secondary)', borderTop: '1px solid var(--border)' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, alignItems: 'start' }}>
                       {yearTerms.map((term) => {
-                        const today = new Date(Date.now() + offsetMs);
+                        const today = getGhanaTime();
                         const start = parseISO(term.startDate);
                         const end = parseISO(term.endDate);
                         end.setHours(23, 59, 59, 999);

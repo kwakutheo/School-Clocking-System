@@ -25,3 +25,33 @@ export function useServerTimeOffset() {
   );
   return data ?? null; // Returns null while loading
 }
+
+/**
+ * Returns a function that generates a "fake" local Date object.
+ * This Date object is mathematically shifted so that standard local methods
+ * (like .getHours(), .getDate(), format(), etc.) will perfectly output the
+ * true Ghana (UTC) time, completely ignoring the device's actual OS timezone.
+ * 
+ * Do NOT use .toISOString() on the returned date, as its UTC representation is warped.
+ */
+export function useGhanaTime() {
+  const offset = useServerTimeOffset() ?? 0;
+  
+  return function getGhanaTime() {
+    const trueEpoch = Date.now() + offset;
+    const tzOffsetMs = new Date().getTimezoneOffset() * 60000;
+    return new Date(trueEpoch + tzOffsetMs);
+  };
+}
+
+/**
+ * Returns a function that gets the true absolute epoch string for the server time,
+ * which is safe to use with .toISOString().
+ */
+export function useTrueEpoch() {
+  const offset = useServerTimeOffset() ?? 0;
+  
+  return function getTrueEpoch() {
+    return new Date(Date.now() + offset);
+  };
+}

@@ -7,7 +7,7 @@ import { Calendar, Plus, Trash2, Edit, ShieldAlert, DownloadCloud, ArrowLeft, Re
 import Link from 'next/link';
 import { can } from '@/lib/permissions';
 import { useAuthStore } from '@/lib/store';
-import { useServerTimeOffset } from '@/lib/useServerTimeOffset';
+import { useGhanaTime } from '@/lib/useServerTimeOffset';
 import { useMemo } from 'react';
 
 const fetcher = () => holidaysApi.list().then((r) => r.data);
@@ -44,9 +44,9 @@ export default function HolidaysPage() {
   const { data: holidays = [], isLoading, mutate } = useSWR('/holidays', fetcher);
   const { data: currentYearHolidays = [] } = useSWR('/holidays/current-year', fetcherCurrentYear);
   const { user } = useAuthStore();
-  const offsetMs = useServerTimeOffset() ?? 0;
+  const getGhanaTime = useGhanaTime();
   
-  const currentYearStr = new Date(Date.now() + offsetMs).getFullYear().toString();
+  const currentYearStr = getGhanaTime().getFullYear().toString();
 
   const [showModal, setShowModal] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
@@ -245,7 +245,7 @@ export default function HolidaysPage() {
   };
 
   const handleSyncPublicHolidays = async () => {
-    const nextYear = new Date(Date.now() + offsetMs).getFullYear() + 1;
+    const nextYear = getGhanaTime().getFullYear() + 1;
     const yearStr = prompt('Enter year to sync official holidays from Ghana (e.g. 2026, 2027):', nextYear.toString());
     if (!yearStr || isNaN(Number(yearStr))) return;
     

@@ -69,8 +69,6 @@ export function AdminManualClockModal({ onClose, onSuccess, selectedDate }: Prop
   // Determine the effective date for this clock entry
   const effectiveDate = useCustomTime && customDate ? customDate : todayDateString;
 
-  // Only show employees who existed on (or before) the effective date.
-  // Employees registered AFTER the selected date are excluded — they didn't exist then.
   const allEmployees = employees ?? [];
   const eligibleEmployees = allEmployees.filter((e: any) => {
     if (!e.createdAt) return true; // no creation date info → include safely

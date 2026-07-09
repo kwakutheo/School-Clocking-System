@@ -119,6 +119,15 @@ function formatMinutes(totalMinutes: number): string {
   return m === 0 ? `${h}h` : `${h}h ${m}min`;
 }
 
+function LiveClock({ safeOffset }: { safeOffset: number }) {
+  const [time, setTime] = useState(() => new Date(Date.now() + safeOffset));
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date(Date.now() + safeOffset)), 1000);
+    return () => clearInterval(timer);
+  }, [safeOffset]);
+  return <>{format(time, 'hh:mm:ss a')}</>;
+}
+
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === 'hr_admin' || user?.role === 'super_admin';
@@ -286,7 +295,14 @@ export default function DashboardPage() {
             {(() => {
               const d = parseLocalDate(selectedDate);
               return d ? format(d, 'EEEE, MMMM d, yyyy') : selectedDate;
-            })()} · 
+            })()} 
+            {isToday && (
+              <>
+                <span style={{ margin: '0 6px' }}>at</span>
+                <LiveClock safeOffset={safeOffset} />
+              </>
+            )}
+            {' · '}
             {isToday ? (
               <span style={{ color: 'var(--success)', fontWeight: 600 }}> ● Live</span>
             ) : (

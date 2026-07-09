@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { saasAdminApi } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
+import { useServerTimeOffset } from "@/lib/useServerTimeOffset";
 import {
   LineChart,
   Line,
@@ -832,7 +833,10 @@ export default function SaasOverviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [rankSort, setRankSort] = useState<"best" | "worst">("best");
   const [rankTab, setRankTab] = useState<"schools" | "employees">("schools");
-  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+  
+  const offset = useServerTimeOffset();
+  const safeOffset = offset ?? 0;
+  const [lastRefreshedMs, setLastRefreshedMs] = useState<number>(Date.now());
 
   // School modal state
   const [showAllSchoolsModal, setShowAllSchoolsModal] = useState(false);
@@ -1055,7 +1059,8 @@ export default function SaasOverviewPage() {
       .getStats(tf)
       .then((res) => {
         setStats(res.data);
-        setLastRefreshed(new Date());
+        setLastRefreshedMs(Date.now());
+        setLoading(false);
       })
       .catch((err) => {
         console.error(err);
@@ -1191,7 +1196,9 @@ export default function SaasOverviewPage() {
               }}
             >
               Live intelligence across all supervised institutions · Last
-              refreshed: {lastRefreshed.toLocaleTimeString()}
+              refreshed: {new Date(lastRefreshedMs + safeOffset).toLocaleTimeString()}
+              {' on '}
+              {new Date(lastRefreshedMs + safeOffset).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
 

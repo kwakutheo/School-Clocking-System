@@ -4,6 +4,7 @@ import useSWR, { mutate } from 'swr';
 import { format } from 'date-fns';
 import { attendanceApi, employeesApi, branchesApi, saasAdminApi, systemApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
+import { useServerTimeOffset } from '@/lib/useServerTimeOffset';
 import { AttendanceChart } from '@/components/attendance-chart';
 import { StatCardSkeleton, TableSkeleton } from '@/components/skeleton';
 import { AdminManualClockModal } from '@/components/admin-manual-clock-modal';
@@ -25,30 +26,7 @@ function parseLocalDate(dateStr: string): Date | null {
   return date;
 }
 
-/**
- * Calculates the exact time offset (in milliseconds) between the client's local
- * device clock and the authoritative server clock (Africa/Accra, Ghana).
- * This completely fixes issues caused by admins having wrong device dates or times.
- */
-function useServerTimeOffset() {
-  const { data } = useSWR(
-    'server-time-offset',
-    () => systemApi.getServerTime().then((r) => {
-      const serverTimeMs = new Date(r.data.iso).getTime();
-      const localTimeMs = Date.now();
-      return serverTimeMs - localTimeMs;
-    }),
-    {
-      dedupingInterval: 60 * 60 * 1000,
-      revalidateOnFocus: false,
-      onErrorRetry: (_err, _key, _cfg, retry, { retryCount }) => {
-        if (retryCount >= 3) return;
-        setTimeout(() => retry(), 5_000);
-      },
-    }
-  );
-  return data ?? null; // Returns null while loading
-}
+
 
 function StatCard({
   icon,
@@ -111,7 +89,6 @@ function typeBadge(type: string) {
   return 'badge-amber';
 }
 
-/** Converts a raw minute count into a human-friendly "Xh Ymin" string. */
 function formatMinutes(totalMinutes: number): string {
   if (totalMinutes < 60) return `${totalMinutes} min`;
   const h = Math.floor(totalMinutes / 60);

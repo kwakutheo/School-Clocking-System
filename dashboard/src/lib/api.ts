@@ -72,8 +72,17 @@ api.interceptors.response.use(
   },
 );
 
+// ── System / Clock ─────────────────────────────────────────────────────────
+// Returns the server's authoritative current date/time (Africa/Accra, Ghana).
+// Used by the dashboard to guard against skewed device clocks.
+export const systemApi = {
+  getServerTime: () =>
+    api.get<{ iso: string; date: string; timezone: string }>("/time"),
+};
+
 // ── Auth ───────────────────────────────────────────────────────────────────
 export const authApi = {
+
   login: (identifier: string, password: string) =>
     api.post("/auth/login", {
       identifier,

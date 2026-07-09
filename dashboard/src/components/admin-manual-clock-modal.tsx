@@ -7,12 +7,15 @@ import { X, UserCheck, Clock, LogIn, LogOut, AlertTriangle, CheckCircle } from '
 import { EmployeeCombobox } from './employee-combobox';
 
 /** Returns the current local time as "HH:mm" — refreshes every 10 s so the max cap stays accurate. */
-function useCurrentTime() {
-  const [now, setNow] = useState(() => format(new Date(), 'HH:mm'));
+function useCurrentTime(offsetMs: number = 0) {
+  const getTrueNow = () => new Date(Date.now() + offsetMs);
+  const [now, setNow] = useState(() => format(getTrueNow(), 'HH:mm'));
+  
   useEffect(() => {
-    const id = setInterval(() => setNow(format(new Date(), 'HH:mm')), 10_000);
+    const id = setInterval(() => setNow(format(getTrueNow(), 'HH:mm')), 10_000);
     return () => clearInterval(id);
-  }, []);
+  }, [offsetMs]);
+  
   return now;
 }
 
@@ -21,6 +24,8 @@ interface Props {
   onSuccess: () => void;
   /** Pre-fills the date picker and enables custom time when viewing a historical date. */
   selectedDate?: string; // 'yyyy-MM-dd'
+  /** The exact ms offset from the server clock to the local device clock. */
+  serverTimeOffset?: number;
 }
 
 const clockableFetcher = () => attendanceApi.clockableEmployees().then((r) => r.data);
@@ -34,11 +39,12 @@ const REASON_CATEGORIES = [
   'Other'
 ];
 
-export function AdminManualClockModal({ onClose, onSuccess, selectedDate }: Props) {
+export function AdminManualClockModal({ onClose, onSuccess, selectedDate, serverTimeOffset = 0 }: Props) {
   const { data: employees } = useSWR('clockable-employees', clockableFetcher);
-  const currentTime = useCurrentTime(); // "HH:mm" — used as max cap on the time input
+  const currentTime = useCurrentTime(serverTimeOffset); // "HH:mm" — used as max cap on the time input
 
-  const today = new Date();
+  const getTrueNow = () => new Date(Date.now() + serverTimeOffset);
+  const today = getTrueNow();
   const todayDateString = format(today, 'yyyy-MM-dd');
 
   // Calculate Monday of the current week
@@ -96,7 +102,7 @@ export function AdminManualClockModal({ onClose, onSuccess, selectedDate }: Prop
       const selectedDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
 
       if (isNaN(selectedDateTime.getTime())) { setError('Invalid date or time entered.'); return; }
-      if (selectedDateTime > new Date()) { setError('The selected date and time cannot be in the future.'); return; }
+      if (selectedDateTime > getTrueNow()) { setError('The selected date and time cannot be in the future.'); return; }
 
       const targetDateZero = new Date(year, month - 1, day);
       const targetDayOfWeek = targetDateZero.getDay();
@@ -106,7 +112,7 @@ export function AdminManualClockModal({ onClose, onSuccess, selectedDate }: Prop
         return;
       }
 
-      const minAllowed = getMonday(new Date());
+      const minAllowed = getMonday(getTrueNow());
       minAllowed.setHours(0, 0, 0, 0);
       if (targetDateZero < minAllowed) {
         setError('The selected date must be within the current week (Monday onwards).');

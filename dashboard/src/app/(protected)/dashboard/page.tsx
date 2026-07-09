@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import useSWR, { mutate } from 'swr';
 import { format } from 'date-fns';
-import { attendanceApi, employeesApi, branchesApi, saasAdminApi } from '@/lib/api';
+import { attendanceApi, employeesApi, branchesApi, saasAdminApi, systemApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import { AttendanceChart } from '@/components/attendance-chart';
 import { StatCardSkeleton, TableSkeleton } from '@/components/skeleton';
@@ -23,6 +23,31 @@ function parseLocalDate(dateStr: string): Date | null {
   // Check the date actually round-trips (guards against e.g. Feb 30)
   if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
   return date;
+}
+
+/**
+ * Calculates the exact time offset (in milliseconds) between the client's local
+ * device clock and the authoritative server clock (Africa/Accra, Ghana).
+ * This completely fixes issues caused by admins having wrong device dates or times.
+ */
+function useServerTimeOffset() {
+  const { data } = useSWR(
+    'server-time-offset',
+    () => systemApi.getServerTime().then((r) => {
+      const serverTimeMs = new Date(r.data.iso).getTime();
+      const localTimeMs = Date.now();
+      return serverTimeMs - localTimeMs;
+    }),
+    {
+      dedupingInterval: 60 * 60 * 1000,
+      revalidateOnFocus: false,
+      onErrorRetry: (_err, _key, _cfg, retry, { retryCount }) => {
+        if (retryCount >= 3) return;
+        setTimeout(() => retry(), 5_000);
+      },
+    }
+  );
+  return data ?? null; // Returns null while loading
 }
 
 function StatCard({
@@ -98,11 +123,26 @@ export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === 'hr_admin' || user?.role === 'super_admin';
 
+  // Calculate the true time by applying the server offset.
+  const offset = useServerTimeOffset();
+  const safeOffset = offset ?? 0;
+  const getTrueNow = () => new Date(Date.now() + safeOffset);
+  const serverTodayDateString = format(getTrueNow(), 'yyyy-MM-dd');
+
+  // Seed selectedDate from the server true time once resolved.
+  const [dateSeedDone, setDateSeedDone] = useState(false);
+  useEffect(() => {
+    if (offset !== null && !dateSeedDone) {
+      setSelectedDate(format(new Date(Date.now() + offset), 'yyyy-MM-dd'));
+      setDateSeedDone(true);
+    }
+  }, [offset, dateSeedDone]);
+
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [showManualClock, setShowManualClock] = useState(false);
   const [excuseModalData, setExcuseModalData] = useState<{logId: string, employeeName: string, type: 'late' | 'early_out'} | null>(null);
   const [modalDetails, setModalDetails] = useState<{ title: string; type: string; data: any[] } | null>(null);
-  const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd');
+  const isToday = selectedDate === serverTodayDateString;
 
   // ── Bulletins / Announcement System ─────────────────────────────────────────
   const [activeBulletins, setActiveBulletins] = useState<any[]>([]);
@@ -209,7 +249,8 @@ export default function DashboardPage() {
   const branchList: any[] = branches ?? [];
   const dashboardStats = stats ?? { totalUniqueAttendance: 0, currentlyOnSite: 0 };
 
-  const hour = new Date().getHours();
+  // Use the offset-corrected time for the greeting so it matches Ghana's actual time of day.
+  const hour = getTrueNow().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   const isLoading = liveLoading || empLoading || statsLoading || branchLoading;
@@ -227,8 +268,9 @@ export default function DashboardPage() {
     const d = parseLocalDate(selectedDate);
     if (!d) return;
     d.setDate(d.getDate() + 1);
-    const today = parseLocalDate(format(new Date(), 'yyyy-MM-dd'))!;
-    if (d <= today) {
+    // Cap navigation at the offset-corrected today.
+    const todayCap = parseLocalDate(serverTodayDateString)!;
+    if (d <= todayCap) {
       setSelectedDate(format(d, 'yyyy-MM-dd'));
     }
   };
@@ -290,10 +332,11 @@ export default function DashboardPage() {
                 const val = e.target.value;
                 const parsed = parseLocalDate(val);
                 if (!parsed) return;
-                const today = parseLocalDate(format(new Date(), 'yyyy-MM-dd'))!;
-                setSelectedDate(parsed > today ? format(new Date(), 'yyyy-MM-dd') : val);
+                // Cap to server-corrected today so admins cannot select future dates
+                const todayCap = parseLocalDate(serverTodayDateString)!;
+                setSelectedDate(parsed > todayCap ? serverTodayDateString : val);
               }}
-              max={format(new Date(), 'yyyy-MM-dd')}
+              max={serverTodayDateString}
               className="input-field"
               aria-label="Select date for attendance history"
               title="Select date for attendance history"
@@ -588,9 +631,10 @@ export default function DashboardPage() {
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               {(() => {
-                // Show Manual Clock button for any Mon–Fri within the current week up to today
+                // Show Manual Clock button for any Mon–Fri within the current week up to today.
+                // Use offset-corrected date to guard against wrong device clocks.
                 const sel = parseLocalDate(selectedDate);
-                const todayDate = parseLocalDate(format(new Date(), 'yyyy-MM-dd'))!;
+                const todayDate = parseLocalDate(serverTodayDateString)!;
                 const dayOfWeek = sel?.getDay(); // 0=Sun, 6=Sat
                 const getMonday = (d: Date) => {
                   const copy = new Date(d);
@@ -721,6 +765,7 @@ export default function DashboardPage() {
         <AdminManualClockModal
           onClose={() => setShowManualClock(false)}
           selectedDate={selectedDate}
+          serverTimeOffset={safeOffset}
           onSuccess={() => {
             mutate(['live', selectedDate]);
             mutate(['attendance-stats', selectedDate]);

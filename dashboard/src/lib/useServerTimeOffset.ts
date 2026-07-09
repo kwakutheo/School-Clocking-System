@@ -45,6 +45,15 @@ export function useGhanaTime() {
 }
 
 /**
+ * Shifts any absolute epoch timestamp into a "fake" local Date object
+ * so that standard local formatting methods will output true Ghana (UTC) time.
+ */
+export function shiftToGhanaTime(trueEpoch: number): Date {
+  const tzOffsetMs = new Date().getTimezoneOffset() * 60000;
+  return new Date(trueEpoch + tzOffsetMs);
+}
+
+/**
  * Returns a function that gets the true absolute epoch string for the server time,
  * which is safe to use with .toISOString().
  */

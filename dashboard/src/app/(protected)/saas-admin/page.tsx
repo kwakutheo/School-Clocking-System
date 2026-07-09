@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { saasAdminApi } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
-import { useServerTimeOffset } from "@/lib/useServerTimeOffset";
+import { useServerTimeOffset, shiftToGhanaTime } from "@/lib/useServerTimeOffset";
 import {
   LineChart,
   Line,
@@ -1196,9 +1196,9 @@ export default function SaasOverviewPage() {
               }}
             >
               Live intelligence across all supervised institutions · Last
-              refreshed: {new Date(lastRefreshedMs + safeOffset).toLocaleTimeString()}
+              refreshed: {shiftToGhanaTime(lastRefreshedMs + safeOffset).toLocaleTimeString()}
               {' on '}
-              {new Date(lastRefreshedMs + safeOffset).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {shiftToGhanaTime(lastRefreshedMs + safeOffset).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
 

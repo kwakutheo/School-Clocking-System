@@ -4,7 +4,7 @@ import useSWR, { mutate } from 'swr';
 import { format } from 'date-fns';
 import { attendanceApi, employeesApi, branchesApi, saasAdminApi, systemApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
-import { useServerTimeOffset } from '@/lib/useServerTimeOffset';
+import { useServerTimeOffset, shiftToGhanaTime } from '@/lib/useServerTimeOffset';
 import { AttendanceChart } from '@/components/attendance-chart';
 import { StatCardSkeleton, TableSkeleton } from '@/components/skeleton';
 import { AdminManualClockModal } from '@/components/admin-manual-clock-modal';
@@ -112,7 +112,7 @@ export default function DashboardPage() {
   // Calculate the true time by applying the server offset.
   const offset = useServerTimeOffset();
   const safeOffset = offset ?? 0;
-  const getTrueNow = () => new Date(Date.now() + safeOffset);
+  const getTrueNow = () => shiftToGhanaTime(Date.now() + safeOffset);
   const serverTodayDateString = format(getTrueNow(), 'yyyy-MM-dd');
 
   // Seed selectedDate from the server true time once resolved.

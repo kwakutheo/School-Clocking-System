@@ -1621,13 +1621,6 @@ export default function ReportsPage() {
 
         <div style={{ flex: 1 }} />
 
-        {/* Row count badge */}
-        {!loading && previewCount > 0 && (
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-            {previewCount} row{previewCount !== 1 ? 's' : ''} in report
-          </span>
-        )}
-
         {/* Generate PDF button */}
         <button
           onClick={handleGeneratePdf}

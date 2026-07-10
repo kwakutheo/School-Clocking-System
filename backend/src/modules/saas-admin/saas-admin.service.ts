@@ -1073,36 +1073,30 @@ export class SaasAdminService implements OnModuleInit {
       };
     });
 
-    // For performance reports/rankings, exclude schools that had no active
-    // workforce scheduled in the selected timeframe — showing them as 0%
-    // would be misleading. The Schools Registry page bypasses this by
-    // passing includeAll=true since it is an administrative list, not a
-    // ranked performance report.
+    // For performance reports/rankings, exclude schools that:
+    //   (a) had no active workforce scheduled in the timeframe (0 expected days + 0 employees),
+    //       since showing them as 0% is misleading, OR
+    //   (b) were not yet registered when the selected period ended — a school that
+    //       onboarded in June 2026 should not appear on a 2024/2025 or 2025/2026 First Term
+    //       ranking with 0% data. We use the actual computed range end date from
+    //       tenantRangesMap (not a string-parsed year) so this works for individual
+    //       terms as well as full-year views.
+    // The Schools Registry page passes includeAll=true and bypasses this entirely.
     if (!includeAll) {
-      results = results.filter(
-        (school) =>
+      results = results.filter((school) => {
+        const range = tenantRangesMap.get(school.id);
+        // Exclude schools that weren't registered yet when the period ended
+        if (range && range.end.getTime() > 0 && new Date(school.createdAt) > range.end) {
+          return false;
+        }
+        // Exclude schools with no workforce data at all for this period
+        return (
           school.metrics.expectedEmployeeDays > 0 ||
-          school.metrics.employees > 0,
-      );
+          school.metrics.employees > 0
+        );
+      });
     }
 
-    // When a specific academic year is requested (e.g. "2024/2025"), exclude
-    // schools that were not yet onboarded by the end of that year. Showing a
-    // school that only joined in 2026 with a 0% rate on the 2024/2025 report
-    // is misleading — they simply didn't exist yet.
-    if (academicYear && !includeAll) {
-      // Derive the end of the academic year from the label, e.g. "2024/2025"
-      // → end year is 2025 → July 31, 2025 23:59:59 (typical Ghanaian school year end)
-      const endYearStr = academicYear.split('/')[1];
-      const endYear = parseInt(endYearStr, 10);
-      if (!isNaN(endYear)) {
-        // Use July 31 as a safe upper bound for the academic year end
-        const academicYearEnd = new Date(endYear, 6, 31, 23, 59, 59, 999); // Month 6 = July
-        results = results.filter(
-          (school) => new Date(school.createdAt) <= academicYearEnd,
-        );
-      }
-    }
 
     if (cohort) {
       if (cohort === 'excellent') {

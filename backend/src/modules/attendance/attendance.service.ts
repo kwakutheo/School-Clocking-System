@@ -1949,19 +1949,17 @@ export class AttendanceService {
     let eligibleStaffRows = [...allStaffRows];
 
     // ── Eligibility filter (Applied Globally) ───────────────────────────────
-    // Exclude employees whose active window is shorter than the required
-    // fraction of the maximum expected working days in the period across ALL schools.
+    // Exclude employees whose active window covers less than minEligibilityPct
+    // of the FULL period's working days (totalPeriodDays), not just the max
+    // among employees. This correctly filters Issifu-style cases where an
+    // employee has only worked 16 out of 202 total expected days.
     if (minEligibilityPct > 0 && eligibleStaffRows.length > 0) {
-      const maxExpected = eligibleStaffRows.reduce(
-        (max, row) => Math.max(max, row.metrics?.expectedDays ?? 0),
-        0,
-      );
-      if (maxExpected > 0) {
-        const minDays = maxExpected * minEligibilityPct;
-        eligibleStaffRows = eligibleStaffRows.filter(
-          (row) => (row.metrics?.expectedDays ?? 0) >= minDays,
-        );
-      }
+      eligibleStaffRows = eligibleStaffRows.filter((row) => {
+        const totalPeriod = row.metrics?.totalPeriodDays ?? 0;
+        if (totalPeriod === 0) return true; // cannot determine; include
+        const coverage = (row.metrics?.expectedDays ?? 0) / totalPeriod;
+        return coverage >= minEligibilityPct;
+      });
     }
 
     const staffWithGlobalRank = eligibleStaffRows.map((row, index) => ({

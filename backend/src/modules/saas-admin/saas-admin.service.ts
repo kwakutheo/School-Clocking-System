@@ -1092,9 +1092,17 @@ export class SaasAdminService implements OnModuleInit {
       const isAsc = direction?.toUpperCase() === 'ASC';
       if (field === 'presenceRate') {
         results.sort((a, b) => {
+          // Primary: presenceRate
           const diff =
             (a.metrics.presenceRate ?? 0) - (b.metrics.presenceRate ?? 0);
-          return isAsc ? diff : -diff;
+          if (diff !== 0) return isAsc ? diff : -diff;
+          // Tie-break 1: expectedEmployeeDays — larger workforce at same rate wins
+          const daysDiff =
+            (b.metrics.expectedEmployeeDays ?? 0) -
+            (a.metrics.expectedEmployeeDays ?? 0);
+          if (daysDiff !== 0) return daysDiff;
+          // Tie-break 2: alphabetical by school name (deterministic final ordering)
+          return String(a.name ?? '').localeCompare(String(b.name ?? ''));
         });
       } else if (field === 'createdAt') {
         results.sort((a, b) => {
@@ -1842,27 +1850,28 @@ export class SaasAdminService implements OnModuleInit {
     let eligibleResults = [...allResults];
 
     // ── Eligibility filter ────────────────────────────────────────────────────
-    // An employee is eligible only if their individual active window covers at
-    // least `minEligibilityPct` of the maximum expected working days among all
-    // employees in the period. This prevents new hires from unfairly topping
-    // the leaderboard with a perfect score over just a handful of days.
+    // An employee is eligible only if their active window covers at least
+    // `minEligibilityPct` of the FULL period's working days (totalPeriodDays).
+    // Using totalPeriodDays (full academic period) as the denominator instead
+    // of maxExpected (max among employees) fixes the case where all employees
+    // at a school are new hires — in that case maxExpected would be small and
+    // the threshold would be too easy to pass.
     if (minEligibilityPct > 0) {
-      const maxExpected = allResults.reduce(
-        (max, emp) => Math.max(max, emp.metrics?.expectedDays ?? 0),
-        0,
-      );
-      if (maxExpected > 0) {
-        const minDays = maxExpected * minEligibilityPct;
-        eligibleResults = eligibleResults.filter(
-          (emp) => (emp.metrics?.expectedDays ?? 0) >= minDays,
-        );
-      }
+      eligibleResults = eligibleResults.filter((emp) => {
+        const totalPeriod = emp.metrics?.totalPeriodDays ?? 0;
+        if (totalPeriod === 0) return true; // cannot determine coverage; include
+        const coverage = (emp.metrics?.expectedDays ?? 0) / totalPeriod;
+        return coverage >= minEligibilityPct;
+      });
     }
 
-    // Assign strictly sequential ranks to the eligible population
+    // Assign strictly sequential ranks to the eligible population,
+    // and update totalEmployees to reflect the filtered pool size.
+    const eligibleCount = eligibleResults.length;
     let finalResults = eligibleResults.map((emp, index) => ({
       ...emp,
       rank: index + 1,
+      totalEmployees: eligibleCount,
     }));
 
     if (sort === 'worst') {
@@ -2163,6 +2172,26 @@ export class SaasAdminService implements OnModuleInit {
         const workingDays: number[] = shift?.workingDays ?? [1, 2, 3, 4, 5];
         let expectedDays = 0;
 
+        // ── Total period working days (denominator for eligibility %) ──────────
+        // Count ALL working days in the full timeframe for this employee's shift,
+        // regardless of when they were hired or their active status.
+        // This ensures 50% means "50% of the full academic period",
+        // NOT "50% of the maximum active employee's days" (which breaks when
+        // all employees are new hires with short active windows).
+        let totalPeriodDays = 0;
+        {
+          const fullCursor = new Date(timeframeStart);
+          fullCursor.setHours(0, 0, 0, 0);
+          const fullEnd = timeframeEnd > endOfToday ? endOfToday : timeframeEnd;
+          while (fullCursor <= fullEnd) {
+            const dow = fullCursor.getDay();
+            if (workingDays.includes(dow === 0 ? 7 : dow)) {
+              totalPeriodDays++;
+            }
+            fullCursor.setDate(fullCursor.getDate() + 1);
+          }
+        }
+
         // Collect the set of valid date strings (YYYY-MM-DD) where this
         // employee was ACTIVE within the timeframe. Used to filter log maps.
         const validActiveDateStrs = new Set<string>();
@@ -2352,13 +2381,29 @@ export class SaasAdminService implements OnModuleInit {
             score,
             daysPresent,
             expectedDays,
+            totalPeriodDays,
             earlyOutCount,
             forgotOutCount,
           },
         });
       }
 
-      results.sort((a, b) => b.metrics.score - a.metrics.score);
+      results.sort((a, b) => {
+        // Primary: composite score (highest first)
+        const scoreDiff = b.metrics.score - a.metrics.score;
+        if (scoreDiff !== 0) return scoreDiff;
+        // Tie-break 1: presence rate (more days attended wins)
+        const presenceDiff = b.metrics.presenceRate - a.metrics.presenceRate;
+        if (presenceDiff !== 0) return presenceDiff;
+        // Tie-break 2: punctuality rate (more on-time events wins)
+        const punctualityDiff = b.metrics.punctualityRate - a.metrics.punctualityRate;
+        if (punctualityDiff !== 0) return punctualityDiff;
+        // Tie-break 3: hours completion rate (more hours completed wins)
+        const hoursDiff = b.metrics.hoursCompletionRate - a.metrics.hoursCompletionRate;
+        if (hoursDiff !== 0) return hoursDiff;
+        // Tie-break 4: alphabetical by name (deterministic final ordering)
+        return String(a.name ?? '').localeCompare(String(b.name ?? ''));
+      });
 
       results.forEach((r, idx) => {
         r.rank = idx + 1;

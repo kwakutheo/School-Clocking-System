@@ -209,17 +209,6 @@ export default function RankingsPage() {
                 {data.globalSchoolRank.presenceRate}% Average Attendance
               </div>
             </div>
-
-            <div style={{ background: 'var(--bg-card-hover)', borderRadius: '12px', padding: '16px 24px', border: '1px solid var(--border)', textAlign: 'center' }}>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
-                Percentile
-              </div>
-              <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--primary)' }}>
-                {data.globalSchoolRank.totalSchools <= 1 
-                  ? '100th' 
-                  : ordinalSuffix(Math.round(((data.globalSchoolRank.totalSchools - data.globalSchoolRank.rank) / (data.globalSchoolRank.totalSchools - 1)) * 100))}
-              </div>
-            </div>
           </div>
         </div>
       )}

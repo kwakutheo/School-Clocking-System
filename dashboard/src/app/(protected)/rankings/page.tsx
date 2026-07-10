@@ -115,7 +115,7 @@ export default function RankingsPage() {
 
   return (
     <div className="dashboard-container">
-      <div className="page-header" style={{ marginBottom: '24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+      <div className="page-header" style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)' }}>
             <Trophy size={28} style={{ color: 'var(--primary)' }} />

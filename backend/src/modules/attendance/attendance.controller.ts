@@ -369,6 +369,7 @@ export class AttendanceController {
     @Query('search') search?: string,
     @Query('academicYear') academicYear?: string,
     @Query('termName') termName?: string,
+    @Query('minEligibilityPct') minEligibilityPct?: string,
   ) {
     if (!user.tenantId) {
       throw new NotFoundException('User does not belong to a school');
@@ -380,6 +381,7 @@ export class AttendanceController {
       page,
       limit,
       search || '',
+      minEligibilityPct ? parseFloat(minEligibilityPct) : 0,
     );
   }
 

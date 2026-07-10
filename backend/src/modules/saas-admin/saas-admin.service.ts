@@ -1825,6 +1825,7 @@ export class SaasAdminService implements OnModuleInit {
     school?: string,
     academicYear?: string,
     termName?: string,
+    minEligibilityPct: number = 0,
   ): Promise<{
     data: any[];
     total: number;
@@ -1838,10 +1839,38 @@ export class SaasAdminService implements OnModuleInit {
       termName,
     );
 
+    let eligibleResults = [...allResults];
+
+    // ── Eligibility filter ────────────────────────────────────────────────────
+    // An employee is eligible only if their individual active window covers at
+    // least `minEligibilityPct` of the maximum expected working days among all
+    // employees in the period. This prevents new hires from unfairly topping
+    // the leaderboard with a perfect score over just a handful of days.
+    if (minEligibilityPct > 0) {
+      const maxExpected = allResults.reduce(
+        (max, emp) => Math.max(max, emp.metrics?.expectedDays ?? 0),
+        0,
+      );
+      if (maxExpected > 0) {
+        const minDays = maxExpected * minEligibilityPct;
+        eligibleResults = eligibleResults.filter(
+          (emp) => (emp.metrics?.expectedDays ?? 0) >= minDays,
+        );
+      }
+    }
+
+    // Assign strictly sequential ranks to the eligible population
+    let finalResults = eligibleResults.map((emp, index) => ({
+      ...emp,
+      rank: index + 1,
+    }));
+
+    if (sort === 'worst') {
+      finalResults = finalResults.reverse();
+    }
+
     const searchTerm = search?.trim().toLowerCase();
     const schoolTerm = school?.trim().toLowerCase();
-    let finalResults =
-      sort === 'worst' ? [...allResults].reverse() : [...allResults];
 
     if (searchTerm) {
       finalResults = finalResults.filter(
@@ -1863,14 +1892,16 @@ export class SaasAdminService implements OnModuleInit {
       );
     }
 
-    const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
+    const limitNum = Number(limit);
+    const isUnlimited = limitNum === -1;
+    const safeLimit = isUnlimited ? finalResults.length : Math.min(Math.max(limitNum || 50, 1), 100);
     const total = finalResults.length;
-    const totalPages = Math.max(1, Math.ceil(total / safeLimit));
-    const safePage = Math.min(Math.max(Number(page) || 1, 1), totalPages);
-    const offset = (safePage - 1) * safeLimit;
+    const totalPages = isUnlimited ? 1 : Math.max(1, Math.ceil(total / safeLimit));
+    const safePage = isUnlimited ? 1 : Math.min(Math.max(Number(page) || 1, 1), totalPages);
+    const offset = isUnlimited ? 0 : (safePage - 1) * safeLimit;
 
     return {
-      data: finalResults.slice(offset, offset + safeLimit),
+      data: isUnlimited ? finalResults : finalResults.slice(offset, offset + safeLimit),
       total,
       page: safePage,
       limit: safeLimit,

@@ -511,7 +511,9 @@ async function generateSchoolsPdf(
     ];
   });
 
-  // Table — margin.top reserves space for header on all pages
+  // Table — margin.top reserves space on all pages
+
+  // Footer on all pages
   autoTable(doc, {
     startY: firstPageTableY,
     head: [['#', 'School Name', 'Employees', 'Approved Leave-Days', 'Attendance Rate', 'Performance', 'Portal']],
@@ -570,6 +572,7 @@ async function generateEmployeesPdf(
   sortOrder: SortOrder,
   timestamp: string,
   isoDate: string,
+  minEligibility: number,
 ) {
   const { jsPDF } = await import('jspdf');
   const { default: autoTable } = await import('jspdf-autotable');
@@ -586,12 +589,16 @@ async function generateEmployeesPdf(
   const summaryStats: PdfStatCard[] = [
     { label: 'Total Employees', value: String(employees.length), accent: [51, 65, 85], icon: 'users' },
     { label: 'Period', value: periodLabel, accent: [71, 85, 105], icon: 'calendar' },
-    {
-      label: 'Ranking Scope',
-      value: sortOrder === 'best' ? 'Best to Worst' : 'Worst to Best',
-      accent: sortOrder === 'best' ? [245, 158, 11] : [239, 68, 68],
-      icon: 'ranking',
-    },
+    ...(minEligibility > 0
+      ? [
+          {
+            label: 'Min. Active',
+            value: `${Math.round(minEligibility * 100)}%`,
+            accent: [59, 130, 246] as [number, number, number],
+            icon: 'calendar' as const,
+          },
+        ]
+      : []),
     {
       label: 'Avg. Score',
       value: `${avgScore}%`,
@@ -701,6 +708,25 @@ async function generateEmployeesPdf(
       bottom: PDF_TABLE_MARGIN_BOTTOM,
     },
   });
+
+  // Add footnote for eligibility filter
+  let currentY = (doc as any).lastAutoTable.finalY;
+  if (minEligibility > 0) {
+    const startYForNote = currentY + 15 > doc.internal.pageSize.getHeight() - PDF_TABLE_MARGIN_BOTTOM 
+      ? 15 
+      : currentY + 15;
+    if (startYForNote === 15) {
+      doc.addPage();
+    }
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text(
+      `* Staff who have been actively employed for less than ${Math.round(minEligibility * 100)}% of the selected period's working days are excluded from this report.`,
+      PDF_MARGIN,
+      startYForNote
+    );
+  }
 
   const totalPages = (doc as any).internal.getNumberOfPages();
   for (let p = 1; p <= totalPages; p++) {
@@ -1222,6 +1248,7 @@ export default function ReportsPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [minEligibility, setMinEligibility] = useState<number>(0.7); // 70% by default
   const timeframe: Timeframe = 'term';
 
   const getGhanaTime = useGhanaTime();
@@ -1259,7 +1286,9 @@ export default function ReportsPage() {
         });
         const activeTerm = terms.find((term) => term.isActive);
         const defaultYear = currentTerm?.academicYear ?? activeTerm?.academicYear ?? years[0] ?? '';
+        const defaultTerm = currentTerm?.name ?? activeTerm?.name ?? 'all';
         setAcademicYear((current) => current || defaultYear);
+        setTermName((current) => current === 'all' && !currentTerm && !activeTerm ? 'all' : (current === 'all' ? defaultTerm : current));
       } catch (e) {
         console.error('Failed to load terms for filter:', e);
       }
@@ -1311,10 +1340,11 @@ export default function ReportsPage() {
         const res = await saasAdminApi.getEmployeeRankings({ 
           timeframe, 
           sort: sortOrder, 
-          limit: 1000, 
+          limit: -1, 
           page: 1,
           academicYear: aYear,
-          termName: tName
+          termName: tName,
+          minEligibilityPct: minEligibility
         });
         const pageData = res.data as any;
         const list: EmployeeRanking[] = Array.isArray(pageData?.data)
@@ -1332,7 +1362,7 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [academicYear, reportType, sortOrder, termName, timeframe]);
+  }, [academicYear, reportType, sortOrder, termName, timeframe, minEligibility]);
 
   useEffect(() => {
     fetchData();
@@ -1372,7 +1402,7 @@ export default function ReportsPage() {
       if (reportType === 'schools') {
         await generateSchoolsPdf(filteredSchools, periodLabel, sortOrder, timestamp, isoDate);
       } else if (reportType === 'employees') {
-        await generateEmployeesPdf(filteredEmployees, periodLabel, sortOrder, timestamp, isoDate);
+        await generateEmployeesPdf(filteredEmployees, periodLabel, sortOrder, timestamp, isoDate, minEligibility);
       } else if (stats) {
         await generateSummaryPdf(stats, periodLabel, timestamp, isoDate);
       }
@@ -1518,6 +1548,33 @@ export default function ReportsPage() {
               <option key={t} value={t} style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>{t}</option>
             ))}
           </select>
+
+          {reportType === 'employees' && (
+            <select
+              aria-label="Select Minimum Active Period"
+              value={minEligibility.toString()}
+              onChange={(e) => setMinEligibility(parseFloat(e.target.value))}
+              style={{
+                padding: '5px 12px',
+                borderRadius: '7px',
+                fontSize: '12px',
+                fontWeight: 600,
+                border: '1px solid var(--border)',
+                background: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+                outline: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <option value="0" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>Show All (No Min.)</option>
+              <option value="0.5" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>At least 50% active</option>
+              <option value="0.6" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>At least 60% active</option>
+              <option value="0.7" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>At least 70% active</option>
+              <option value="0.8" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>At least 80% active</option>
+              <option value="0.9" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>At least 90% active</option>
+              <option value="0.95" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>At least 95% active</option>
+            </select>
+          )}
         </div>
 
         {/* Sort toggle (schools + employees only) */}

@@ -290,6 +290,7 @@ export class SaasAdminController {
     @Query('school') school?: string,
     @Query('academicYear') academicYear?: string,
     @Query('termName') termName?: string,
+    @Query('minEligibilityPct') minEligibilityPct?: string,
   ) {
     this.verifyGlobalAdmin(req);
     return this.adminService.getEmployeeRankings(
@@ -301,6 +302,7 @@ export class SaasAdminController {
       school,
       academicYear,
       termName,
+      minEligibilityPct ? parseFloat(minEligibilityPct) : 0,
     );
   }
 

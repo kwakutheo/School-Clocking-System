@@ -1933,6 +1933,7 @@ export class AttendanceService {
     page: number = 1,
     limit: number = 10,
     search: string = '',
+    minEligibilityPct: number = 0,
   ) {
     const timeframe = termName ? 'term' : 'academic_year';
     const allStaffRows = await tenantLocalStorage.run(null, () =>
@@ -1945,25 +1946,43 @@ export class AttendanceService {
 
     const lowerSearch = search.toLowerCase();
     
-    const staffWithGlobalRank = allStaffRows.map((row, index) => ({
+    let eligibleStaffRows = [...allStaffRows];
+
+    // ── Eligibility filter (Applied Globally) ───────────────────────────────
+    // Exclude employees whose active window is shorter than the required
+    // fraction of the maximum expected working days in the period across ALL schools.
+    if (minEligibilityPct > 0 && eligibleStaffRows.length > 0) {
+      const maxExpected = eligibleStaffRows.reduce(
+        (max, row) => Math.max(max, row.metrics?.expectedDays ?? 0),
+        0,
+      );
+      if (maxExpected > 0) {
+        const minDays = maxExpected * minEligibilityPct;
+        eligibleStaffRows = eligibleStaffRows.filter(
+          (row) => (row.metrics?.expectedDays ?? 0) >= minDays,
+        );
+      }
+    }
+
+    const staffWithGlobalRank = eligibleStaffRows.map((row, index) => ({
       ...row,
       globalRank: index + 1,
     }));
 
-    const schoolStaff = staffWithGlobalRank.filter(
+    let schoolStaff = staffWithGlobalRank.filter(
       (row) => row.school?.id === tenantId,
     );
 
-    const filteredStaff = schoolStaff.filter((row) => {
+    const schoolStaffWithLocalRank = schoolStaff.map((row, index) => ({
+      ...row,
+      localRank: index + 1,
+    }));
+
+    const staffWithLocalRank = schoolStaffWithLocalRank.filter((row) => {
       const nameMatch = String(row.name ?? '').toLowerCase().includes(lowerSearch);
       const codeMatch = String(row.employeeCode ?? '').toLowerCase().includes(lowerSearch);
       return nameMatch || codeMatch;
     });
-
-    const staffWithLocalRank = filteredStaff.map((row, index) => ({
-      ...row,
-      localRank: index + 1,
-    }));
 
     const total = staffWithLocalRank.length;
     const startIndex = (page - 1) * limit;

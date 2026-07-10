@@ -32,6 +32,7 @@ export default function RankingsPage() {
   const [academicYears, setAcademicYears] = useState<string[]>([]);
   const [selectedYear, setSelectedYear] = useState<string>('');
   const [selectedTerm, setSelectedTerm] = useState<string>('');
+  const [minEligibility, setMinEligibility] = useState<number>(0.7); // 70% by default
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 500);
@@ -74,7 +75,7 @@ export default function RankingsPage() {
     if (selectedYear || terms.length === 0) {
       fetchRankings();
     }
-  }, [page, debouncedSearch, selectedYear, selectedTerm, terms.length]);
+  }, [page, debouncedSearch, selectedYear, selectedTerm, terms.length, minEligibility]);
 
   const fetchRankings = async () => {
     setLoading(true);
@@ -85,6 +86,7 @@ export default function RankingsPage() {
         search: debouncedSearch,
         academicYear: selectedYear || undefined,
         termName: selectedTerm === 'Entire Academic Year' ? undefined : (selectedTerm || undefined),
+        minEligibilityPct: minEligibility,
       });
       setData(res.data);
     } catch (err) {
@@ -151,6 +153,21 @@ export default function RankingsPage() {
             {availableTermsForYear.map(t => (
               <option key={t.id} value={t.name}>{t.name}</option>
             ))}
+          </select>
+          <select
+            value={minEligibility.toString()}
+            onChange={(e) => setMinEligibility(parseFloat(e.target.value))}
+            aria-label="Filter by Minimum Active Period"
+            className="form-input"
+            style={{ minWidth: '180px', width: 'auto', padding: '8px 12px' }}
+          >
+            <option value="0">Show All (No Min.)</option>
+            <option value="0.5">At least 50% active</option>
+            <option value="0.6">At least 60% active</option>
+            <option value="0.7">At least 70% active</option>
+            <option value="0.8">At least 80% active</option>
+            <option value="0.9">At least 90% active</option>
+            <option value="0.95">At least 95% active</option>
           </select>
         </div>
       </div>

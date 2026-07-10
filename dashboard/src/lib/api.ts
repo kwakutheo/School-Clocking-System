@@ -125,7 +125,7 @@ export const attendanceApi = {
     api.get(`/attendance/report/${employeeId}/term/${termId}`),
   getAcademicYearReport: (employeeId: string, academicYear: string) =>
     api.get(`/attendance/report/${employeeId}/academic-year/${encodeURIComponent(academicYear)}`),
-  getRankings: (params: { page?: number; limit?: number; search?: string; academicYear?: string; termName?: string }) =>
+  getRankings: (params: { page?: number; limit?: number; search?: string; academicYear?: string; termName?: string; minEligibilityPct?: number }) =>
     api.get("/attendance/rankings", { params }),
   /** Returns all employees the acting admin is allowed to clock (excludes self). */
   clockableEmployees: () => api.get("/attendance/clockable-employees"),
@@ -406,6 +406,7 @@ export const saasAdminApi = {
     school?: string;
     academicYear?: string;
     termName?: string;
+    minEligibilityPct?: number;
   }) => api.get("/saas-admin/rankings/employees", { params }),
 
   // Central Admin Accounts

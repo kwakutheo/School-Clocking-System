@@ -821,11 +821,7 @@ export class SaasAdminService implements OnModuleInit {
         .getRawMany();
     }
 
-    // For term/academic_year views, employeeCount above = only employees WITH logs.
-    // We need a separate enrolled count (all non-inactive employees) to use as the
-    // fallback expected-days denominator, otherwise schools with partial log coverage
-    // get an artificially inflated rate (e.g. 1 employee with logs / 1 × days = 100%
-    // when there are actually 5 enrolled employees).
+
     const enrolledStatsRaw = await this.employeeRepo
       .createQueryBuilder('e')
       .select('e.tenantId', 'tenantId')
@@ -1029,11 +1025,16 @@ export class SaasAdminService implements OnModuleInit {
       let expectedInTimeframe =
         expectedMap.get(tenant.id) ?? enrolledCount * rangeParams.weekdays;
 
-      // If employees show up on a day with 0 expectations (e.g. holiday or weekend),
-      // we raise the expectation to match so they get a 100% rate, preventing >100% rates
-      // and div/0 issues.
+      // Guard against >100% rates (e.g. someone clocking in on a holiday or weekend).
+      // IMPORTANT: we must NOT simply set expected = present when the cron's daily summary
+      // is stale (low expected count from old data) while present logs are high (e.g. from
+      // backdated attendance seeding). Doing so inflates to exactly 100%.
+      // Instead, when presentCount exceeds the summary's expected count, we fall back to
+      // enrolled × full-period weekdays as the denominator — the most accurate available
+      // upper bound. This ensures the rate reflects the true workforce utilisation.
       if (presentCount > expectedInTimeframe) {
-        expectedInTimeframe = presentCount;
+        const enrolledFallback = enrolledCount * rangeParams.weekdays;
+        expectedInTimeframe = Math.max(enrolledFallback, presentCount);
       }
       
       const approvedLeaveDays = leaveMap.get(tenant.id) || 0;

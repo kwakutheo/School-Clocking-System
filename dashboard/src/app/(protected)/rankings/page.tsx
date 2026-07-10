@@ -215,7 +215,9 @@ export default function RankingsPage() {
                 Percentile
               </div>
               <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--primary)' }}>
-                {ordinalSuffix(Math.round(((data.globalSchoolRank.totalSchools - data.globalSchoolRank.rank) / data.globalSchoolRank.totalSchools) * 100))}
+                {data.globalSchoolRank.totalSchools <= 1 
+                  ? '100th' 
+                  : ordinalSuffix(Math.round(((data.globalSchoolRank.totalSchools - data.globalSchoolRank.rank) / (data.globalSchoolRank.totalSchools - 1)) * 100))}
               </div>
             </div>
           </div>

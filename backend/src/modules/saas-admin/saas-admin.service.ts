@@ -1025,13 +1025,6 @@ export class SaasAdminService implements OnModuleInit {
       let expectedInTimeframe =
         expectedMap.get(tenant.id) ?? enrolledCount * rangeParams.weekdays;
 
-      // Guard against >100% rates (e.g. someone clocking in on a holiday or weekend).
-      // IMPORTANT: we must NOT simply set expected = present when the cron's daily summary
-      // is stale (low expected count from old data) while present logs are high (e.g. from
-      // backdated attendance seeding). Doing so inflates to exactly 100%.
-      // Instead, when presentCount exceeds the summary's expected count, we fall back to
-      // enrolled × full-period weekdays as the denominator — the most accurate available
-      // upper bound. This ensures the rate reflects the true workforce utilisation.
       if (presentCount > expectedInTimeframe) {
         const enrolledFallback = enrolledCount * rangeParams.weekdays;
         expectedInTimeframe = Math.max(enrolledFallback, presentCount);
@@ -1091,6 +1084,24 @@ export class SaasAdminService implements OnModuleInit {
           school.metrics.expectedEmployeeDays > 0 ||
           school.metrics.employees > 0,
       );
+    }
+
+    // When a specific academic year is requested (e.g. "2024/2025"), exclude
+    // schools that were not yet onboarded by the end of that year. Showing a
+    // school that only joined in 2026 with a 0% rate on the 2024/2025 report
+    // is misleading — they simply didn't exist yet.
+    if (academicYear && !includeAll) {
+      // Derive the end of the academic year from the label, e.g. "2024/2025"
+      // → end year is 2025 → July 31, 2025 23:59:59 (typical Ghanaian school year end)
+      const endYearStr = academicYear.split('/')[1];
+      const endYear = parseInt(endYearStr, 10);
+      if (!isNaN(endYear)) {
+        // Use July 31 as a safe upper bound for the academic year end
+        const academicYearEnd = new Date(endYear, 6, 31, 23, 59, 59, 999); // Month 6 = July
+        results = results.filter(
+          (school) => new Date(school.createdAt) <= academicYearEnd,
+        );
+      }
     }
 
     if (cohort) {

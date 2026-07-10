@@ -821,6 +821,22 @@ export class SaasAdminService implements OnModuleInit {
         .getRawMany();
     }
 
+    // For term/academic_year views, employeeCount above = only employees WITH logs.
+    // We need a separate enrolled count (all non-inactive employees) to use as the
+    // fallback expected-days denominator, otherwise schools with partial log coverage
+    // get an artificially inflated rate (e.g. 1 employee with logs / 1 × days = 100%
+    // when there are actually 5 enrolled employees).
+    const enrolledStatsRaw = await this.employeeRepo
+      .createQueryBuilder('e')
+      .select('e.tenantId', 'tenantId')
+      .addSelect('COUNT(*)', 'count')
+      .where('e.status != :inactive', { inactive: EmployeeStatus.INACTIVE })
+      .groupBy('e.tenantId')
+      .getRawMany();
+    const enrolledMap = new Map(
+      enrolledStatsRaw.map((s) => [s.tenantId, Number(s.count)]),
+    );
+
     // Fetch check-ins count based on selected timeframe
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
@@ -1007,8 +1023,11 @@ export class SaasAdminService implements OnModuleInit {
         end: boundingEnd,
         weekdays: 1,
       };
+      // Use enrolled workforce (all non-inactive employees) for the fallback denominator
+      // so that schools where only some employees have logs don't get an inflated 100% rate.
+      const enrolledCount = enrolledMap.get(tenant.id) ?? employeeCount;
       let expectedInTimeframe =
-        expectedMap.get(tenant.id) ?? employeeCount * rangeParams.weekdays;
+        expectedMap.get(tenant.id) ?? enrolledCount * rangeParams.weekdays;
 
       // If employees show up on a day with 0 expectations (e.g. holiday or weekend),
       // we raise the expectation to match so they get a 100% rate, preventing >100% rates

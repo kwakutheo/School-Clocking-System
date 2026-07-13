@@ -125,7 +125,8 @@ const REPORT_TYPES: {
     icon: BarChart2,
     color: 'var(--primary)',
     bg: 'var(--primary-dim)',
-    hidden: true,
+    // TODO: To make the Platform Summary visible again, simply remove the line below
+    // or set it to `hidden: false`.
   },
 ];
 

@@ -554,13 +554,13 @@ export class SaasAdminService implements OnModuleInit {
     timeframe: string,
     academicYear?: string,
     termName?: string,
-  ): Promise<Map<string, { start: Date; end: Date; weekdays: number }>> {
+  ): Promise<Map<string, { start: Date; end: Date; weekdays: number; periodEnd: Date }>> {
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
 
     const tenantRangesMap = new Map<
       string,
-      { start: Date; end: Date; weekdays: number }
+      { start: Date; end: Date; weekdays: number; periodEnd: Date }
     >();
 
     const defaultStart = new Date();
@@ -604,6 +604,7 @@ export class SaasAdminService implements OnModuleInit {
           start: defaultStart,
           end: defaultEnd,
           weekdays: defaultWeekdays,
+          periodEnd: defaultEnd,
         });
       }
     } else {
@@ -677,13 +678,28 @@ export class SaasAdminService implements OnModuleInit {
           tEnd = maxEnd;
           tEnd.setHours(23, 59, 59, 999);
 
+          // Preserve the unclamped period end for eligibility filtering later.
+          // This lets us correctly exclude schools registered after the entire
+          // period ended, while still including schools that joined mid-period.
+          const periodEnd = new Date(tEnd);
+
+          // Clamp the effective start to the school's onboarding date.
+          // A school that registered mid-term should not have days before its
+          // existence counted in the denominator (which would deflate its rate).
+          const tenantOnboarded = new Date(tenant.createdAt);
+          tenantOnboarded.setHours(0, 0, 0, 0);
+          if (tenantOnboarded > tStart) {
+            tStart = tenantOnboarded;
+          }
+
           if (tStart > endOfToday) {
-            // Future term: preserve the actual boundaries for querying, but
-            // expose 0 elapsed weekdays so downstream metrics render as no-data.
+            // Future term (or school onboards in the future): preserve actual
+            // boundaries for querying, but expose 0 weekdays so metrics = no-data.
             tenantRangesMap.set(tenant.id, {
               start: tStart,
               end: tEnd,
               weekdays: 0,
+              periodEnd,
             });
           } else {
             // Current or past term: cap end date to today if it extends into the future,
@@ -695,6 +711,7 @@ export class SaasAdminService implements OnModuleInit {
               start: tStart,
               end: tEnd,
               weekdays: this.countWeekdays(tStart, tEnd),
+              periodEnd,
             });
           }
         } else {
@@ -709,6 +726,7 @@ export class SaasAdminService implements OnModuleInit {
               start: new Date(0),
               end: new Date(0),
               weekdays: 0,
+              periodEnd: new Date(0),
             });
           } else {
             const fallbackStart = new Date();
@@ -718,6 +736,7 @@ export class SaasAdminService implements OnModuleInit {
               start: fallbackStart,
               end: defaultEnd,
               weekdays: this.countWeekdays(fallbackStart, defaultEnd),
+              periodEnd: defaultEnd,
             });
           }
         }
@@ -1085,15 +1104,18 @@ export class SaasAdminService implements OnModuleInit {
     if (!includeAll) {
       results = results.filter((school) => {
         const range = tenantRangesMap.get(school.id);
-        // Exclude schools that weren't registered yet when the period ended
-        if (range && range.end.getTime() > 0 && new Date(school.createdAt) > range.end) {
+        // Use the unclamped period end (before today-cap or onboarding-clamp)
+        // to decide whether the school existed at all during the requested period.
+        // A school registered on Jan 6 should appear in Second Term (Jan–Apr)
+        // and the full academic year, but NOT in First Term (Sep–Dec).
+        const periodEndMs = range?.periodEnd?.getTime() ?? range?.end?.getTime() ?? 0;
+        if (periodEndMs > 0 && new Date(school.createdAt) > range!.periodEnd) {
           return false;
         }
-        // Exclude schools with no workforce data at all for this period
-        return (
-          school.metrics.expectedEmployeeDays > 0 ||
-          school.metrics.employees > 0
-        );
+        // Only exclude schools that have zero enrolled workforce AND zero presence
+        // data. A school with enrolled employees but no logs yet should still
+        // be visible (it will show a 0% or '—' rate).
+        return school.metrics.expectedEmployeeDays > 0 || school.metrics.employees > 0;
       });
     }
 

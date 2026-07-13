@@ -816,7 +816,7 @@ export default function EmployeesPage() {
                     </div>
                     <a href="/branches" className="btn btn-sm btn-primary" style={{ whiteSpace: 'nowrap', textDecoration: 'none' }}
                       onClick={() => setShowSetupWarning(null)}>
-                      Go to Locations (Geofence)
+                      Create One
                     </a>
                   </div>
                 )}
@@ -833,7 +833,7 @@ export default function EmployeesPage() {
                     </div>
                     <a href="/shifts" className="btn btn-sm btn-primary" style={{ whiteSpace: 'nowrap', textDecoration: 'none' }}
                       onClick={() => setShowSetupWarning(null)}>
-                      Go to Shifts
+                      Create One
                     </a>
                   </div>
                 )}

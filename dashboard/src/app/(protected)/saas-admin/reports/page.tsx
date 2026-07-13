@@ -127,6 +127,7 @@ const REPORT_TYPES: {
     bg: 'var(--primary-dim)',
     // TODO: To make the Platform Summary visible again, simply remove the line below
     // or set it to `hidden: false`.
+    hidden: true,
   },
 ];
 

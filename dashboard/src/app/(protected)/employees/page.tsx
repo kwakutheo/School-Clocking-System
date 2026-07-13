@@ -796,10 +796,10 @@ export default function EmployeesPage() {
               <p style={{ color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.6 }}>
                 Before registering an employee, your school must have at least one
                 {showSetupWarning.missingBranch && showSetupWarning.missingShift
-                  ? ' branch (geofenced location) and one shift'
+                  ? ' branch (geofenced location) and one shift (working hours)'
                   : showSetupWarning.missingBranch
                   ? ' branch (geofenced location)'
-                  : ' shift'}{' '}
+                  : ' shift (working hours)'}{' '}
                 configured in the system.
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

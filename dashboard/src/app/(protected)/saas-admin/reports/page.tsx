@@ -456,17 +456,6 @@ async function generateSchoolsPdf(
       accent: rateColorRgb(avgRate, schoolsWithAttendance.length > 0),
       icon: 'rate',
     },
-    {
-      label: 'Approved Leave-Days',
-      value: String(
-        schools.reduce(
-          (sum, school) => sum + Number(school.metrics.approvedLeaveDays ?? 0),
-          0,
-        ),
-      ),
-      accent: [245, 158, 11],
-      icon: 'calendar',
-    },
   ];
   const firstPageTableY = getPdfFirstPageTableY(doc, summaryStats.length);
 

@@ -100,6 +100,7 @@ const REPORT_TYPES: {
   icon: React.ElementType;
   color: string;
   bg: string;
+  hidden?: boolean;
 }[] = [
   {
     type: 'schools',
@@ -124,6 +125,7 @@ const REPORT_TYPES: {
     icon: BarChart2,
     color: 'var(--primary)',
     bg: 'var(--primary-dim)',
+    hidden: true,
   },
 ];
 
@@ -1443,7 +1445,7 @@ export default function ReportsPage() {
 
       {/* ── Report Type Cards ────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '20px' }}>
-        {REPORT_TYPES.map((rt) => {
+        {REPORT_TYPES.filter((rt) => !rt.hidden).map((rt) => {
           const Icon = rt.icon;
           const isActive = reportType === rt.type;
           return (

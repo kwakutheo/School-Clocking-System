@@ -96,6 +96,13 @@ export default function SchoolsRegistryPage() {
   const [editSlugError, setEditSlugError] = useState<string | null>(null);
   const [editInitialsError, setEditInitialsError] = useState<string | null>(null);
 
+  // Deletion Modal States
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [schoolToDelete, setSchoolToDelete] = useState<SchoolTenant | null>(null);
+  const [deleteConfirmSlug, setDeleteConfirmSlug] = useState('');
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   useEffect(() => {
     fetchSchools();
   }, []);
@@ -158,30 +165,40 @@ export default function SchoolsRegistryPage() {
       });
   };
 
-  // Permanently delete a school tenant and all associated data
-  const handleDeleteSchool = (school: SchoolTenant) => {
-    const slugInput = prompt(
-      `⚠️ DANGER: You are about to PERMANENTLY DELETE "${school.name}".\n` +
-      `This will instantly purge all branches, departments, shifts, employees, and years of attendance logs!\n` +
-      `This action CANNOT BE UNDONE.\n\n` +
-      `To confirm deletion, please type the school subdomain slug: "${school.slug}"`
-    );
+  // Open the deletion modal
+  const openDeleteModal = (school: SchoolTenant) => {
+    setSchoolToDelete(school);
+    setDeleteConfirmSlug('');
+    setDeleteError(null);
+    setDeleteModalOpen(true);
+  };
 
-    if (slugInput === null) return; // Cancelled
-
-    if (slugInput.trim().toLowerCase() !== school.slug.toLowerCase()) {
-      alert('❌ Error: Subdomain slug does not match. Deletion aborted.');
+  // Execute the permanent deletion
+  const confirmDeleteSchool = () => {
+    if (!schoolToDelete) return;
+    
+    if (deleteConfirmSlug.trim().toLowerCase() !== schoolToDelete.slug.toLowerCase()) {
+      setDeleteError('Subdomain slug does not match. Please type exactly as requested.');
       return;
     }
 
-    saasAdminApi.deleteTenant(school.id)
+    setDeleteSubmitting(true);
+    setDeleteError(null);
+
+    saasAdminApi.deleteTenant(schoolToDelete.id)
       .then(() => {
-        alert(`🟢 Success: "${school.name}" has been permanently purged.`);
+        setDeleteModalOpen(false);
+        setSchoolToDelete(null);
         fetchSchools();
+        // Optional: show a success toast here if available in the app, for now using alert
+        alert(`🟢 Success: "${schoolToDelete.name}" has been permanently purged.`);
       })
       .catch((err: any) => {
         console.error(err);
-        alert(err.response?.data?.message || 'Failed to delete school.');
+        setDeleteError(err.response?.data?.message || 'Failed to delete school.');
+      })
+      .finally(() => {
+        setDeleteSubmitting(false);
       });
   };
 
@@ -729,7 +746,7 @@ export default function SchoolsRegistryPage() {
                           </button>
 
                           <button
-                            onClick={() => handleDeleteSchool(school)}
+                            onClick={() => openDeleteModal(school)}
                             style={{
                               padding: '6px 12px',
                               borderRadius: '8px',
@@ -1169,6 +1186,142 @@ export default function SchoolsRegistryPage() {
                   </>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Confirmation Modal ── */}
+      {deleteModalOpen && schoolToDelete && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 999, animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div className="card" style={{
+            width: '100%', maxWidth: '520px',
+            padding: '32px', position: 'relative',
+            boxShadow: '0 24px 48px rgba(0,0,0,0.5)',
+            border: '1px solid var(--border)',
+            borderRadius: '16px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ 
+                  width: '44px', height: '44px', 
+                  borderRadius: '12px', 
+                  background: 'rgba(239, 68, 68, 0.1)', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#ef4444'
+                }}>
+                  <ShieldAlert size={22} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Delete School Tenant</h2>
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>Permanently remove a school from the platform.</p>
+                </div>
+              </div>
+              <button onClick={() => setDeleteModalOpen(false)} title="Close" aria-label="Close" style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ 
+              background: 'var(--bg-card-alt, rgba(255,255,255,0.02))', 
+              border: '1px solid var(--border)', 
+              borderRadius: '12px', 
+              padding: '16px', 
+              marginBottom: '24px' 
+            }}>
+              <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 12px 0' }}>
+                You are about to permanently delete:
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ 
+                  width: '40px', height: '40px', 
+                  borderRadius: '50%', 
+                  background: schoolToDelete.primaryColor || 'var(--primary)', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontWeight: 'bold', fontSize: '16px'
+                }}>
+                  {schoolToDelete.initials || schoolToDelete.name.charAt(0)}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{schoolToDelete.name}</h3>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                    Subdomain: {schoolToDelete.slug} • Employees: {schoolToDelete.metrics?.employees || 0}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: '16px' }}>
+                This will instantly purge all branches, departments, shifts, employees, and years of attendance logs associated with this school. <strong style={{ color: '#ef4444' }}>This action CANNOT BE UNDONE.</strong>
+              </p>
+
+              {deleteError && (
+                <div style={{ 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  background: 'rgba(239, 68, 68, 0.1)', 
+                  border: '1px solid rgba(239, 68, 68, 0.2)',
+                  color: '#ef4444', 
+                  fontSize: '13px', 
+                  marginBottom: '16px',
+                  display: 'flex', alignItems: 'center', gap: '8px' 
+                }}>
+                  <ShieldAlert size={16} />
+                  {deleteError}
+                </div>
+              )}
+
+              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '8px' }}>
+                To confirm deletion, please type the school subdomain slug: <strong style={{ color: 'var(--text-primary)', background: 'var(--bg-body)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border)' }}>{schoolToDelete.slug}</strong>
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                value={deleteConfirmSlug}
+                onChange={(e) => setDeleteConfirmSlug(e.target.value)}
+                placeholder={schoolToDelete.slug}
+                style={{ 
+                  width: '100%', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-input)',
+                  color: 'var(--text-primary)'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setDeleteModalOpen(false)}
+                className="btn btn-secondary"
+                style={{ padding: '12px 24px', borderRadius: '8px', fontWeight: 600, border: '1px solid var(--border)' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteSubmitting || deleteConfirmSlug.trim().toLowerCase() !== schoolToDelete.slug.toLowerCase()}
+                onClick={confirmDeleteSchool}
+                style={{ 
+                  display: 'flex', alignItems: 'center', gap: '8px', 
+                  padding: '12px 24px', borderRadius: '8px', fontWeight: 600,
+                  background: deleteConfirmSlug.trim().toLowerCase() === schoolToDelete.slug.toLowerCase() ? '#ef4444' : 'rgba(239, 68, 68, 0.5)',
+                  color: '#fff',
+                  border: 'none',
+                  cursor: deleteConfirmSlug.trim().toLowerCase() === schoolToDelete.slug.toLowerCase() ? 'pointer' : 'not-allowed',
+                  transition: 'background 0.2s'
+                }}
+              >
+                {deleteSubmitting ? 'Deleting...' : 'Permanently Delete'}
+              </button>
             </div>
           </div>
         </div>

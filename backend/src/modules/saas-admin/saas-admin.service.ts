@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  UnauthorizedException,
   Logger,
   OnModuleInit,
 } from '@nestjs/common';
@@ -2473,7 +2474,14 @@ export class SaasAdminService implements OnModuleInit {
   }
 
   /** Delete a school tenant permanently (hard-purge all associated tables via database cascade). */
-  async deleteTenant(id: string, adminUser: User): Promise<void> {
+  async deleteTenant(id: string, adminUser: User, adminPassword?: string): Promise<void> {
+    if (!adminPassword) {
+      throw new BadRequestException('Admin password is required to delete a tenant.');
+    }
+    const isPasswordValid = await bcrypt.compare(adminPassword, adminUser.passwordHash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid admin password.');
+    }
     const tenant = await this.tenantRepo.findOne({ where: { id } });
     if (!tenant) {
       throw new NotFoundException(`School tenant with ID "${id}" not found.`);

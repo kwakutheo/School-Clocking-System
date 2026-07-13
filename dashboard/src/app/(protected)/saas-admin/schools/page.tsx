@@ -100,6 +100,7 @@ export default function SchoolsRegistryPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [schoolToDelete, setSchoolToDelete] = useState<SchoolTenant | null>(null);
   const [deleteConfirmSlug, setDeleteConfirmSlug] = useState('');
+  const [deleteAdminPassword, setDeleteAdminPassword] = useState('');
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -169,6 +170,7 @@ export default function SchoolsRegistryPage() {
   const openDeleteModal = (school: SchoolTenant) => {
     setSchoolToDelete(school);
     setDeleteConfirmSlug('');
+    setDeleteAdminPassword('');
     setDeleteError(null);
     setDeleteModalOpen(true);
   };
@@ -182,10 +184,15 @@ export default function SchoolsRegistryPage() {
       return;
     }
 
+    if (!deleteAdminPassword.trim()) {
+      setDeleteError('Please enter your admin password to confirm deletion.');
+      return;
+    }
+
     setDeleteSubmitting(true);
     setDeleteError(null);
 
-    saasAdminApi.deleteTenant(schoolToDelete.id)
+    saasAdminApi.deleteTenant(schoolToDelete.id, deleteAdminPassword)
       .then(() => {
         setDeleteModalOpen(false);
         setSchoolToDelete(null);
@@ -1297,6 +1304,27 @@ export default function SchoolsRegistryPage() {
               />
             </div>
 
+            <div style={{ marginTop: '16px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '8px' }}>
+                Admin Password:
+              </label>
+              <input
+                type="password"
+                className="form-input"
+                value={deleteAdminPassword}
+                onChange={(e) => setDeleteAdminPassword(e.target.value)}
+                placeholder="Enter your admin password"
+                style={{ 
+                  width: '100%', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-input)',
+                  color: 'var(--text-primary)'
+                }}
+              />
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
               <button
                 type="button"
@@ -1308,7 +1336,7 @@ export default function SchoolsRegistryPage() {
               </button>
               <button
                 type="button"
-                disabled={deleteSubmitting || deleteConfirmSlug.trim().toLowerCase() !== schoolToDelete.slug.toLowerCase()}
+                disabled={deleteSubmitting || deleteConfirmSlug.trim().toLowerCase() !== schoolToDelete.slug.toLowerCase() || !deleteAdminPassword.trim()}
                 onClick={confirmDeleteSchool}
                 style={{ 
                   display: 'flex', alignItems: 'center', gap: '8px', 

@@ -310,9 +310,13 @@ export class SaasAdminController {
   @ApiOperation({
     summary: 'Permanently remove a school tenant and all associated data',
   })
-  async deleteTenant(@Req() req: any, @Param('id') id: string) {
+  async deleteTenant(
+    @Req() req: any, 
+    @Param('id') id: string,
+    @Body() body: { adminPassword?: string }
+  ) {
     this.verifyGlobalSuperAdmin(req);
-    await this.adminService.deleteTenant(id, req.user as User);
+    await this.adminService.deleteTenant(id, req.user as User, body?.adminPassword);
     return {
       success: true,
       message: 'School tenant and all associated data removed permanently.',

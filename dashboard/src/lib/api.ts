@@ -372,7 +372,7 @@ export const saasAdminApi = {
       customDomain?: string;
     },
   ) => api.put(`/saas-admin/tenants/${id}`, data),
-  deleteTenant: (id: string) => api.delete(`/saas-admin/tenants/${id}`),
+  deleteTenant: (id: string, adminPassword?: string) => api.delete(`/saas-admin/tenants/${id}`, { data: { adminPassword } }),
 
   // Bulletins Management (Admin)
   getBulletins: () => api.get("/saas-admin/bulletins"),

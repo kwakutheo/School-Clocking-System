@@ -811,7 +811,7 @@ export default function EmployeesPage() {
                   }}>
                     <span style={{ fontSize: 24 }}>🏢</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>No Branches Found</div>
+                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>No Branches (geofenced locations) Found</div>
                       <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Create at least one branch/location for your school.</div>
                     </div>
                     <a href="/branches" className="btn btn-sm btn-primary" style={{ whiteSpace: 'nowrap', textDecoration: 'none' }}
@@ -828,7 +828,7 @@ export default function EmployeesPage() {
                   }}>
                     <span style={{ fontSize: 24 }}>🕐</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>No Shifts Found</div>
+                      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>No Shifts (working hours) Found</div>
                       <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Create at least one work shift for your school.</div>
                     </div>
                     <a href="/shifts" className="btn btn-sm btn-primary" style={{ whiteSpace: 'nowrap', textDecoration: 'none' }}

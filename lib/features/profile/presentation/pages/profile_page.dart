@@ -627,7 +627,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                             _InfoItem(
                                               icon:
                                                   Icons.calendar_month_outlined,
-                                              label: 'Member Since',
+                                              label: 'Date Registered',
                                               value: _formatHireDate(
                                                   user.hireDate!),
                                             ),
@@ -885,20 +885,34 @@ class _ProfilePageState extends State<ProfilePage> {
   String _formatHireDate(DateTime date) {
     const months = [
       '',
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
+      'Jan,',
+      'Feb,',
+      'Mar,',
+      'Apr,',
+      'May,',
+      'Jun,',
+      'Jul,',
+      'Aug,',
+      'Sep,',
+      'Oct,',
+      'Nov,',
+      'Dec,'
     ];
-    return '${months[date.month]} ${date.year}';
+    final suffixes = [
+      'th',
+      'st',
+      'nd',
+      'rd',
+      'th',
+      'th',
+      'th',
+      'th',
+      'th',
+      'th'
+    ];
+    final suffix =
+        (date.day >= 11 && date.day <= 13) ? 'th' : suffixes[date.day % 10];
+    return '${date.day}$suffix ${months[date.month]} ${date.year}';
   }
 
   void _confirmSignOut(BuildContext context) {

@@ -6,7 +6,7 @@ import { employeesApi, branchesApi, departmentsApi, shiftsApi, usersApi } from '
 import { useAuthStore } from '@/lib/store';
 import { can } from '@/lib/permissions';
 import { useGhanaTime } from '@/lib/useServerTimeOffset';
-import { Eye, EyeOff, Users } from 'lucide-react';
+import { Eye, EyeOff, Users, ShieldAlert } from 'lucide-react';
 
 const LIMIT = 50;
 
@@ -51,6 +51,11 @@ export default function EmployeesPage() {
   const [deleteInputName, setDeleteInputName] = useState('');
   const [resetPasswordConfirm, setResetPasswordConfirm] = useState<string | null>(null);
   const [adminPasswordValue, setAdminPasswordValue] = useState('');
+  const [notification, setNotification] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' | 'info' }>({ isOpen: false, message: '', type: 'info' });
+
+  const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setNotification({ isOpen: true, message, type });
+  };
   const [form, setForm] = useState({
     firstName: '', lastName: '', username: '', email: '', password: '',
     departmentId: '', branchId: '', shiftId: '', position: '',
@@ -220,11 +225,11 @@ export default function EmployeesPage() {
     setIsSubmitting(true);
     try {
       const response = await employeesApi.resetPassword(resetPasswordConfirm, adminPasswordValue);
-      alert(`Account Unlocked!\n\nPlease give this temporary PIN to the employee: ${response.data.pin}\n\nThey must enter this PIN in the mobile app to create a new password.`);
+      showAlert(`Account Unlocked!\n\nPlease give this temporary PIN to the employee: ${response.data.pin}\n\nThey must enter this PIN in the mobile app to create a new password.`, 'success');
       setResetPasswordConfirm(null); setAdminPasswordValue('');
     } catch (err: any) {
       const msg = err.response?.data?.message;
-      alert(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Failed to request password reset.');
+      showAlert(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Failed to request password reset.', 'error');
     } finally { setIsSubmitting(false); }
   };
 
@@ -232,7 +237,7 @@ export default function EmployeesPage() {
     try { await employeesApi.update(id, { status: newStatus }); await mutate(); }
     catch (err: any) {
       const msg = err.response?.data?.message;
-      alert(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Failed to update status.');
+      showAlert(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Failed to update status.', 'error');
     }
   };
 
@@ -240,7 +245,7 @@ export default function EmployeesPage() {
     try { await employeesApi.delete(id); await mutate(); setDeleteConfirm(null); }
     catch (err: any) {
       const msg = err.response?.data?.message;
-      alert(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Failed to delete employee.');
+      showAlert(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Failed to delete employee.', 'error');
     }
   };
 
@@ -841,6 +846,32 @@ export default function EmployeesPage() {
             </div>
             <div className="modal-footer">
               <button className="btn" onClick={() => setShowSetupWarning(null)}>Dismiss</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global Notification Modal */}
+      {notification.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}>
+              {notification.type === 'error' ? (
+                <ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} />
+              ) : notification.type === 'success' ? (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(34, 197, 94, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+              ) : (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </div>
+              )}
+            </div>
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>{notification.type === 'error' ? 'Error' : notification.type === 'success' ? 'Success' : 'Notice'}</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{notification.message}</p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button type="button" className="btn btn-primary" onClick={() => setNotification({ ...notification, isOpen: false })} style={{ minWidth: 120 }}>OK</button>
             </div>
           </div>
         </div>

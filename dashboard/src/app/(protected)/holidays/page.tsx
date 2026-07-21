@@ -58,6 +58,7 @@ export default function HolidaysPage() {
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [notification, setNotification] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' | 'info' }>({ isOpen: false, message: '', type: 'info' });
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string }>({ isOpen: false, id: '' });
+  const [clearDateConfirm, setClearDateConfirm] = useState<{ isOpen: boolean }>({ isOpen: false });
   const [syncPrompt, setSyncPrompt] = useState<{ isOpen: boolean; defaultYear: string }>({ isOpen: false, defaultYear: '' });
 
   const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -484,6 +485,21 @@ export default function HolidaysPage() {
         </div>
       )}
 
+      {/* Clear Date Confirm Modal */}
+      {clearDateConfirm.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}><ShieldAlert size={48} style={{ color: 'var(--warning)', margin: '0 auto' }} /></div>
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>Clear Custom Date?</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>Are you sure you want to clear the custom observed date?</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setClearDateConfirm({ isOpen: false })}>Cancel</button>
+              <button type="button" className="btn btn-primary" style={{ background: 'var(--warning)', borderColor: 'var(--warning)' }} onClick={() => { setForm({ ...form, observedDate: '' }); setClearDateConfirm({ isOpen: false }); }}>Yes, Clear</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {deleteConfirm.isOpen && (
         <div className="modal-overlay" style={{ zIndex: 10000 }}>
@@ -612,13 +628,9 @@ export default function HolidaysPage() {
                         <button
                           type="button"
                           className="btn btn-sm btn-ghost btn-danger"
-                          onClick={() => {
-                            if (window.confirm('Are you sure you want to clear the custom observed date?')) {
-                              setForm({ ...form, observedDate: '' });
-                            }
-                          }}
+                          onClick={() => setClearDateConfirm({ isOpen: true })}
                           aria-label="Clear observed date"
-                          title="Clear observed date"
+                          title="Clear custom observed date"
                           style={{ padding: '8px' }}
                         >
                           <Trash2 size={16} />

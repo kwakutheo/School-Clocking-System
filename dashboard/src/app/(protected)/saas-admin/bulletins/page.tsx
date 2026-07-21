@@ -4,7 +4,7 @@ import { saasAdminApi } from '@/lib/api';
 import {
   Megaphone, AlertCircle, CheckCircle, Info, Hammer,
   Trash2, Plus, X, ToggleLeft, ToggleRight, Loader2,
-  Globe, Target, School, Search, CheckSquare, Square,
+  Globe, Target, School, Search, CheckSquare, Square, ShieldAlert,
 } from 'lucide-react';
 
 interface Bulletin {
@@ -46,6 +46,13 @@ export default function BulletinsManagerPage() {
   const [audienceMode, setAudienceMode] = useState<'all' | 'selected'>('all');
   const [selectedTenantIds, setSelectedTenantIds] = useState<string[]>([]);
   const [tenantSearch, setTenantSearch] = useState('');
+  
+  const [notification, setNotification] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' | 'info' }>({ isOpen: false, message: '', type: 'info' });
+  const [confirmAction, setConfirmAction] = useState<{ isOpen: boolean; payload: any; message: string; onConfirm: (payload: any) => void }>({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+
+  const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setNotification({ isOpen: true, message, type });
+  };
 
   const fetchBulletins = () => {
     setLoading(true);
@@ -142,21 +149,28 @@ export default function BulletinsManagerPage() {
       })
       .catch((err) => {
         console.error(err);
-        alert('Failed to update bulletin status.');
+        showAlert('Failed to update bulletin status.', 'error');
       });
   };
 
-  const handleDelete = (id: string) => {
-    if (!confirm('Are you absolutely sure you want to permanently delete this bulletin? This action is irreversible.')) {
-      return;
-    }
+  const handleDeleteClick = (id: string) => {
+    setConfirmAction({
+      isOpen: true,
+      payload: id,
+      message: 'Are you absolutely sure you want to permanently delete this bulletin? This action is irreversible.',
+      onConfirm: executeDelete
+    });
+  };
+
+  const executeDelete = (id: string) => {
+    setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
     saasAdminApi.deleteBulletin(id)
       .then(() => {
         setBulletins(prev => prev.filter(b => b.id !== id));
       })
       .catch((err) => {
         console.error(err);
-        alert('Failed to delete bulletin.');
+        showAlert('Failed to delete bulletin.', 'error');
       });
   };
 
@@ -347,7 +361,7 @@ export default function BulletinsManagerPage() {
 
                   {/* Delete Button */}
                   <button
-                    onClick={() => handleDelete(bulletin.id)}
+                    onClick={() => handleDeleteClick(bulletin.id)}
                     className="text-danger"
                     style={{
                       background: 'none', border: 'none', cursor: 'pointer',
@@ -396,6 +410,69 @@ export default function BulletinsManagerPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Global Notification Modal */}
+      {notification.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}>
+              {notification.type === 'error' ? (
+                <ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} />
+              ) : notification.type === 'success' ? (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(34, 197, 94, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+              ) : (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </div>
+              )}
+            </div>
+            
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>
+              {notification.type === 'error' ? 'Error' : notification.type === 'success' ? 'Success' : 'Notice'}
+            </h3>
+            
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+              {notification.message}
+            </p>
+            
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                onClick={() => setNotification({ ...notification, isOpen: false })}
+                style={{ minWidth: 120 }}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global Confirmation Modal */}
+      {confirmAction.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}>
+              <ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} />
+            </div>
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>Are you sure?</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
+              {confirmAction.message}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} })}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn-primary" style={{ background: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => confirmAction.onConfirm(confirmAction.payload)}>
+                Yes, Proceed
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

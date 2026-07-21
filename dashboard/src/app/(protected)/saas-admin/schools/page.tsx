@@ -44,6 +44,12 @@ export default function SchoolsRegistryPage() {
   const { setImpersonatedTenant } = useAuthStore();
   const [schools, setSchools] = useState<SchoolTenant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [notification, setNotification] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' | 'info' }>({ isOpen: false, message: '', type: 'info' });
+  const [confirmAction, setConfirmAction] = useState<{ isOpen: boolean; payload: any; message: string; onConfirm: (payload: any) => void }>({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+
+  const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setNotification({ isOpen: true, message, type });
+  };
   const [error, setError] = useState<string | null>(null);
 
   // Impersonation switch handler
@@ -148,21 +154,29 @@ export default function SchoolsRegistryPage() {
       .toUpperCase();
 
   // Toggle active/suspended state of a school
-  const handleToggleStatus = (id: string, currentStatus: boolean) => {
+  const handleToggleStatusClick = (id: string, currentStatus: boolean) => {
     const nextStatus = !currentStatus;
     const confirmMsg = nextStatus
       ? `Are you sure you want to activate this school's portal access?`
       : `⚠️ WARNING: Are you sure you want to suspend this school's portal? All their employees and admins will be blocked from accessing the system instantly.`;
 
-    if (!confirm(confirmMsg)) return;
+    setConfirmAction({
+      isOpen: true,
+      payload: { id, nextStatus },
+      message: confirmMsg,
+      onConfirm: executeToggleStatus
+    });
+  };
 
+  const executeToggleStatus = ({ id, nextStatus }: { id: string, nextStatus: boolean }) => {
+    setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
     saasAdminApi.toggleStatus(id, nextStatus)
       .then(() => {
         setSchools(prev => prev.map(s => s.id === id ? { ...s, isActive: nextStatus } : s));
       })
       .catch((err) => {
         console.error(err);
-        alert('Failed to update school portal status.');
+        showAlert('Failed to update school portal status.', 'error');
       });
   };
 
@@ -198,7 +212,7 @@ export default function SchoolsRegistryPage() {
         setSchoolToDelete(null);
         fetchSchools();
         // Optional: show a success toast here if available in the app, for now using alert
-        alert(`🟢 Success: "${schoolToDelete.name}" has been permanently purged.`);
+        showAlert(`Success: "${schoolToDelete.name}" has been permanently purged.`, 'success');
       })
       .catch((err: any) => {
         console.error(err);
@@ -576,6 +590,69 @@ export default function SchoolsRegistryPage() {
         </div>
       </div>
 
+      {/* Global Notification Modal */}
+      {notification.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}>
+              {notification.type === 'error' ? (
+                <ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} />
+              ) : notification.type === 'success' ? (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(34, 197, 94, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+              ) : (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </div>
+              )}
+            </div>
+            
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>
+              {notification.type === 'error' ? 'Error' : notification.type === 'success' ? 'Success' : 'Notice'}
+            </h3>
+            
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+              {notification.message}
+            </p>
+            
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                onClick={() => setNotification({ ...notification, isOpen: false })}
+                style={{ minWidth: 120 }}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global Confirmation Modal */}
+      {confirmAction.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}>
+              <ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} />
+            </div>
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>Are you sure?</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
+              {confirmAction.message}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} })}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn-primary" style={{ background: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => confirmAction.onConfirm(confirmAction.payload)}>
+                Yes, Proceed
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Schools Table ── */}
       <div className="card" style={{ padding: '0px', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
@@ -734,7 +811,7 @@ export default function SchoolsRegistryPage() {
                           </button>
                           
                           <button
-                            onClick={() => handleToggleStatus(school.id, school.isActive)}
+                                onClick={() => handleToggleStatusClick(school.id, school.isActive)}
                             style={{
                               padding: '6px 12px',
                               borderRadius: '8px',

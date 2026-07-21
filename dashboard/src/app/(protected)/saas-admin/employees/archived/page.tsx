@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { saasAdminApi } from '@/lib/api';
-import { Search, Building2, UserCircle, UserCheck, ArrowLeft, Archive, X, MoreVertical, Trash2, Lock, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import { Search, Building2, UserCircle, UserCheck, ArrowLeft, Archive, X, MoreVertical, Trash2, Lock, Eye, EyeOff, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface EmployeeGlobal {
@@ -58,6 +58,17 @@ export default function ArchivedEmployeesPage() {
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Notification Modal
+  const [notification, setNotification] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' | 'info' }>({ isOpen: false, message: '', type: 'info' });
+  const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setNotification({ isOpen: true, message, type });
+  };
+
+  const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setNotification({ isOpen: true, message, type });
+  };
 
   // Debounce search
   useEffect(() => {
@@ -100,10 +111,10 @@ export default function ArchivedEmployeesPage() {
       const res = await saasAdminApi.unarchiveGlobalEmployee(selectedEmp.id);
       setReactivateModalOpen(false);
       fetchArchivedEmployees();
-      alert(res.data.message);
+      showNotification(res.data.message, 'success');
     } catch (err: any) {
       console.error(err);
-      alert(err.response?.data?.message || 'Failed to reactivate employee.');
+      showNotification(err.response?.data?.message || 'Failed to reactivate employee.', 'error');
     } finally {
       setReactivateSubmitting(false);
     }
@@ -117,19 +128,20 @@ export default function ArchivedEmployeesPage() {
   const handlePermanentlyDelete = async () => {
     if (!selectedEmp) return;
     if (!adminPassword) {
-      alert('Administrator password is required to permanently delete.');
+      setDeleteError('Administrator password is required to permanently delete.');
       return;
     }
     setDeleteSubmitting(true);
+    setDeleteError(null);
     try {
       const res = await saasAdminApi.permanentlyDeleteEmployee(selectedEmp.id, adminPassword);
       setDeleteModalOpen(false);
       setAdminPassword('');
       fetchArchivedEmployees();
-      alert(res.data.message);
+      showNotification(res.data.message, 'success');
     } catch (err: any) {
       console.error(err);
-      alert(err.response?.data?.message || 'Failed to permanently delete employee.');
+      setDeleteError(err.response?.data?.message || 'Failed to permanently delete employee.');
     } finally {
       setDeleteSubmitting(false);
     }
@@ -372,6 +384,32 @@ export default function ArchivedEmployeesPage() {
         )}
       </div>
 
+      {/* Global Notification Modal */}
+      {notification.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}>
+              {notification.type === 'error' ? (
+                <ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} />
+              ) : notification.type === 'success' ? (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(34, 197, 94, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+              ) : (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </div>
+              )}
+            </div>
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>{notification.type === 'error' ? 'Error' : notification.type === 'success' ? 'Success' : 'Notice'}</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{notification.message}</p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button type="button" className="btn btn-primary" onClick={() => setNotification({ ...notification, isOpen: false })} style={{ minWidth: 120 }}>OK</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Reactivate Confirmation Modal ── */}
       {reactivateModalOpen && selectedEmp && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, animation: 'fadeIn 0.2s ease-out' }}>
@@ -463,12 +501,12 @@ export default function ArchivedEmployeesPage() {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter your super admin password..." 
                   value={adminPassword}
-                  onChange={e => setAdminPassword(e.target.value)}
+                  onChange={e => { setAdminPassword(e.target.value); setDeleteError(null); }}
                   style={{
                     width: '100%',
                     padding: '12px 16px 12px 40px',
                     borderRadius: 12,
-                    border: '1px solid var(--danger)',
+                    border: `1px solid ${deleteError ? 'var(--danger)' : 'var(--danger)'}`,
                     background: 'var(--bg-input)',
                     color: 'var(--text-primary)',
                     fontSize: 14,
@@ -484,6 +522,9 @@ export default function ArchivedEmployeesPage() {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {deleteError && (
+                <p style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '8px' }}>{deleteError}</p>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -499,6 +540,41 @@ export default function ArchivedEmployeesPage() {
                 {deleteSubmitting ? 'Deleting...' : 'Permanently Delete'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Notification Modal ── */}
+      {notification.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}>
+              {notification.type === 'error' ? (
+                <AlertTriangle size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} />
+              ) : notification.type === 'success' ? (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(34, 197, 94, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+              ) : (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </div>
+              )}
+            </div>
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>
+              {notification.type === 'error' ? 'Error' : notification.type === 'success' ? 'Success' : 'Notice'}
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+              {notification.message}
+            </p>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setNotification({ ...notification, isOpen: false })}
+              style={{ minWidth: 120 }}
+            >
+              OK
+            </button>
           </div>
         </div>
       )}

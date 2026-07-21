@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useCallback, useEffect, Fragment } from 'react';
 import useSWR from 'swr';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, ShieldAlert } from 'lucide-react';
 
 import {
   PERMISSION_GROUPS,
@@ -37,6 +37,12 @@ export default function PermissionsPage() {
   const [showAccessModal, setShowAccessModal] = useState(false);
   const { user } = useAuthStore();
   const hasUnsavedChanges = React.useRef(false);
+  const [notification, setNotification] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' | 'info' }>({ isOpen: false, message: '', type: 'info' });
+  const [confirmAction, setConfirmAction] = useState<{ isOpen: boolean; payload: any; message: string; onConfirm: (payload: any) => void }>({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+
+  const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setNotification({ isOpen: true, message, type });
+  };
 
   // Sync server data into local state + cache once loaded
   useEffect(() => {
@@ -70,7 +76,7 @@ export default function PermissionsPage() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch {
-      alert('Failed to save permissions. Please try again.');
+      showAlert('Failed to save permissions. Please try again.', 'error');
     } finally {
       setSaving(false);
     }
@@ -88,18 +94,27 @@ export default function PermissionsPage() {
     return () => clearTimeout(timer);
   }, [matrix]);
 
-  const handleReset = async () => {
-    if (!confirm('Reset all permissions to their default values?')) return;
+  const handleResetClick = () => {
+    setConfirmAction({
+      isOpen: true,
+      payload: null,
+      message: 'Reset all permissions to their default values? This cannot be undone.',
+      onConfirm: executeReset
+    });
+  };
+
+  const executeReset = async (_: any) => {
+    setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
     setSaving(true);
     try {
       await settingsApi.updatePermissions(DEFAULT_PERMISSIONS as unknown as Record<string, string[]>);
       setMatrix(DEFAULT_PERMISSIONS);
       savePermissions(DEFAULT_PERMISSIONS);
-      mutate(DEFAULT_PERMISSIONS, false); // sync SWR cache instantly without re-fetching
+      mutate(DEFAULT_PERMISSIONS, false);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch {
-      alert('Failed to reset permissions.');
+      showAlert('Failed to reset permissions.', 'error');
     } finally {
       setSaving(false);
     }
@@ -122,7 +137,7 @@ export default function PermissionsPage() {
             Define exactly what each role can and cannot do in the system.</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost" onClick={handleReset} disabled={saving}>
+          <button className="btn btn-ghost" onClick={handleResetClick} disabled={saving}>
             Reset to Defaults
           </button>
           <button
@@ -333,6 +348,43 @@ export default function PermissionsPage() {
               >
                 Manage Restrictions
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global Notification Modal */}
+      {notification.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}>
+              {notification.type === 'error' ? (
+                <ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} />
+              ) : (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(34, 197, 94, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+              )}
+            </div>
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>{notification.type === 'error' ? 'Error' : 'Success'}</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{notification.message}</p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button type="button" className="btn btn-primary" onClick={() => setNotification({ ...notification, isOpen: false })} style={{ minWidth: 120 }}>OK</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global Confirmation Modal */}
+      {confirmAction.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}><ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} /></div>
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>Are you sure?</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>{confirmAction.message}</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} })}>Cancel</button>
+              <button type="button" className="btn btn-primary" style={{ background: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => confirmAction.onConfirm(confirmAction.payload)}>Yes, Reset</button>
             </div>
           </div>
         </div>

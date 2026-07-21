@@ -52,6 +52,7 @@ export default function GlobalEmployeeRegistryPage() {
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [newStatus, setNewStatus] = useState<'ACTIVE' | 'SUSPENDED'>('ACTIVE');
   const [statusSubmitting, setStatusSubmitting] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   // Archive Modal (requires super_admin password)
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
@@ -59,6 +60,11 @@ export default function GlobalEmployeeRegistryPage() {
   const [archivePasswordError, setArchivePasswordError] = useState<string | null>(null);
   const [archiveSubmitting, setArchiveSubmitting] = useState(false);
   const archivePasswordRef = useRef<HTMLInputElement>(null);
+  const [notification, setNotification] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' | 'info' }>({ isOpen: false, message: '', type: 'info' });
+
+  const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setNotification({ isOpen: true, message, type });
+  };
 
   // Debounce search
   useEffect(() => {
@@ -99,13 +105,14 @@ export default function GlobalEmployeeRegistryPage() {
   const handleStatusUpdate = async () => {
     if (!selectedEmp) return;
     setStatusSubmitting(true);
+    setStatusError(null);
     try {
       await saasAdminApi.updateGlobalEmployeeStatus(selectedEmp.id, newStatus);
       setStatusModalOpen(false);
       fetchEmployees();
     } catch (err: any) {
       console.error(err);
-      alert(err.response?.data?.message || 'Failed to update employee status.');
+      setStatusError(err.response?.data?.message || 'Failed to update employee status.');
     } finally {
       setStatusSubmitting(false);
     }
@@ -381,6 +388,32 @@ export default function GlobalEmployeeRegistryPage() {
         )}
       </div>
 
+      {/* Global Notification Modal */}
+      {notification.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}>
+              {notification.type === 'error' ? (
+                <ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} />
+              ) : notification.type === 'success' ? (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(34, 197, 94, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+              ) : (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </div>
+              )}
+            </div>
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>{notification.type === 'error' ? 'Error' : notification.type === 'success' ? 'Success' : 'Notice'}</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{notification.message}</p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button type="button" className="btn btn-primary" onClick={() => setNotification({ ...notification, isOpen: false })} style={{ minWidth: 120 }}>OK</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── View Profile Modal ── */}
       {viewModalOpen && selectedEmp && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: '16px', animation: 'fadeIn 0.2s ease-out' }}>
@@ -479,7 +512,7 @@ export default function GlobalEmployeeRegistryPage() {
                 <ShieldAlert size={22} color="var(--warning)" />
                 <h2 style={{ fontSize: '20px', fontWeight: 800 }}>Confirm Action</h2>
               </div>
-              <button onClick={() => setStatusModalOpen(false)} title="Close" aria-label="Close" style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}>
+              <button onClick={() => { setStatusModalOpen(false); setStatusError(null); }} title="Close" aria-label="Close" style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
             </div>
@@ -490,8 +523,14 @@ export default function GlobalEmployeeRegistryPage() {
               {newStatus === 'SUSPENDED' && ' They will not be able to log in until reactivated.'}
             </p>
 
+            {statusError && (
+              <p style={{ fontSize: '13px', color: 'var(--danger)', marginBottom: '16px', padding: '10px 14px', background: 'rgba(239,68,68,0.08)', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.2)' }}>
+                {statusError}
+              </p>
+            )}
+
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button type="button" className="btn btn-secondary" onClick={() => setStatusModalOpen(false)} style={{ flex: 1, padding: '12px' }}>
+              <button type="button" className="btn btn-secondary" onClick={() => { setStatusModalOpen(false); setStatusError(null); }} style={{ flex: 1, padding: '12px' }}>
                 Cancel
               </button>
               <button type="button" className="btn btn-primary" onClick={handleStatusUpdate} disabled={statusSubmitting} style={{ flex: 1, padding: '12px', background: newStatus === 'SUSPENDED' ? 'var(--warning)' : 'var(--success)' }}>

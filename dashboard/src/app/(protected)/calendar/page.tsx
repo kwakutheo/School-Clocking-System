@@ -37,6 +37,7 @@ export default function AcademicCalendarPage() {
   const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setNotification({ isOpen: true, message, type });
   };
+  const [confirmAction, setConfirmAction] = useState<{ isOpen: boolean; payload: any; message: string; onConfirm: (payload: any) => void }>({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
   const [globalTemplates, setGlobalTemplates] = useState<any[]>([]);
   const [isLoadingGlobal, setIsLoadingGlobal] = useState(false);
 
@@ -325,8 +326,17 @@ export default function AcademicCalendarPage() {
     }
   };
 
-  const deleteTerm = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this term? All associated breaks will be removed.')) return;
+  const deleteTermClick = (id: string) => {
+    setConfirmAction({
+      isOpen: true,
+      payload: id,
+      message: 'Are you sure you want to delete this term? All associated breaks will be removed.',
+      onConfirm: executeDeleteTerm
+    });
+  };
+
+  const executeDeleteTerm = async (id: string) => {
+    setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
     try {
       await calendarApi.deleteTerm(id);
       mutate();
@@ -335,8 +345,17 @@ export default function AcademicCalendarPage() {
     }
   };
 
-  const deleteBreak = async (id: string) => {
-    if (!confirm('Delete this break?')) return;
+  const deleteBreakClick = (id: string) => {
+    setConfirmAction({
+      isOpen: true,
+      payload: id,
+      message: 'Delete this break?',
+      onConfirm: executeDeleteBreak
+    });
+  };
+
+  const executeDeleteBreak = async (id: string) => {
+    setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
     try {
       await calendarApi.deleteBreak(id);
       mutate();
@@ -543,7 +562,7 @@ export default function AcademicCalendarPage() {
                                     </div>
                                     {can(userRole, 'calendar.delete') && (
                                     <button 
-                                      onClick={() => deleteBreak(b.id)} 
+                                      onClick={() => deleteBreakClick(b.id)} 
                                       style={{ color: 'var(--danger)', opacity: 0.6 }}
                                       aria-label="Delete Break"
                                       title="Delete Break"
@@ -954,6 +973,46 @@ export default function AcademicCalendarPage() {
 
             <div className="modal-footer">
               <button type="button" className="btn btn-ghost" onClick={() => setShowCloneModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Global Notification Modal */}
+      {notification.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}>
+              {notification.type === 'error' ? (
+                <ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} />
+              ) : notification.type === 'success' ? (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(34, 197, 94, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+              ) : (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </div>
+              )}
+            </div>
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>{notification.type === 'error' ? 'Error' : notification.type === 'success' ? 'Success' : 'Notice'}</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{notification.message}</p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button type="button" className="btn btn-primary" onClick={() => setNotification({ ...notification, isOpen: false })} style={{ minWidth: 120 }}>OK</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global Confirmation Modal */}
+      {confirmAction.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}><ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} /></div>
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>Are you sure?</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>{confirmAction.message}</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} })}>Cancel</button>
+              <button type="button" className="btn btn-primary" style={{ background: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => confirmAction.onConfirm(confirmAction.payload)}>Yes, Proceed</button>
             </div>
           </div>
         </div>

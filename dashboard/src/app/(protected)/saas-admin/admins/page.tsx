@@ -67,6 +67,12 @@ export default function CentralAdminsPage() {
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
   const [checkingUsername, setCheckingUsername] = useState(false);
+  const [notification, setNotification] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' | 'info' }>({ isOpen: false, message: '', type: 'info' });
+  const [confirmAction, setConfirmAction] = useState<{ isOpen: boolean; payload: any; message: string; onConfirm: (payload: any) => void }>({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+
+  const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setNotification({ isOpen: true, message, type });
+  };
   const usernameCheckTimer = useRef<number | null>(null);
 
   // Debounced username availability check while creating a new admin
@@ -182,33 +188,60 @@ export default function CentralAdminsPage() {
     setModalError(null);
   };
 
-  const handleArchive = async (id: string) => {
-    if (!confirm('Are you sure you want to archive this central admin account?')) return;
+  const handleArchiveClick = (id: string) => {
+    setConfirmAction({
+      isOpen: true,
+      payload: id,
+      message: 'Are you sure you want to archive this central admin account?',
+      onConfirm: executeArchive
+    });
+  };
+
+  const executeArchive = async (id: string) => {
+    setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
     try {
       await saasAdminApi.deleteAdminUser(id);
       fetchAdmins();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to archive account.');
+      showAlert(err.response?.data?.message || 'Failed to archive account.', 'error');
     }
   };
 
-  const handleRestore = async (id: string) => {
-    if (!confirm('Are you sure you want to restore this central admin account?')) return;
+  const handleRestoreClick = (id: string) => {
+    setConfirmAction({
+      isOpen: true,
+      payload: id,
+      message: 'Are you sure you want to restore this central admin account?',
+      onConfirm: executeRestore
+    });
+  };
+
+  const executeRestore = async (id: string) => {
+    setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
     try {
       await saasAdminApi.restoreAdminUser(id);
       fetchAdmins();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to restore account.');
+      showAlert(err.response?.data?.message || 'Failed to restore account.', 'error');
     }
   };
 
-  const handleResetPassword = async (id: string) => {
-    if (!confirm('Are you sure you want to generate a password reset PIN for this admin?')) return;
+  const handleResetPasswordClick = (id: string) => {
+    setConfirmAction({
+      isOpen: true,
+      payload: id,
+      message: 'Are you sure you want to generate a password reset PIN for this admin?',
+      onConfirm: executeResetPassword
+    });
+  };
+
+  const executeResetPassword = async (id: string) => {
+    setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
     try {
       const res = await saasAdminApi.sendAdminResetLink(id);
-      alert(res.data?.message || 'Password reset request sent.');
+      showAlert(res.data?.message || 'Password reset request sent.', 'success');
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to send reset link.');
+      showAlert(err.response?.data?.message || 'Failed to send reset link.', 'error');
     }
   };
 
@@ -221,7 +254,7 @@ export default function CentralAdminsPage() {
       setAdminLogs(res.data?.data || []);
     } catch (err) {
       console.error(err);
-      alert('Failed to load audit logs for this admin.');
+      showAlert('Failed to load audit logs for this admin.', 'error');
     } finally {
       setLoadingLogs(false);
     }
@@ -494,7 +527,7 @@ export default function CentralAdminsPage() {
                         </button>
                         <button
                           className="btn btn-ghost"
-                          onClick={() => handleResetPassword(admin.id)}
+                          onClick={() => handleResetPasswordClick(admin.id)}
                           title="Send Password Reset"
                           style={{ padding: '6px 10px' }}
                         >
@@ -513,7 +546,7 @@ export default function CentralAdminsPage() {
                           admin.deletedAt ? (
                             <button
                               className="btn btn-ghost"
-                              onClick={() => handleRestore(admin.id)}
+                              onClick={() => handleRestoreClick(admin.id)}
                               title="Restore"
                               style={{ padding: '6px 10px' }}
                             >
@@ -522,7 +555,7 @@ export default function CentralAdminsPage() {
                           ) : (
                             <button
                               className="btn btn-ghost"
-                              onClick={() => handleArchive(admin.id)}
+                              onClick={() => handleArchiveClick(admin.id)}
                               title="Archive"
                               style={{ padding: '6px 10px' }}
                             >
@@ -539,6 +572,53 @@ export default function CentralAdminsPage() {
           </table>
         </div>
       </div>
+
+      {/* Global Notification Modal */}
+      {notification.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}>
+              {notification.type === 'error' ? (
+                <ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} />
+              ) : notification.type === 'success' ? (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(34, 197, 94, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+              ) : (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </div>
+              )}
+            </div>
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>
+              {notification.type === 'error' ? 'Error' : notification.type === 'success' ? 'Success' : 'Notice'}
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+              {notification.message}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button type="button" className="btn btn-primary" onClick={() => setNotification({ ...notification, isOpen: false })} style={{ minWidth: 120 }}>OK</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global Confirmation Modal */}
+      {confirmAction.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}>
+              <ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} />
+            </div>
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>Are you sure?</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>{confirmAction.message}</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} })}>Cancel</button>
+              <button type="button" className="btn btn-primary" style={{ background: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => confirmAction.onConfirm(confirmAction.payload)}>Yes, Proceed</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {modalOpen && (
         <div className="modal-overlay" onClick={closeModal}>

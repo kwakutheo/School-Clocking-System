@@ -31,6 +31,7 @@ export default function AcademicCalendarPage() {
   const [hasInitialized, setHasInitialized] = useState(false);
 
   const [showCloneModal, setShowCloneModal] = useState(false);
+  const [cloneConfirm, setCloneConfirm] = useState({ isOpen: false, academicYear: '', isOverwrite: false });
   const [globalTemplates, setGlobalTemplates] = useState<any[]>([]);
   const [isLoadingGlobal, setIsLoadingGlobal] = useState(false);
 
@@ -50,10 +51,12 @@ export default function AcademicCalendarPage() {
     }
   }, [showCloneModal]);
 
-  const handleCloneYear = async (academicYear: string, forceOverwrite = false) => {
-    if (!forceOverwrite) {
-      if (!confirm(`Are you sure you want to import the standard national calendar template for the ${academicYear} academic year?`)) return;
-    }
+  const handleCloneYearClick = (academicYear: string) => {
+    setCloneConfirm({ isOpen: true, academicYear, isOverwrite: false });
+  };
+
+  const executeCloneYear = async (academicYear: string, forceOverwrite = false) => {
+    setCloneConfirm({ isOpen: false, academicYear: '', isOverwrite: false });
     setIsSubmitting(true);
     try {
       await calendarApi.cloneTemplate(academicYear, forceOverwrite);
@@ -63,14 +66,7 @@ export default function AcademicCalendarPage() {
     } catch (err: any) {
       const errMsg = err.response?.data?.message;
       if (errMsg === 'EXISTING_CALENDAR') {
-        const confirmOverwrite = confirm(
-          `Your school already has academic terms defined for the ${academicYear} academic year.\n\n` +
-          `Would you like to OVERWRITE your current calendar with the central master template?\n` +
-          `⚠️ WARNING: This will permanently delete all your existing terms and mid-term breaks for ${academicYear}.`
-        );
-        if (confirmOverwrite) {
-          await handleCloneYear(academicYear, true);
-        }
+        setCloneConfirm({ isOpen: true, academicYear, isOverwrite: true });
       } else {
         alert(errMsg || 'Failed to import calendar template.');
       }
@@ -774,6 +770,62 @@ export default function AcademicCalendarPage() {
         </div>
       )}
 
+      {/* Clone Confirmation Modal */}
+      {cloneConfirm.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-content" style={{ maxWidth: 450, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}>
+              {cloneConfirm.isOverwrite ? (
+                <ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} />
+              ) : (
+                <Calendar size={48} style={{ color: 'var(--primary)', margin: '0 auto' }} />
+              )}
+            </div>
+            
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>
+              {cloneConfirm.isOverwrite ? 'Overwrite Existing Calendar?' : 'Import Calendar Template'}
+            </h3>
+            
+            <div style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
+              {cloneConfirm.isOverwrite ? (
+                <>
+                  <p style={{ marginBottom: 12 }}>
+                    Your school already has academic terms defined for the <strong>{cloneConfirm.academicYear}</strong> academic year.
+                  </p>
+                  <p>Would you like to OVERWRITE your current calendar with the central master template?</p>
+                  <div style={{ marginTop: 12, padding: 12, background: 'rgba(239, 68, 68, 0.1)', borderRadius: 8, color: 'var(--danger)', fontSize: 13, textAlign: 'left' }}>
+                    <strong>⚠️ WARNING:</strong> This will permanently delete all your existing terms and mid-term breaks for {cloneConfirm.academicYear}.
+                  </div>
+                </>
+              ) : (
+                <p>
+                  Are you sure you want to import the standard national calendar template for the <strong>{cloneConfirm.academicYear}</strong> academic year?
+                </p>
+              )}
+            </div>
+            
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button 
+                type="button" 
+                className="btn btn-ghost" 
+                onClick={() => setCloneConfirm({ isOpen: false, academicYear: '', isOverwrite: false })}
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                onClick={() => executeCloneYear(cloneConfirm.academicYear, cloneConfirm.isOverwrite)}
+                style={{ flex: 1, ...(cloneConfirm.isOverwrite ? { backgroundColor: 'var(--danger)', color: 'white', borderColor: 'var(--danger)' } : {}) }}
+              >
+                {cloneConfirm.isOverwrite ? 'Yes, Overwrite' : 'Yes, Import'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Import/Clone Global Templates Modal */}
       {showCloneModal && (
         <div className="modal-overlay" onClick={() => setShowCloneModal(false)}>
@@ -842,7 +894,7 @@ export default function AcademicCalendarPage() {
                         <button 
                           className="btn btn-sm btn-primary" 
                           disabled={isSubmitting}
-                          onClick={() => handleCloneYear(year)}
+                          onClick={() => handleCloneYearClick(year)}
                           style={{ whiteSpace: 'nowrap' }}
                         >
                           Clone Template

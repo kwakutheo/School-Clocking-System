@@ -51,6 +51,13 @@ export default function SaasHolidaysPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', date: '', isRecurring: true, postponeIfWeekend: false, observedDate: '' });
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [notification, setNotification] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' | 'info' }>({ isOpen: false, message: '', type: 'info' });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string }>({ isOpen: false, id: '' });
+  const [syncPrompt, setSyncPrompt] = useState<{ isOpen: boolean; defaultYear: string }>({ isOpen: false, defaultYear: '' });
+
+  const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setNotification({ isOpen: true, message, type });
+  };
 
   const currentYearStr = getGhanaTime().getFullYear().toString();
 
@@ -130,7 +137,7 @@ export default function SaasHolidaysPage() {
           <button className="btn btn-sm btn-ghost" onClick={() => openEdit(h)} aria-label="Edit Holiday">
             <Edit size={16} />
           </button>
-          <button className="btn btn-sm btn-ghost" style={{ color: 'var(--danger)' }} onClick={() => handleDelete(h.id)} aria-label="Delete Holiday">
+          <button className="btn btn-sm btn-ghost" style={{ color: 'var(--danger)' }} onClick={() => handleDeleteClick(h.id)} aria-label="Delete Holiday">
             <Trash2 size={16} />
           </button>
         </div>
@@ -155,13 +162,13 @@ export default function SaasHolidaysPage() {
     // Frontend guard: prevent admin from setting observedDate on a weekend or backward
     if (form.observedDate) {
       if (isDateWeekend(form.observedDate)) {
-        alert('You cannot manually move a holiday to a weekend. Please select a valid working day (Monday–Friday).');
+        showAlert('You cannot manually move a holiday to a weekend. Please select a valid working day (Monday–Friday).', 'error');
         return;
       }
       const [y] = form.observedDate.split('-');
       const origDateStr = form.isRecurring ? `${y}-${form.date.substring(5)}` : form.date;
       if (form.observedDate <= origDateStr) {
-        alert('The custom observed date must be strictly after the original holiday date.');
+        showAlert('The custom observed date must be strictly after the original holiday date.', 'error');
         return;
       }
     }
@@ -186,17 +193,21 @@ export default function SaasHolidaysPage() {
         err?.response?.data?.message ||
         err?.response?.data?.error ||
         err?.message;
-      alert(serverMsg || (editingId ? 'Failed to update holiday' : 'Failed to add holiday'));
+      showAlert(serverMsg || (editingId ? 'Failed to update holiday' : 'Failed to add holiday'), 'error');
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this global holiday? It will affect attendance rates for ALL schools.')) return;
+  const handleDeleteClick = (id: string) => {
+    setDeleteConfirm({ isOpen: true, id });
+  };
+
+  const executeDelete = async (id: string) => {
+    setDeleteConfirm({ isOpen: false, id: '' });
     try {
       await holidaysApi.delete(id);
       mutate();
     } catch (err) {
-      alert('Failed to delete');
+      showAlert('Failed to delete', 'error');
     }
   };
 
@@ -218,9 +229,13 @@ export default function SaasHolidaysPage() {
     setShowModal(true);
   };
 
-  const handleSyncPublicHolidays = async () => {
+  const handleSyncPublicHolidaysClick = () => {
     const nextYear = getGhanaTime().getFullYear() + 1;
-    const yearStr = prompt('Enter year to sync official holidays from Ghana (e.g. 2026, 2027):', nextYear.toString());
+    setSyncPrompt({ isOpen: true, defaultYear: nextYear.toString() });
+  };
+
+  const executeSyncPublicHolidays = async (yearStr: string) => {
+    setSyncPrompt({ ...syncPrompt, isOpen: false });
     if (!yearStr || isNaN(Number(yearStr))) return;
     
     setIsSyncing(true);
@@ -245,7 +260,7 @@ export default function SaasHolidaysPage() {
       }));
 
       if (missing.length === 0) {
-        alert(`All public holidays for ${yearStr} are already in your system.`);
+        showAlert(`All public holidays for ${yearStr} are already in your system.`, 'info');
         setIsSyncing(false);
         return;
       }
@@ -257,7 +272,7 @@ export default function SaasHolidaysPage() {
       setSelectedSyncDates(initialSelected);
       setShowSyncModal(true);
     } catch (err) {
-      alert('Error syncing public holidays. Please try again.');
+      showAlert('Error syncing public holidays. Please try again.', 'error');
     } finally {
       setIsSyncing(false);
     }
@@ -266,7 +281,7 @@ export default function SaasHolidaysPage() {
   const handleApproveSync = async () => {
     const toAdd = syncResults.filter(h => selectedSyncDates[h.date]);
     if (toAdd.length === 0) {
-      alert('Please select at least one holiday to import.');
+      showAlert('Please select at least one holiday to import.', 'error');
       return;
     }
 
@@ -282,9 +297,9 @@ export default function SaasHolidaysPage() {
       mutate();
       setShowSyncModal(false);
       setSyncResults([]);
-      alert(`Successfully added ${toAdd.length} global holidays!`);
+      showAlert(`Successfully added ${toAdd.length} global holidays!`, 'success');
     } catch (err) {
-      alert('Failed to import holidays.');
+      showAlert('Failed to import holidays.', 'error');
     } finally {
       setIsSyncing(false);
     }
@@ -303,7 +318,7 @@ export default function SaasHolidaysPage() {
         </div>
         {isSuperAdmin && (
           <div style={{ display: 'flex', gap: 12 }}>
-            <button className="btn btn-secondary" onClick={handleSyncPublicHolidays} disabled={isSyncing}>
+            <button className="btn btn-secondary" onClick={handleSyncPublicHolidaysClick} disabled={isSyncing}>
               <DownloadCloud size={18} style={{ marginRight: 6 }} />
               {isSyncing ? 'Syncing...' : 'Sync Year'}
             </button>
@@ -411,6 +426,100 @@ export default function SaasHolidaysPage() {
           </table>
         )}
       </div>
+
+      
+      {/* Global Notification Modal */}
+      {notification.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}>
+              {notification.type === 'error' ? (
+                <ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} />
+              ) : notification.type === 'success' ? (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(34, 197, 94, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+              ) : (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </div>
+              )}
+            </div>
+            
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>
+              {notification.type === 'error' ? 'Error' : notification.type === 'success' ? 'Success' : 'Notice'}
+            </h3>
+            
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+              {notification.message}
+            </p>
+            
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                onClick={() => setNotification({ ...notification, isOpen: false })}
+                style={{ minWidth: 120 }}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}>
+              <ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} />
+            </div>
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>Are you sure?</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
+              Are you sure you want to delete this holiday? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setDeleteConfirm({ isOpen: false, id: '' })}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn-primary" style={{ background: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => executeDelete(deleteConfirm.id)}>
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sync Prompt Modal */}
+      {syncPrompt.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, padding: '30px 20px' }}>
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)', textAlign: 'center' }}>Sync Official Holidays</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 16, textAlign: 'center' }}>
+              Enter year to sync official holidays from Ghana (e.g. 2026, 2027):
+            </p>
+            <div className="form-group">
+              <input 
+                type="number" 
+                className="form-control" 
+                value={syncPrompt.defaultYear} 
+                onChange={e => setSyncPrompt({ ...syncPrompt, defaultYear: e.target.value })} 
+                placeholder="YYYY" 
+                autoFocus 
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 24 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setSyncPrompt({ ...syncPrompt, isOpen: false })}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn-primary" onClick={() => executeSyncPublicHolidays(syncPrompt.defaultYear)}>
+                Sync Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)} style={{ backdropFilter: 'blur(4px)' }}>

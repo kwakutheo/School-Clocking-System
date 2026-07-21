@@ -32,6 +32,11 @@ export default function AcademicCalendarPage() {
 
   const [showCloneModal, setShowCloneModal] = useState(false);
   const [cloneConfirm, setCloneConfirm] = useState({ isOpen: false, academicYear: '', isOverwrite: false });
+  const [notification, setNotification] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' | 'info' }>({ isOpen: false, message: '', type: 'info' });
+
+  const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setNotification({ isOpen: true, message, type });
+  };
   const [globalTemplates, setGlobalTemplates] = useState<any[]>([]);
   const [isLoadingGlobal, setIsLoadingGlobal] = useState(false);
 
@@ -43,7 +48,7 @@ export default function AcademicCalendarPage() {
           setGlobalTemplates(r.data);
         })
         .catch(() => {
-          alert('Failed to load global templates');
+          showAlert('Failed to load global templates', 'error');
         })
         .finally(() => {
           setIsLoadingGlobal(false);
@@ -60,7 +65,7 @@ export default function AcademicCalendarPage() {
     setIsSubmitting(true);
     try {
       await calendarApi.cloneTemplate(academicYear, forceOverwrite);
-      alert(`Successfully imported the standard ${academicYear} academic calendar!`);
+      showAlert(`Successfully imported the standard ${academicYear} academic calendar!`, 'success');
       mutate();
       setShowCloneModal(false);
     } catch (err: any) {
@@ -68,7 +73,7 @@ export default function AcademicCalendarPage() {
       if (errMsg === 'EXISTING_CALENDAR') {
         setCloneConfirm({ isOpen: true, academicYear, isOverwrite: true });
       } else {
-        alert(errMsg || 'Failed to import calendar template.');
+        showAlert(errMsg || 'Failed to import calendar template.', 'error');
       }
     } finally {
       setIsSubmitting(false);
@@ -168,7 +173,7 @@ export default function AcademicCalendarPage() {
       const currentEnd = new Date(validTerms[i].endDate).getTime();
       
       if (currentStart > currentEnd) {
-        alert(`${validTerms[i].name} cannot end before its start date.`);
+        showAlert(`${validTerms[i].name} cannot end before its start date.`);
         setIsSubmitting(false);
         return;
       }
@@ -177,7 +182,7 @@ export default function AcademicCalendarPage() {
         const nextStart = new Date(validTerms[j].startDate).getTime();
         const nextEnd = new Date(validTerms[j].endDate).getTime();
         if (Math.max(currentStart, nextStart) <= Math.min(currentEnd, nextEnd)) {
-           alert(`Dates for ${validTerms[i].name} and ${validTerms[j].name} overlap.`);
+           showAlert(`Dates for ${validTerms[i].name} and ${validTerms[j].name} overlap.`);
            setIsSubmitting(false);
            return;
         }
@@ -188,7 +193,7 @@ export default function AcademicCalendarPage() {
         const extStart = new Date(existingTerm.startDate).getTime();
         const extEnd = new Date(existingTerm.endDate).getTime();
         if (Math.max(currentStart, extStart) <= Math.min(currentEnd, extEnd)) {
-          alert(`${validTerms[i].name} overlaps with an another term (${existingTerm.name}).`);
+          showAlert(`${validTerms[i].name} overlaps with an another term (${existingTerm.name}).`);
           setIsSubmitting(false);
           return;
         }
@@ -220,7 +225,7 @@ export default function AcademicCalendarPage() {
         ]
       });
     } catch (err) {
-      alert('Failed to save academic year');
+      showAlert('Failed to save academic year', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -235,7 +240,7 @@ export default function AcademicCalendarPage() {
       const newEnd = new Date(termForm.endDate).getTime();
       
       if (newStart > newEnd) {
-        alert(`The term cannot end before its start date.`);
+        showAlert(`The term cannot end before its start date.`);
         setIsSubmitting(false);
         return;
       }
@@ -245,7 +250,7 @@ export default function AcademicCalendarPage() {
         const extStart = new Date(existingTerm.startDate).getTime();
         const extEnd = new Date(existingTerm.endDate).getTime();
         if (Math.max(newStart, extStart) <= Math.min(newEnd, extEnd)) {
-          alert(`This term overlaps with an existing term (${existingTerm.name}).`);
+          showAlert(`This term overlaps with an existing term (${existingTerm.name}).`);
           setIsSubmitting(false);
           return;
         }
@@ -266,7 +271,7 @@ export default function AcademicCalendarPage() {
       setEditingTerm(null);
       setTermForm({ name: '', academicYear: '', startDate: '', endDate: '' });
     } catch (err) {
-      alert('Failed to save term');
+      showAlert('Failed to save term', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -281,7 +286,7 @@ export default function AcademicCalendarPage() {
     const bEnd = new Date(breakForm.endDate).getTime();
 
     if (bStart > bEnd) {
-      alert("The break cannot end before its start date.");
+      showAlert("The break cannot end before its start date.");
       setIsSubmitting(false);
       return;
     }
@@ -292,7 +297,7 @@ export default function AcademicCalendarPage() {
       const tEnd = new Date(parentTerm.endDate).getTime();
       
       if (bStart < tStart || bEnd > tEnd) {
-        alert("The mid-term break must fall completely within the start and end dates of the term.");
+        showAlert("The mid-term break must fall completely within the start and end dates of the term.");
         setIsSubmitting(false);
         return;
       }
@@ -301,7 +306,7 @@ export default function AcademicCalendarPage() {
         const eBStart = new Date(existingBreak.startDate).getTime();
         const eBEnd = new Date(existingBreak.endDate).getTime();
         if (Math.max(bStart, eBStart) <= Math.min(bEnd, eBEnd)) {
-          alert(`This break overlaps with an existing break (${existingBreak.name}).`);
+          showAlert(`This break overlaps with an existing break (${existingBreak.name}).`);
           setIsSubmitting(false);
           return;
         }
@@ -314,7 +319,7 @@ export default function AcademicCalendarPage() {
       setShowBreakModal(false);
       setBreakForm({ name: '', startDate: '', endDate: '' });
     } catch (err) {
-      alert('Failed to save break');
+      showAlert('Failed to save break', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -326,7 +331,7 @@ export default function AcademicCalendarPage() {
       await calendarApi.deleteTerm(id);
       mutate();
     } catch (err) {
-      alert('Failed to delete term');
+      showAlert('Failed to delete term', 'error');
     }
   };
 
@@ -336,7 +341,7 @@ export default function AcademicCalendarPage() {
       await calendarApi.deleteBreak(id);
       mutate();
     } catch (err) {
-      alert('Failed to delete break');
+      showAlert('Failed to delete break', 'error');
     }
   };
 
@@ -766,6 +771,47 @@ export default function AcademicCalendarPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      
+      {/* Global Notification Modal */}
+      {notification.isOpen && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
+            <div style={{ marginBottom: 20 }}>
+              {notification.type === 'error' ? (
+                <ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} />
+              ) : notification.type === 'success' ? (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(34, 197, 94, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+              ) : (
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </div>
+              )}
+            </div>
+            
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>
+              {notification.type === 'error' ? 'Error' : notification.type === 'success' ? 'Success' : 'Notice'}
+            </h3>
+            
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+              {notification.message}
+            </p>
+            
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                onClick={() => setNotification({ ...notification, isOpen: false })}
+                style={{ minWidth: 120 }}
+              >
+                OK
+              </button>
+            </div>
           </div>
         </div>
       )}

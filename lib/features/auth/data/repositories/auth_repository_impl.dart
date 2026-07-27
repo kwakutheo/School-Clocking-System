@@ -53,6 +53,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final identifier = username.trim().toLowerCase();
       await _storage.saveOfflineIdentifier(identifier);
       await _storage.saveOfflinePasswordHash(_hashPassword(password));
+      await _storage.saveOfflineUserJson(user.toJsonString());
 
       // Securely save actual credentials for Biometric login
       await _storage.saveSecureIdentifier(username);
@@ -92,7 +93,7 @@ class AuthRepositoryImpl implements AuthRepository {
   ) async {
     final cachedIdentifier = _storage.getOfflineIdentifier();
     final cachedHash = _storage.getOfflinePasswordHash();
-    final cachedUserJson = _storage.getUserJson();
+    final cachedUserJson = _storage.getOfflineUserJson();
 
     if (cachedIdentifier == null ||
         cachedHash == null ||
@@ -127,7 +128,6 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, void>> logout() async {
     try {
       await _storage.clearSession();
-      await _storage.clearOfflineCredentials();
       return const Right(null);
     } catch (_) {
       return const Left(CacheFailure());
@@ -185,6 +185,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       final user = UserModel.fromJson(merged);
       await _storage.saveUserJson(user.toJsonString());
+      await _storage.saveOfflineUserJson(user.toJsonString());
       return Right(user);
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {

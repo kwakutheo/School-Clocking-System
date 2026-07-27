@@ -77,10 +77,16 @@ class StorageService {
   String? getOfflinePasswordHash() =>
       _prefs.getString(AppConstants.offlinePasswordHashKey);
 
+  Future<void> saveOfflineUserJson(String json) =>
+      _prefs.setString(AppConstants.offlineUserKey, json);
+
+  String? getOfflineUserJson() => _prefs.getString(AppConstants.offlineUserKey);
+
   Future<void> clearOfflineCredentials() async {
     await Future.wait([
       _prefs.remove(AppConstants.offlineIdentifierKey),
       _prefs.remove(AppConstants.offlinePasswordHashKey),
+      _prefs.remove(AppConstants.offlineUserKey),
     ]);
   }
 

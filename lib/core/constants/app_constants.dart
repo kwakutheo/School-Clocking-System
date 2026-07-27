@@ -19,6 +19,7 @@ abstract final class AppConstants {
   // ── Offline login keys ───────────────────────────────────────────────────
   static const String offlineIdentifierKey = 'offline_identifier';
   static const String offlinePasswordHashKey = 'offline_password_hash';
+  static const String offlineUserKey = 'offline_user';
 
   // ── Biometric login keys (Secure Storage) ────────────────────────────────
   static const String secureIdentifierKey = 'secure_identifier';

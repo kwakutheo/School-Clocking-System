@@ -10,21 +10,7 @@ import 'package:tk_clocking_system/core/di/injection_container.dart';
 import 'package:tk_clocking_system/core/services/time_service.dart';
 import 'package:tk_clocking_system/features/dashboard/domain/entities/home_data_entity.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Notification IDs (reserved ranges)
-// 100 : legacy clock-out reminder (kept for backward compat)
-// 200 : shift starting soon — 2-hour warning
-// 201 : shift starting soon — 30-minute warning
-// 202 : shift started    — clock-in nudge (late banner)
-// 203 : persistent late  — 2-hour escalation
-// 204 : forgot clock-out — 1-hour post-shift-end
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// Timezone name used throughout the app.
-/// Ghana operates on GMT+0 (Africa/Accra) all year — no DST.
 const _kGhanaTz = 'Africa/Accra';
-
-/// Channel IDs / names
 const _kReminderChannelId = 'shift_reminders';
 const _kReminderChannelName = 'Shift Reminders';
 const _kReminderChannelDesc =
@@ -49,11 +35,17 @@ class NotificationService {
 
   // ── Initialisation ──────────────────────────────────────────────────────────
 
+  Future<void> initForBackgroundIsolate() async {
+    tz.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation(_kGhanaTz));
+
+    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initSettings = InitializationSettings(android: androidInit);
+    await _notifications.initialize(initSettings);
+    debugPrint('[NOTIF] Background isolate notification service initialized.');
+  }
+
   Future<void> init() async {
-    // ── Bug Fix 3: Set local location AFTER initializing timezone data ─────────
-    // initializeTimeZones() loads the timezone database but does NOT set the
-    // local timezone. Without setLocalLocation(), zonedSchedule() has no base
-    // and fires at wrong times or is silently dropped.
     tz.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation(_kGhanaTz));
 
@@ -75,14 +67,38 @@ class NotificationService {
     );
 
     if (Platform.isAndroid) {
+      // Create required channels manually so background service can use them
+      final androidImplementation =
+          _notifications.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+
+      if (androidImplementation != null) {
+        // High importance channel
+        await androidImplementation.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _kHighChannelId,
+            _kHighChannelName,
+            description: 'This channel is used for important notifications.',
+            importance: Importance.max,
+          ),
+        );
+        // Reminder channel
+        await androidImplementation.createNotificationChannel(
+          const AndroidNotificationChannel(
+            _kReminderChannelId,
+            _kReminderChannelName,
+            description: _kReminderChannelDesc,
+            importance: Importance.high,
+          ),
+        );
+      }
+
       // Request POST_NOTIFICATIONS (Android 13+)
       final notifStatus = await Permission.notification.status;
       if (!notifStatus.isGranted) {
         await Permission.notification.request();
       }
-      
-      // Request SCHEDULE_EXACT_ALARM (Android 12+)
-      // Without this, exact alarms fallback to inexact and Doze mode delays them.
+
       final exactStatus = await Permission.scheduleExactAlarm.status;
       if (!exactStatus.isGranted) {
         await Permission.scheduleExactAlarm.request();
@@ -112,8 +128,6 @@ class NotificationService {
       }
     });
   }
-
-  // ── Foreground FCM display ──────────────────────────────────────────────────
 
   Future<void> _showForegroundNotification(RemoteMessage message) async {
     final notification = message.notification;
@@ -157,17 +171,29 @@ class NotificationService {
 
   // ── Shift reminder scheduling ───────────────────────────────────────────────
 
-  /// Parses a "HH:mm" or "HH:mm:ss" string into a [tz.TZDateTime] for today
-  /// in the Ghana timezone.  Returns null if the string is malformed.
+  /// Parses a "HH:mm", "HH:mm:ss", "hh:mm AM", etc. string into a [tz.TZDateTime]
+  /// for today in the Ghana timezone. Returns null if the string is malformed.
   tz.TZDateTime? _todayAt(String rawTime, tz.TZDateTime trueNow) {
     try {
       final ghanaZone = tz.getLocation(_kGhanaTz);
-      final parts = rawTime.split(':');
+      final normalizedTime = rawTime.trim().toLowerCase();
+      final isPm = normalizedTime.contains('pm');
+      final isAm = normalizedTime.contains('am');
+
+      final timePart = normalizedTime.replaceAll(RegExp(r'[a-z\s]'), '');
+      final parts = timePart.split(':');
       if (parts.length < 2) return null;
-      final hour = int.tryParse(parts[0]);
-      final minute = int.tryParse(parts[1]);
+
+      int? hour = int.tryParse(parts[0]);
+      final int? minute = int.tryParse(parts[1]);
+
       if (hour == null || minute == null) return null;
+
+      if (isPm && hour < 12) hour += 12;
+      if (isAm && hour == 12) hour = 0;
+
       if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+
       return tz.TZDateTime(
           ghanaZone, trueNow.year, trueNow.month, trueNow.day, hour, minute);
     } catch (e) {
@@ -195,128 +221,108 @@ class NotificationService {
         ),
       );
 
-  /// Schedules (or re-schedules) all shift reminder notifications based on the
-  /// current [data] fetched from the server / cache.
-  ///
-  /// This is safe to call on every home-data refresh:
-  /// - Skips past times gracefully (no exception, no spurious notification).
-  /// - Cancels irrelevant alerts automatically based on current work state.
   Future<void> scheduleShiftReminders(HomeDataEntity data) async {
-    // Always start by cancelling any previously scheduled reminders so we
-    // never have stale or duplicate notifications.
-    await cancelShiftReminders();
+    try {
+      // Always start by cancelling any previously scheduled reminders so we
+      // never have stale or duplicate notifications.
+      await cancelShiftReminders();
 
-    // Don't schedule on weekends, holidays, or vacation days.
-    if (data.isWeekend || data.isHoliday || data.isVacation) {
-      debugPrint('[NOTIF] Skipping shift reminders — not a working day.');
-      return;
-    }
+      // Don't schedule on weekends, holidays, or vacation days.
+      if (data.isWeekend || data.isHoliday || data.isVacation) return;
 
-    // Don't schedule if no shift is assigned.
-    if (data.noShiftAssigned || data.shiftStartTime == null) {
-      debugPrint('[NOTIF] Skipping shift reminders — no shift assigned.');
-      return;
-    }
+      // Don't schedule if no shift is assigned.
+      if (data.noShiftAssigned || data.shiftStartTime == null) return;
 
-    final ghanaZone = tz.getLocation(_kGhanaTz);
+      final ghanaZone = tz.getLocation(_kGhanaTz);
 
-    // Calculate the difference between device OS time and the app's True Time.
-    // The OS scheduler ONLY understands the local OS clock. If the user tampers
-    // with their phone clock, we must translate our True Time target into OS Time.
-    final trueTimeUtc = await sl<TimeService>().getGhanaTimeAsync();
-    final trueNow = tz.TZDateTime.from(trueTimeUtc, ghanaZone);
-    final osNow = tz.TZDateTime.now(ghanaZone);
-    final osOffset = osNow.difference(trueNow);
+      // Calculate the difference between device OS time and the app's True Time.
+      final trueTimeUtc = await sl<TimeService>().getGhanaTimeAsync();
+      final trueNow = tz.TZDateTime.from(trueTimeUtc, ghanaZone);
+      final osNow = tz.TZDateTime.now(ghanaZone);
+      final osOffset = osNow.difference(trueNow);
 
-    final shiftStart = _todayAt(data.shiftStartTime!, trueNow);
-    if (shiftStart == null) {
-      debugPrint(
-          '[NOTIF] Could not parse shiftStartTime: ${data.shiftStartTime}');
-      return;
-    }
+      final shiftStart = _todayAt(data.shiftStartTime!, trueNow);
+      if (shiftStart == null) return;
 
-    // ── 1. Shift Starting Soon — 2-hour warning (ID 200) ────────────────────
-    // Only schedule if employee hasn't clocked in and shift hasn't started yet.
-    if (!data.hasClockedInToday && !data.forgotToClockOut) {
-      final twoHourWarning = shiftStart.subtract(const Duration(hours: 2));
-      if (twoHourWarning.isAfter(trueNow)) {
-        await _schedule(
-          id: 200,
-          title: '⏰ Shift Starting Soon',
-          body: 'Your shift starts in 2 hours. Prepare to head to work!',
-          scheduledDate: twoHourWarning.add(osOffset),
-        );
-      }
+      int scheduledCount = 0;
 
-      // ── 2. Shift Starting Soon — 30-minute warning (ID 201) ───────────────
-      final thirtyMinWarning = shiftStart.subtract(const Duration(minutes: 30));
-      if (thirtyMinWarning.isAfter(trueNow)) {
-        await _schedule(
-          id: 201,
-          title: '⏰ Shift Starting Soon',
-          body: 'Your shift starts in 30 minutes. Make sure you clock in.',
-          scheduledDate: thirtyMinWarning.add(osOffset),
-        );
-      }
-
-      // ── 3. Shift Started — late clock-in nudge (ID 202) ───────────────────
-      // Fires exactly at shift start (or as soon as possible if already past).
-      if (shiftStart.isAfter(trueNow)) {
-        await _schedule(
-          id: 202,
-          title: '🔔 Your Shift Has Started',
-          body: 'Please clock in as soon as possible.',
-          scheduledDate: shiftStart.add(osOffset),
-        );
-      }
-
-      // ── 4. Persistent Late — 2-hour escalation (ID 203) ───────────────────
-      final persistentLateTime = shiftStart.add(const Duration(hours: 2));
-      if (persistentLateTime.isAfter(trueNow)) {
-        await _schedule(
-          id: 203,
-          title: '🚨 Still Not Clocked In',
-          body: 'Your attendance is at risk. Please clock in immediately!',
-          scheduledDate: persistentLateTime.add(osOffset),
-        );
-      }
-    } else {
-      debugPrint(
-          '[NOTIF] Skipping pre-shift reminders (already clocked in today).');
-    }
-
-    // ── 5. Forgot to Clock Out — 10 minutes after shift end (ID 204) ────────
-    // Only schedule if employee is currently clocked in (or was marked as forgot)
-    // and we know when the shift ends.
-    if (data.shiftEndTime != null &&
-        (data.isClockedIn || data.forgotToClockOut)) {
-      final shiftEnd = _todayAt(data.shiftEndTime!, trueNow);
-      if (shiftEnd != null) {
-        final clockOutReminder = shiftEnd.add(const Duration(minutes: 2));
-
-        if (clockOutReminder.isAfter(trueNow)) {
+      // ── 1. Shift Starting Soon — 2-hour warning (ID 200) ────────────────────
+      if (!data.hasClockedInToday && !data.forgotToClockOut) {
+        final twoHourWarning = shiftStart.subtract(const Duration(hours: 2));
+        if (twoHourWarning.isAfter(trueNow)) {
+          scheduledCount++;
           await _schedule(
-            id: 204,
-            title: '⏰ Clock Out Reminder',
-            body: 'Your shift has ended. Make sure you clock out.',
-            scheduledDate: clockOutReminder.add(osOffset),
+            id: 200,
+            title: '⏰ Shift Starting Soon',
+            body: 'Your shift starts in 2 hours. Prepare to head to work!',
+            scheduledDate: twoHourWarning.add(osOffset),
           );
-        } else {
-          // 10-minute mark has already passed (forgotToClockOut == true or
-          // app was opened late). Fire an immediate notification right now.
-          debugPrint(
-              '[NOTIF] Forgot-clock-out window already elapsed — showing immediately.');
-          await _notifications.show(
-            204,
-            '❗ Did You Forget to Clock Out?',
-            'It looks like you never clocked out. Please do so immediately.',
-            _reminderDetails,
+        }
+
+        // ── 2. Shift Starting Soon — 30-minute warning (ID 201) ───────────────
+        final thirtyMinWarning = shiftStart.subtract(const Duration(minutes: 30));
+        if (thirtyMinWarning.isAfter(trueNow)) {
+          scheduledCount++;
+          await _schedule(
+            id: 201,
+            title: '⏰ Shift Starting Soon',
+            body: 'Your shift starts in 30 minutes. Make sure you clock in.',
+            scheduledDate: thirtyMinWarning.add(osOffset),
+          );
+        }
+
+        // ── 3. Shift Started — late clock-in nudge (ID 202) ───────────────────
+        if (shiftStart.isAfter(trueNow)) {
+          scheduledCount++;
+          await _schedule(
+            id: 202,
+            title: '🔔 Your Shift Has Started',
+            body: 'Please clock in as soon as possible.',
+            scheduledDate: shiftStart.add(osOffset),
+          );
+        }
+
+        // ── 4. Persistent Late — 2-hour escalation (ID 203) ───────────────────
+        final persistentLateTime = shiftStart.add(const Duration(hours: 2));
+        if (persistentLateTime.isAfter(trueNow)) {
+          scheduledCount++;
+          await _schedule(
+            id: 203,
+            title: '🚨 Still Not Clocked In',
+            body: 'Your attendance is at risk. Please clock in immediately!',
+            scheduledDate: persistentLateTime.add(osOffset),
           );
         }
       }
-    }
 
-    debugPrint('[NOTIF] scheduleShiftReminders complete.');
+      // ── 5. Forgot to Clock Out — 10 minutes after shift end (ID 204) ────────
+      if (data.shiftEndTime != null &&
+          (data.isClockedIn || data.forgotToClockOut)) {
+        final shiftEnd = _todayAt(data.shiftEndTime!, trueNow);
+        if (shiftEnd != null) {
+          final clockOutReminder = shiftEnd.add(const Duration(minutes: 5));
+
+          if (clockOutReminder.isAfter(trueNow)) {
+            scheduledCount++;
+            await _schedule(
+              id: 204,
+              title: '⏰ Clock Out Reminder',
+              body: 'Your shift has ended. Make sure you clock out.',
+              scheduledDate: clockOutReminder.add(osOffset),
+            );
+          } else {
+            await _notifications.show(
+              204,
+              '❗ Did You Forget to Clock Out?',
+              'It looks like you never clocked out. Please do so immediately.',
+              _reminderDetails,
+            );
+          }
+        }
+      }
+    } catch (e) {
+      // Silently catch exceptions to prevent crashing the app.
+    }
   }
 
   /// Schedules a single notification. Swallows errors so a scheduling

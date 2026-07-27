@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:tk_clocking_system/app.dart';
 import 'package:tk_clocking_system/core/di/injection_container.dart' as di;
-
 import 'package:tk_clocking_system/core/constants/app_constants.dart';
 import 'package:tk_clocking_system/core/services/time_service.dart';
 import 'package:tk_clocking_system/core/services/storage_service.dart';
 import 'package:tk_clocking_system/core/services/notification_service.dart';
-
 import 'package:firebase_core/firebase_core.dart';
+import 'package:tk_clocking_system/core/services/background_service_handler.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +17,7 @@ void main() async {
   // Initialize dependency injection
   await di.init();
 
-  // Initialize notification service
+  // Initialize notification service FIRST so channels are created
   final notificationService = di.sl<NotificationService>();
   await notificationService.init();
 

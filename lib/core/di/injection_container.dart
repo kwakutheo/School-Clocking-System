@@ -185,6 +185,12 @@ Future<void> init() async {
 // ── Hive initialisation ───────────────────────────────────────────────────────
 Future<void> _initHive() async {
   await Hive.initFlutter();
-  await Hive.openBox<Map>(AppConstants.attendanceBox);
-  await Hive.openBox<Map>(AppConstants.userBox);
+  // Guard: openBox throws if the box is already open (e.g. background isolate
+  // sharing process with main isolate). Check first to avoid a crash.
+  if (!Hive.isBoxOpen(AppConstants.attendanceBox)) {
+    await Hive.openBox<Map>(AppConstants.attendanceBox);
+  }
+  if (!Hive.isBoxOpen(AppConstants.userBox)) {
+    await Hive.openBox<Map>(AppConstants.userBox);
+  }
 }

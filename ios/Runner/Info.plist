@@ -68,5 +68,14 @@
 	</array>
 	<key>NSFaceIDUsageDescription</key>
 	<string>We use Face ID to verify your identity before clocking actions.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>processing</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>dev.flutter.background.refresh</string>
+	</array>
 </dict>
 </plist>

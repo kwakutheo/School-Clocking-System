@@ -238,155 +238,161 @@ class _ClockInPageState extends State<ClockInPage> {
 
   Widget _buildWorkZoneBadge() {
     return ListenableBuilder(
-      listenable: sl<GeofenceService>(),
-      builder: (context, _) {
-        final service = sl<GeofenceService>();
-        
-        if (service.checkingLocation) {
-          return const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 12,
-                height: 12,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              SizedBox(width: 6),
-              Text('Checking location...',
-                  style: TextStyle(fontSize: 12, color: Colors.grey)),
-            ],
-          );
-        }
+        listenable: sl<GeofenceService>(),
+        builder: (context, _) {
+          final service = sl<GeofenceService>();
 
-        if (service.data?.branchLat == null ||
-            service.data?.branchLng == null ||
-            service.data?.branchRadius == null) {
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.grey.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-            ),
-            child: Row(
+          if (service.checkingLocation) {
+            return const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.location_disabled_rounded,
-                    size: 14, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(
-                  'No Work Zone Assigned',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade700,
-                  ),
+                SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
+                SizedBox(width: 6),
+                Text('Checking location...',
+                    style: TextStyle(fontSize: 12, color: Colors.grey)),
               ],
-            ),
-          );
-        }
+            );
+          }
 
-        if (service.locationError != null && service.isInWorkZone == null) {
+          if (service.data?.branchLat == null ||
+              service.data?.branchLng == null ||
+              service.data?.branchRadius == null) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.location_disabled_rounded,
+                      size: 14, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    'No Work Zone Assigned',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (service.locationError != null && service.isInWorkZone == null) {
+            return GestureDetector(
+              onTap: () => service.checkGeofence(),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border:
+                      Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.gps_off_rounded,
+                        size: 14, color: Colors.orange),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${service.locationError}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.orange.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          if (service.isInWorkZone == null) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.help_outline_rounded,
+                      size: 14, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Location Unknown',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final isInside = service.isInWorkZone!;
           return GestureDetector(
             onTap: () => service.checkGeofence(),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.1),
+                color: isInside
+                    ? Colors.green.withValues(alpha: 0.1)
+                    : Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                border: Border.all(
+                    color: isInside
+                        ? Colors.green.withValues(alpha: 0.3)
+                        : Colors.red.withValues(alpha: 0.3)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.gps_off_rounded, size: 14, color: Colors.orange),
+                  Icon(
+                    isInside
+                        ? Icons.location_on_rounded
+                        : Icons.location_off_rounded,
+                    size: 14,
+                    color: isInside ? Colors.green : Colors.red,
+                  ),
                   const SizedBox(width: 4),
                   Text(
-                    '${service.locationError} • Step outside to retry',
+                    isInside
+                        ? 'Inside Work Zone'
+                        : (service.locationError ?? 'Outside Work Zone'),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.orange.shade800,
+                      color: isInside
+                          ? Colors.green.shade700
+                          : Colors.red.shade700,
                     ),
                   ),
+                  if (!isInside) ...[
+                    const SizedBox(width: 4),
+                    Icon(Icons.refresh_rounded,
+                        size: 12, color: Colors.red.shade700),
+                  ]
                 ],
               ),
             ),
           );
-        }
-
-        if (service.isInWorkZone == null) {
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.grey.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.help_outline_rounded,
-                    size: 14, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(
-                  'Location Unknown',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade700,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final isInside = service.isInWorkZone!;
-        return GestureDetector(
-          onTap: () => service.checkGeofence(),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: isInside
-                  ? Colors.green.withValues(alpha: 0.1)
-                  : Colors.red.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                  color: isInside
-                      ? Colors.green.withValues(alpha: 0.3)
-                      : Colors.red.withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isInside ? Icons.location_on_rounded : Icons.location_off_rounded,
-                  size: 14,
-                  color: isInside ? Colors.green : Colors.red,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  isInside
-                      ? 'Inside Work Zone'
-                      : (service.locationError ?? 'Outside Work Zone'),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isInside ? Colors.green.shade700 : Colors.red.shade700,
-                  ),
-                ),
-                if (!isInside) ...[
-                  const SizedBox(width: 4),
-                  Icon(Icons.refresh_rounded, size: 12, color: Colors.red.shade700),
-                ]
-              ],
-            ),
-          ),
-        );
-      }
-    );
+        });
   }
 }
 

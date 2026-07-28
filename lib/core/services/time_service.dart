@@ -142,12 +142,14 @@ class TimeService {
 
       // 3. POST-REBOOT OFFLINE: currentUptime < lastSavedUptime means the device rebooted.
       //    We no longer have a continuous uptime anchor to the original boot.
-      final lastKnownTrueTime = _storage.getLastKnownTrueTime();
-      if (lastKnownTrueTime != null && currentUptime > 0) {
-        // We know the phone rebooted after lastKnownTrueTime.
-        // The best we can do is: lastKnownTrueTime + currentUptime (time since this boot).
-        final estimatedTime = lastKnownTrueTime.add(Duration(milliseconds: currentUptime));
-        return estimatedTime.toUtc();
+      if (lastSavedUptime != null && currentUptime < lastSavedUptime) {
+        final lastKnownTrueTime = _storage.getLastKnownTrueTime();
+        if (lastKnownTrueTime != null) {
+          // We know the phone rebooted after lastKnownTrueTime.
+          // The best we can do is: lastKnownTrueTime + currentUptime (time since this boot).
+          final estimatedTime = lastKnownTrueTime.add(Duration(milliseconds: currentUptime));
+          return estimatedTime.toUtc();
+        }
       }
     } catch (_) {
       // Ignore and fall through

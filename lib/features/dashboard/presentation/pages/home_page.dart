@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:intl/intl.dart';
+import 'package:tk_clocking_system/core/errors/failures.dart';
+import 'package:tk_clocking_system/features/calendar/domain/repositories/calendar_repository.dart';
 import 'package:tk_clocking_system/core/constants/app_constants.dart';
 import 'package:tk_clocking_system/core/di/injection_container.dart';
 import 'package:tk_clocking_system/features/attendance/domain/repositories/attendance_repository.dart';
@@ -23,10 +25,10 @@ import 'package:tk_clocking_system/features/leaves/presentation/pages/leaves_pag
 import 'package:tk_clocking_system/features/calendar/presentation/pages/calendar_page.dart';
 import 'package:tk_clocking_system/shared/enums/attendance_type.dart';
 import 'package:tk_clocking_system/shared/enums/sync_status.dart';
-import 'package:tk_clocking_system/core/services/location_service.dart';
 import 'package:tk_clocking_system/core/services/geofence_service.dart';
 import 'package:tk_clocking_system/core/services/notification_service.dart';
 import 'package:tk_clocking_system/core/services/time_service.dart';
+import 'package:tk_clocking_system/core/utils/offline_state_engine.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 class HomePage extends StatefulWidget {
@@ -218,16 +220,28 @@ class _DashboardTabState extends State<_DashboardTab> {
       try {
         final cachedData =
             HomeDataModel.fromJson(Map<String, dynamic>.from(cached));
+            
+        final cachedDate = cached['cacheDate'] as String?;
+        final now = sl<TimeService>().currentGhanaTime;
+        final nowStr =
+            '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+            
+        final isStale = cachedDate == null || cachedDate != nowStr;
+        final effectiveData = isStale
+            ? OfflineStateEngine.recomputeForOfflineDay(cachedData, now)
+            : cachedData;
+
         setState(() {
-          _data = cachedData;
+          _data = effectiveData;
           _isLoading = false;
         });
         sl<GeofenceService>().initData();
         // Schedule reminders from cache immediately. If the network call
         // succeeds later, scheduleShiftReminders will be called again
         // (it cancels and re-schedules, so this is safe / idempotent).
-        sl<NotificationService>().scheduleShiftReminders(cachedData);
-      } catch (_) {
+        sl<NotificationService>().scheduleShiftReminders(effectiveData);
+      } catch (e) {
+        debugPrint('Cache corrupted: $e');
         // Cache corrupted, just move on to network load
       }
     }
@@ -255,6 +269,13 @@ class _DashboardTabState extends State<_DashboardTab> {
             if (!silent) {
               // Optional: show error snackbar
             }
+            if (_data != null && f is NetworkFailure) {
+              final now = sl<TimeService>().currentGhanaTime;
+              setState(() {
+                _data = OfflineStateEngine.recomputeForOfflineDay(
+                    _data as HomeDataModel, now);
+              });
+            }
             setState(() => _isLoading = false);
           },
           (data) {
@@ -265,6 +286,9 @@ class _DashboardTabState extends State<_DashboardTab> {
             sl<GeofenceService>().updateData(data);
             sl<GeofenceService>().checkGeofence(silent: silent);
 
+            // Fetch holidays quietly to ensure offline state engine has them cached
+            sl<CalendarRepository>().getHolidays().then((_) {});
+            
             // Re-schedule OS-level local notifications to mirror the banners.
             // This is idempotent — safe to call on every refresh.
             sl<NotificationService>().scheduleShiftReminders(data);
@@ -273,7 +297,8 @@ class _DashboardTabState extends State<_DashboardTab> {
             if (data is HomeDataModel) {
               try {
                 final box = Hive.box<Map>(AppConstants.userBox);
-                box.put('home_data_cache', data.toJson());
+                final trustedNow = sl<TimeService>().currentGhanaTime;
+                box.put('home_data_cache', data.toJson(now: trustedNow));
               } catch (e) {
                 debugPrint('Failed to save cache: $e');
               }

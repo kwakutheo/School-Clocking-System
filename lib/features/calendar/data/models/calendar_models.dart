@@ -62,4 +62,13 @@ class HolidayModel extends HolidayEntity {
       isRecurring: json['isRecurring'] as bool? ?? false,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'date': date,
+      'isRecurring': isRecurring,
+    };
+  }
 }

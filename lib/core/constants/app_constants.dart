@@ -21,6 +21,10 @@ abstract final class AppConstants {
   static const String offlinePasswordHashKey = 'offline_password_hash';
   static const String offlineUserKey = 'offline_user';
 
+  // ── Offline calendar cache keys (stored in userBox) ──────────────────────
+  static const String holidaysCacheKey = 'holidays_cache';
+  static const String vacationDatesCacheKey = 'vacation_dates_cache';
+
   // ── Biometric login keys (Secure Storage) ────────────────────────────────
   static const String secureIdentifierKey = 'secure_identifier';
   static const String securePasswordKey = 'secure_password';

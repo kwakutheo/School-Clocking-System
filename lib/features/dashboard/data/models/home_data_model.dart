@@ -113,7 +113,13 @@ class HomeDataModel extends HomeDataEntity {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({DateTime? now}) {
+    // Record the calendar date this snapshot was created for.
+    // Uses the trusted NTP-synced time passed in by the caller (TimeService),
+    // NOT DateTime.now(), so that device clock tampering has no effect.
+    final safeNow = (now ?? DateTime.now()).toUtc();
+    final cacheDate =
+        '${safeNow.year.toString().padLeft(4, '0')}-${safeNow.month.toString().padLeft(2, '0')}-${safeNow.day.toString().padLeft(2, '0')}';
     return {
       'lastActivity': lastActivityType != null
           ? {
@@ -157,6 +163,7 @@ class HomeDataModel extends HomeDataEntity {
               'note': adminOverrideNote ?? '',
             }
           : null,
+      'cacheDate': cacheDate,
     };
   }
 }

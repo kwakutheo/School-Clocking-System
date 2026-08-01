@@ -462,6 +462,7 @@ export default function BranchesPage() {
     payload: any;
     message: string;
     requiresPassword?: boolean;
+    error?: string;
     onConfirm: (payload: any, password?: string) => void;
   }>({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
   const [adminPassword, setAdminPassword] = useState('');
@@ -537,6 +538,7 @@ export default function BranchesPage() {
           payload: id,
           message: `This branch is currently assigned to ${usage.count} employee(s) (e.g. ${usage.names.slice(0, 3).join(', ')}${usage.count > 3 ? '...' : ''}). Deleting it will leave them without a branch. Please enter your password to confirm.`,
           requiresPassword: true,
+          error: undefined,
           onConfirm: executeDelete
         });
       } else {
@@ -545,6 +547,7 @@ export default function BranchesPage() {
           payload: id,
           message: 'Are you sure you want to delete this branch? It is currently not assigned to anyone.',
           requiresPassword: false,
+          error: undefined,
           onConfirm: executeDelete
         });
       }
@@ -561,8 +564,12 @@ export default function BranchesPage() {
       setAdminPassword('');
     } catch (err: any) {
       const msg = err.response?.data?.message;
-      alert(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Failed to delete branch.');
-      if (!msg?.toLowerCase().includes('password')) {
+      const errorMsg = Array.isArray(msg) ? msg.join(', ') : msg ?? 'Failed to delete branch.';
+      
+      if (errorMsg.toLowerCase().includes('password')) {
+        setDeleteConfirmAction(prev => ({ ...prev, error: errorMsg }));
+      } else {
+        alert(errorMsg);
         setDeleteConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
         setAdminPassword('');
       }
@@ -745,6 +752,12 @@ export default function BranchesPage() {
             <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>Are you sure?</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>{deleteConfirmAction.message}</p>
             
+            {deleteConfirmAction.error && (
+              <div style={{ marginBottom: 16, padding: 12, borderRadius: 8, background: 'var(--danger-light, #fee2e2)', color: 'var(--danger, #dc2626)', fontSize: 14, textAlign: 'left' }}>
+                {deleteConfirmAction.error}
+              </div>
+            )}
+
             {deleteConfirmAction.requiresPassword && (
               <div style={{ marginBottom: 20, textAlign: 'left' }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-secondary)' }}>Admin Password</label>

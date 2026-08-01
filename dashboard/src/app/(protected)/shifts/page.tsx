@@ -30,6 +30,7 @@ export default function ShiftsPage() {
     payload: any; 
     message: string; 
     requiresPassword?: boolean;
+    error?: string;
     onConfirm: (payload: any, password?: string) => void 
   }>({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
   const [adminPassword, setAdminPassword] = useState('');
@@ -100,6 +101,7 @@ export default function ShiftsPage() {
           payload: id,
           message: `This shift is currently assigned to ${usage.count} employee(s) (e.g. ${usage.names.slice(0, 3).join(', ')}${usage.count > 3 ? '...' : ''}). Deleting it will leave them without a shift. Please enter your password to confirm.`,
           requiresPassword: true,
+          error: undefined,
           onConfirm: executeDelete
         });
       } else {
@@ -108,6 +110,7 @@ export default function ShiftsPage() {
           payload: id,
           message: 'Are you sure you want to delete this shift? It is currently not assigned to anyone.',
           requiresPassword: false,
+          error: undefined,
           onConfirm: executeDelete
         });
       }
@@ -125,9 +128,13 @@ export default function ShiftsPage() {
       showAlert('Shift deleted successfully', 'success');
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Failed to delete shift';
-      showAlert(Array.isArray(msg) ? msg.join('\n') : msg, 'error');
-      // If it's a password error, don't close the modal
-      if (!msg.toLowerCase().includes('password')) {
+      const errorMsg = Array.isArray(msg) ? msg.join('\n') : msg;
+      
+      if (errorMsg.toLowerCase().includes('password')) {
+        // Show inline error in the modal
+        setConfirmAction(prev => ({ ...prev, error: errorMsg }));
+      } else {
+        showAlert(errorMsg, 'error');
         setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
         setAdminPassword('');
       }
@@ -219,7 +226,7 @@ export default function ShiftsPage() {
 
       {/* Global Notification Modal */}
       {notification.isOpen && (
-        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+        <div className="modal-overlay" style={{ zIndex: 10005 }}>
           <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }}>
             <div style={{ marginBottom: 20 }}>
               {notification.type === 'error' ? (
@@ -250,6 +257,13 @@ export default function ShiftsPage() {
             <div style={{ marginBottom: 20 }}><ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} /></div>
             <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>Are you sure?</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>{confirmAction.message}</p>
+            
+            {confirmAction.error && (
+              <div style={{ marginBottom: 16, padding: 12, borderRadius: 8, background: 'var(--danger-light, #fee2e2)', color: 'var(--danger, #dc2626)', fontSize: 14, textAlign: 'left' }}>
+                {confirmAction.error}
+              </div>
+            )}
+
             {confirmAction.requiresPassword && (
               <div style={{ marginBottom: 20, textAlign: 'left' }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-secondary)' }}>Admin Password</label>

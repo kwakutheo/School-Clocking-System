@@ -299,7 +299,9 @@ export const branchesApi = {
       allowedRadius?: number;
     },
   ) => api.patch(`/branches/${id}`, data),
-  delete: (id: string) => api.delete(`/branches/${id}`),
+  checkUsage: (id: string) => api.get(`/branches/${id}/usage`),
+  delete: (id: string, confirmPassword?: string) => 
+    api.delete(`/branches/${id}`, { data: { confirmPassword } }),
   getQr: (id: string) => api.get(`/branches/${id}/qr-code`),
   regenerateQr: (id: string, password: string) =>
     api.post(`/branches/${id}/qr-code`, { password }),

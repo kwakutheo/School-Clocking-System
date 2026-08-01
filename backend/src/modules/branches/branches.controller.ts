@@ -15,6 +15,7 @@ import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserRole } from '../../common/enums';
+import { User } from '../users/user.entity';
 import { Branch } from './branch.entity';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
@@ -39,6 +40,14 @@ export class BranchesController {
     return this.service.findById(id);
   }
 
+  @Get(':id/usage')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('branches.manage')
+  @ApiOperation({ summary: 'Check how many employees are assigned to a branch' })
+  checkUsage(@Param('id') id: string) {
+    return this.service.checkUsage(id);
+  }
+
   @Post()
   @UseGuards(PermissionsGuard)
   @RequirePermissions('branches.manage')
@@ -61,9 +70,13 @@ export class BranchesController {
   @Delete(':id')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('branches.manage')
-  @ApiOperation({ summary: 'Delete a branch' })
-  remove(@Param('id') id: string): Promise<void> {
-    return this.service.remove(id);
+  @ApiOperation({ summary: 'Delete a branch (password required if employees are assigned)' })
+  remove(
+    @Param('id') id: string,
+    @CurrentUser() user: User,
+    @Body('confirmPassword') confirmPassword?: string,
+  ): Promise<void> {
+    return this.service.remove(id, user.id, confirmPassword);
   }
 
   @Post(':id/qr-code')

@@ -457,7 +457,14 @@ export default function BranchesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleteConfirmAction, setDeleteConfirmAction] = useState<{
+    isOpen: boolean;
+    payload: any;
+    message: string;
+    requiresPassword?: boolean;
+    onConfirm: (payload: any, password?: string) => void;
+  }>({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+  const [adminPassword, setAdminPassword] = useState('');
 
   const [form, setForm] = useState({
     name: '',
@@ -520,14 +527,45 @@ export default function BranchesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDeleteClick = async (id: string) => {
     try {
-      await branchesApi.delete(id);
+      const res = await branchesApi.checkUsage(id);
+      const usage = res.data;
+      if (usage.count > 0) {
+        setDeleteConfirmAction({
+          isOpen: true,
+          payload: id,
+          message: `This branch is currently assigned to ${usage.count} employee(s) (e.g. ${usage.names.slice(0, 3).join(', ')}${usage.count > 3 ? '...' : ''}). Deleting it will leave them without a branch. Please enter your password to confirm.`,
+          requiresPassword: true,
+          onConfirm: executeDelete
+        });
+      } else {
+        setDeleteConfirmAction({
+          isOpen: true,
+          payload: id,
+          message: 'Are you sure you want to delete this branch? It is currently not assigned to anyone.',
+          requiresPassword: false,
+          onConfirm: executeDelete
+        });
+      }
+    } catch (err) {
+      alert('Failed to check branch usage');
+    }
+  };
+
+  const executeDelete = async (id: string, password?: string) => {
+    try {
+      await branchesApi.delete(id, password);
       await mutate();
-      setDeleteConfirm(null);
+      setDeleteConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+      setAdminPassword('');
     } catch (err: any) {
       const msg = err.response?.data?.message;
       alert(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Failed to delete branch.');
+      if (!msg?.toLowerCase().includes('password')) {
+        setDeleteConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+        setAdminPassword('');
+      }
     }
   };
 
@@ -572,7 +610,7 @@ export default function BranchesPage() {
               key={branch.id}
               branch={branch}
               onEdit={() => openEdit(branch)}
-              onDelete={() => setDeleteConfirm(branch.id)}
+              onDelete={() => handleDeleteClick(branch.id)}
               canDelete={can(userRole, 'branches.manage')}
             />
           ))}
@@ -697,17 +735,45 @@ export default function BranchesPage() {
       )}
 
       {/* Delete confirmation */}
-      {deleteConfirm && (
-        <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
+      {deleteConfirmAction.isOpen && (
+        <div className="modal-overlay" onClick={() => {
+          setDeleteConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+          setAdminPassword('');
+        }}>
           <div className="modal-content" style={{ maxWidth: 400 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Delete Branch</h3>
-              <button className="modal-close" onClick={() => setDeleteConfirm(null)}>✕</button>
+              <button className="modal-close" onClick={() => {
+                setDeleteConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+                setAdminPassword('');
+              }}>✕</button>
             </div>
-            <p>Are you sure you want to delete this branch? This action cannot be undone.</p>
+            <p style={{ marginBottom: 20 }}>{deleteConfirmAction.message}</p>
+            {deleteConfirmAction.requiresPassword && (
+              <div style={{ marginBottom: 20, textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-secondary)' }}>Admin Password</label>
+                <input 
+                  type="password" 
+                  className="form-input" 
+                  placeholder="Enter your password to confirm"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            )}
             <div className="modal-footer">
-              <button className="btn" onClick={() => setDeleteConfirm(null)}>Cancel</button>
-              <button className="btn btn-danger" onClick={() => handleDelete(deleteConfirm)}>Delete</button>
+              <button className="btn" onClick={() => {
+                setDeleteConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+                setAdminPassword('');
+              }}>Cancel</button>
+              <button 
+                className="btn btn-danger" 
+                onClick={() => deleteConfirmAction.onConfirm(deleteConfirmAction.payload, adminPassword)}
+                disabled={deleteConfirmAction.requiresPassword && !adminPassword}
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>

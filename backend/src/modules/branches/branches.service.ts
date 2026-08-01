@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -88,9 +89,51 @@ export class BranchesService {
     return this.findById(id);
   }
 
-  async remove(id: string): Promise<void> {
+  /**
+   * Returns how many employees are currently assigned to a given branch.
+   * Used by the frontend to warn admins before deletion.
+   */
+  async checkUsage(id: string): Promise<{ count: number; names: string[] }> {
+    await this.findById(id); // enforce tenant scope / 404
+    const employees = await this.employeeRepo.find({
+      where: { branch: { id } } as any,
+      relations: ['user'],
+    });
+    return {
+      count: employees.length,
+      names: employees.map((e) => e.user?.fullName ?? e.employeeCode),
+    };
+  }
+
+  async remove(
+    id: string,
+    adminUserId: string,
+    confirmPassword?: string,
+  ): Promise<void> {
     // findById already enforces tenant scope — will 404 if not owned
     await this.findById(id);
+
+    const { count } = await this.checkUsage(id);
+
+    if (count > 0) {
+      if (!confirmPassword) {
+        throw new BadRequestException({
+          code: 'BRANCH_IN_USE',
+          message: `This branch is assigned to ${count} employee(s). Provide your password to confirm deletion.`,
+          count,
+        });
+      }
+
+      // Verify the acting admin's password.
+      const adminUser = await this.users.findById(adminUserId);
+      const passwordMatches = await bcrypt.compare(
+        confirmPassword,
+        adminUser.passwordHash,
+      );
+      if (!passwordMatches) {
+        throw new UnauthorizedException('Incorrect password. Deletion aborted.');
+      }
+    }
 
     // Unlink employees
     await this.employeeRepo

@@ -104,7 +104,7 @@ export class ShiftsService {
         adminUser.passwordHash,
       );
       if (!passwordMatches) {
-        throw new UnauthorizedException('Incorrect password. Deletion aborted.');
+        throw new BadRequestException('Incorrect password. Deletion aborted.');
       }
     }
 

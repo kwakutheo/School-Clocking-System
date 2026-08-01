@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { authApi, usersApi } from '@/lib/api';
 import { useAuthStore, type AuthUser } from '@/lib/store';
 
-import { Pencil, X, UserPen } from 'lucide-react';
+import { Pencil, X, UserPen, Eye, EyeOff } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, setAuth } = useAuthStore();
@@ -15,6 +15,8 @@ export default function ProfilePage() {
   const [editingUsername, setEditingUsername] = useState(false);
   const [editingPhone, setEditingPhone] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [form, setForm] = useState({
     fullName: '',
@@ -320,33 +322,80 @@ export default function ProfilePage() {
                   {isChangingPassword ? 'Cancel' : 'Change Password'}
                 </button>
               </div>
-              <input
-                id="password"
-                className="form-input"
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder={isChangingPassword ? "Enter new password" : "••••••••"}
-                minLength={6}
-                readOnly={!isChangingPassword}
-                required={isChangingPassword}
-                style={{ backgroundColor: !isChangingPassword ? 'var(--bg-card-alt)' : undefined, opacity: !isChangingPassword ? 0.7 : 1 }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="password"
+                  className="form-input"
+                  type={showPassword ? "text" : "password"}
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder={isChangingPassword ? "Enter new password" : "••••••••"}
+                  minLength={6}
+                  readOnly={!isChangingPassword}
+                  required={isChangingPassword}
+                  style={{ backgroundColor: !isChangingPassword ? 'var(--bg-card-alt)' : undefined, opacity: !isChangingPassword ? 0.7 : 1, width: '100%', paddingRight: '40px' }}
+                />
+                {isChangingPassword && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                )}
+              </div>
             </div>
 
             {isChangingPassword && (
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                 <label htmlFor="confirmPassword">Confirm New Password</label>
-                <input
-                  id="confirmPassword"
-                  className="form-input"
-                  type="password"
-                  value={form.confirmPassword}
-                  onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-                  placeholder="Confirm new password"
-                  minLength={6}
-                  required
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="confirmPassword"
+                    className="form-input"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={form.confirmPassword}
+                    onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                    placeholder="Confirm new password"
+                    minLength={6}
+                    required
+                    style={{ width: '100%', paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0
+                    }}
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
                 {form.password !== form.confirmPassword && form.confirmPassword !== '' && (
                   <div style={{ color: 'var(--error)', fontSize: 13, marginTop: 4 }}>
                     Passwords do not match

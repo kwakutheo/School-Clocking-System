@@ -3,7 +3,7 @@ import useSWR from 'swr';
 import { useState } from 'react';
 import { shiftsApi, calendarApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
-import { Clock, Plus, Trash2, Save, Edit, ShieldAlert, ArrowLeft } from 'lucide-react';
+import { Clock, Plus, Trash2, Save, Edit, ShieldAlert, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { can } from '@/lib/permissions';
 
@@ -34,6 +34,7 @@ export default function ShiftsPage() {
     onConfirm: (payload: any, password?: string) => void 
   }>({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
   const [adminPassword, setAdminPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setNotification({ isOpen: true, message, type });
@@ -267,14 +268,36 @@ export default function ShiftsPage() {
             {confirmAction.requiresPassword && (
               <div style={{ marginBottom: 20, textAlign: 'left' }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-secondary)' }}>Admin Password</label>
-                <input 
-                  type="password" 
-                  className="form-input" 
-                  placeholder="Enter your password to confirm"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  style={{ width: '100%' }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    className="form-input" 
+                    placeholder="Enter your password to confirm"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    style={{ width: '100%', paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>

@@ -1,20 +1,27 @@
 import {
   Injectable,
   NotFoundException,
-  ForbiddenException,
+  BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 import { Shift } from './shift.entity';
+import { Employee } from '../employees/employee.entity';
 import { CreateShiftDto } from './dto/create-shift.dto';
 import { UpdateShiftDto } from './dto/update-shift.dto';
 import { getCurrentTenantId } from '../../common/tenant/tenant-filter.helper';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class ShiftsService {
   constructor(
     @InjectRepository(Shift)
     private readonly repo: Repository<Shift>,
+    @InjectRepository(Employee)
+    private readonly employeeRepo: Repository<Employee>,
+    private readonly usersService: UsersService,
   ) {}
 
   findAll(): Promise<Shift[]> {
@@ -48,9 +55,59 @@ export class ShiftsService {
     return this.findOne(id);
   }
 
-  async remove(id: string): Promise<void> {
-    // findOne already enforces tenant scope — will throw 404 if not owned
-    await this.findOne(id);
+  /**
+   * Returns how many employees are currently assigned to a given shift.
+   * Used by the frontend to warn admins before deletion.
+   */
+  async checkUsage(id: string): Promise<{ count: number; names: string[] }> {
+    await this.findOne(id); // enforce tenant scope / 404
+    const employees = await this.employeeRepo.find({
+      where: { shift: { id } } as any,
+      relations: ['user'],
+    });
+    return {
+      count: employees.length,
+      names: employees.map(
+        (e) => e.user?.fullName ?? e.employeeCode,
+      ),
+    };
+  }
+
+  /**
+   * Delete a shift.
+   * - If the shift is not assigned to anyone, deletes immediately.
+   * - If it IS assigned to employees, the caller must supply the admin's
+   *   password to confirm. Throws 401 if the password is wrong.
+   */
+  async remove(
+    id: string,
+    adminUserId: string,
+    confirmPassword?: string,
+  ): Promise<void> {
+    await this.findOne(id); // enforce tenant scope / 404
+
+    const { count } = await this.checkUsage(id);
+
+    if (count > 0) {
+      if (!confirmPassword) {
+        throw new BadRequestException({
+          code: 'SHIFT_IN_USE',
+          message: `This shift is assigned to ${count} employee(s). Provide your password to confirm deletion.`,
+          count,
+        });
+      }
+
+      // Verify the acting admin's password.
+      const adminUser = await this.usersService.findById(adminUserId);
+      const passwordMatches = await bcrypt.compare(
+        confirmPassword,
+        adminUser.passwordHash,
+      );
+      if (!passwordMatches) {
+        throw new UnauthorizedException('Incorrect password. Deletion aborted.');
+      }
+    }
+
     await this.repo.delete(id);
   }
 }

@@ -25,7 +25,14 @@ export default function ShiftsPage() {
     graceMinutes: 0,
   });
   const [notification, setNotification] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' | 'info' }>({ isOpen: false, message: '', type: 'info' });
-  const [confirmAction, setConfirmAction] = useState<{ isOpen: boolean; payload: any; message: string; onConfirm: (payload: any) => void }>({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+  const [confirmAction, setConfirmAction] = useState<{ 
+    isOpen: boolean; 
+    payload: any; 
+    message: string; 
+    requiresPassword?: boolean;
+    onConfirm: (payload: any, password?: string) => void 
+  }>({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+  const [adminPassword, setAdminPassword] = useState('');
 
   const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setNotification({ isOpen: true, message, type });
@@ -83,24 +90,50 @@ export default function ShiftsPage() {
     setForm({ name: '', startTime: '08:00', endTime: '17:00', graceMinutes: 15 });
   };
 
-  const handleDeleteClick = (id: string) => {
-    setConfirmAction({
-      isOpen: true,
-      payload: id,
-      message: 'Are you sure you want to delete this shift?',
-      onConfirm: executeDelete
-    });
-  };
-
-  const executeDelete = async (id: string) => {
-    setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+  const handleDeleteClick = async (id: string) => {
     try {
-      await shiftsApi.delete(id);
-      mutate();
+      const res = await shiftsApi.checkUsage(id);
+      const usage = res.data;
+      if (usage.count > 0) {
+        setConfirmAction({
+          isOpen: true,
+          payload: id,
+          message: `This shift is currently assigned to ${usage.count} employee(s) (e.g. ${usage.names.slice(0, 3).join(', ')}${usage.count > 3 ? '...' : ''}). Deleting it will leave them without a shift. Please enter your password to confirm.`,
+          requiresPassword: true,
+          onConfirm: executeDelete
+        });
+      } else {
+        setConfirmAction({
+          isOpen: true,
+          payload: id,
+          message: 'Are you sure you want to delete this shift? It is currently not assigned to anyone.',
+          requiresPassword: false,
+          onConfirm: executeDelete
+        });
+      }
     } catch (err) {
-      showAlert('Failed to delete shift', 'error');
+      showAlert('Failed to check shift usage', 'error');
     }
   };
+
+  const executeDelete = async (id: string, password?: string) => {
+    try {
+      await shiftsApi.delete(id, password);
+      setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+      setAdminPassword('');
+      mutate();
+      showAlert('Shift deleted successfully', 'success');
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Failed to delete shift';
+      showAlert(Array.isArray(msg) ? msg.join('\n') : msg, 'error');
+      // If it's a password error, don't close the modal
+      if (!msg.toLowerCase().includes('password')) {
+        setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+        setAdminPassword('');
+      }
+    }
+  };
+
 
   return (
     <>
@@ -217,9 +250,33 @@ export default function ShiftsPage() {
             <div style={{ marginBottom: 20 }}><ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} /></div>
             <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>Are you sure?</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>{confirmAction.message}</p>
+            {confirmAction.requiresPassword && (
+              <div style={{ marginBottom: 20, textAlign: 'left' }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-secondary)' }}>Admin Password</label>
+                <input 
+                  type="password" 
+                  className="form-input" 
+                  placeholder="Enter your password to confirm"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-              <button type="button" className="btn btn-ghost" onClick={() => setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} })}>Cancel</button>
-              <button type="button" className="btn btn-primary" style={{ background: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => confirmAction.onConfirm(confirmAction.payload)}>Yes, Delete</button>
+              <button type="button" className="btn btn-ghost" onClick={() => {
+                setConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+                setAdminPassword('');
+              }}>Cancel</button>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                style={{ background: 'var(--danger)', borderColor: 'var(--danger)' }} 
+                onClick={() => confirmAction.onConfirm(confirmAction.payload, adminPassword)}
+                disabled={confirmAction.requiresPassword && !adminPassword}
+              >
+                Yes, Delete
+              </button>
             </div>
           </div>
         </div>

@@ -13,7 +13,8 @@ import { ShiftsService } from './shifts.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
-import { UserRole } from '../../common/enums';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../users/user.entity';
 import { CreateShiftDto } from './dto/create-shift.dto';
 import { UpdateShiftDto } from './dto/update-shift.dto';
 
@@ -36,6 +37,14 @@ export class ShiftsController {
     return this.service.findOne(id);
   }
 
+  @Get(':id/usage')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('shifts.manage')
+  @ApiOperation({ summary: 'Check how many employees are assigned to a shift' })
+  checkUsage(@Param('id') id: string) {
+    return this.service.checkUsage(id);
+  }
+
   @Post()
   @UseGuards(PermissionsGuard)
   @RequirePermissions('shifts.manage')
@@ -55,8 +64,12 @@ export class ShiftsController {
   @Delete(':id')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('shifts.manage')
-  @ApiOperation({ summary: 'Delete a shift' })
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  @ApiOperation({ summary: 'Delete a shift (password required if employees are assigned)' })
+  remove(
+    @Param('id') id: string,
+    @CurrentUser() user: User,
+    @Body('confirmPassword') confirmPassword?: string,
+  ) {
+    return this.service.remove(id, user.id, confirmPassword);
   }
 }

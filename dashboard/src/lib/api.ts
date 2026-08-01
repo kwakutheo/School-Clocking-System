@@ -195,9 +195,11 @@ export const holidaysApi = {
 // ── Shifts ────────────────────────────────────────────────────────────────
 export const shiftsApi = {
   list: () => api.get("/shifts"),
+  checkUsage: (id: string) => api.get(`/shifts/${id}/usage`),
   create: (data: any) => api.post("/shifts", data),
   update: (id: string, data: any) => api.patch(`/shifts/${id}`, data),
-  delete: (id: string) => api.delete(`/shifts/${id}`),
+  delete: (id: string, confirmPassword?: string) => 
+    api.delete(`/shifts/${id}`, { data: { confirmPassword } }),
 };
 
 // ── Employees ──────────────────────────────────────────────────────────────

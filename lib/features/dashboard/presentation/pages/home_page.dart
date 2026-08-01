@@ -160,11 +160,12 @@ class _DashboardTab extends StatefulWidget {
 }
 
 class _DashboardTabState extends State<_DashboardTab> {
+  HomeDataModel? _serverBaseline;
   HomeDataEntity? _data;
   bool _isLoading = true;
   int _pendingCount = 0;
   Timer? _autoRefreshTimer;
-  bool _isRefetching = false;
+  int _fetchVersion = 0;
   StreamSubscription? _syncSubscription;
 
   @override
@@ -173,17 +174,16 @@ class _DashboardTabState extends State<_DashboardTab> {
     _initData();
     _checkPending();
 
-    // Auto-refresh every 30 s — force=true guarantees it fires even
-    // if a visibility-triggered fetch is simultaneously in progress.
+    // Auto-refresh every 30 s
     _autoRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      _loadData(silent: true, force: true);
+      _loadData(silent: true);
     });
 
     // Listen for real-time silent sync events from Firebase Cloud Messaging
     _syncSubscription = sl<NotificationService>().onSyncEvent.listen((_) {
       if (mounted) {
         debugPrint('Received silent sync event, refreshing dashboard...');
-        _loadData(silent: true, force: true);
+        _loadData(silent: true);
       }
     });
 
@@ -221,15 +221,12 @@ class _DashboardTabState extends State<_DashboardTab> {
         final cachedData =
             HomeDataModel.fromJson(Map<String, dynamic>.from(cached));
             
-        final cachedDate = cached['cacheDate'] as String?;
+        _serverBaseline = cachedData;
         final now = sl<TimeService>().currentGhanaTime;
-        final nowStr =
-            '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-            
-        final isStale = cachedDate == null || cachedDate != nowStr;
-        final effectiveData = isStale
-            ? OfflineStateEngine.recomputeForOfflineDay(cachedData, now)
-            : cachedData;
+        
+        // Always pass through the offline engine so that any pending 
+        // local records created after the cache snapshot are overlaid.
+        final effectiveData = OfflineStateEngine.recomputeForOfflineDay(cachedData, now);
 
         setState(() {
           _data = effectiveData;
@@ -250,11 +247,9 @@ class _DashboardTabState extends State<_DashboardTab> {
     await _loadData();
   }
 
-  Future<void> _loadData({bool silent = false, bool force = false}) async {
-    // force = true bypasses the guard so pull-to-refresh and the timer
-    // always fire, even if a background fetch is already in progress.
-    if (!force && _isRefetching) return;
-    _isRefetching = true;
+  Future<void> _loadData({bool silent = false}) async {
+    _fetchVersion++;
+    final currentFetchVersion = _fetchVersion;
 
     if (!silent && _data == null) {
       setState(() => _isLoading = true);
@@ -263,23 +258,26 @@ class _DashboardTabState extends State<_DashboardTab> {
     try {
       final res = await sl<AttendanceRepository>().getHomeData();
 
-      if (mounted) {
+      if (mounted && currentFetchVersion == _fetchVersion) {
         res.fold(
           (f) {
             if (!silent) {
               // Optional: show error snackbar
             }
-            if (_data != null && f is NetworkFailure) {
+            if (_serverBaseline != null && f is NetworkFailure) {
               final now = sl<TimeService>().currentGhanaTime;
               setState(() {
                 _data = OfflineStateEngine.recomputeForOfflineDay(
-                    _data as HomeDataModel, now);
+                    _serverBaseline!, now);
               });
             }
             setState(() => _isLoading = false);
           },
           (data) {
             setState(() {
+              if (data is HomeDataModel) {
+                _serverBaseline = data;
+              }
               _data = data;
               _isLoading = false;
             });
@@ -306,10 +304,8 @@ class _DashboardTabState extends State<_DashboardTab> {
           },
         );
       }
-    } finally {
-      // Always reset — prevents the guard getting permanently stuck
-      // if an unexpected exception escapes the repository.
-      _isRefetching = false;
+    } catch (e) {
+      debugPrint('Error loading home data: $e');
     }
   }
 
@@ -333,6 +329,16 @@ class _DashboardTabState extends State<_DashboardTab> {
       listener: (context, state) {
         if (state is AttendanceRecorded) {
           _checkPending();
+          
+          // Optimistically update the UI immediately with the local record
+          if (_serverBaseline != null) {
+            final now = sl<TimeService>().currentGhanaTime;
+            setState(() {
+              _data = OfflineStateEngine.recomputeForOfflineDay(
+                  _serverBaseline!, now);
+            });
+          }
+          
           _loadData(silent: true);
 
           // Cancel shift reminders that are no longer relevant based on
@@ -423,7 +429,7 @@ class _DashboardTabState extends State<_DashboardTab> {
               edgeOffset: 40,
               onRefresh: () async {
                 final authBloc = context.read<AuthBloc>();
-                await _loadData(silent: true, force: true);
+                await _loadData(silent: true);
                 if (mounted) {
                   authBloc.add(const AuthSyncProfileEvent());
                 }
@@ -640,9 +646,7 @@ class _DashboardTabState extends State<_DashboardTab> {
           _ShiftCountdownBanner(
             shiftStartTime: data.shiftStartTime!,
             onFinished: () async {
-              // Reset the guard so the forced fetch is never blocked,
-              // then wait 2s for the server clock to catch up before syncing.
-              _isRefetching = false;
+              // Wait 2s for the server clock to catch up before syncing.
               await Future.delayed(const Duration(seconds: 2));
               _loadData(silent: true);
             },
@@ -1076,8 +1080,8 @@ class _LiveStatusBanner extends StatelessWidget {
       );
     }
 
-    // ── Late banners — only shown while the shift is still active ────────────
-    if (lateStatus == LateStatus.persistentLate) {
+    // ── Late banners — only shown while the shift is still active and user hasn't clocked in
+    if (!data.hasClockedInToday && lateStatus == LateStatus.persistentLate) {
       // > 3 hours late: escalated, deep-orange urgent alert
       return Container(
         padding: const EdgeInsets.all(16),
@@ -1116,7 +1120,7 @@ class _LiveStatusBanner extends StatelessWidget {
       );
     }
 
-    if (lateStatus == LateStatus.late) {
+    if (!data.hasClockedInToday && lateStatus == LateStatus.late) {
       // < 3 hours late: standard orange warning
       return Container(
         padding: const EdgeInsets.all(16),

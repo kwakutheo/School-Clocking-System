@@ -5,7 +5,6 @@ import 'package:tk_clocking_system/features/auth/presentation/bloc/auth_bloc.dar
 import 'package:tk_clocking_system/features/auth/presentation/bloc/auth_event.dart';
 import 'package:tk_clocking_system/features/auth/presentation/bloc/auth_state.dart';
 import 'package:dio/dio.dart';
-import 'package:tk_clocking_system/core/constants/app_constants.dart';
 import 'package:tk_clocking_system/core/di/injection_container.dart';
 import 'package:tk_clocking_system/core/network/api_client.dart';
 import 'package:tk_clocking_system/core/services/storage_service.dart';
@@ -490,47 +489,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
           );
         },
-      ),
-    );
-  }
-
-  void _showServerConfigDialog(BuildContext context) {
-    final urlCtrl = TextEditingController(text: AppConstants.baseUrl);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Server Configuration'),
-        content: TextField(
-          controller: urlCtrl,
-          decoration: const InputDecoration(
-            labelText: 'Server Base URL',
-            hintText: 'http://192.168.1.X:3000/api/v1',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final newUrl = urlCtrl.text.trim();
-              if (newUrl.isNotEmpty) {
-                AppConstants.baseUrl = newUrl;
-                sl<ApiClient>().updateBaseUrl(newUrl);
-                await sl<StorageService>().saveServerUrl(newUrl);
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Server URL updated successfully')),
-                  );
-                }
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }

@@ -7,106 +7,55 @@ import 'package:tk_clocking_system/shared/enums/attendance_type.dart';
 import 'package:tk_clocking_system/features/dashboard/domain/entities/home_data_entity.dart';
 
 class OfflineStateEngine {
-  /// Recomputes a stale [HomeDataModel] for the current offline day.
   static HomeDataModel recomputeForOfflineDay(
       HomeDataModel stale, DateTime now) {
-    
-    // 1. Check local holidays cache
     bool isHoliday = false;
     String? holidayName;
     final userBox = Hive.box<Map>(AppConstants.userBox);
     final cachedData = userBox.get(AppConstants.holidaysCacheKey);
-    
+
     if (cachedData != null && cachedData.containsKey('data')) {
       final cachedHolidays = cachedData['data'] as List<dynamic>?;
       if (cachedHolidays != null) {
-        final nowStr = '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-        final nowStrNoYear = '${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-        
+        final nowStr =
+            '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+        final nowStrNoYear =
+            '${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
         final holidays = cachedHolidays
             .cast<Map<String, dynamic>>()
             .map((json) => HolidayModel.fromJson(json))
             .toList();
-          
-      for (final holiday in holidays) {
-        if (holiday.date == nowStr || (holiday.isRecurring && holiday.date == nowStrNoYear)) {
-          isHoliday = true;
-          holidayName = holiday.name;
-          break;
+
+        for (final holiday in holidays) {
+          if (holiday.date == nowStr ||
+              (holiday.isRecurring && holiday.date == nowStrNoYear)) {
+            isHoliday = true;
+            holidayName = holiday.name;
+            break;
+          }
         }
-      }
       }
     }
 
-    final isWeekend = now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
-    
-    // Check local attendance box for today's offline events
-    final attendanceBox = Hive.box<Map>(AppConstants.attendanceBox);
-    final todayRecords = attendanceBox.values
-        .map((e) => AttendanceModel.fromJson(Map<String, dynamic>.from(e)))
-        .where((record) {
-      final t = record.timestamp;
-      return t.year == now.year && t.month == now.month && t.day == now.day;
-    }).toList();
-    
-    todayRecords.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    final isWeekend =
+        now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
 
-    bool hasClockedInToday = false;
-    bool isClockedIn = false;
-    bool forgotToClockOut = false;
-    DateTime? clockedInTime;
-    double todayHours = 0.0;
-    AttendanceType? lastActivityType;
-    DateTime? lastActivityTime;
-
-    DateTime? currentInTime;
-
-    for (final record in todayRecords) {
-      lastActivityType = record.type;
-      lastActivityTime = record.timestamp;
-      
-      if (record.type == AttendanceType.clockIn) {
-        hasClockedInToday = true;
-        isClockedIn = true;
-        clockedInTime = record.timestamp;
-        currentInTime = record.timestamp;
-      } else if (record.type == AttendanceType.clockOut) {
-        isClockedIn = false;
-        if (currentInTime != null) {
-          todayHours += record.timestamp.difference(currentInTime).inMinutes / 60.0;
-          currentInTime = null;
-        }
-      } else if (record.type == AttendanceType.breakIn) {
-        // Break doesn't clock you out, but it stops counting hours
-        if (currentInTime != null) {
-          todayHours += record.timestamp.difference(currentInTime).inMinutes / 60.0;
-          currentInTime = null;
-        }
-      } else if (record.type == AttendanceType.breakOut) {
-        currentInTime = record.timestamp;
-      }
-    }
-    
-    // Add pending hours if currently clocked in
-    if (isClockedIn && currentInTime != null) {
-      todayHours += now.difference(currentInTime).inMinutes / 60.0;
-    }
-
-    // Determine shift start and end
     DateTime? shiftStart;
     DateTime? shiftEnd;
-    
+
     if (stale.shiftStartTime != null) {
       final parts = stale.shiftStartTime!.split(':');
       if (parts.length >= 2) {
         final hour = int.tryParse(parts[0]);
         final minute = int.tryParse(parts[1]);
         if (hour != null && minute != null) {
-          shiftStart = DateTime.utc(now.year, now.month, now.day, hour, minute);
+          shiftStart =
+              DateTime.utc(now.year, now.month, now.day, hour, minute);
         }
       }
     }
-    
+
     if (stale.shiftEndTime != null) {
       final parts = stale.shiftEndTime!.split(':');
       if (parts.length >= 2) {
@@ -118,35 +67,144 @@ class OfflineStateEngine {
       }
     }
 
+    final attendanceBox = Hive.box<Map>(AppConstants.attendanceBox);
+    final todayRecords = attendanceBox.values
+        .map((e) => AttendanceModel.fromJson(Map<String, dynamic>.from(e)))
+        .where((record) {
+      final t = record.timestamp;
+      return t.year == now.year && t.month == now.month && t.day == now.day;
+    }).toList();
+
+    todayRecords.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    final bool hasActivityTimestampToday = stale.lastActivityTime != null &&
+        stale.lastActivityTime!.year == now.year &&
+        stale.lastActivityTime!.month == now.month &&
+        stale.lastActivityTime!.day == now.day;
+
+    final bool isStaleFromToday = hasActivityTimestampToday ||
+        (stale.isClockedIn &&
+            stale.clockedInTime != null &&
+            stale.clockedInTime!.year == now.year &&
+            stale.clockedInTime!.month == now.month &&
+            stale.clockedInTime!.day == now.day);
+
+    final validIncrementalRecords = todayRecords.where((record) {
+      if (isStaleFromToday && stale.lastActivityTime != null) {
+        if (record.timestamp.isAfter(stale.lastActivityTime!)) return true;
+        return false;
+      }
+      return true;
+    }).toList();
+
+    bool hasClockedInToday = isStaleFromToday ? stale.hasClockedInToday : false;
+    bool isClockedIn = isStaleFromToday ? stale.isClockedIn : false;
+    bool isOnBreak = isStaleFromToday ? stale.isOnBreak : false;
+    bool forgotToClockOut = isStaleFromToday ? stale.forgotToClockOut : false;
+    DateTime? clockedInTime = isStaleFromToday ? stale.clockedInTime : null;
+    AttendanceType? lastActivityType =
+        isStaleFromToday ? stale.lastActivityType : null;
+    DateTime? lastActivityTime =
+        isStaleFromToday ? stale.lastActivityTime : null;
+    double todayHours = isStaleFromToday ? stale.todayHours : 0.0;
+
+    DateTime? calcStart;
+
+    final cacheMap = userBox.get('home_data_cache');
+    final cacheTimestampStr = cacheMap?['cacheTimestamp'] as String?;
+    final cacheTime =
+        cacheTimestampStr != null ? DateTime.tryParse(cacheTimestampStr) : null;
+
+    if (isStaleFromToday && isClockedIn) {
+      calcStart = cacheTime ?? clockedInTime;
+    }
+
+    for (final record in validIncrementalRecords) {
+      lastActivityType = record.type;
+      lastActivityTime = record.timestamp;
+
+      if (record.type == AttendanceType.clockIn) {
+        hasClockedInToday = true;
+        isClockedIn = true;
+        isOnBreak = false;
+        clockedInTime = record.timestamp;
+
+        DateTime start = record.timestamp;
+        if (shiftStart != null && start.isBefore(shiftStart)) {
+          start = shiftStart;
+        }
+        calcStart = start;
+      } else if (record.type == AttendanceType.clockOut) {
+        isClockedIn = false;
+        isOnBreak = false;
+        forgotToClockOut = false;
+
+        if (calcStart != null) {
+          DateTime calcEnd = record.timestamp;
+          if (shiftEnd != null && calcEnd.isAfter(shiftEnd)) {
+            calcEnd = shiftEnd;
+          }
+          if (calcEnd.isAfter(calcStart)) {
+            todayHours += calcEnd.difference(calcStart).inMinutes / 60.0;
+          }
+          calcStart = null;
+        }
+      } else if (record.type == AttendanceType.breakIn) {
+        isOnBreak = true;
+        isClockedIn = true;
+      } else if (record.type == AttendanceType.breakOut) {
+        isOnBreak = false;
+        isClockedIn = true;
+      }
+    }
+
+    if (isClockedIn && calcStart != null) {
+      DateTime calcEnd = now;
+      if (shiftEnd != null && calcEnd.isAfter(shiftEnd)) {
+        calcEnd = shiftEnd;
+      }
+      if (calcEnd.isAfter(calcStart)) {
+        todayHours += calcEnd.difference(calcStart).inMinutes / 60.0;
+      }
+    }
+
     bool isShiftOver = false;
     if (shiftEnd != null) {
       isShiftOver = now.isAfter(shiftEnd);
     }
-    
-    if (isClockedIn && isShiftOver && shiftEnd != null) {
-      if (now.difference(shiftEnd).inHours > 2) {
+
+    if (isClockedIn && hasClockedInToday && shiftEnd != null) {
+      if (now.isAfter(shiftEnd.add(const Duration(minutes: 10)))) {
         forgotToClockOut = true;
+        isClockedIn = false;
       }
     }
 
-    bool isAbsentToday = !hasClockedInToday && isShiftOver;
-    
+    final isWorkingDay =
+        !isWeekend && !isHoliday && !stale.isVacation && !stale.noShiftAssigned;
+    bool isAbsentToday = isWorkingDay && !hasClockedInToday && isShiftOver;
+
     bool isLateToday = false;
     LateStatus lateStatus = LateStatus.none;
-    
+
     if (hasClockedInToday && shiftStart != null && clockedInTime != null) {
       if (clockedInTime.isAfter(shiftStart)) {
         isLateToday = true;
         final minutesLate = clockedInTime.difference(shiftStart).inMinutes;
-        lateStatus = minutesLate > 120 ? LateStatus.persistentLate : LateStatus.late;
+        lateStatus =
+            minutesLate > 180 ? LateStatus.persistentLate : LateStatus.late;
+      }
+    } else if (!hasClockedInToday && shiftStart != null && shiftEnd != null && isWorkingDay) {
+      if (now.isAfter(shiftStart) && (now.isBefore(shiftEnd) || now.isAtSameMomentAs(shiftEnd))) {
+        final minutesLate = now.difference(shiftStart).inMinutes;
+        lateStatus =
+            minutesLate > 180 ? LateStatus.persistentLate : LateStatus.late;
       }
     }
 
-    // Preserve vacation state from cache
     final isVacation = stale.isVacation;
     final vacationName = stale.vacationName;
-    
-    // If on vacation, they can't be absent or late
+
     if (isVacation) {
       isAbsentToday = false;
       isLateToday = false;
@@ -156,6 +214,7 @@ class OfflineStateEngine {
       lastActivityType: lastActivityType,
       lastActivityTime: lastActivityTime,
       isClockedIn: isClockedIn,
+      isOnBreak: isOnBreak,
       clockedInTime: clockedInTime,
       forgotToClockOut: forgotToClockOut,
       hasClockedInToday: hasClockedInToday,
@@ -164,14 +223,14 @@ class OfflineStateEngine {
       isShiftOver: isShiftOver,
       isAbsentToday: isAbsentToday,
       todayHours: todayHours,
-      weekHours: stale.weekHours, // Keep stale
-      daysWorkedThisWeek: stale.daysWorkedThisWeek, // Keep stale
+      weekHours: stale.weekHours,
+      daysWorkedThisWeek: stale.daysWorkedThisWeek,
       isHoliday: isHoliday,
       holidayName: holidayName,
       isWeekend: isWeekend,
       isVacation: isVacation,
       vacationName: vacationName,
-      noShiftAssigned: stale.noShiftAssigned, // Keep stale (assume schedule repeats)
+      noShiftAssigned: stale.noShiftAssigned,
       shiftStartTime: stale.shiftStartTime,
       shiftEndTime: stale.shiftEndTime,
       nextShiftStartTime: stale.nextShiftStartTime,
@@ -183,8 +242,8 @@ class OfflineStateEngine {
       branchLat: stale.branchLat,
       branchLng: stale.branchLng,
       branchRadius: stale.branchRadius,
-      adminOverrideName: null, // Reset for new day
-      adminOverrideNote: null, // Reset for new day
+      adminOverrideName: isStaleFromToday ? stale.adminOverrideName : null,
+      adminOverrideNote: isStaleFromToday ? stale.adminOverrideNote : null,
     );
   }
 }

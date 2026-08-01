@@ -561,14 +561,28 @@ export class AttendanceReportService {
       let isExcusedLate = false;
       let excuseReason: string | null = null;
 
-      if (employee.shift) {
-        const shiftStart = this._timeToMinutes(employee.shift.startTime);
-        const shiftEnd = this._timeToMinutes(employee.shift.endTime);
-        const grace = employee.shift.graceMinutes || 0;
 
-        if (clockIn) {
+      if (clockIn || clockOut) {
+        daysWorked++;
+
+        // ── Lateness: snapshot-first, dynamic fallback ──────────────────────
+        if (clockIn?.scheduledStartTime != null) {
+          // Snapshotted record: trust the permanently saved values.
+          isLate = clockIn.isLate;
+          isExcusedLate = clockIn.isExcusedLate || false;
+          excuseReason = clockIn.excuseReason;
+          lateMinutes = clockIn.lateMinutes ?? 0;
+          if (isLate) {
+            daysLate++;
+            totalLateMinutes += lateMinutes;
+          }
+        } else if (employee.shift && clockIn) {
+          // Legacy record (pre-migration): recalculate dynamically.
+          const shiftStart = this._timeToMinutes(employee.shift.startTime);
+          const grace = employee.shift.graceMinutes || 0;
           const actualIn =
-            clockIn.timestamp.getHours() * 60 + clockIn.timestamp.getMinutes();
+            clockIn.timestamp.getHours() * 60 +
+            clockIn.timestamp.getMinutes();
           if (actualIn > shiftStart + grace) {
             isLate = true;
             isExcusedLate = clockIn.isExcusedLate || false;
@@ -579,7 +593,20 @@ export class AttendanceReportService {
           }
         }
 
-        if (clockOut) {
+        // ── Early out: snapshot-first, dynamic fallback ─────────────────────
+        if (clockOut?.scheduledEndTime != null) {
+          // Snapshotted record: trust the permanently saved values.
+          isEarlyOut = clockOut.isEarlyOut;
+          isExcusedEarlyOut = clockOut.isExcusedEarlyOut || false;
+          excuseEarlyOutReason = clockOut.excuseEarlyOutReason;
+          earlyOutMinutes = clockOut.earlyOutMinutes ?? 0;
+          if (isEarlyOut) {
+            daysEarlyDeparture++;
+            totalEarlyOutMinutes += earlyOutMinutes;
+          }
+        } else if (employee.shift && clockOut) {
+          // Legacy record (pre-migration): recalculate dynamically.
+          const shiftEnd = this._timeToMinutes(employee.shift.endTime);
           const actualOut =
             clockOut.timestamp.getHours() * 60 +
             clockOut.timestamp.getMinutes();
@@ -592,16 +619,18 @@ export class AttendanceReportService {
             totalEarlyOutMinutes += earlyOutMinutes;
           }
         }
-      }
 
-      if (clockIn || clockOut) {
-        daysWorked++;
-
+        // ── Hours: prefer snapshot shift boundaries, dynamic fallback ───────
         if (clockIn && employee.shift) {
-          const [sHours, sMins] = employee.shift.startTime
-            .split(':')
-            .map(Number);
-          const [eHours, eMins] = employee.shift.endTime.split(':').map(Number);
+          // Resolve shift boundaries: use snapshot values when available so
+          // hours are also immune to shift edits after the fact.
+          const startTimeStr =
+            clockIn.scheduledStartTime ?? employee.shift.startTime;
+          const endTimeStr =
+            clockOut?.scheduledEndTime ?? employee.shift.endTime;
+
+          const [sHours, sMins] = startTimeStr.split(':').map(Number);
+          const [eHours, eMins] = endTimeStr.split(':').map(Number);
 
           const sStart = new Date(day);
           sStart.setHours(sHours, sMins, 0, 0);
@@ -625,7 +654,7 @@ export class AttendanceReportService {
             missingClockOut = true;
             daysForgotClockOut++;
           } else {
-            calcEnd = calcStart; // No hours for future?
+            calcEnd = calcStart;
           }
 
           hours = Math.max(
@@ -633,7 +662,7 @@ export class AttendanceReportService {
             (calcEnd.getTime() - calcStart.getTime()) / 3600000,
           );
         } else if (clockIn && clockOut) {
-          // Legacy calculation if no shift
+          // Legacy: no shift assigned at all
           hours =
             (clockOut.timestamp.getTime() - clockIn.timestamp.getTime()) /
             (1000 * 60 * 60);

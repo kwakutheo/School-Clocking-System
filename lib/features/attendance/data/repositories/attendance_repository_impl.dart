@@ -315,9 +315,13 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
 
         // If it's a 4xx error (business rule rejection like weekend clocking),
         // delete it from local storage so it doesn't get stuck forever.
+        // DANGER: We MUST exclude 401 (Unauthorized) so we don't delete records
+        // just because the user's tokens expired while they were offline!
         if (e.response?.statusCode != null &&
             e.response!.statusCode! >= 400 &&
-            e.response!.statusCode! < 500) {
+            e.response!.statusCode! < 500 &&
+            e.response!.statusCode! != 401 &&
+            e.response!.statusCode! != 429) {
           await _box.delete(key);
         }
       } catch (e) {

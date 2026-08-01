@@ -6,11 +6,11 @@ class ErrorStateView extends StatelessWidget {
   final IconData icon;
 
   const ErrorStateView({
-    Key? key,
+    super.key,
     required this.message,
     required this.onRetry,
     this.icon = Icons.cloud_off_rounded,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class ErrorStateView extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.3),
+                color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3),
                 shape: BoxShape.circle,
               ),
               child: Icon(

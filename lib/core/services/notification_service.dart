@@ -243,14 +243,10 @@ class NotificationService {
 
       final shiftStart = _todayAt(data.shiftStartTime!, trueNow);
       if (shiftStart == null) return;
-
-      int scheduledCount = 0;
-
       // ── 1. Shift Starting Soon — 2-hour warning (ID 200) ────────────────────
       if (!data.hasClockedInToday && !data.forgotToClockOut) {
         final twoHourWarning = shiftStart.subtract(const Duration(hours: 2));
         if (twoHourWarning.isAfter(trueNow)) {
-          scheduledCount++;
           await _schedule(
             id: 200,
             title: '⏰ Shift Starting Soon',
@@ -262,7 +258,6 @@ class NotificationService {
         // ── 2. Shift Starting Soon — 30-minute warning (ID 201) ───────────────
         final thirtyMinWarning = shiftStart.subtract(const Duration(minutes: 30));
         if (thirtyMinWarning.isAfter(trueNow)) {
-          scheduledCount++;
           await _schedule(
             id: 201,
             title: '⏰ Shift Starting Soon',
@@ -273,7 +268,6 @@ class NotificationService {
 
         // ── 3. Shift Started — late clock-in nudge (ID 202) ───────────────────
         if (shiftStart.isAfter(trueNow)) {
-          scheduledCount++;
           await _schedule(
             id: 202,
             title: '🔔 Your Shift Has Started',
@@ -285,7 +279,6 @@ class NotificationService {
         // ── 4. Persistent Late — 2-hour escalation (ID 203) ───────────────────
         final persistentLateTime = shiftStart.add(const Duration(hours: 2));
         if (persistentLateTime.isAfter(trueNow)) {
-          scheduledCount++;
           await _schedule(
             id: 203,
             title: '🚨 Still Not Clocked In',
@@ -303,7 +296,6 @@ class NotificationService {
           final clockOutReminder = shiftEnd.add(const Duration(minutes: 5));
 
           if (clockOutReminder.isAfter(trueNow)) {
-            scheduledCount++;
             await _schedule(
               id: 204,
               title: '⏰ Clock Out Reminder',

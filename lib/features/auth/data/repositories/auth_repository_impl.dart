@@ -116,6 +116,13 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     final user = UserModel.fromJsonString(cachedUserJson);
+    if (user.tenantId != null) {
+      await _storage.saveTenantId(user.tenantId!);
+    }
+    // Restore the primary user key so `getCachedUser` finds it on next boot,
+    // keeping the user logged in across app restarts while offline.
+    await _storage.saveUserJson(user.toJsonString());
+    
     return Right(LoginResult(user: user, isOffline: true));
   }
 

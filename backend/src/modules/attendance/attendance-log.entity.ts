@@ -90,6 +90,33 @@ export class AttendanceLog extends TenantBaseEntity {
   @Column({ name: 'admin_override_name', nullable: true })
   adminOverrideName: string;
 
+  /**
+   * Shift Snapshot Columns
+   * Written once at the moment of CLOCK_IN / CLOCK_OUT and never changed.
+   * These make all lateness/early-out calculations in reports immutable and
+   * immune to future edits of the shift or employee reassignments.
+   */
+
+  /** The shift start time active when this CLOCK_IN was recorded (e.g. "07:00:00"). */
+  @Column({ name: 'scheduled_start_time', type: 'varchar', length: 8, nullable: true })
+  scheduledStartTime: string | null;
+
+  /** The shift end time active when this CLOCK_OUT was recorded (e.g. "14:00:00"). */
+  @Column({ name: 'scheduled_end_time', type: 'varchar', length: 8, nullable: true })
+  scheduledEndTime: string | null;
+
+  /** The grace period in minutes active when this CLOCK_IN was recorded. */
+  @Column({ name: 'scheduled_grace_minutes', type: 'int', nullable: true })
+  scheduledGraceMinutes: number | null;
+
+  /** Minutes late, calculated and frozen at CLOCK_IN time. 0 means on-time. */
+  @Column({ name: 'late_minutes', type: 'int', nullable: true })
+  lateMinutes: number | null;
+
+  /** Minutes early, calculated and frozen at CLOCK_OUT time. 0 means on-time. */
+  @Column({ name: 'early_out_minutes', type: 'int', nullable: true })
+  earlyOutMinutes: number | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

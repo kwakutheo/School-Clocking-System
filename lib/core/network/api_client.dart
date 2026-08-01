@@ -67,6 +67,12 @@ class ApiClient {
               return handler.next(error);
             }
 
+            // Guard against infinite retry loops: if this request was already a
+            // retry, don't attempt to refresh again — just pass the error through.
+            if (error.requestOptions.extra['_isRetry'] == true) {
+              return handler.next(error);
+            }
+
             final refreshToken = await _storage.getRefreshToken();
             if (refreshToken != null) {
               try {
@@ -95,23 +101,102 @@ class ApiClient {
                     await _storage.saveRefreshToken(newRefreshToken);
                   }
 
-                  // Retry the original request with the new token
+                  // Retry the original request with the new token.
+                  // Mark as a retry so the interceptor doesn't loop if it
+                  // gets another 401 (e.g. server issue with fresh token).
                   final retryOptions = error.requestOptions;
                   retryOptions.headers['Authorization'] = 'Bearer $newAccessToken';
+                  retryOptions.extra['_isRetry'] = true;
                   
-                  // Use a new Dio instance to avoid interceptor loops if needed, 
-                  // or just use _dio.fetch
-                  final retryResponse = await _dio.fetch(retryOptions);
-                  return handler.resolve(retryResponse);
+                  try {
+                    final retryResponse = await _dio.fetch(retryOptions);
+                    return handler.resolve(retryResponse);
+                  } on DioException catch (e) {
+                    return handler.reject(e);
+                  }
                 }
               } catch (_) {
-                // If refresh fails, fall through to logout
+                // If refresh fails, fall through to login fallback below
               }
             }
 
-            // If we have no refresh token or it failed, clear session and logout
-            await _storage.clearSession();
-            _unauthorizedController.add(null);
+            // FALLBACK: Auto-login using secure credentials if refresh failed or no refresh token.
+            // This is crucial for users who logged in offline and therefore have no valid tokens.
+            try {
+              final username = await _storage.getSecureIdentifier();
+              final password = await _storage.getSecurePassword();
+
+              if (username != null && password != null) {
+                final loginResponse = await Dio(
+                  BaseOptions(
+                    baseUrl: _dio.options.baseUrl,
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                  ),
+                ).post(
+                  '/auth/login',
+                  data: {'identifier': username, 'password': password},
+                );
+
+                final data = loginResponse.data;
+                if (data is Map<String, dynamic>) {
+                  final newAccessToken = data['access_token'];
+                  final newRefreshToken = data['refresh_token'];
+
+                  if (newAccessToken != null) {
+                    await _storage.saveAccessToken(newAccessToken as String);
+                    if (newRefreshToken != null) {
+                      await _storage.saveRefreshToken(newRefreshToken as String);
+                    }
+
+                    // Also capture tenant ID if available
+                    final userJson = data['user'];
+                    String? newTenantId;
+                    if (userJson is Map<String, dynamic> && userJson['tenantId'] != null) {
+                      newTenantId = userJson['tenantId'] as String;
+                      await _storage.saveTenantId(newTenantId);
+                    }
+
+                    final retryOptions = error.requestOptions;
+                    retryOptions.headers['Authorization'] = 'Bearer $newAccessToken';
+                    if (newTenantId != null) {
+                      retryOptions.headers['x-tenant-id'] = newTenantId;
+                    }
+                    retryOptions.extra['_isRetry'] = true;
+                    
+                    try {
+                      final retryResponse = await _dio.fetch(retryOptions);
+                      return handler.resolve(retryResponse);
+                    } on DioException catch (e) {
+                      return handler.reject(e);
+                    }
+                  }
+                }
+              }
+            } catch (_) {
+              // If auto-login fails, fall through to normal failure/logout handling
+            }
+
+            // Refresh and auto-login both failed. Only force-logout for
+            // user-facing critical paths. Background tasks (sync, profile
+            // refresh, home-data polling) must NOT kick the user out —
+            // they should just silently fail and retry next cycle.
+            final path = error.requestOptions.path;
+            final isBackgroundRequest =
+                path.contains('/attendance/sync') ||
+                path.contains('/employees/me') ||
+                path.contains('/attendance/home-data') ||
+                path.contains('/attendance/history') ||
+                path.contains('/attendance/my-report') ||
+                path.contains('/attendance/live') ||
+                path.contains('/academic-calendar') ||
+                path.contains('/auth/me/fcm-token');
+
+            if (!isBackgroundRequest) {
+              await _storage.clearSession();
+              _unauthorizedController.add(null);
+            }
           }
           handler.next(error);
         },

@@ -353,17 +353,25 @@ export class AttendanceService {
 
     let isLate = false;
     let isEarlyOut = false;
+    let lateMinutes: number | null = null;
+    let earlyOutMinutes: number | null = null;
+    let scheduledStartTime: string | null = null;
+    let scheduledEndTime: string | null = null;
+    let scheduledGraceMinutes: number | null = null;
 
     if (dto.type === AttendanceType.CLOCK_IN && employee.shift) {
+      const grace = employee.shift.graceMinutes || 0;
       const [sHours, sMins] = employee.shift.startTime.split(':').map(Number);
       const shiftStart = new Date(now);
-      shiftStart.setHours(
-        sHours,
-        sMins + (employee.shift.graceMinutes || 0),
-        0,
-        0,
-      );
+      shiftStart.setHours(sHours, sMins + grace, 0, 0);
       isLate = now > shiftStart;
+      const shiftStartExact = new Date(now);
+      shiftStartExact.setHours(sHours, sMins, 0, 0);
+      lateMinutes = isLate
+        ? Math.round((now.getTime() - shiftStartExact.getTime()) / 60_000)
+        : 0;
+      scheduledStartTime = employee.shift.startTime;
+      scheduledGraceMinutes = grace;
     }
 
     if (dto.type === AttendanceType.CLOCK_OUT && employee.shift) {
@@ -371,6 +379,10 @@ export class AttendanceService {
       const shiftEnd = new Date(now);
       shiftEnd.setHours(eHours, eMins, 0, 0);
       isEarlyOut = now < shiftEnd;
+      earlyOutMinutes = isEarlyOut
+        ? Math.round((shiftEnd.getTime() - now.getTime()) / 60_000)
+        : 0;
+      scheduledEndTime = employee.shift.endTime;
     }
 
     const log = this.repo.create({
@@ -384,6 +396,11 @@ export class AttendanceService {
       isOfflineSync: dto.isOfflineSync ?? false,
       isLate,
       isEarlyOut,
+      scheduledStartTime,
+      scheduledEndTime,
+      scheduledGraceMinutes,
+      lateMinutes,
+      earlyOutMinutes,
     });
 
     const saved = await this.repo.save(log);
@@ -600,30 +617,39 @@ export class AttendanceService {
       }
     }
 
-    // ── Determine isLate for CLOCK_IN ────────────────────────────────────────
+    // ── Determine isLate for CLOCK_IN and snapshot shift ────────────────────
     let isLate = false;
     let isEarlyOut = false;
+    let lateMinutesAdmin: number | null = null;
+    let earlyOutMinutesAdmin: number | null = null;
+    let scheduledStartTimeAdmin: string | null = null;
+    let scheduledEndTimeAdmin: string | null = null;
+    let scheduledGraceMinutesAdmin: number | null = null;
+
     if (dto.type === AttendanceType.CLOCK_IN && targetEmployee.shift) {
-      const [sHours, sMins] = targetEmployee.shift.startTime
-        .split(':')
-        .map(Number);
+      const grace = targetEmployee.shift.graceMinutes || 0;
+      const [sHours, sMins] = targetEmployee.shift.startTime.split(':').map(Number);
       const shiftStart = new Date(now);
-      shiftStart.setHours(
-        sHours,
-        sMins + (targetEmployee.shift.graceMinutes || 0),
-        0,
-        0,
-      );
+      shiftStart.setHours(sHours, sMins + grace, 0, 0);
       isLate = now > shiftStart;
+      const shiftStartExact = new Date(now);
+      shiftStartExact.setHours(sHours, sMins, 0, 0);
+      lateMinutesAdmin = isLate
+        ? Math.round((now.getTime() - shiftStartExact.getTime()) / 60_000)
+        : 0;
+      scheduledStartTimeAdmin = targetEmployee.shift.startTime;
+      scheduledGraceMinutesAdmin = grace;
     }
 
     if (dto.type === AttendanceType.CLOCK_OUT && targetEmployee.shift) {
-      const [eHours, eMins] = targetEmployee.shift.endTime
-        .split(':')
-        .map(Number);
+      const [eHours, eMins] = targetEmployee.shift.endTime.split(':').map(Number);
       const shiftEnd = new Date(now);
       shiftEnd.setHours(eHours, eMins, 0, 0);
       isEarlyOut = now < shiftEnd;
+      earlyOutMinutesAdmin = isEarlyOut
+        ? Math.round((shiftEnd.getTime() - now.getTime()) / 60_000)
+        : 0;
+      scheduledEndTimeAdmin = targetEmployee.shift.endTime;
     }
 
     // ── Persist the log ──────────────────────────────────────────────────────
@@ -646,6 +672,11 @@ export class AttendanceService {
       isAdminOverride: true,
       adminNote: dto.note,
       adminOverrideName: adminDisplayName,
+      scheduledStartTime: scheduledStartTimeAdmin,
+      scheduledEndTime: scheduledEndTimeAdmin,
+      scheduledGraceMinutes: scheduledGraceMinutesAdmin,
+      lateMinutes: lateMinutesAdmin,
+      earlyOutMinutes: earlyOutMinutesAdmin,
     });
 
     const savedLog = await this.repo.save(log);
@@ -952,17 +983,25 @@ export class AttendanceService {
 
     let isLate = false;
     let isEarlyOut = false;
+    let lateMinutesQr: number | null = null;
+    let earlyOutMinutesQr: number | null = null;
+    let scheduledStartTimeQr: string | null = null;
+    let scheduledEndTimeQr: string | null = null;
+    let scheduledGraceMinutesQr: number | null = null;
 
     if (dto.type === AttendanceType.CLOCK_IN && employee.shift) {
+      const grace = employee.shift.graceMinutes || 0;
       const [sHours, sMins] = employee.shift.startTime.split(':').map(Number);
       const shiftStart = new Date(now);
-      shiftStart.setHours(
-        sHours,
-        sMins + (employee.shift.graceMinutes || 0),
-        0,
-        0,
-      );
+      shiftStart.setHours(sHours, sMins + grace, 0, 0);
       isLate = now > shiftStart;
+      const shiftStartExact = new Date(now);
+      shiftStartExact.setHours(sHours, sMins, 0, 0);
+      lateMinutesQr = isLate
+        ? Math.round((now.getTime() - shiftStartExact.getTime()) / 60_000)
+        : 0;
+      scheduledStartTimeQr = employee.shift.startTime;
+      scheduledGraceMinutesQr = grace;
     }
 
     if (dto.type === AttendanceType.CLOCK_OUT && employee.shift) {
@@ -970,6 +1009,10 @@ export class AttendanceService {
       const shiftEnd = new Date(now);
       shiftEnd.setHours(eHours, eMins, 0, 0);
       isEarlyOut = now < shiftEnd;
+      earlyOutMinutesQr = isEarlyOut
+        ? Math.round((shiftEnd.getTime() - now.getTime()) / 60_000)
+        : 0;
+      scheduledEndTimeQr = employee.shift.endTime;
     }
 
     const log = this.repo.create({
@@ -983,6 +1026,11 @@ export class AttendanceService {
       isOfflineSync: false,
       isLate,
       isEarlyOut,
+      scheduledStartTime: scheduledStartTimeQr,
+      scheduledEndTime: scheduledEndTimeQr,
+      scheduledGraceMinutes: scheduledGraceMinutesQr,
+      lateMinutes: lateMinutesQr,
+      earlyOutMinutes: earlyOutMinutesQr,
     });
 
     const saved = await this.repo.save(log);

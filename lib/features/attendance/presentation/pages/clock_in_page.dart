@@ -16,11 +16,6 @@ import 'package:tk_clocking_system/core/di/injection_container.dart';
 import 'package:tk_clocking_system/core/services/biometric_service.dart';
 import 'package:tk_clocking_system/core/services/notification_service.dart';
 import 'package:tk_clocking_system/core/services/time_service.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:tk_clocking_system/core/constants/app_constants.dart';
-import 'package:tk_clocking_system/features/dashboard/domain/entities/home_data_entity.dart';
-import 'package:tk_clocking_system/features/dashboard/data/models/home_data_model.dart';
-import 'package:tk_clocking_system/core/services/location_service.dart';
 import 'package:tk_clocking_system/core/services/geofence_service.dart';
 
 /// The main clock-in / clock-out screen for employees.

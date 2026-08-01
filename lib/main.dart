@@ -6,7 +6,6 @@ import 'package:tk_clocking_system/core/services/time_service.dart';
 import 'package:tk_clocking_system/core/services/storage_service.dart';
 import 'package:tk_clocking_system/core/services/notification_service.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:tk_clocking_system/core/services/background_service_handler.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

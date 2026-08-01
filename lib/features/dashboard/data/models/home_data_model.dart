@@ -164,6 +164,7 @@ class HomeDataModel extends HomeDataEntity {
             }
           : null,
       'cacheDate': cacheDate,
+      'cacheTimestamp': safeNow.toIso8601String(),
     };
   }
 }

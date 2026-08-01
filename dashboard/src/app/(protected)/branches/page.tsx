@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 import { branchesApi } from '@/lib/api';
 import { can } from '@/lib/permissions';
 import { useAuthStore } from '@/lib/store';
-import { ArrowLeft, MapPin,} from 'lucide-react';
+import { ArrowLeft, MapPin, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 
 const fetcher = () => branchesApi.list().then((r) => r.data);
@@ -736,19 +736,15 @@ export default function BranchesPage() {
 
       {/* Delete confirmation */}
       {deleteConfirmAction.isOpen && (
-        <div className="modal-overlay" onClick={() => {
+        <div className="modal-overlay" style={{ zIndex: 10000 }} onClick={() => {
           setDeleteConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
           setAdminPassword('');
         }}>
-          <div className="modal-content" style={{ maxWidth: 400 }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Delete Branch</h3>
-              <button className="modal-close" onClick={() => {
-                setDeleteConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
-                setAdminPassword('');
-              }}>✕</button>
-            </div>
-            <p style={{ marginBottom: 20 }}>{deleteConfirmAction.message}</p>
+          <div className="modal-content" style={{ maxWidth: 400, textAlign: 'center', padding: '30px 20px' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ marginBottom: 20 }}><ShieldAlert size={48} style={{ color: 'var(--danger)', margin: '0 auto' }} /></div>
+            <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--text-primary)' }}>Are you sure?</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>{deleteConfirmAction.message}</p>
+            
             {deleteConfirmAction.requiresPassword && (
               <div style={{ marginBottom: 20, textAlign: 'left' }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-secondary)' }}>Admin Password</label>
@@ -762,17 +758,26 @@ export default function BranchesPage() {
                 />
               </div>
             )}
-            <div className="modal-footer">
-              <button className="btn" onClick={() => {
-                setDeleteConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
-                setAdminPassword('');
-              }}>Cancel</button>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
               <button 
-                className="btn btn-danger" 
+                type="button" 
+                className="btn btn-ghost" 
+                onClick={() => {
+                  setDeleteConfirmAction({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+                  setAdminPassword('');
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                style={{ background: 'var(--danger)', borderColor: 'var(--danger)', color: '#fff' }}
                 onClick={() => deleteConfirmAction.onConfirm(deleteConfirmAction.payload, adminPassword)}
                 disabled={deleteConfirmAction.requiresPassword && !adminPassword}
               >
-                Delete
+                Yes, Delete
               </button>
             </div>
           </div>

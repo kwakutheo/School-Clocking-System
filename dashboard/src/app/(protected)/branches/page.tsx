@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 import { branchesApi } from '@/lib/api';
 import { can } from '@/lib/permissions';
 import { useAuthStore } from '@/lib/store';
-import { ArrowLeft, MapPin, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, MapPin, ShieldAlert, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 
 const fetcher = () => branchesApi.list().then((r) => r.data);
@@ -117,6 +117,7 @@ function PasswordModal({
   error?: string;
 }) {
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -170,21 +171,43 @@ function PasswordModal({
 
         <div className="form-group">
           <label htmlFor="modalPassword">Your Password</label>
-          <input
-            id="modalPassword"
-            ref={inputRef}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && password.length >= 6 && !isLoading) {
-                onConfirm(password);
-              }
-            }}
-            className="form-input"
-            style={{ marginBottom: 24 }}
-          />
+          <div style={{ position: 'relative', marginBottom: 24 }}>
+            <input
+              id="modalPassword"
+              ref={inputRef}
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && password.length >= 6 && !isLoading) {
+                  onConfirm(password);
+                }
+              }}
+              className="form-input"
+              style={{ width: '100%', paddingRight: '40px' }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0
+              }}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: 12 }}>
@@ -466,6 +489,7 @@ export default function BranchesPage() {
     onConfirm: (payload: any, password?: string) => void;
   }>({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
   const [adminPassword, setAdminPassword] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
@@ -761,14 +785,36 @@ export default function BranchesPage() {
             {deleteConfirmAction.requiresPassword && (
               <div style={{ marginBottom: 20, textAlign: 'left' }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: 'var(--text-secondary)' }}>Admin Password</label>
-                <input 
-                  type="password" 
-                  className="form-input" 
-                  placeholder="Enter your password to confirm"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  style={{ width: '100%' }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showAdminPassword ? "text" : "password"} 
+                    className="form-input" 
+                    placeholder="Enter your password to confirm"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    style={{ width: '100%', paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminPassword(!showAdminPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0
+                    }}
+                  >
+                    {showAdminPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
             )}
 

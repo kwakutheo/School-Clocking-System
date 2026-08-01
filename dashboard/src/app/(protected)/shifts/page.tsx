@@ -327,55 +327,57 @@ export default function ShiftsPage() {
               <button className="modal-close" onClick={handleClose}>✕</button>
             </div>
             <form onSubmit={handleAdd}>
-              <div className="form-group">
-                <label htmlFor="shiftName">Shift Name</label>
-                <input 
-                  id="shiftName"
-                  className="form-input" 
-                  required 
-                  value={form.name} 
-                  onChange={e => setForm({...form, name: e.target.value})} 
-                  placeholder="e.g. Morning Shift, Night Shift" 
-                />
-              </div>
-              <div className="form-grid">
+              <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div className="form-group">
-                  <label htmlFor="startTime">Start Time</label>
+                  <label htmlFor="shiftName">Shift Name</label>
                   <input 
-                    id="startTime"
-                    type="time" 
+                    id="shiftName"
                     className="form-input" 
                     required 
-                    value={form.startTime} 
-                    onChange={e => setForm({...form, startTime: e.target.value})} 
+                    value={form.name} 
+                    onChange={e => setForm({...form, name: e.target.value})} 
+                    placeholder="e.g. Morning Shift, Night Shift" 
                   />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div className="form-group">
+                    <label htmlFor="startTime">Start Time</label>
+                    <input 
+                      id="startTime"
+                      type="time" 
+                      className="form-input" 
+                      required 
+                      value={form.startTime} 
+                      onChange={e => setForm({...form, startTime: e.target.value})} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="endTime">End Time</label>
+                    <input 
+                      id="endTime"
+                      type="time" 
+                      className="form-input" 
+                      required 
+                      value={form.endTime} 
+                      onChange={e => setForm({...form, endTime: e.target.value})} 
+                    />
+                  </div>
                 </div>
                 <div className="form-group">
-                  <label htmlFor="endTime">End Time</label>
+                  <label htmlFor="graceMinutes">Grace Minutes (Late threshold)</label>
                   <input 
-                    id="endTime"
-                    type="time" 
+                    id="graceMinutes"
+                    type="number" 
                     className="form-input" 
                     required 
-                    value={form.endTime} 
-                    onChange={e => setForm({...form, endTime: e.target.value})} 
+                    value={form.graceMinutes} 
+                    onChange={e => setForm({...form, graceMinutes: Number(e.target.value)})} 
+                    placeholder="e.g. 15"
                   />
+                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
+                    Clock-ins after {form.startTime} + this many minutes will be flagged as LATE.
+                  </p>
                 </div>
-              </div>
-              <div className="form-group">
-                <label htmlFor="graceMinutes">Grace Minutes (Late threshold)</label>
-                <input 
-                  id="graceMinutes"
-                  type="number" 
-                  className="form-input" 
-                  required 
-                  value={form.graceMinutes} 
-                  onChange={e => setForm({...form, graceMinutes: Number(e.target.value)})} 
-                  placeholder="e.g. 15"
-                />
-                <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
-                  Clock-ins after {form.startTime} + this many minutes will be flagged as LATE.
-                </p>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn" onClick={handleClose}>Cancel</button>

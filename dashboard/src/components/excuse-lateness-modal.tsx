@@ -40,10 +40,11 @@ export function ExcuseLatenessModal({ logId, employeeName, type = 'late', onClos
 
     setIsSubmitting(true);
     try {
+      const { offlineApi } = await import('@/lib/offline-api');
       if (isEarlyOut) {
-        await attendanceApi.excuseEarlyOut(logId, finalReason);
+        await offlineApi.excuseEarlyOut(logId, finalReason);
       } else {
-        await attendanceApi.excuseLateness(logId, finalReason);
+        await offlineApi.excuseLateness(logId, finalReason);
       }
       onSuccess();
     } catch (err: any) {

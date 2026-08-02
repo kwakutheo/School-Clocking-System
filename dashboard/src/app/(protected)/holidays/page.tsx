@@ -201,14 +201,15 @@ export default function HolidaysPage() {
     }
 
     try {
+      const { offlineApi } = await import('@/lib/offline-api');
       const payload = {
         ...form,
-        observedDate: form.observedDate || null
+        observedDate: form.observedDate || undefined
       };
       if (editingId) {
-        await holidaysApi.update(editingId, payload);
+        await offlineApi.updateHoliday(editingId, payload);
       } else {
-        await holidaysApi.create(payload);
+        await offlineApi.createHoliday(payload);
       }
       mutate();
       setShowModal(false);
@@ -231,7 +232,8 @@ export default function HolidaysPage() {
   const executeDelete = async (id: string) => {
     setDeleteConfirm({ isOpen: false, id: '' });
     try {
-      await holidaysApi.delete(id);
+      const { offlineApi } = await import('@/lib/offline-api');
+      await offlineApi.deleteHoliday(id);
       mutate();
     } catch (err) {
       showAlert('Failed to delete', 'error');

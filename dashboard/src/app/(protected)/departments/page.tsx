@@ -48,10 +48,11 @@ export default function DepartmentsPage() {
     setError('');
 
     try {
+      const { offlineApi } = await import('@/lib/offline-api');
       if (editingId) {
-        await departmentsApi.update(editingId, { name });
+        await offlineApi.updateDepartment(editingId, { name });
       } else {
-        await departmentsApi.create({ name });
+        await offlineApi.createDepartment({ name });
       }
       await mutate();
       setShowModal(false);
@@ -66,7 +67,8 @@ export default function DepartmentsPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      await departmentsApi.delete(id);
+      const { offlineApi } = await import('@/lib/offline-api');
+      await offlineApi.deleteDepartment(id);
       await mutate();
       setDeleteConfirm(null);
     } catch (err: any) {

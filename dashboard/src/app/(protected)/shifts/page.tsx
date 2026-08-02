@@ -65,13 +65,14 @@ export default function ShiftsPage() {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const { offlineApi } = await import('@/lib/offline-api');
       if (editingId) {
-        await shiftsApi.update(editingId, {
+        await offlineApi.updateShift(editingId, {
           ...form,
           graceMinutes: Number(form.graceMinutes),
         });
       } else {
-        await shiftsApi.create({
+        await offlineApi.createShift({
           ...form,
           graceMinutes: Number(form.graceMinutes),
         });

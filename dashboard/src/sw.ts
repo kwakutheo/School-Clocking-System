@@ -19,10 +19,16 @@ declare global {
 declare const self: ServiceWorkerGlobalScope;
 
 // ── Cache name constants ────────────────────────────────────────────────────
-const STATIC_CACHE = 'static-assets-v2';
-const PAGES_CACHE  = 'pages-v2';
-const API_READ_CACHE = 'api-read-v2';
-const IMAGES_CACHE = 'images-v2';
+const STATIC_CACHE  = 'static-assets-v3';
+const PAGES_CACHE   = 'pages-v3';
+const API_READ_CACHE = 'api-read-v3';
+const IMAGES_CACHE  = 'images-v3';
+
+// ── The one page we MUST precache ────────────────────────────────────────────
+// /offline must be available before the user visits it online, because by
+// definition they're offline when they need it. We precache ONLY this one URL
+// to avoid the performance regression of downloading all 36 pages on SW install.
+const OFFLINE_URL = '/offline';
 
 // ── Serwist instance ────────────────────────────────────────────────────────
 // @serwist/next scans the source for the token `self.__SW_MANIFEST` at build
@@ -203,31 +209,109 @@ const serwist = new Serwist({
 
 serwist.addEventListeners();
 
-// ── Offline fallback for uncached navigation requests ────────────────────────
-// When the user navigates to a page that isn't cached yet and is offline,
-// serve the /offline page instead of a browser error.
-self.addEventListener('fetch', (event) => {
-  if (event.request.mode !== 'navigate') return;
-
-  event.respondWith(
-    fetch(event.request).catch(async () => {
-      const cache = await caches.open(PAGES_CACHE);
-      const cachedPage = await cache.match(event.request);
-      if (cachedPage) return cachedPage;
-      const offlinePage = await cache.match('/offline');
-      return offlinePage ?? Response.error();
-    })
+// ── Precache the /offline fallback page on SW install ───────────────────────
+// We don't use serwist's precacheEntries for this because we need to keep
+// self.__SW_MANIFEST referenced (build requirement) but empty. Instead we
+// manually cache /offline during the install event.
+self.addEventListener('install', (event: ExtendableEvent) => {
+  event.waitUntil(
+    caches.open(PAGES_CACHE).then((cache) => cache.add(OFFLINE_URL)),
   );
 });
 
-// ── Cache-bust on logout ─────────────────────────────────────────────────────
-// The app posts a 'LOGOUT' message to the SW when the user signs out.
-// We delete the API read cache and pages cache to prevent stale data leaks
-// when a different tenant user logs in on the same browser.
-self.addEventListener('message', async (event) => {
-  if (event.data && event.data.type === 'LOGOUT') {
-    await caches.delete(API_READ_CACHE);
-    await caches.delete(PAGES_CACHE);
-    event.ports[0]?.postMessage({ success: true });
+// ── Background Sync: replay the offline queue ────────────────────────────────
+// When the browser detects connectivity, it fires the 'sync' event (even if
+// the tab is closed). We read pending items from IndexedDB and replay them.
+// The actual replay logic lives in src/lib/offline-queue.ts (replayQueue).
+// We duplicate a minimal version here so the SW bundle stays self-contained.
+self.addEventListener('sync', (event: any) => {
+  if (event.tag === 'offline-queue-sync') {
+    event.waitUntil(swReplayQueue());
   }
 });
+
+const SW_DB_NAME  = 'tk-offline-queue';
+const SW_DB_VER   = 1;
+const SW_STORE    = 'requests';
+const MAX_RETRIES = 3;
+
+function openSwDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = self.indexedDB.open(SW_DB_NAME, SW_DB_VER);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(SW_STORE)) {
+        db.createObjectStore(SW_STORE, { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+function swGetAll(db: IDBDatabase): Promise<any[]> {
+  return new Promise((resolve, reject) => {
+    const req = db.transaction(SW_STORE, 'readonly').objectStore(SW_STORE).getAll();
+    req.onsuccess = () => resolve(req.result as any[]);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+function swPut(db: IDBDatabase, item: any): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const req = db.transaction(SW_STORE, 'readwrite').objectStore(SW_STORE).put(item);
+    req.onsuccess = () => resolve();
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+async function swReplayQueue(): Promise<void> {
+  const db  = await openSwDb();
+  const all = await swGetAll(db);
+  const pending = all
+    .filter((r: any) => r.status === 'pending')
+    .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+  for (const item of pending) {
+    await swPut(db, { ...item, status: 'syncing' });
+    try {
+      const res = await fetch(item.url, {
+        method: item.method,
+        headers: { 'Content-Type': 'application/json', ...item.headers },
+        body: item.body ? JSON.stringify(item.body) : undefined,
+      });
+
+      if (res.ok) {
+        await swPut(db, { ...item, status: 'synced', retryCount: item.retryCount });
+        // Notify all open clients so the Sync Center badge updates
+        const clients = await (self as any).clients.matchAll({ includeUncontrolled: true });
+        for (const client of clients) {
+          client.postMessage({ type: 'SYNC_CENTER_UPDATED' });
+        }
+      } else {
+        const data = await res.json().catch(() => ({}));
+        const msg: string = Array.isArray(data?.message)
+          ? data.message.join(', ')
+          : data?.message ?? `Server returned ${res.status}`;
+        const nextRetry = item.retryCount + 1;
+        const isPermanent = nextRetry >= MAX_RETRIES || res.status === 401 || res.status === 403;
+        const failReason  = res.status === 401
+          ? 'Session expired — please retry after logging in again'
+          : msg;
+        await swPut(db, {
+          ...item,
+          status: isPermanent ? 'failed' : 'pending',
+          failureReason: isPermanent ? failReason : msg,
+          retryCount: nextRetry,
+        });
+        const clients = await (self as any).clients.matchAll({ includeUncontrolled: true });
+        for (const client of clients) {
+          client.postMessage({ type: 'SYNC_CENTER_UPDATED' });
+        }
+      }
+    } catch {
+      // Network still down — reset to pending for next attempt
+      await swPut(db, { ...item, status: 'pending' });
+    }
+  }
+}

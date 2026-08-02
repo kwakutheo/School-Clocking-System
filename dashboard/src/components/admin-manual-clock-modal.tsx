@@ -126,7 +126,8 @@ export function AdminManualClockModal({ onClose, onSuccess, selectedDate, server
 
     setLoading(true);
     try {
-      await attendanceApi.adminManualClock({ employeeId, type, timestamp, note: fullNote });
+      const { offlineApi } = await import('@/lib/offline-api');
+      await offlineApi.adminManualClock({ employeeId, type, timestamp, note: fullNote });
       setSuccess(
         `Successfully recorded ${type === 'clock_in' ? 'Clock In' : 'Clock Out'} for ${selectedEmp?.user?.fullName}.`,
       );

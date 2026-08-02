@@ -183,16 +183,17 @@ export default function EmployeesPage() {
     e.preventDefault(); setIsSubmitting(true); setError('');
     const fullName = `${form.firstName} ${form.lastName}`.trim();
     try {
+      const { offlineApi } = await import('@/lib/offline-api');
       if (editingId) {
-        const res = await employeesApi.update(editingId, {
+        const res = await offlineApi.updateEmployee(editingId, {
           fullName, email: form.email || undefined, departmentId: form.departmentId || undefined,
           branchId: form.branchId || undefined, shiftId: form.shiftId || undefined,
           position: form.position || undefined, phone: form.phone || undefined,
           hireDate: form.hireDate || undefined, role: form.role, status: form.status,
         });
-        if (user && (res.data as any).user?.id === user.id) {
+        if (user && (res as any).data?.user?.id === user.id) {
           const token = localStorage.getItem('access_token') || '';
-          setAuth((res.data as any).user, token);
+          setAuth((res as any).data.user, token);
         }
       } else {
         if (usernameStatus === 'taken') {
@@ -205,7 +206,7 @@ export default function EmployeesPage() {
           setIsSubmitting(false);
           return;
         }
-        await employeesApi.register({
+        await offlineApi.registerEmployee({
           fullName, username: form.username, email: form.email || undefined, password: form.password,
           departmentId: form.departmentId || undefined, branchId: form.branchId || undefined,
           shiftId: form.shiftId || undefined, position: form.position || undefined,

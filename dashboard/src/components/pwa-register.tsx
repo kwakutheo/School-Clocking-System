@@ -31,6 +31,23 @@ export function PwaRegister() {
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
+        // Register Background Sync if supported (Chrome/Edge)
+        if ('sync' in registration) {
+          const swReg = registration as any;
+          // Register immediately and also when coming back online
+          swReg.sync.register('offline-queue-sync').catch(() => {});
+          window.addEventListener('online', () => {
+            swReg.sync.register('offline-queue-sync').catch(() => {});
+          });
+        } else {
+          // Fallback for Safari/Firefox: trigger manually on 'online' event
+          window.addEventListener('online', () => {
+            import('@/lib/offline-queue').then(({ replayQueue }) => {
+              replayQueue().catch(() => {});
+            });
+          });
+        }
+
         return () => {
           document.removeEventListener(
             'visibilitychange',

@@ -4,6 +4,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuthStore, initials, roleLabel } from '@/lib/store';
+import { SyncCenter } from '@/components/sync-center';
 import { fetchAndCachePermissions, can, type Permission } from '@/lib/permissions';
 import { 
   LayoutDashboard, 
@@ -410,6 +411,12 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
       {/* ── Main ───────────────────────────────────────────────────────── */}
       <main className="main-content" style={{ position: 'relative' }}>
+        {/* ── Sync Center (Offline Sync Queue) ────────────────────────── */}
+        <div style={{ position: 'absolute', top: '24px', right: '128px', zIndex: 10 }} className="desktop-only">
+          <SyncCenter />
+        </div>
+        
+        {/* ── Theme toggle ──────────────────────── */}
         <button 
           className="theme-toggle-btn desktop-only"
           onClick={toggleTheme}

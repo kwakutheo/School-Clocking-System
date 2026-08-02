@@ -113,7 +113,7 @@ export function PwaInstallPrompt() {
       {/* Text */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>
-          Install Dashboard App
+          Install TK Dashboard
         </div>
         <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
           Add to your home screen for offline access &amp; faster loading

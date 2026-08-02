@@ -1,15 +1,6 @@
 import { type MetadataRoute } from 'next';
 import { headers } from 'next/headers';
 
-// ── Dynamic multi-tenant manifest ───────────────────────────────────────────
-// Each subdomain (school) gets its own manifest via the browser's per-origin
-// manifest cache. This means "testing.tkclocking.online" installs as
-// "Testing School" and "lincoln.tkclocking.online" installs as "Lincoln High".
-//
-// Tenant branding (name, primaryColor) is fetched from the backend.
-// Icons must be static files served from the same origin — they cannot be
-// dynamic per tenant due to PWA spec constraints. All tenants share the
-// TK Clocking system icon, but the name and theme color are per-tenant.
 
 async function getTenantBranding(slug: string | null): Promise<{
   name: string;
@@ -38,6 +29,13 @@ async function getTenantBranding(slug: string | null): Promise<{
   }
 }
 
+// Build the /api/icon URL with the tenant's brand color.
+// The color is stripped of the # sign and URL-encoded safely.
+function iconUrl(hexColor: string, size: 192 | 512, purpose: 'maskable' | 'any'): string {
+  const clean = hexColor.replace('#', '').replace(/[^a-fA-F0-9]/g, '') || '3b82f6';
+  return `/api/icon?color=${clean}&size=${size}&purpose=${purpose}`;
+}
+
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   // ── Extract tenant slug from the host header ─────────────────────────────
   const headersList = await headers();
@@ -54,56 +52,70 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
 
   const branding = await getTenantBranding(slug);
 
+  // ── Naming ────────────────────────────────────────────────────────────────
+  // The dashboard PWA is explicitly named "Dashboard" to distinguish it from
+  // the Flutter mobile clocking app which is just "TK Clocking".
   const appName = branding?.name
-    ? `${branding.name} — Clocking`
-    : 'TK Clocking System';
+    ? `${branding.name} Dashboard`
+    : 'TK Dashboard';
 
   const shortName = branding?.name
-    ? branding.name.split(' ').slice(0, 2).join(' ')
-    : 'TK Clocking';
+    ? `${branding.name.split(' ')[0]} Dash`   // e.g. "Lincoln Dash"
+    : 'TK Dashboard';
 
   const themeColor = branding?.primaryColor ?? '#3b82f6';
+
+  // ── Icon color ────────────────────────────────────────────────────────────
+  // The /api/icon route generates the logo with the brand color as a ring.
+  // Default: system blue (#3b82f6) — same as the Flutter app's default tint,
+  //          but visually distinct because the Dashboard name makes it clear.
+  // Tenant:  whatever primaryColor the school admin set in Settings.
+  const color = (branding?.primaryColor ?? '#3b82f6').replace('#', '');
 
   return {
     name: appName,
     short_name: shortName,
     description: branding?.name
-      ? `Attendance tracking dashboard for ${branding.name}`
-      : 'Multi-tenant attendance and workforce time-tracking dashboard',
-    start_url: '/',
+      ? `Management dashboard for ${branding.name}`
+      : 'TK Clocking — HR & Attendance Management Dashboard',
+    start_url: '/dashboard',
     scope: '/',
     display: 'standalone',
     orientation: 'portrait-primary',
-    background_color: '#ffffff',
+    background_color: '#0f1117',
     theme_color: themeColor,
     categories: ['business', 'productivity', 'education'],
     lang: 'en',
+
     icons: [
+      // ── Maskable icons (solid background — required by Android adaptive icons)
       {
-        src: '/icons/icon-192x192-maskable.png',
+        src: iconUrl(`#${color}`, 192, 'maskable'),
         sizes: '192x192',
         type: 'image/png',
         purpose: 'maskable',
       },
       {
-        src: '/icons/icon-512x512-maskable.png',
+        src: iconUrl(`#${color}`, 512, 'maskable'),
         sizes: '512x512',
         type: 'image/png',
         purpose: 'maskable',
       },
+      // ── Any-purpose icons (used for splash screens, bookmarks)
       {
-        src: '/icons/icon-192x192.png',
+        src: iconUrl(`#${color}`, 192, 'any'),
         sizes: '192x192',
         type: 'image/png',
         purpose: 'any',
       },
       {
-        src: '/icons/icon-512x512.png',
+        src: iconUrl(`#${color}`, 512, 'any'),
         sizes: '512x512',
         type: 'image/png',
         purpose: 'any',
       },
     ],
+
     screenshots: [],
     shortcuts: [
       {

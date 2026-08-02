@@ -73,6 +73,17 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem('impersonated_tenant_id');
     localStorage.removeItem('impersonated_tenant');
     set({ user: null, token: null, impersonatedTenant: null });
+
+    // Tell the service worker to purge all cached API and page data so that
+    // the next tenant user logging in on this browser doesn't see stale data.
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      const channel = new MessageChannel();
+      navigator.serviceWorker.controller.postMessage(
+        { type: 'LOGOUT' },
+        [channel.port2]
+      );
+    }
+
     window.location.href = '/';
   },
 

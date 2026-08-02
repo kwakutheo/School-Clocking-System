@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3001 --webpack",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start"
   },
   "dependencies": {
+    "@serwist/next": "9.5.12",
     "axios": "^1.15.2",
     "date-fns": "^4.1.0",
     "jspdf": "^4.2.1",
@@ -18,6 +19,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "recharts": "^3.8.1",
+    "serwist": "9.5.12",
     "swr": "^2.4.1",
     "zustand": "^5.0.12"
   },

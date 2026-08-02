@@ -13,18 +13,24 @@ async function getTenantBranding(slug: string | null): Promise<{
       process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
 
     const res = await fetch(`${BASE_URL}/tenants/brand/${slug}`, {
-      // Keep manifest fetches short — they block the browser install prompt
-      signal: AbortSignal.timeout(3000),
-      next: { revalidate: 300 }, // Cache server-side for 5 minutes
+      // Allow enough time for backend cold starts on Render/Heroku
+      signal: AbortSignal.timeout(8000),
+      // Do not use Next.js cache for this fetch so we don't accidentally
+      // bake in a failed fetch result into the manifest route cache
+      cache: 'no-store',
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn(`[manifest] Failed to fetch brand for ${slug}: ${res.status}`);
+      return null;
+    }
     const data = await res.json();
     return {
       name: data.name ?? null,
       primaryColor: data.primaryColor ?? '#3b82f6',
     };
-  } catch {
+  } catch (err) {
+    console.error(`[manifest] Error fetching brand for ${slug}:`, err);
     return null;
   }
 }
@@ -39,7 +45,8 @@ function iconUrl(hexColor: string, size: 192 | 512, purpose: 'maskable' | 'any')
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   // ── Extract tenant slug from the host header ─────────────────────────────
   const headersList = await headers();
-  const host = headersList.get('host') ?? '';
+  // Vercel / proxies usually pass the original host in x-forwarded-host
+  const host = headersList.get('x-forwarded-host') ?? headersList.get('host') ?? '';
   // Strip port for local dev (e.g. "testing.localhost:3001")
   const hostname = host.split(':')[0];
   const parts = hostname.split('.');

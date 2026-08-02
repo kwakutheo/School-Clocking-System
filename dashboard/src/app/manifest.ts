@@ -9,8 +9,19 @@ async function getTenantBranding(slug: string | null): Promise<{
   if (!slug) return null;
 
   try {
-    const BASE_URL =
-      process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
+    let BASE_URL =
+      process.env.NEXT_PUBLIC_API_URL ?? 'https://school-clocking-system.onrender.com/api/v1';
+
+    // If running in Vercel/cloud, local network IPs like 10.x.x.x or localhost
+    // are unreachable. We must route requests to the public Render API URL.
+    if (
+      BASE_URL.includes('10.') ||
+      BASE_URL.includes('192.168.') ||
+      BASE_URL.includes('localhost') ||
+      BASE_URL.includes('127.0.0.1')
+    ) {
+      BASE_URL = 'https://school-clocking-system.onrender.com/api/v1';
+    }
 
     const res = await fetch(`${BASE_URL}/tenants/brand/${slug}`, {
       // Allow enough time for backend cold starts on Render/Heroku

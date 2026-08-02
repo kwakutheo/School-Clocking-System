@@ -12,10 +12,11 @@ import {
   Zap,
   Info,
   Printer,
-  Share2
+  Share2,
+  MonitorPlay
 } from 'lucide-react';
 import styles from './page.module.css';
-import { useAuthStore } from '@/lib/store';
+import { useAuthStore, usePwaStore } from '@/lib/store';
 import { can } from '@/lib/permissions';
 import { useRouter } from 'next/navigation';
 
@@ -26,6 +27,7 @@ export default function MobileAppPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const { user, isHydrated } = useAuthStore();
+  const { installEvent, setInstallEvent } = usePwaStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -80,6 +82,15 @@ export default function MobileAppPage() {
       if (err instanceof Error && err.name !== 'AbortError') {
         console.error('Error sharing:', err);
       }
+    }
+  };
+
+  const handleInstallPwa = async () => {
+    if (!installEvent) return;
+    await installEvent.prompt();
+    const { outcome } = await installEvent.userChoice;
+    if (outcome === 'accepted') {
+      setInstallEvent(null);
     }
   };
 
@@ -153,6 +164,16 @@ export default function MobileAppPage() {
               <Printer size={18} />
               Print QR Code
             </button>
+            {installEvent && (
+              <button 
+                onClick={handleInstallPwa}
+                className={styles.secondaryButton}
+                style={{ width: '100%', gridColumn: '1 / -1', background: 'var(--primary)', color: 'white', border: 'none' }}
+              >
+                <MonitorPlay size={18} />
+                Install Dashboard App
+              </button>
+            )}
           </div>
         </div>
 

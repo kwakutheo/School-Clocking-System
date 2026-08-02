@@ -16,8 +16,10 @@ interface BeforeInstallPromptEvent extends Event {
 // Uses the tenant's primary color from the CSS variable already applied
 // by the protected layout — no extra props needed.
 
+import { usePwaStore } from '@/lib/store';
+
 export function PwaInstallPrompt() {
-  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
+  const { installEvent, setInstallEvent } = usePwaStore();
   const [isVisible, setIsVisible] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
 

@@ -99,6 +99,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 }));
 
+export interface PwaState {
+  installEvent: any | null;
+  setInstallEvent: (event: any) => void;
+}
+
+export const usePwaStore = create<PwaState>((set) => ({
+  installEvent: null,
+  setInstallEvent: (event) => set({ installEvent: event }),
+}));
+
 export const initials = (name?: string) =>
   name
     ?.split(' ')

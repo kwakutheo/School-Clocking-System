@@ -7,7 +7,7 @@ import { PwaInstallPrompt } from '@/components/pwa-install-prompt';
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'TK Dashboard — HR Management',
+  title: 'TK Dashboard',
   description: 'Workforce Time & Attendance Management Dashboard',
   // PWA / installability meta
   applicationName: 'TK Dashboard',

@@ -12,8 +12,6 @@ async function getTenantBranding(slug: string | null): Promise<{
     let BASE_URL =
       process.env.NEXT_PUBLIC_API_URL ?? 'https://school-clocking-system.onrender.com/api/v1';
 
-    // If running in Vercel/cloud, local network IPs like 10.x.x.x or localhost
-    // are unreachable. We must route requests to the public Render API URL.
     if (
       BASE_URL.includes('10.') ||
       BASE_URL.includes('192.168.') ||
@@ -27,10 +25,7 @@ async function getTenantBranding(slug: string | null): Promise<{
       headers: {
         'x-tenant-slug': slug,
       },
-      // Allow enough time for backend cold starts on Render/Heroku
       signal: AbortSignal.timeout(8000),
-      // Do not use Next.js cache for this fetch so we don't accidentally
-      // bake in a failed fetch result into the manifest route cache
       cache: 'no-store',
     });
 
@@ -81,16 +76,12 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     : 'TK Dashboard';
 
   const shortName = branding?.name
-    ? `${branding.name.split(' ')[0]} Dash`   // e.g. "Lincoln Dash"
+    ? `${branding.name.split(' ')[0]} Dashboard`   // e.g. "Lincoln Dashboard"
     : 'TK Dashboard';
 
   const themeColor = branding?.primaryColor ?? '#3b82f6';
 
   // ── Icon color ────────────────────────────────────────────────────────────
-  // The /api/icon route generates the logo with the brand color as a ring.
-  // Default: system blue (#3b82f6) — same as the Flutter app's default tint,
-  //          but visually distinct because the Dashboard name makes it clear.
-  // Tenant:  whatever primaryColor the school admin set in Settings.
   const color = (branding?.primaryColor ?? '#3b82f6').replace('#', '');
 
   return {

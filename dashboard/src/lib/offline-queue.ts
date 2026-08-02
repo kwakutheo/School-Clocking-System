@@ -175,7 +175,7 @@ export async function replayQueue(): Promise<void> {
           : data?.message ?? `Server returned ${res.status}`;
 
         const nextRetry = item.retryCount + 1;
-        if (nextRetry >= MAX_RETRIES || res.status === 401 || res.status === 403) {
+        if (nextRetry >= MAX_RETRIES || res.status === 401 || res.status === 403 || res.status === 400) {
           // Permanent failure or auth error — stop retrying
           const sessionMsg =
             res.status === 401

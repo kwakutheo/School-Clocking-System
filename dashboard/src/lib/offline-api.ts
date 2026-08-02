@@ -77,7 +77,17 @@ async function withOfflineFallback<T>(
   offlineMessage?: string,
 ): Promise<T> {
   if (navigator.onLine) {
-    return onlineCall();
+    try {
+      return await onlineCall();
+    } catch (err: any) {
+      // If it's an Axios network error (server unreachable) despite being "online",
+      // fallback to the offline queue.
+      if (!err.response) {
+        console.warn('[Offline Fallback] Network request failed despite navigator.onLine=true. Falling back to offline queue.', err);
+      } else {
+        throw err; // Real API error (e.g., 400 Bad Request), rethrow
+      }
+    }
   }
 
   // ── Offline path ─────────────────────────────────────────────────────────

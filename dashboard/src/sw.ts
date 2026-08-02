@@ -294,7 +294,7 @@ async function swReplayQueue(): Promise<void> {
           ? data.message.join(', ')
           : data?.message ?? `Server returned ${res.status}`;
         const nextRetry = item.retryCount + 1;
-        const isPermanent = nextRetry >= MAX_RETRIES || res.status === 401 || res.status === 403;
+        const isPermanent = nextRetry >= MAX_RETRIES || res.status === 401 || res.status === 403 || res.status === 400;
         const failReason  = res.status === 401
           ? 'Session expired — please retry after logging in again'
           : msg;

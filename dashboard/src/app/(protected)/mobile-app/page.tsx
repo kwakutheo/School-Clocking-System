@@ -95,7 +95,7 @@ export default function MobileAppPage() {
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--primary)' }}>
             <Smartphone size={28} style={{ color: 'var(--primary)' }} /> 
-            Mobile App Distribution
+            Mobile & Dashboard App Download
           </h1>
         </div>
         <p className="page-subtitle">

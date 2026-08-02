@@ -19,43 +19,54 @@ declare global {
 declare const self: ServiceWorkerGlobalScope;
 
 // ── Cache name constants ────────────────────────────────────────────────────
-const STATIC_CACHE = 'static-assets-v1';
-const PAGES_CACHE = 'pages-v1';
-const API_READ_CACHE = 'api-read-v1';
-const IMAGES_CACHE = 'images-v1';
+const STATIC_CACHE = 'static-assets-v2';
+const PAGES_CACHE  = 'pages-v2';
+const API_READ_CACHE = 'api-read-v2';
+const IMAGES_CACHE = 'images-v2';
 
 // ── Serwist instance ────────────────────────────────────────────────────────
+// @serwist/next scans the source for the token `self.__SW_MANIFEST` at build
+// time — the build fails if the string is absent. We reference it here to
+// satisfy that requirement, but intentionally do NOT pass it to
+// precacheEntries. Precaching all 36 pages + JS bundles on install caused a
+// massive background download that competed with live network traffic and made
+// the dashboard feel slow. All caching is done lazily at runtime instead.
+void self.__SW_MANIFEST; // required reference — do not remove
+
 const serwist = new Serwist({
-  precacheEntries: self.__SW_MANIFEST,
-  skipWaiting: true,          // immediately activate new SW
-  clientsClaim: true,         // take control of all existing clients
-  navigationPreload: true,    // speed up navigation responses
+  precacheEntries: [],    // runtime-only caching — no install-time downloads
+
+  skipWaiting: true,           // immediately activate new SW version
+  clientsClaim: true,          // take control of all existing clients
+  navigationPreload: false,    // disable — not needed without NetworkFirst navigation
   offlineAnalyticsConfig: false,
 
   runtimeCaching: [
 
     // ── 1. Static Next.js assets (JS, CSS, fonts) — Cache First ────────────
-    // These are fingerprinted by Next.js build hashes so they never clash.
+    // These are content-hashed by the Next.js build so they never go stale.
+    // Serving from cache saves a full round-trip on every page load — this is
+    // the biggest real-world speed win for repeat visitors.
     {
       matcher: ({ url }) =>
         url.pathname.startsWith('/_next/static/') ||
-        url.pathname.startsWith('/icons/') ||
-        url.pathname.endsWith('.svg') ||
-        url.pathname.endsWith('.woff') ||
+        url.pathname.startsWith('/icons/')         ||
+        url.pathname.endsWith('.svg')              ||
+        url.pathname.endsWith('.woff')             ||
         url.pathname.endsWith('.woff2'),
       handler: new CacheFirst({
         cacheName: STATIC_CACHE,
         plugins: [
           {
-            // Limit cache size to avoid filling the user's storage
-            cacheDidUpdate: async () => {},
+            cacheWillUpdate: async ({ response }) =>
+              response && response.status === 200 ? response : null,
           },
         ],
       }),
     },
 
-    // ── 2. Tenant logo / brand images (CDN URLs) — Cache First, 7-day TTL ──
-    // Logos rarely change; aggressively cache them.
+    // ── 2. Tenant logo / brand images (CDN URLs) — Cache First ─────────────
+    // Logos are rarely changed; caching them avoids repeated CDN round-trips.
     {
       matcher: ({ request }) =>
         request.destination === 'image' &&
@@ -72,38 +83,38 @@ const serwist = new Serwist({
     },
 
     // ── 3. Read-safe API endpoints — Stale While Revalidate ─────────────────
-    // Serve cached data immediately, refresh in the background when online.
-    // Covers: shifts, branches, employees, attendance stats/history,
-    //         departments, holidays, leaves, rankings, academic calendar,
-    //         bulletins, audit logs.
+    // Serve the cached response immediately (zero network wait), then update
+    // the cache in the background. This makes the dashboard feel instant on
+    // repeat visits and keeps data available offline.
     {
-      matcher: ({ url }) => {
+      matcher: ({ url, request }) => {
+        // Only intercept GET requests
+        if (request.method !== 'GET') return false;
         const path = url.pathname;
+        const isApiPath =
+          path.includes('/api/v1/') || path.includes('/api/');
+        if (!isApiPath) return false;
+
         return (
-          (path.includes('/api/v1/') || path.includes('/api/')) &&
-          (
-            path.includes('/shifts') ||
-            path.includes('/branches') ||
-            path.includes('/employees') ||
-            path.includes('/attendance') ||
-            path.includes('/departments') ||
-            path.includes('/holidays') ||
-            path.includes('/leaves') ||
-            path.includes('/rankings') ||
-            path.includes('/academic-calendar') ||
-            path.includes('/bulletins') ||
-            path.includes('/audit') ||
-            path.includes('/tenants/brand') ||
-            // SaaS admin read routes — both users requested
-            path.includes('/saas-admin/stats') ||
-            path.includes('/saas-admin/tenants') ||
-            path.includes('/saas-admin/bulletins') ||
-            path.includes('/saas-admin/rankings') ||
-            path.includes('/saas-admin/employees') ||
-            path.includes('/saas-admin/admin-users')
-          ) &&
-          // Only cache GET requests
-          true
+          path.includes('/shifts')           ||
+          path.includes('/branches')         ||
+          path.includes('/employees')        ||
+          path.includes('/attendance')       ||
+          path.includes('/departments')      ||
+          path.includes('/holidays')         ||
+          path.includes('/leaves')           ||
+          path.includes('/rankings')         ||
+          path.includes('/academic-calendar')||
+          path.includes('/bulletins')        ||
+          path.includes('/audit')            ||
+          path.includes('/tenants/brand')    ||
+          // SaaS admin read routes
+          path.includes('/saas-admin/stats')       ||
+          path.includes('/saas-admin/tenants')     ||
+          path.includes('/saas-admin/bulletins')   ||
+          path.includes('/saas-admin/rankings')    ||
+          path.includes('/saas-admin/employees')   ||
+          path.includes('/saas-admin/admin-users')
         );
       },
       handler: new StaleWhileRevalidate({
@@ -118,19 +129,21 @@ const serwist = new Serwist({
     },
 
     // ── 4. Auth & permissions — Network First ────────────────────────────────
-    // These must be fresh if possible; fall back to cache if offline.
+    // Must be fresh when online; use a short timeout so it doesn't block the
+    // app for long if the backend is slow. Falls back to cache if offline.
     {
-      matcher: ({ url }) => {
+      matcher: ({ url, request }) => {
+        if (request.method !== 'GET') return false;
         const path = url.pathname;
         return (
-          path.includes('/auth/me') ||
+          path.includes('/auth/me')              ||
           path.includes('/settings/permissions') ||
           path.includes('/time')
         );
       },
       handler: new NetworkFirst({
         cacheName: API_READ_CACHE,
-        networkTimeoutSeconds: 5,
+        networkTimeoutSeconds: 4,
         plugins: [
           {
             cacheWillUpdate: async ({ response }) =>
@@ -141,17 +154,16 @@ const serwist = new Serwist({
     },
 
     // ── 5. Mutating API calls — Network Only (never cache) ───────────────────
-    // POST, PUT, PATCH, DELETE must always go to the server.
-    // Also covers sensitive SaaS admin actions and QR code regeneration.
+    // POST / PUT / PATCH / DELETE must always reach the server.
     {
       matcher: ({ request, url }) => {
         const isMutating = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(
           request.method.toUpperCase()
         );
         const isSensitive =
-          url.pathname.includes('/saas-admin/audit') ||
-          url.pathname.includes('/qr-code') ||
-          url.pathname.includes('/auth/login') ||
+          url.pathname.includes('/saas-admin/audit')          ||
+          url.pathname.includes('/qr-code')                   ||
+          url.pathname.includes('/auth/login')                ||
           url.pathname.includes('/auth/request-password-reset') ||
           url.pathname.includes('/auth/complete-password-reset');
         return isMutating || isSensitive;
@@ -159,26 +171,29 @@ const serwist = new Serwist({
       handler: new NetworkOnly(),
     },
 
-    // ── 6. App pages (HTML navigation) — Network First ──────────────────────
-    // Try to get the freshest page; fall back to cache when offline.
-    // The offline fallback page (/offline) is served when nothing is cached.
+    // ── 6. App pages (HTML navigation) — Stale While Revalidate ─────────────
+    // PERFORMANCE FIX #2: Changed from NetworkFirst to StaleWhileRevalidate.
+    //
+    // NetworkFirst (old): Every navigation waited for a full network round-trip
+    // through the SW before the browser got ANY response — always slower than
+    // no SW at all.
+    //
+    // StaleWhileRevalidate (new):
+    //   • First visit  → served from network (same as before PWA, no overhead)
+    //   • Repeat visits → served from cache INSTANTLY, updated in background
+    //                     (actually FASTER than before PWA)
+    //   • Offline       → served from cache (still works offline)
+    //
+    // The offline fallback is handled by the fetch event listener below to
+    // show /offline when nothing is cached for a given URL.
     {
       matcher: ({ request }) => request.mode === 'navigate',
-      handler: new NetworkFirst({
+      handler: new StaleWhileRevalidate({
         cacheName: PAGES_CACHE,
-        networkTimeoutSeconds: 6,
         plugins: [
           {
             cacheWillUpdate: async ({ response }) =>
               response && response.status === 200 ? response : null,
-          },
-          {
-            // If navigation fails offline and nothing is cached, serve /offline
-            handlerDidError: async () => {
-              const cache = await caches.open(PAGES_CACHE);
-              const offlinePage = await cache.match('/offline');
-              return offlinePage ?? Response.error();
-            },
           },
         ],
       }),
@@ -187,6 +202,23 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+// ── Offline fallback for uncached navigation requests ────────────────────────
+// When the user navigates to a page that isn't cached yet and is offline,
+// serve the /offline page instead of a browser error.
+self.addEventListener('fetch', (event) => {
+  if (event.request.mode !== 'navigate') return;
+
+  event.respondWith(
+    fetch(event.request).catch(async () => {
+      const cache = await caches.open(PAGES_CACHE);
+      const cachedPage = await cache.match(event.request);
+      if (cachedPage) return cachedPage;
+      const offlinePage = await cache.match('/offline');
+      return offlinePage ?? Response.error();
+    })
+  );
+});
 
 // ── Cache-bust on logout ─────────────────────────────────────────────────────
 // The app posts a 'LOGOUT' message to the SW when the user signs out.

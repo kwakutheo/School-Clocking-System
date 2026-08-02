@@ -24,6 +24,9 @@ async function getTenantBranding(slug: string | null): Promise<{
     }
 
     const res = await fetch(`${BASE_URL}/tenants/brand/${slug}`, {
+      headers: {
+        'x-tenant-slug': slug,
+      },
       // Allow enough time for backend cold starts on Render/Heroku
       signal: AbortSignal.timeout(8000),
       // Do not use Next.js cache for this fetch so we don't accidentally

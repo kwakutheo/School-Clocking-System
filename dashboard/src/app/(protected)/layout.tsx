@@ -48,7 +48,7 @@ const NAV: NavItem[] = [
   { href: '/employees',   icon: Users,            label: 'Staff Registry',             permission: 'employees.view'     },
   { href: '/leaves',      icon: FileText,         label: 'Permissions & Leaves',       permission: 'leaves.manage'      },
   { href: '/rankings',    icon: Trophy,           label: 'Performance Rankings',       permission: 'attendance.view'    },
-  { href: '/mobile-app',  icon: Smartphone,       label: 'Mobile App',                 permission: 'employees.view'     },
+  { href: '/mobile-app',  icon: Smartphone,       label: 'App Download',                 permission: 'employees.view'     },
   { href: '/settings',    icon: Settings,         label: 'Settings',                   permission: [
     'permissions.manage',
     'calendar.view',

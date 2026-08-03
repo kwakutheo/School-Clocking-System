@@ -24,10 +24,6 @@ export function PwaInstallPrompt() {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    // Don't show if user permanently dismissed
-    const dismissed = localStorage.getItem('pwa-install-dismissed');
-    if (dismissed === 'true') return;
-
     // Don't show if already running as installed PWA
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
@@ -37,7 +33,11 @@ export function PwaInstallPrompt() {
     const handler = (e: Event) => {
       e.preventDefault(); // Suppress browser's default mini-infobar
       setInstallEvent(e as BeforeInstallPromptEvent);
-      setIsVisible(true);
+      
+      const dismissed = localStorage.getItem('pwa-install-dismissed');
+      if (dismissed !== 'true') {
+        setIsVisible(true);
+      }
     };
 
     window.addEventListener('beforeinstallprompt', handler);
@@ -118,7 +118,7 @@ export function PwaInstallPrompt() {
           Install TK Dashboard
         </div>
         <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-          Add to your home screen for offline access &amp; faster loading
+          Add to your home screen for faster loading
         </div>
       </div>
 

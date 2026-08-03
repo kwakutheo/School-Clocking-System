@@ -49,14 +49,14 @@ export async function GET(request: NextRequest) {
       .png()
       .toBuffer();
 
-    const finalBuffer = await sharp({
-      create: {
-        width: size,
-        height: size,
-        channels: 4,
-        background: { r, g, b, alpha: 255 },
-      },
-    })
+    const radius = purpose === 'any' ? Math.round(size * 0.22) : 0;
+    const backgroundSvg = Buffer.from(
+      `<svg width="${size}" height="${size}">
+         <rect x="0" y="0" width="${size}" height="${size}" rx="${radius}" ry="${radius}" fill="#${color}" />
+       </svg>`
+    );
+
+    const finalBuffer = await sharp(backgroundSvg)
       .composite([
         {
           input: resizedLogo,

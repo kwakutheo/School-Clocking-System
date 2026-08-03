@@ -172,10 +172,10 @@ export default function MobileAppPage() {
                   style={{ width: '100%', background: 'var(--primary)', color: 'white', border: 'none', padding: '12px', fontSize: '15px' }}
                 >
                   <MonitorPlay size={20} />
-                  Install Dashboard App
+                  Install Dashboard Web App
                 </button>
                 <p style={{ fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '8px', lineHeight: 1.4 }}>
-                  Add this dashboard to your desktop or your device's home screen for easier access and faster loading.
+                  Add this web app to your desktop or your device's home screen for easier access and faster loading.
                 </p>
               </div>
             )}

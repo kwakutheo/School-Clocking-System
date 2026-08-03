@@ -1,0 +1,1 @@
+const sharp = require('sharp'); sharp(Buffer.from('<svg width="192" height="192"><rect width="192" height="192" rx="42" fill="#3b82f6"/></svg>')).png().toFile('test.png').then(() => console.log('done'));

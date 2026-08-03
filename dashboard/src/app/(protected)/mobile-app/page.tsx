@@ -165,14 +165,19 @@ export default function MobileAppPage() {
               Print QR Code
             </button>
             {installEvent && (
-              <button 
-                onClick={handleInstallPwa}
-                className={styles.secondaryButton}
-                style={{ width: '100%', gridColumn: '1 / -1', background: 'var(--primary)', color: 'white', border: 'none' }}
-              >
-                <MonitorPlay size={18} />
-                Install Dashboard App
-              </button>
+              <div style={{ gridColumn: '1 / -1', marginTop: '16px' }}>
+                <button 
+                  onClick={handleInstallPwa}
+                  className={styles.secondaryButton}
+                  style={{ width: '100%', background: 'var(--primary)', color: 'white', border: 'none', padding: '12px', fontSize: '15px' }}
+                >
+                  <MonitorPlay size={20} />
+                  Install Dashboard App
+                </button>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '8px', lineHeight: 1.4 }}>
+                  Add this dashboard to your home screen or desktop for faster loading.
+                </p>
+              </div>
             )}
           </div>
         </div>

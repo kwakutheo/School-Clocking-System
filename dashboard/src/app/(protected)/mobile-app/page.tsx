@@ -128,7 +128,7 @@ export default function MobileAppPage() {
           </div>
           <h2 className={styles.cardTitle}>Scan to Download</h2>
           <p className={styles.cardDesc}>
-            Have your employees scan this QR code with their mobile device to instantly download and install the clocking app.
+            Have your staff scan this QR code with their mobile device to instantly download and install the clocking app.
           </p>
           
           <div className={styles.qrContainerWrapper}>

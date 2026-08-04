@@ -73,12 +73,12 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
   // The dashboard PWA is explicitly named "Dashboard" to distinguish it from
   // the Flutter mobile clocking app which is just "TK Clocking".
   const appName = branding?.name
-    ? `${branding.name} Dashboard`
-    : 'TK Dashboard';
+    ? `${branding.name}`
+    : 'TK Clocking Dashboard';
 
   const shortName = branding?.name
     ? `${branding.name.split(' ')[0]} Dashboard`   // e.g. "Lincoln Dashboard"
-    : 'TK Dashboard';
+    : 'TK Clocking Dashboard';
 
   const themeColor = branding?.primaryColor ?? '#3b82f6';
 

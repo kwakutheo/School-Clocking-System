@@ -89,7 +89,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     name: appName,
     short_name: shortName,
     description: branding?.name
-      ? `Admin dashboard for ${branding.name}`
+      ? `Admin dashboard for ${branding.name} Attendance`
       : 'TK Clocking — Attendance Management Dashboard',
     start_url: '/dashboard',
     scope: '/',

@@ -718,7 +718,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   box-shadow: 0 4px 14px rgba(59,130,246,0.35);
 }
 
-.btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
+.btn-primary:hover { background: var(--primary); transform: translateY(-1px); }
 
 .btn-accent {
   background: var(--accent);

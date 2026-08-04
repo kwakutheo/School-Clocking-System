@@ -27,13 +27,54 @@ export const metadata: Metadata = {
   },
 };
 
+import { headers } from 'next/headers';
+
 // Viewport must be exported separately in Next.js 14+ App Router
-export const viewport: Viewport = {
-  themeColor: '#3b82f6',
-  width: 'device-width',
-  initialScale: 1,
-  minimumScale: 1,
-};
+export async function generateViewport(): Promise<Viewport> {
+  const headersList = await headers();
+  const host = headersList.get('x-forwarded-host') ?? headersList.get('host') ?? '';
+  const hostname = host.split(':')[0];
+  const parts = hostname.split('.');
+  const slug = parts.length > 1 && parts[0] !== 'www' && parts[0] !== 'localhost' ? parts[0] : null;
+
+  let themeColor = '#3b82f6';
+
+  if (slug) {
+    try {
+      let BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://school-clocking-system.onrender.com/api/v1';
+      if (
+        BASE_URL.includes('10.') ||
+        BASE_URL.includes('192.168.') ||
+        BASE_URL.includes('localhost') ||
+        BASE_URL.includes('127.0.0.1')
+      ) {
+        BASE_URL = 'https://school-clocking-system.onrender.com/api/v1';
+      }
+
+      const res = await fetch(`${BASE_URL}/tenants/brand/${slug}`, {
+        headers: { 'x-tenant-slug': slug },
+        signal: AbortSignal.timeout(8000),
+        cache: 'no-store',
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.primaryColor) {
+          themeColor = data.primaryColor;
+        }
+      }
+    } catch (err) {
+      console.warn(`[layout] Error fetching brand for ${slug}:`, err);
+    }
+  }
+
+  return {
+    themeColor,
+    width: 'device-width',
+    initialScale: 1,
+    minimumScale: 1,
+  };
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

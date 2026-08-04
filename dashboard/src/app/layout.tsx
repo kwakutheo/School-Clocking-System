@@ -7,14 +7,14 @@ import { PwaInstallPrompt } from '@/components/pwa-install-prompt';
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'TK Dashboard',
+  title: 'TK Clocking Dashboard',
   description: 'Workforce Time & Attendance Management Dashboard',
   // PWA / installability meta
-  applicationName: 'TK Dashboard',
+  applicationName: 'TK Clocking Dashboard',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'TK Dashboard',
+    title: 'TK Clocking Dashboard',
   },
   formatDetection: { telephone: false },
   manifest: '/manifest.webmanifest',

@@ -193,7 +193,7 @@ export default function PermissionsPage() {
         <table style={{ minWidth: 700, borderCollapse: 'separate', borderSpacing: 0 }}>
           <thead>
             <tr>
-              <th style={{ width: '45%', textAlign: 'left', padding: '12px 20px', borderBottom: '2px solid var(--border)' }}>
+              <th style={{ width: '45%', textAlign: 'left', padding: '12px 20px', borderBottom: '2px solid var(--primary)' }}>
                 Permission
               </th>
               {ROLES.map(r => (

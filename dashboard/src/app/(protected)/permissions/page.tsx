@@ -212,7 +212,7 @@ export default function PermissionsPage() {
                         display: 'inline-block', padding: '2px 10px',
                         borderRadius: 12, fontSize: 12, fontWeight: 700,
                         background: r.color + '22', color: r.color,
-                        border: `1px solid ${r.color}55`,
+                        border: `2px solid ${r.color}55`,
                       }}
                     >
                       {r.label}

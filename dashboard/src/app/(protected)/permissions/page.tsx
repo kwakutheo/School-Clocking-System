@@ -98,7 +98,7 @@ export default function PermissionsPage() {
     setConfirmAction({
       isOpen: true,
       payload: null,
-      message: 'Reset all permissions to their default values? This cannot be undone.',
+      message: 'Reset all permissions to their default values.',
       onConfirm: executeReset
     });
   };

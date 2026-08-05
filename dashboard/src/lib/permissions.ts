@@ -13,7 +13,6 @@ export type Permission =
   // Attendance
   | 'attendance.view'
   | 'attendance.view_live'
-  | 'attendance.edit'
   | 'attendance.export'
   | 'attendance.admin_clock'
   // Academic Calendar
@@ -27,8 +26,7 @@ export type Permission =
   | 'branches.manage'
   | 'holidays.manage'
   | 'leaves.manage'
-  | 'audit.view'
-  | 'permissions.manage';
+  | 'audit.view';
 
 export type PermissionMatrix = Record<Role, Permission[]>;
 
@@ -41,7 +39,6 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'employees.toggle_status': 'Toggle Employee Status',
   'attendance.view': 'View All Attendance',
   'attendance.view_live': 'View Live Attendance',
-  'attendance.edit': 'Edit / Correct Clocking Times',
   'attendance.export': 'Export Attendance Reports',
   'attendance.admin_clock': 'Manual Clock Override (on behalf of employees)',
   'calendar.view': 'View Academic Calendar',
@@ -54,7 +51,6 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'holidays.manage': 'Manage Holidays',
   'leaves.manage': 'Manage Leave Requests',
   'audit.view': 'View Audit Logs',
-  'permissions.manage': 'Manage Roles & Permissions',
 };
 
 export const PERMISSION_GROUPS: { label: string; icon: string; permissions: Permission[] }[] = [
@@ -119,7 +115,7 @@ export const DEFAULT_PERMISSIONS: PermissionMatrix = {
     'attendance.view', 'attendance.view_live', 'attendance.export', 'attendance.admin_clock',
     'calendar.view', 'calendar.create', 'calendar.edit', 'calendar.delete',
     'shifts.manage', 'departments.manage', 'branches.manage', 'holidays.manage', 'leaves.manage',
-    'audit.view', 'permissions.manage',
+    'audit.view',
   ],
   hr_admin: [
     'employees.view', 'employees.create', 'employees.edit',
@@ -183,9 +179,6 @@ export async function fetchAndCachePermissions(): Promise<PermissionMatrix> {
 export function can(role: Role | string | undefined, permission: Permission): boolean {
   if (!role) return false;
   if (role === 'super_admin') return true;
-  
-  // Hardcode protection: Only super_admin can ever manage permissions/branding
-  if (permission === 'permissions.manage') return false;
 
   const matrix = loadPermissions();
   const rolePerms = matrix[role as Role] ?? [];

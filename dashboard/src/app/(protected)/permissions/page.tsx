@@ -237,7 +237,7 @@ export default function PermissionsPage() {
                       padding: '10px 20px',
                       fontWeight: 700,
                       fontSize: 13,
-                      color: 'var(--text-secondary)',
+                      color: 'var(--primary)',
                       letterSpacing: '0.05em',
                       textTransform: 'uppercase',
                       borderTop: gi > 0 ? '2px solid var(--border)' : undefined,

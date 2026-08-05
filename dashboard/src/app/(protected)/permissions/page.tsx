@@ -218,7 +218,7 @@ export default function PermissionsPage() {
                       {r.label}
                     </span>
                     {r.key === 'super_admin' && (
-                      <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>Always full access</span>
+                      <span style={{ fontSize: 10, color: 'var(--text-primary)' }}>Always full access</span>
                     )}
                   </div>
                 </th>

@@ -50,14 +50,13 @@ const NAV: NavItem[] = [
   { href: '/rankings',    icon: Trophy,           label: 'Performance Rankings',       permission: 'attendance.view'    },
   { href: '/mobile-app',  icon: Smartphone,       label: 'App Download',                 permission: 'employees.view'     },
   { href: '/settings',    icon: Settings,         label: 'Settings',                   permission: [
-    'permissions.manage',
     'calendar.view',
     'holidays.manage',
     'shifts.manage',
     'departments.manage',
     'branches.manage'
   ] },
-  { href: '/permissions', icon: ShieldAlert,      label: 'Permissions',                permission: 'permissions.manage' },
+  { href: '/permissions', icon: ShieldAlert,      label: 'Permissions' },
   { href: '/audit',       icon: BookOpen,      label: 'Audit Logs',                 permission: 'audit.view'         },
 ];
 

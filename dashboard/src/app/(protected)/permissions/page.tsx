@@ -202,8 +202,8 @@ export default function PermissionsPage() {
                   style={{
                     textAlign: 'center',
                     padding: '12px 16px',
-                    borderBottom: '2px solid var(--border)',
-                    borderLeft: '1px solid var(--border)',
+                    borderBottom: '2px solid var(--primary)',
+                    borderLeft: '2px solid var(--border)',
                   }}
                 >
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>

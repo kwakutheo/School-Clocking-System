@@ -240,7 +240,7 @@ export default function PermissionsPage() {
                       color: 'var(--primary)',
                       letterSpacing: '0.05em',
                       textTransform: 'uppercase',
-                      borderTop: gi > 0 ? '2px solid var(--border)' : undefined,
+                      borderTop: gi > 0 ? '2px solid var(--primary)' : undefined,
                     }}
                   >
                     {group.icon}&nbsp;&nbsp;{group.label}

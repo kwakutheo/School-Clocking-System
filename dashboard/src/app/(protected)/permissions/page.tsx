@@ -181,7 +181,7 @@ export default function PermissionsPage() {
                 {countGranted(r.key)}
               </span>
               <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                / {Object.keys(PERMISSION_LABELS).length} permissions
+                out of {Object.keys(PERMISSION_LABELS).length} permissions
               </span>
             </div>
           </div>

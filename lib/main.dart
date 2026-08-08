@@ -23,6 +23,7 @@ void main() async {
   // Initialize time service
   final timeService = di.sl<TimeService>();
   await timeService.syncTime();
+  await notificationService.scheduleCachedShiftReminders();
 
   final storage = di.sl<StorageService>();
   final savedUrl = storage.getServerUrl();

@@ -52,7 +52,7 @@ class _ClockInPageState extends State<ClockInPage> {
           if (state is AttendanceRecorded) {
             // Notification logic: Schedule reminder on clock-in, cancel on clock-out
             if (state.record.type == AttendanceType.clockIn) {
-              sl<NotificationService>().scheduleClockOutReminder();
+              sl<NotificationService>().scheduleCachedShiftReminders();
             } else if (state.record.type == AttendanceType.clockOut) {
               sl<NotificationService>().cancelClockOutReminder();
             }

@@ -1198,7 +1198,7 @@ export default function SaasOverviewPage() {
               Live intelligence across all supervised institutions · Last
               refreshed: {shiftToGhanaTime(lastRefreshedMs + safeOffset).toLocaleTimeString()}
               {' on '}
-              {shiftToGhanaTime(lastRefreshedMs + safeOffset).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {shiftToGhanaTime(lastRefreshedMs + safeOffset).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
             </p>
           </div>
 
@@ -2400,7 +2400,7 @@ export default function SaasOverviewPage() {
                     marginTop: "1px",
                   }}
                 >
-                  Top sustained attendance over 30 days
+                  Top sustained attendance over the last 30 days
                 </div>
               </div>
             </div>

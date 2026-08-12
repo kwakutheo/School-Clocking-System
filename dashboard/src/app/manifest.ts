@@ -49,7 +49,7 @@ async function getTenantBranding(slug: string | null): Promise<{
 function iconUrl(hexColor: string, size: 192 | 512, purpose: 'maskable' | 'any'): string {
   const clean = hexColor.replace('#', '').replace(/[^a-fA-F0-9]/g, '') || '3b82f6';
   // Added v=3 to bust the browser cache for the new logo design
-  return `/api/icon?color=${clean}&size=${size}&purpose=${purpose}&v=3`;
+  return `/api/icon?color=${clean}&size=${size}&purpose=${purpose}&v=2`;
 }
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {

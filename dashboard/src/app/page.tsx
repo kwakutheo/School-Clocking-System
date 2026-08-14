@@ -87,6 +87,20 @@ export default function WelcomePage() {
     fetchBranding();
   }, []);
 
+  // Enter key navigates to login
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('from_welcome', 'true');
+        }
+        router.push('/login');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [router]);
+
   // Use system primary if not configured
   const primaryColor = schoolData.primaryColor || 'var(--primary)';
 

@@ -10,9 +10,7 @@ import {
   LayoutDashboard, 
   Clock, 
   Users, 
-  MapPin, 
   Building2, 
-  UserCircle, 
   LogOut, 
   ShieldCheck,
   ShieldAlert,
@@ -428,18 +426,26 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             width: '40px',
             height: '40px',
             borderRadius: '50%',
-            background: theme === 'light' ? 'transparent' : 'var(--bg-card)',
-            border: theme === 'light' ? 'none' : '1px solid var(--border)',
+            background: theme === 'light' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(30, 30, 30, 0.4)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: theme === 'light' ? '1px solid rgba(255, 255, 255, 0.5)' : '1px solid rgba(255, 255, 255, 0.08)',
             color: 'var(--text-primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            boxShadow: theme === 'light' ? 'none' : 'var(--shadow)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
             transition: 'all 0.2s ease',
           }}
-          onMouseEnter={(e) => e.currentTarget.style.background = theme === 'light' ? 'rgba(128,128,128,0.12)' : 'var(--bg-card-hover)'}
-          onMouseLeave={(e) => e.currentTarget.style.background = theme === 'light' ? 'transparent' : 'var(--bg-card)'}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(40, 40, 40, 0.6)';
+            e.currentTarget.style.transform = 'scale(1.05)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(30, 30, 30, 0.4)';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
         >
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
@@ -456,18 +462,26 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             width: '40px',
             height: '40px',
             borderRadius: '50%',
-            background: theme === 'light' ? 'transparent' : 'var(--bg-card)',
-            border: theme === 'light' ? 'none' : '1px solid var(--border)',
+            background: theme === 'light' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(30, 30, 30, 0.4)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: theme === 'light' ? '1px solid rgba(255, 255, 255, 0.5)' : '1px solid rgba(255, 255, 255, 0.08)',
             color: 'var(--text-primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            boxShadow: theme === 'light' ? 'none' : 'var(--shadow)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
             transition: 'all 0.2s ease',
           }}
-          onMouseEnter={(e) => e.currentTarget.style.background = theme === 'light' ? 'rgba(128,128,128,0.12)' : 'var(--bg-card-hover)'}
-          onMouseLeave={(e) => e.currentTarget.style.background = theme === 'light' ? 'transparent' : 'var(--bg-card)'}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(40, 40, 40, 0.6)';
+            e.currentTarget.style.transform = 'scale(1.05)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.6)' : 'rgba(30, 30, 30, 0.4)';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
         >
           {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
         </button>

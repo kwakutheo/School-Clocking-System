@@ -226,7 +226,7 @@ export default function LoginPage() {
             alt="TK Clocking Logo"
             width={72}
             height={72}
-            style={{ borderRadius: '16px', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}
+            style={{ backgroundColor: 'var(--primary)', borderRadius: '16px', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}
             priority
           />
         </div>

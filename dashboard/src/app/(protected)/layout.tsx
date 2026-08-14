@@ -422,18 +422,50 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           right: '32px',
           zIndex: 10,
           display: 'flex',
+          flexDirection: 'column',
           gap: '8px',
           alignItems: 'center',
         }}>
+          {/* ── Toggle Controls Button ──────────────────────── */}
+          <button
+            onClick={() => setShowTopControls(!showTopControls)}
+            title="Toggle Controls"
+            style={{
+              flexShrink: 0,
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: theme === 'light' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+              border: theme === 'light' ? '1px solid rgba(255, 255, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+              color: 'var(--text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+              transition: 'all 0.2s ease',
+              transform: showTopControls ? 'rotate(90deg)' : 'rotate(0deg)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)';
+            }}
+          >
+            <MoreVertical size={18} />
+          </button>
+          
           {/* Expandable Container */}
           <div style={{
             display: 'flex',
+            flexDirection: 'column',
             gap: '8px',
             overflow: 'hidden',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            width: showTopControls ? '88px' : '0px',
+            height: showTopControls ? '88px' : '0px',
             opacity: showTopControls ? 1 : 0,
-            transform: showTopControls ? 'translateX(0)' : 'translateX(10px)',
+            transform: showTopControls ? 'translateY(0)' : 'translateY(-10px)',
             pointerEvents: showTopControls ? 'auto' : 'none'
           }}>
             {/* ── Theme toggle ──────────────────────── */}
@@ -499,36 +531,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
               {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
             </button>
           </div>
-          
-          {/* ── Toggle Controls Button ──────────────────────── */}
-          <button
-            onClick={() => setShowTopControls(!showTopControls)}
-            title="Toggle Controls"
-            style={{
-              flexShrink: 0,
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              background: theme === 'light' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
-              border: theme === 'light' ? '1px solid rgba(255, 255, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
-              color: 'var(--text-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-              transition: 'all 0.2s ease',
-              transform: showTopControls ? 'rotate(90deg)' : 'rotate(0deg)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)';
-            }}
-          >
-            <MoreVertical size={18} />
-          </button>
         </div>
         {children}
       </main>

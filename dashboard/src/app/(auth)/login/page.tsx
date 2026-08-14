@@ -502,10 +502,6 @@ export default function LoginPage() {
             </form>
           </>
         )}
-
-        <p style={{ marginTop: 24, fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>
-          Employee app available on Android & iOS
-        </p>
       </div>
     </div>
   );

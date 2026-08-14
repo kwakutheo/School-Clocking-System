@@ -29,7 +29,8 @@ import {
   Maximize2,
   Minimize2,
   Trophy,
-  BookOpen
+  BookOpen,
+  MoreVertical
 } from 'lucide-react';
 
 interface NavItem {
@@ -81,6 +82,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+  const [showTopControls, setShowTopControls] = useState(false);
 
   const [permissionsTick, setPermissionsTick] = useState(0);
 
@@ -413,74 +415,121 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           <SyncCenter />
         </div>
         
-        {/* ── Theme toggle ──────────────────────── */}
-        <button 
-          className="theme-toggle-btn desktop-only"
-          onClick={toggleTheme}
-          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-          style={{
-            position: 'absolute',
-            top: '24px',
-            right: '80px',
-            zIndex: 10,
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            background: theme === 'light' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
-            border: theme === 'light' ? '1px solid rgba(255, 255, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
-            color: 'var(--text-primary)',
+        {/* ── Top Right Controls ──────────────────────── */}
+        <div className="desktop-only" style={{
+          position: 'absolute',
+          top: '24px',
+          right: '32px',
+          zIndex: 10,
+          display: 'flex',
+          gap: '8px',
+          alignItems: 'center',
+        }}>
+          {/* Expandable Container */}
+          <div style={{
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)';
-            e.currentTarget.style.transform = 'scale(1.05)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)';
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
-        >
-          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-        {/* ── Fullscreen toggle (F key shortcut) ──────────────────────── */}
-        <button
-          className="theme-toggle-btn desktop-only"
-          onClick={toggleFullscreen}
-          title={isFullscreen ? 'Exit fullscreen (F)' : 'Enter fullscreen (F)'}
-          style={{
-            position: 'absolute',
-            top: '24px',
-            right: '32px',
-            zIndex: 10,
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            background: theme === 'light' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
-            border: theme === 'light' ? '1px solid rgba(255, 255, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
-            color: 'var(--text-primary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)';
-            e.currentTarget.style.transform = 'scale(1.05)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)';
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
-        >
-          {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-        </button>
+            gap: '8px',
+            overflow: 'hidden',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            width: showTopControls ? '88px' : '0px',
+            opacity: showTopControls ? 1 : 0,
+            transform: showTopControls ? 'translateX(0)' : 'translateX(10px)',
+            pointerEvents: showTopControls ? 'auto' : 'none'
+          }}>
+            {/* ── Theme toggle ──────────────────────── */}
+            <button 
+              className="theme-toggle-btn"
+              onClick={toggleTheme}
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+              style={{
+                flexShrink: 0,
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: theme === 'light' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+                border: theme === 'light' ? '1px solid rgba(255, 255, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                color: 'var(--text-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)';
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            {/* ── Fullscreen toggle ──────────────────────── */}
+            <button
+              className="theme-toggle-btn"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? 'Exit fullscreen (F)' : 'Enter fullscreen (F)'}
+              style={{
+                flexShrink: 0,
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: theme === 'light' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+                border: theme === 'light' ? '1px solid rgba(255, 255, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                color: 'var(--text-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)';
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+            </button>
+          </div>
+          
+          {/* ── Toggle Controls Button ──────────────────────── */}
+          <button
+            onClick={() => setShowTopControls(!showTopControls)}
+            title="Toggle Controls"
+            style={{
+              flexShrink: 0,
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: theme === 'light' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+              border: theme === 'light' ? '1px solid rgba(255, 255, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+              color: 'var(--text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+              transition: 'all 0.2s ease',
+              transform: showTopControls ? 'rotate(90deg)' : 'rotate(0deg)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = theme === 'light' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)';
+            }}
+          >
+            <MoreVertical size={18} />
+          </button>
+        </div>
         {children}
       </main>
 

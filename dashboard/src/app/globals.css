@@ -1595,13 +1595,6 @@ input::-webkit-credentials-auto-fill-button {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  right: 0;
-}
-
-@media (max-width: 768px) {
-  .responsive-dropdown {
-    right: auto;
-    left: 0;
-  }
+  left: 0;
 }
 

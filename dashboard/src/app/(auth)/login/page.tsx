@@ -1,7 +1,7 @@
 'use client';
 import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { authApi } from '@/lib/api';
+import { authApi, tenantsApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import { Sun, Moon, Eye, EyeOff } from 'lucide-react';
 
@@ -22,6 +22,25 @@ export default function LoginPage() {
       }
     }
   }, [router]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      const parts = hostname.split('.');
+      const slug = parts.length > 1 && parts[0] !== 'www' && parts[0] !== 'localhost' ? parts[0] : null;
+
+      if (slug) {
+        tenantsApi.getBrandingBySlug(slug)
+          .then(res => {
+            if (res.data?.primaryColor) {
+              document.documentElement.style.setProperty('--primary', res.data.primaryColor);
+              document.documentElement.style.setProperty('--primary-dim', res.data.primaryColor + '18');
+            }
+          })
+          .catch(err => console.warn('Failed to fetch tenant brand on login', err));
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

@@ -94,7 +94,6 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     start_url: '/dashboard',
     scope: '/',
     display: 'standalone',
-    orientation: 'natural',
     background_color: '#0f1117',
     theme_color: themeColor,
     categories: ['business', 'productivity', 'education'],

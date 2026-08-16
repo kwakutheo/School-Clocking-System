@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { authApi, usersApi } from '@/lib/api';
 import { useAuthStore, type AuthUser, initials } from '@/lib/store';
 
-import { Pencil, X, UserPen, Eye, EyeOff, Camera, Trash2, Loader2 } from 'lucide-react';
+import { Pencil, X, UserPen, Eye, EyeOff, Camera, Trash2, Loader2, ShieldAlert } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, setAuth } = useAuthStore();
@@ -13,6 +13,8 @@ export default function ProfilePage() {
 
   const [editingFullName, setEditingFullName] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [showFullImage, setShowFullImage] = useState(false);
+  const [showRemovePhotoConfirm, setShowRemovePhotoConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingUsername, setEditingUsername] = useState(false);
   const [editingPhone, setEditingPhone] = useState(false);
@@ -160,9 +162,8 @@ export default function ProfilePage() {
     }
   };
 
-  const handleRemovePhoto = async () => {
-    if (!window.confirm('Are you sure you want to remove your profile photo?')) return;
-    
+  const executeRemovePhoto = async () => {
+    setShowRemovePhotoConfirm(false);
     setIsUploadingPhoto(true);
     setError('');
     setSuccess('');
@@ -244,7 +245,7 @@ export default function ProfilePage() {
                   <Camera size={16} />
                 </button>
                 {user.photoUrl && (
-                  <button type="button" onClick={handleRemovePhoto} style={{ background: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer', padding: 4 }} title="Remove Photo">
+                  <button type="button" onClick={() => setShowRemovePhotoConfirm(true)} style={{ background: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer', padding: 4 }} title="Remove Photo">
                     <Trash2 size={16} />
                   </button>
                 )}

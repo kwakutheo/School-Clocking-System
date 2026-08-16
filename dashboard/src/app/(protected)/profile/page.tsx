@@ -227,8 +227,8 @@ export default function ProfilePage() {
           {success && <div className="alert alert-success">{success}</div>}
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 32 }}>
-            <div style={{ position: 'relative', width: 100, height: 100, marginBottom: 8 }}>
-              <div style={{ width: 100, height: 100, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 36, fontWeight: 'bold', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+            <div style={{ position: 'relative', width: 100, height: 100, marginBottom: 16 }}>
+              <div style={{ width: 100, height: 100, borderRadius: '50%', border: '4px solid var(--primary)', background: 'linear-gradient(135deg, var(--primary), #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 36, fontWeight: 'bold', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
                 {isUploadingPhoto ? (
                   <Loader2 size={32} className="spinner-lucide" />
                 ) : user.photoUrl ? (
@@ -238,10 +238,21 @@ export default function ProfilePage() {
                 )}
               </div>
               
+              {user.photoUrl && (
+                <button 
+                  type="button" 
+                  onClick={() => setShowFullImage(true)} 
+                  style={{ position: 'absolute', bottom: 6, left: -12, background: 'var(--primary)', border: '2px solid var(--bg-card)', borderRadius: '50%', color: 'white', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} 
+                  title="View Full Photo"
+                >
+                  <Eye size={14} />
+                </button>
+              )}
+
               <button 
                 type="button" 
                 onClick={() => fileInputRef.current?.click()} 
-                style={{ position: 'absolute', bottom: -4, right: -4, background: 'var(--primary)', border: '2px solid var(--bg-card)', borderRadius: '50%', color: 'white', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} 
+                style={{ position: 'absolute', bottom: -16, left: '50%', transform: 'translateX(-50%)', background: 'var(--primary)', border: '2px solid var(--bg-card)', borderRadius: '50%', color: 'white', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} 
                 title="Upload Photo"
               >
                 <Camera size={14} />
@@ -251,7 +262,7 @@ export default function ProfilePage() {
                 <button 
                   type="button" 
                   onClick={() => setShowRemovePhotoConfirm(true)} 
-                  style={{ position: 'absolute', top: -4, right: -4, background: 'var(--danger)', border: '2px solid var(--bg-card)', borderRadius: '50%', color: 'white', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} 
+                  style={{ position: 'absolute', bottom: 6, right: -12, background: 'var(--primary)', border: '2px solid var(--bg-card)', borderRadius: '50%', color: 'white', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} 
                   title="Remove Photo"
                 >
                   <Trash2 size={14} />

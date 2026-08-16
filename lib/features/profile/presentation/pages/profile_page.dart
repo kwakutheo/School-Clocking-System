@@ -186,10 +186,6 @@ class _ProfilePageState extends State<ProfilePage> {
       );
 
       final data = response.data!;
-      // The endpoint returns an Employee object: photoUrl is at the top level
-      // and user fields are nested under data['user']. Mirror the same merge
-      // logic used in syncProfile (auth_repository_impl.dart) so every
-      // employee-level field is picked up by UserModel.fromJson.
       final userMap =
           Map<String, dynamic>.from(data['user'] as Map<String, dynamic>? ?? data);
       final merged = <String, dynamic>{

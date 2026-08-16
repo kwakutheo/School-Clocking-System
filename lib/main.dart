@@ -20,10 +20,11 @@ void main() async {
   final notificationService = di.sl<NotificationService>();
   await notificationService.init();
 
-  // Initialize time service
+  // Initialize time service — runs in background so it never blocks app launch.
+  // The time service has a safe fallback (cached offset) if NTP is slow or offline.
   final timeService = di.sl<TimeService>();
-  await timeService.syncTime();
-  await notificationService.scheduleCachedShiftReminders();
+  timeService.syncTime().ignore();
+  notificationService.scheduleCachedShiftReminders().ignore();
 
   final storage = di.sl<StorageService>();
   final savedUrl = storage.getServerUrl();

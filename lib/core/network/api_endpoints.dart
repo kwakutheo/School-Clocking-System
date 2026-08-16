@@ -39,6 +39,7 @@ abstract final class ApiEndpoints {
   static String employee(String id) => '/employees/$id';
   static const String employeeMe = '/employees/me';
   static const String employeeMeUpdate = '/employees/me';
+  static const String employeeMePhoto = '/employees/me/photo';
 
   // ── Branches ─────────────────────────────────────────────────────────────
   static const String branches = '/branches';

@@ -11,13 +11,22 @@ import {
   Query,
   DefaultValuePipe,
   ParseIntPipe,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiBearerAuth,
   ApiOperation,
   ApiQuery,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import { extname } from 'path';
+import { createClient } from '@supabase/supabase-js';
 import { EmployeesService } from './employees.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -94,6 +103,88 @@ export class EmployeesController {
     @CurrentUser() adminUser: User,
   ): Promise<Employee> {
     return this.service.createEmployeeWithUser(dto, adminUser);
+  }
+
+  @Post('me/photo')
+  @ApiOperation({ summary: 'Upload or replace own profile photo' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { photo: { type: 'string', format: 'binary' } },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('photo', {
+      storage: memoryStorage(), // file goes into buffer — no disk writes
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+      fileFilter: (req, file, cb) => {
+        const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        if (!allowed.includes(file.mimetype)) {
+          return cb(
+            new BadRequestException(
+              'Only JPEG, PNG, WEBP, or GIF images are allowed.',
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async uploadPhoto(
+    @CurrentUser() user: { id: string },
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<Employee> {
+    if (!file) {
+      throw new BadRequestException('No file uploaded. Include a "photo" field.');
+    }
+
+    // Look up the employee to get their stable ID for the filename
+    const employee = await this.service.findByUserId(user.id);
+    if (!employee) {
+      throw new BadRequestException('Employee profile not found.');
+    }
+
+    // ── Upload to Supabase Storage ─────────────────────────────────────────
+    const supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+
+    const BUCKET = 'profile-photos';
+    const ext = extname(file.originalname) || '.jpg';
+    // Use employee.id as filename so re-uploads overwrite the old photo
+    const storagePath = `${employee.id}${ext}`;
+
+    // Ensure the bucket exists (creates it if not, ignores error if it does)
+    await supabase.storage.createBucket(BUCKET, {
+      public: true,
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+      fileSizeLimit: 5 * 1024 * 1024,
+    });
+
+    const { error: uploadError } = await supabase.storage
+      .from(BUCKET)
+      .upload(storagePath, file.buffer, {
+        contentType: file.mimetype,
+        upsert: true, // overwrite if same filename exists
+      });
+
+    if (uploadError) {
+      throw new BadRequestException(
+        `Failed to upload photo: ${uploadError.message}`,
+      );
+    }
+
+    // Get the permanent public CDN URL
+    const { data: publicUrlData } = supabase.storage
+      .from(BUCKET)
+      .getPublicUrl(storagePath);
+
+    const photoUrl = publicUrlData.publicUrl;
+
+    return this.service.updateProfile(user.id, { photoUrl });
   }
 
   @Patch('me')

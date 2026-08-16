@@ -1,8 +1,9 @@
 import 'dart:async';
-import 'dart:ui' as ui;
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:tk_clocking_system/core/di/injection_container.dart';
 import 'package:tk_clocking_system/core/router/app_router.dart';
@@ -34,6 +35,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   bool _isEditing = false;
   bool _isSaving = false;
+  bool _isUploadingPhoto = false;
   bool _isChangingPassword = false;
   String? _lastSyncedUserId;
   String _usernameStatus = 'idle'; // 'idle', 'checking', 'available', 'taken'
@@ -126,6 +128,104 @@ class _ProfilePageState extends State<ProfilePage> {
   UserEntity? get _currentUser {
     final authState = context.read<AuthBloc>().state;
     return authState is AuthAuthenticated ? authState.user : null;
+  }
+
+  Future<void> _pickAndUploadPhoto() async {
+    // Show source picker bottom sheet
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded),
+              title: const Text('Take a Photo'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Choose from Gallery'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: source,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 85,
+    );
+
+    if (pickedFile == null || !mounted) return;
+
+    setState(() => _isUploadingPhoto = true);
+    try {
+      final api = sl<ApiClient>();
+      final formData = FormData.fromMap({
+        'photo': await MultipartFile.fromFile(
+          pickedFile.path,
+          filename: pickedFile.name,
+        ),
+      });
+
+      final response = await api.dio.post<Map<String, dynamic>>(
+        ApiEndpoints.employeeMePhoto,
+        data: formData,
+        options: Options(contentType: 'multipart/form-data'),
+      );
+
+      final data = response.data!;
+      // The endpoint returns the full Employee object with nested user
+      final updatedUser = UserModel.fromJson(
+        data['user'] as Map<String, dynamic>? ?? data,
+      );
+
+      // Persist updated user and refresh Bloc
+      final storage = sl<StorageService>();
+      await storage.saveUserJson(updatedUser.toJsonString());
+
+      if (mounted) {
+        context.read<AuthBloc>().add(const AuthCheckSessionEvent());
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile photo updated.')),
+        );
+      }
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'];
+      final errorText = msg is String
+          ? msg
+          : msg is List
+              ? (msg as List).join(', ')
+              : e.message ?? 'Failed to upload photo.';
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorText), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload photo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
+    }
   }
 
   Future<void> _saveProfile() async {
@@ -278,36 +378,75 @@ class _ProfilePageState extends State<ProfilePage> {
                                   children: [
                                     const SizedBox(height: 30),
                                     // ── Avatar ──────────────────────────────────
-                                    Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: cs.primary.withValues(alpha: 0.3),
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: Hero(
-                                        tag: 'profile-avatar',
-                                        child: CircleAvatar(
-                                          radius: 42,
-                                          backgroundColor: cs.primaryContainer,
-                                          child: Text(
-                                            user.initials,
-                                            style: theme.textTheme.headlineLarge?.copyWith(
-                                              color: cs.onPrimaryContainer,
-                                              fontWeight: FontWeight.w900,
-                                              letterSpacing: -1,
+                                    GestureDetector(
+                                      onTap: _isUploadingPhoto ? null : _pickAndUploadPhoto,
+                                      child: Stack(
+                                        alignment: Alignment.bottomRight,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: cs.primary.withValues(alpha: 0.3),
+                                                width: 2,
+                                              ),
+                                            ),
+                                            child: Hero(
+                                              tag: 'profile-avatar',
+                                              child: _isUploadingPhoto
+                                                  ? CircleAvatar(
+                                                      radius: 42,
+                                                      backgroundColor: cs.primaryContainer,
+                                                      child: const CircularProgressIndicator(strokeWidth: 2),
+                                                    )
+                                                  : CircleAvatar(
+                                                      radius: 42,
+                                                      backgroundColor: cs.primaryContainer,
+                                                      backgroundImage: user.photoUrl != null
+                                                          ? NetworkImage(
+                                                              user.photoUrl!,
+                                                            )
+                                                          : null,
+                                                      child: user.photoUrl == null
+                                                          ? Text(
+                                                              user.initials,
+                                                              style: theme.textTheme.headlineLarge?.copyWith(
+                                                                color: cs.onPrimaryContainer,
+                                                                fontWeight: FontWeight.w900,
+                                                                letterSpacing: -1,
+                                                              ),
+                                                            )
+                                                          : null,
+                                                    ),
                                             ),
                                           ),
-                                        ),
+                                          // ── Camera overlay badge ────────────────────
+                                          Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: cs.primary,
+                                              border: Border.all(
+                                                color: cs.surface,
+                                                width: 1.5,
+                                              ),
+                                            ),
+                                            child: Icon(
+                                              Icons.camera_alt_rounded,
+                                              size: 14,
+                                              color: cs.onPrimary,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                     const SizedBox(height: 16),
                                     // ── Name ────────────────────────────────────
                                     Text(
                                       user.fullName,
-                                      style: theme.textTheme.headlineSmall?.copyWith(
+                                      style: theme.textTheme.headlineSmall
+                                          ?.copyWith(
                                         color: cs.onSurface,
                                         fontWeight: FontWeight.w900,
                                         letterSpacing: -0.5,
@@ -315,26 +454,28 @@ class _ProfilePageState extends State<ProfilePage> {
                                     ),
                                     const SizedBox(height: 6),
                                     // ── Role Badge ──────────────────────────────
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 14, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: cs.secondaryContainer,
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                            color: cs.onSecondaryContainer
-                                                .withValues(alpha: 0.2)),
-                                      ),
-                                      child: Text(
-                                        _roleLabel(user.role).toUpperCase(),
-                                        style: theme.textTheme.labelSmall?.copyWith(
-                                          color: cs.onSecondaryContainer,
-                                          fontWeight: FontWeight.w900,
-                                          letterSpacing: 1.2,
-                                          fontSize: 10,
+                                    if (user.role != UserRole.employee)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 14, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: cs.secondaryContainer,
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                              color: cs.onSecondaryContainer
+                                                  .withValues(alpha: 0.2)),
+                                        ),
+                                        child: Text(
+                                          _roleLabel(user.role).toUpperCase(),
+                                          style: theme.textTheme.labelSmall
+                                              ?.copyWith(
+                                            color: cs.onSecondaryContainer,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: 1.2,
+                                            fontSize: 10,
+                                          ),
                                         ),
                                       ),
-                                    ),
                                   ],
                                 )
                               : const SizedBox(),
@@ -918,8 +1059,6 @@ class _ProfilePageState extends State<ProfilePage> {
 }
 
 // ── Header Components ──────────────────────────────────────────────────────────
-
-
 
 // ── Info section ──────────────────────────────────────────────────────────────
 class _EditSection extends StatelessWidget {

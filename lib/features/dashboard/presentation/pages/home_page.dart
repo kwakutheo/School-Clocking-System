@@ -508,14 +508,19 @@ class _DashboardTabState extends State<_DashboardTab> {
                           child: CircleAvatar(
                             radius: 20,
                             backgroundColor: colorScheme.primaryContainer,
-                            child: Text(
-                              user?.initials ?? '?',
-                              style: TextStyle(
-                                color: colorScheme.onPrimaryContainer,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
-                              ),
-                            ),
+                            backgroundImage: user?.photoUrl != null
+                                ? NetworkImage(user!.photoUrl!)
+                                : null,
+                            child: user?.photoUrl == null
+                                ? Text(
+                                    user?.initials ?? '?',
+                                    style: TextStyle(
+                                      color: colorScheme.onPrimaryContainer,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 14,
+                                    ),
+                                  )
+                                : null,
                           ),
                         ),
                       ),

@@ -773,7 +773,7 @@ export class EmployeesService implements OnModuleInit {
       fullName?: string;
       email?: string;
       phone?: string;
-      photoUrl?: string;
+      photoUrl?: string | null;
       username?: string;
       password?: string;
     },

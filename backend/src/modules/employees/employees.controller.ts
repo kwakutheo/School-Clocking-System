@@ -218,6 +218,44 @@ export class EmployeesController {
     return this.service.updateProfile(user.id, { photoUrl });
   }
 
+  @Delete('me/photo')
+  @ApiOperation({ summary: 'Remove own profile photo' })
+  async removePhoto(@CurrentUser() user: { id: string }): Promise<Employee> {
+    const employee = await this.service.findByUserId(user.id);
+    if (!employee) {
+      throw new BadRequestException('Employee profile not found.');
+    }
+
+    if (employee.photoUrl) {
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+      if (supabaseUrl && serviceKey) {
+        const BUCKET = 'profile-photos';
+        // The URL format is: https://.../storage/v1/object/public/profile-photos/filename.jpg?t=...
+        // Extract just the filename (which is the employee.id + ext)
+        const urlParts = employee.photoUrl.split('?')[0].split('/');
+        const filename = urlParts[urlParts.length - 1];
+
+        const storageBase = `${supabaseUrl}/storage/v1`;
+        const authHeaders = {
+          Authorization: `Bearer ${serviceKey}`,
+          apikey: serviceKey,
+        };
+
+        // Delete from Supabase Storage
+        await fetch(`${storageBase}/object/${BUCKET}/${filename}`, {
+          method: 'DELETE',
+          headers: authHeaders,
+        });
+      }
+    }
+
+    // Update DB to nullify photoUrl
+    return this.service.updateProfile(user.id, { photoUrl: null });
+  }
+
+
   @Patch('me')
   @ApiOperation({ summary: 'Update own profile (self-service)' })
   updateProfile(

@@ -244,6 +244,143 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _removePhoto() async {
+    setState(() => _isUploadingPhoto = true); // reuse loading state
+    try {
+      final api = sl<ApiClient>();
+      final response = await api.dio.delete<Map<String, dynamic>>(
+        ApiEndpoints.employeeMePhoto,
+      );
+
+      final data = response.data!;
+      final userMap =
+          Map<String, dynamic>.from(data['user'] as Map<String, dynamic>? ?? data);
+      final merged = <String, dynamic>{
+        ...userMap,
+        'employee_id': data['id'] ?? userMap['employee_id'],
+        'employee_code': data['employeeCode'] ?? userMap['employee_code'],
+        'photo_url': null, // Explicitly set to null
+        'branch': data['branch'],
+        'department': data['department'],
+        'position': data['position'],
+        'hire_date': data['hireDate'],
+      };
+      final updatedUser = UserModel.fromJson(merged);
+
+      final storage = sl<StorageService>();
+      await storage.saveUserJson(updatedUser.toJsonString());
+      await storage.saveOfflineUserJson(updatedUser.toJsonString());
+
+      if (mounted) {
+        context.read<AuthBloc>().add(const AuthCheckSessionEvent());
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile photo removed.')),
+        );
+      }
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'];
+      final errorText = msg is String
+          ? msg
+          : msg is List
+              ? (msg as List).join(', ')
+              : e.message ?? 'Failed to remove photo.';
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorText), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to remove photo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
+    }
+  }
+
+  Future<void> _showPhotoOptions() async {
+    final user = _currentUser;
+    if (user == null) return;
+
+    final hasPhoto = user.photoUrl != null && user.photoUrl!.isNotEmpty;
+
+    await showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            if (hasPhoto)
+              ListTile(
+                leading: const Icon(Icons.fullscreen_rounded),
+                title: const Text('View Photo'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  showDialog(
+                    context: context,
+                    builder: (context) => Dialog(
+                      backgroundColor: Colors.transparent,
+                      insetPadding: EdgeInsets.zero,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          InteractiveViewer(
+                            panEnabled: true,
+                            boundaryMargin: const EdgeInsets.all(20),
+                            minScale: 0.5,
+                            maxScale: 4,
+                            child: Image.network(
+                              user.photoUrl!,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          Positioned(
+                            top: 40,
+                            right: 20,
+                            child: IconButton(
+                              icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded),
+              title: Text(hasPhoto ? 'Change Photo' : 'Upload Photo'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndUploadPhoto();
+              },
+            ),
+            if (hasPhoto)
+              ListTile(
+                leading: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                title: const Text('Remove Photo', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _removePhoto();
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
     if (_usernameStatus == 'taken') {
@@ -395,7 +532,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     const SizedBox(height: 30),
                                     // ── Avatar ──────────────────────────────────
                                     GestureDetector(
-                                      onTap: _isUploadingPhoto ? null : _pickAndUploadPhoto,
+                                      onTap: _isUploadingPhoto ? null : _showPhotoOptions,
                                       child: Stack(
                                         alignment: Alignment.bottomRight,
                                         children: [

@@ -508,10 +508,14 @@ class _DashboardTabState extends State<_DashboardTab> {
                           child: CircleAvatar(
                             radius: 20,
                             backgroundColor: colorScheme.primaryContainer,
-                            backgroundImage: user?.photoUrl != null
+                            foregroundImage: user?.photoUrl != null
                                 ? NetworkImage(user!.photoUrl!)
                                 : const AssetImage('assets/images/default_profile_photo.jpg') as ImageProvider,
-                            child: null,
+                            onForegroundImageError: (_, __) {},
+                            child: Image.asset(
+                              'assets/images/default_profile_photo.jpg',
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                       ),

@@ -14,6 +14,7 @@ import 'package:tk_clocking_system/features/auth/data/models/user_model.dart';
 import 'package:tk_clocking_system/features/auth/domain/entities/user_entity.dart';
 import 'package:tk_clocking_system/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:tk_clocking_system/features/auth/presentation/bloc/auth_event.dart';
+import 'package:tk_clocking_system/shared/widgets/face_capture_page.dart';
 import 'package:tk_clocking_system/features/auth/presentation/bloc/auth_state.dart';
 import 'package:tk_clocking_system/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:tk_clocking_system/features/profile/presentation/bloc/profile_event.dart';
@@ -131,7 +132,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _pickAndUploadPhoto() async {
     // Show source picker bottom sheet
-    final source = await showModalBottomSheet<ImageSource>(
+    final source = await showModalBottomSheet<String>(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -144,12 +145,12 @@ class _ProfilePageState extends State<ProfilePage> {
             ListTile(
               leading: const Icon(Icons.camera_alt_rounded),
               title: const Text('Take a Photo'),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              onTap: () => Navigator.pop(ctx, 'camera'),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_rounded),
               title: const Text('Choose from Gallery'),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              onTap: () => Navigator.pop(ctx, 'gallery'),
             ),
             const SizedBox(height: 8),
           ],
@@ -157,15 +158,24 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
 
-    if (source == null) return;
+    if (source == null || !mounted) return;
 
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(
-      source: source,
-      maxWidth: 800,
-      maxHeight: 800,
-      imageQuality: 85,
-    );
+    XFile? pickedFile;
+
+    if (source == 'camera') {
+      pickedFile = await Navigator.push<XFile>(
+        context,
+        MaterialPageRoute(builder: (_) => const FaceCapturePage()),
+      );
+    } else if (source == 'gallery') {
+      final picker = ImagePicker();
+      pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+    }
 
     if (pickedFile == null || !mounted) return;
 
@@ -359,6 +369,19 @@ class _ProfilePageState extends State<ProfilePage> {
                             child: Image.network(
                               user.photoUrl!,
                               fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(
+                                Icons.broken_image_rounded,
+                                color: Colors.white54,
+                                size: 80,
+                              ),
+                              loadingBuilder: (context, child, progress) {
+                                if (progress == null) return child;
+                                return const Center(
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white),
+                                );
+                              },
                             ),
                           ),
                           Positioned(
@@ -574,12 +597,16 @@ class _ProfilePageState extends State<ProfilePage> {
                                                   : CircleAvatar(
                                                       radius: 42,
                                                       backgroundColor: cs.primaryContainer,
-                                                      backgroundImage: user.photoUrl != null
-                                                          ? NetworkImage(
-                                                              user.photoUrl!,
-                                                            )
+                                                      // foregroundImage with error callback prevents
+                                                      // a bad/expired URL from crashing the widget.
+                                                      foregroundImage: user.photoUrl != null
+                                                          ? NetworkImage(user.photoUrl!)
                                                           : const AssetImage('assets/images/default_profile_photo.jpg') as ImageProvider,
-                                                      child: null,
+                                                      onForegroundImageError: (_, __) {},
+                                                      child: Image.asset(
+                                                        'assets/images/default_profile_photo.jpg',
+                                                        fit: BoxFit.cover,
+                                                      ),
                                                     ),
                                             ),
                                           ),

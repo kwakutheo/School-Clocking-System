@@ -229,14 +229,15 @@ export default function ProfilePage() {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 32 }}>
             <div style={{ position: 'relative', width: 100, height: 100, marginBottom: 16 }}>
               <div style={{ width: 100, height: 100, borderRadius: '50%', border: '4px solid var(--primary)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-                {isUploadingPhoto ? (
-                  <Loader2 size={32} className="spinner-lucide" />
-                ) : (
-                  <img
-                    src={user.photoUrl || '/icons/default_profile_photo.jpg'}
-                    alt={user.fullName}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
+                <img
+                  src={user.photoUrl || '/icons/default_profile_photo.jpg'}
+                  alt={user.fullName}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+                {isUploadingPhoto && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center" style={{ zIndex: 10 }}>
+                    <Loader2 size={32} className="animate-spin text-white" />
+                  </div>
                 )}
               </div>
               

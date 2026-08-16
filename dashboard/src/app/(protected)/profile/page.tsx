@@ -13,7 +13,6 @@ export default function ProfilePage() {
 
   const [editingFullName, setEditingFullName] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [showFullImage, setShowFullImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingUsername, setEditingUsername] = useState(false);
   const [editingPhone, setEditingPhone] = useState(false);
@@ -241,11 +240,6 @@ export default function ProfilePage() {
                 onMouseEnter={e => e.currentTarget.style.opacity = '1'}
                 onMouseLeave={e => e.currentTarget.style.opacity = '0'}
               >
-                {user.photoUrl && (
-                  <button type="button" onClick={() => setShowFullImage(true)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: 4 }} title="View Full Photo">
-                    <Eye size={16} />
-                  </button>
-                )}
                 <button type="button" onClick={() => fileInputRef.current?.click()} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: 4 }} title="Upload Photo">
                   <Camera size={16} />
                 </button>
@@ -502,14 +496,7 @@ export default function ProfilePage() {
         </form>
       </div>
 
-      {showFullImage && user.photoUrl && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowFullImage(false)}>
-          <img src={user.photoUrl} alt="Full Profile" style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: 8, objectFit: 'contain', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }} />
-          <button type="button" onClick={() => setShowFullImage(false)} style={{ position: 'absolute', top: 20, right: 20, background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}>
-            <X size={24} />
-          </button>
-        </div>
-      )}
+
     </div>
   );
 }

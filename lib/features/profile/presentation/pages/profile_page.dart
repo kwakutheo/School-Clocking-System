@@ -245,6 +245,29 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _removePhoto() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Remove Photo'),
+          content: const Text('Are you sure you want to remove your profile photo?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
     setState(() => _isUploadingPhoto = true); // reuse loading state
     try {
       final api = sl<ApiClient>();

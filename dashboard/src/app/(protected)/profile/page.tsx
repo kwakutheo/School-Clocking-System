@@ -1,9 +1,9 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { authApi, usersApi } from '@/lib/api';
-import { useAuthStore, type AuthUser } from '@/lib/store';
+import { useAuthStore, type AuthUser, initials } from '@/lib/store';
 
-import { Pencil, X, UserPen, Eye, EyeOff } from 'lucide-react';
+import { Pencil, X, UserPen, Eye, EyeOff, Camera, Trash2, Loader2 } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, setAuth } = useAuthStore();
@@ -12,6 +12,8 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState('');
 
   const [editingFullName, setEditingFullName] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingUsername, setEditingUsername] = useState(false);
   const [editingPhone, setEditingPhone] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -133,6 +135,53 @@ export default function ProfilePage() {
 
 
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingPhoto(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const res = await authApi.uploadProfilePhoto(file);
+      const token = localStorage.getItem('access_token') ?? '';
+      // The backend returns the updated Employee object, but we need to re-fetch me()
+      // to update the publicUser payload in the store properly, OR we can just call authApi.me()
+      const meRes = await authApi.me();
+      setAuth(meRes.data, token);
+      setSuccess('Profile photo updated.');
+    } catch (err: any) {
+      const msg = err.response?.data?.message;
+      setError(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Failed to upload photo.');
+    } finally {
+      setIsUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!window.confirm('Are you sure you want to remove your profile photo?')) return;
+    
+    setIsUploadingPhoto(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      await authApi.removeProfilePhoto();
+      const token = localStorage.getItem('access_token') ?? '';
+      const meRes = await authApi.me();
+      setAuth(meRes.data, token);
+      setSuccess('Profile photo removed.');
+    } catch (err: any) {
+      const msg = err.response?.data?.message;
+      setError(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Failed to remove photo.');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+
   const isDirty = 
     (editingFullName && form.fullName !== user?.fullName) ||
     (editingUsername && form.username !== user?.username) ||
@@ -175,6 +224,35 @@ export default function ProfilePage() {
         <form onSubmit={handleSubmit}>
           {error && <div className="alert alert-danger">{error}</div>}
           {success && <div className="alert alert-success">{success}</div>}
+
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 32 }}>
+            <div style={{ position: 'relative', width: 100, height: 100, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 36, fontWeight: 'bold', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+              {isUploadingPhoto ? (
+                <Loader2 size={32} className="spinner-lucide" />
+              ) : user.photoUrl ? (
+                <img src={user.photoUrl} alt={user.fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                initials(user.fullName)
+              )}
+              
+              <div 
+                style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'space-around', padding: '4px 0', opacity: 0, transition: 'opacity 0.2s', cursor: 'pointer' }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '0'}
+              >
+                <button type="button" onClick={() => fileInputRef.current?.click()} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: 4 }} title="Upload Photo">
+                  <Camera size={16} />
+                </button>
+                {user.photoUrl && (
+                  <button type="button" onClick={handleRemovePhoto} style={{ background: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer', padding: 4 }} title="Remove Photo">
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
+            </div>
+            <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/jpeg, image/png, image/webp" style={{ display: 'none' }} />
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 8 }}>Profile Photo</div>
+          </div>
 
           <div className="form-grid">
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>

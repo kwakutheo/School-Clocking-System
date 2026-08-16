@@ -97,6 +97,14 @@ export const authApi = {
     username?: string;
     password?: string;
   }) => api.patch("/employees/me", data),
+  uploadProfilePhoto: (file: File) => {
+    const formData = new FormData();
+    formData.append("photo", file);
+    return api.post("/employees/me/photo", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  removeProfilePhoto: () => api.delete("/employees/me/photo"),
   updateMyBranding: (data: {
     name?: string;
     primaryColor?: string;

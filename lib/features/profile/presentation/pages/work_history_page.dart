@@ -36,14 +36,7 @@ class _WorkHistoryView extends StatelessWidget {
     return Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
-        title: const Text(
-          'Work History',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
-        centerTitle: false,
-        backgroundColor: const Color(0xFFF602E2),
-        foregroundColor: Colors.white,
-        elevation: 0,
+        title: const Text('Work History'),
       ),
       body: RefreshIndicator(
         onRefresh: () async {

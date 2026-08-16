@@ -58,24 +58,24 @@ class HomePageState extends State<HomePage> {
             children: [
               const SizedBox(height: 8),
               ListTile(
-                leading: const Icon(Icons.person_rounded),
-                title: const Text('Profile'),
+                title: const Text('Profile', textAlign: TextAlign.right),
+                trailing: const Icon(Icons.person_rounded),
                 onTap: () {
                   Navigator.pop(context);
                   setState(() => _selectedIndex = 3);
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.calendar_month_rounded),
-                title: const Text('Permissions & Leaves'),
+                title: const Text('Permissions & Leaves', textAlign: TextAlign.right),
+                trailing: const Icon(Icons.calendar_month_rounded),
                 onTap: () {
                   Navigator.pop(context);
                   setState(() => _selectedIndex = 4);
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.event_note_rounded),
-                title: const Text('Calendar'),
+                title: const Text('Calendar', textAlign: TextAlign.right),
+                trailing: const Icon(Icons.event_note_rounded),
                 onTap: () {
                   Navigator.pop(context);
                   setState(() => _selectedIndex = 5);

@@ -265,130 +265,79 @@ class _ProfilePageState extends State<ProfilePage> {
                         expandedHeight: 240,
                         pinned: true,
                         stretch: true,
-                        elevation: 4,
-                        scrolledUnderElevation: 4,
-                        backgroundColor:
-                            const ui.Color.fromARGB(211, 108, 1, 101),
-                        title: const Text(
-                          'Profile',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
+                        elevation: 0,
+                        scrolledUnderElevation: 2,
+                        title: const Text('Profile'),
                         centerTitle: false,
                         actions: const [],
                         flexibleSpace: FlexibleSpaceBar(
                           stretchModes: const [StretchMode.zoomBackground],
-                          background: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              _AnimatedMeshBackground(colorScheme: cs),
-                              if (user != null)
-                                Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.black.withValues(alpha: 0.2),
-                                        Colors.transparent,
-                                        Colors.black.withValues(alpha: 0.3),
-                                      ],
+                          background: user != null
+                              ? Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const SizedBox(height: 30),
+                                    // ── Avatar ──────────────────────────────────
+                                    Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: cs.primary.withValues(alpha: 0.3),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Hero(
+                                        tag: 'profile-avatar',
+                                        child: CircleAvatar(
+                                          radius: 42,
+                                          backgroundColor: cs.primaryContainer,
+                                          child: Text(
+                                            user.initials,
+                                            style: theme.textTheme.headlineLarge?.copyWith(
+                                              color: cs.onPrimaryContainer,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: -1,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const SizedBox(height: 30),
-                                      // ── Avatar ──────────────────────────────────
-                                      Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.3),
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: Hero(
-                                          tag: 'profile-avatar',
-                                          child: CircleAvatar(
-                                            radius: 42,
-                                            backgroundColor: Colors.white
-                                                .withValues(alpha: 0.2),
-                                            child: Text(
-                                              user.initials,
-                                              style: theme
-                                                  .textTheme.headlineLarge
-                                                  ?.copyWith(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.w900,
-                                                letterSpacing: -1,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
+                                    const SizedBox(height: 16),
+                                    // ── Name ────────────────────────────────────
+                                    Text(
+                                      user.fullName,
+                                      style: theme.textTheme.headlineSmall?.copyWith(
+                                        color: cs.onSurface,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: -0.5,
                                       ),
-                                      const SizedBox(height: 16),
-                                      // ── Name ────────────────────────────────────
-                                      Text(
-                                        user.fullName,
-                                        style: theme.textTheme.headlineSmall
-                                            ?.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w900,
-                                          letterSpacing: -0.5,
-                                          shadows: [
-                                            Shadow(
-                                              color: Colors.black
-                                                  .withValues(alpha: 0.3),
-                                              blurRadius: 15,
-                                              offset: const Offset(0, 4),
-                                            )
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      // ── Role Badge ──────────────────────────────
-                                      ClipRRect(
+                                    ),
+                                    const SizedBox(height: 6),
+                                    // ── Role Badge ──────────────────────────────
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 14, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: cs.secondaryContainer,
                                         borderRadius: BorderRadius.circular(12),
-                                        child: BackdropFilter(
-                                          filter: ui.ImageFilter.blur(
-                                              sigmaX: 10, sigmaY: 10),
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 14, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white
-                                                  .withValues(alpha: 0.15),
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              border: Border.all(
-                                                  color: Colors.white
-                                                      .withValues(alpha: 0.2)),
-                                            ),
-                                            child: Text(
-                                              _roleLabel(user.role)
-                                                  .toUpperCase(),
-                                              style: theme.textTheme.labelSmall
-                                                  ?.copyWith(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.w900,
-                                                letterSpacing: 1.2,
-                                                fontSize: 10,
-                                              ),
-                                            ),
-                                          ),
+                                        border: Border.all(
+                                            color: cs.onSecondaryContainer
+                                                .withValues(alpha: 0.2)),
+                                      ),
+                                      child: Text(
+                                        _roleLabel(user.role).toUpperCase(),
+                                        style: theme.textTheme.labelSmall?.copyWith(
+                                          color: cs.onSecondaryContainer,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: 1.2,
+                                          fontSize: 10,
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
+                                    ),
+                                  ],
+                                )
+                              : const SizedBox(),
                         ),
                       ),
                       SliverToBoxAdapter(
@@ -970,107 +919,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
 // ── Header Components ──────────────────────────────────────────────────────────
 
-class _AnimatedMeshBackground extends StatefulWidget {
-  const _AnimatedMeshBackground({required this.colorScheme});
-  final ColorScheme colorScheme;
 
-  @override
-  State<_AnimatedMeshBackground> createState() =>
-      _AnimatedMeshBackgroundState();
-}
-
-class _AnimatedMeshBackgroundState extends State<_AnimatedMeshBackground>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 15),
-    )..repeat(reverse: true);
-    _animation =
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        // Shift stops and alignment based on animation
-        final value = _animation.value;
-        const deepMagenta = Color(0xFF700166);
-        const vibrantMagenta = Color(0xFFF602E2);
-        const lightMagenta = Color(0xFFFF71F3);
-
-        return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment(-1.0 + (value * 0.2), -1.0 + (value * 0.2)),
-              end: Alignment(1.0 - (value * 0.2), 1.0 - (value * 0.2)),
-              colors: [
-                vibrantMagenta,
-                Color.lerp(vibrantMagenta, deepMagenta, 0.5 + (value * 0.2)) ??
-                    deepMagenta,
-                deepMagenta,
-              ],
-              stops: const [0.0, 0.6, 1.0],
-            ),
-          ),
-          child: Stack(
-            children: [
-              // ── Top Light ───────────────────────────────────────────────
-              Positioned(
-                top: -100 + (value * 50),
-                right: -50 + (value * 100),
-                child: Container(
-                  width: 350,
-                  height: 350,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        lightMagenta.withValues(alpha: 0.15),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              // ── Bottom Light ────────────────────────────────────────────
-              Positioned(
-                bottom: -150 + (value * 120),
-                left: -100 + (value * 60),
-                child: Container(
-                  width: 400,
-                  height: 400,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        Colors.white.withValues(alpha: 0.1),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
 
 // ── Info section ──────────────────────────────────────────────────────────────
 class _EditSection extends StatelessWidget {

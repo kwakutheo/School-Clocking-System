@@ -368,13 +368,13 @@ export default function EmployeesPage() {
                           style={{ background: 'transparent', opacity: isInactive ? 0.6 : 1, transition: 'opacity 0.2s', animationDelay: `${index * 0.05}s` }}>
                           <td>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                              <div className="avatar">
-                                {emp.photoUrl ? (
-                                  <img src={emp.photoUrl} alt={emp.user?.fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                ) : (
-                                  (emp.user?.fullName ?? '').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
-                                )}
-                              </div>
+                                <div className="avatar">
+                                  <img
+                                    src={emp.photoUrl || '/icons/default_profile_photo.jpg'}
+                                    alt={emp.user?.fullName}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                                  />
+                                </div>
                               <div>
                                 <div style={{ fontWeight: 600 }}>{emp.user?.fullName}</div>
                                 <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>

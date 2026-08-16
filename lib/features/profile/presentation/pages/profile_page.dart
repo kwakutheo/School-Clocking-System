@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -223,7 +222,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final errorText = msg is String
           ? msg
           : msg is List
-              ? (msg as List).join(', ')
+              ? (msg as List<dynamic>).join(', ')
               : e.message ?? 'Failed to upload photo.';
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -305,7 +304,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final errorText = msg is String
           ? msg
           : msg is List
-              ? (msg as List).join(', ')
+              ? (msg as List<dynamic>).join(', ')
               : e.message ?? 'Failed to remove photo.';
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -583,17 +582,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                                           ? NetworkImage(
                                                               user.photoUrl!,
                                                             )
-                                                          : null,
-                                                      child: user.photoUrl == null
-                                                          ? Text(
-                                                              user.initials,
-                                                              style: theme.textTheme.headlineLarge?.copyWith(
-                                                                color: cs.onPrimaryContainer,
-                                                                fontWeight: FontWeight.w900,
-                                                                letterSpacing: -1,
-                                                              ),
-                                                            )
-                                                          : null,
+                                                          : const AssetImage('assets/images/default_profile_photo.jpg') as ImageProvider,
+                                                      child: null,
                                                     ),
                                             ),
                                           ),

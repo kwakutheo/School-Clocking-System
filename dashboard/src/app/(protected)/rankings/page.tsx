@@ -263,13 +263,11 @@ export default function RankingsPage() {
                   <tr key={row.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '16px 20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                        {row.photoUrl ? (
-                          <img src={row.photoUrl} alt="" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border)', flexShrink: 0 }} />
-                        ) : (
-                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary-dim)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, flexShrink: 0 }}>
-                            {row.name?.charAt(0) || '?'}
-                          </div>
-                        )}
+                        <img
+                          src={row.photoUrl || '/icons/default_profile_photo.jpg'}
+                          alt=""
+                          style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border)', flexShrink: 0 }}
+                        />
                         <div style={{ minWidth: 0, overflow: 'hidden' }}>
                           <div style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.name}</div>
                           <div style={{ fontSize: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.position || 'Staff'} • {row.employeeCode}</div>

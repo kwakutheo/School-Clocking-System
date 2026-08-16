@@ -558,28 +558,15 @@ function EmployeeRankRow({
           height: "34px",
           borderRadius: "50%",
           flexShrink: 0,
-          background: emp.photoUrl
-            ? "transparent"
-            : emp.school.primaryColor + "33",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "13px",
-          fontWeight: 800,
-          color: emp.school.primaryColor,
           border: `2px solid ${emp.school.primaryColor}44`,
           overflow: "hidden",
         }}
       >
-        {emp.photoUrl ? (
-          <img
-            src={emp.photoUrl}
-            alt={emp.name}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
-        ) : (
-          initials
-        )}
+        <img
+          src={emp.photoUrl || '/icons/default_profile_photo.jpg'}
+          alt={emp.name}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
       </div>
 
       {/* Name + school */}
@@ -2811,20 +2798,16 @@ export default function SaasOverviewPage() {
                           border: `2px solid ${emp.school.primaryColor}55`,
                         }}
                       >
-                        {emp.photoUrl ? (
-                          <img
-                            src={emp.photoUrl}
-                            alt={emp.name}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                              borderRadius: "50%",
-                            }}
-                          />
-                        ) : (
-                          initials
-                        )}
+                        <img
+                          src={emp.photoUrl || '/icons/default_profile_photo.jpg'}
+                          alt={emp.name}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            borderRadius: "50%",
+                          }}
+                        />
                       </div>
                       {/* Name + school */}
                       <div style={{ minWidth: 0 }}>
@@ -3971,15 +3954,11 @@ export default function SaasOverviewPage() {
                               overflow: "hidden"
                             }}
                           >
-                            {emp.photoUrl ? (
-                              <img
-                                src={emp.photoUrl}
-                                alt={emp.name}
-                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                              />
-                            ) : (
-                              initials
-                            )}
+                            <img
+                              src={emp.photoUrl || '/icons/default_profile_photo.jpg'}
+                              alt={emp.name}
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            />
                           </div>
                           <span style={{ fontWeight: 700, fontSize: "13px", color: "var(--text-primary)" }}>
                             {emp.name}

@@ -228,13 +228,15 @@ export default function ProfilePage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 32 }}>
             <div style={{ position: 'relative', width: 100, height: 100, marginBottom: 16 }}>
-              <div style={{ width: 100, height: 100, borderRadius: '50%', border: '4px solid var(--primary)', background: 'linear-gradient(135deg, var(--primary), #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 36, fontWeight: 'bold', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+              <div style={{ width: 100, height: 100, borderRadius: '50%', border: '4px solid var(--primary)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
                 {isUploadingPhoto ? (
                   <Loader2 size={32} className="spinner-lucide" />
-                ) : user.photoUrl ? (
-                  <img src={user.photoUrl} alt={user.fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  initials(user.fullName)
+                  <img
+                    src={user.photoUrl || '/icons/default_profile_photo.jpg'}
+                    alt={user.fullName}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
                 )}
               </div>
               

@@ -292,13 +292,11 @@ export default function GlobalEmployeeRegistryPage() {
                   <tr key={emp.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}>
                     <td style={{ padding: '16px 24px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {emp.photoUrl ? (
-                          <img src={emp.photoUrl} alt="Avatar" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
-                        ) : (
-                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--bg-input)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <UserCircle size={20} color="var(--text-secondary)" />
-                          </div>
-                        )}
+                        <img
+                          src={emp.photoUrl || '/icons/default_profile_photo.jpg'}
+                          alt="Avatar"
+                          style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
+                        />
                         <div>
                           <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>{emp.user?.fullName || 'Unknown'}</div>
                           <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
@@ -439,15 +437,11 @@ export default function GlobalEmployeeRegistryPage() {
 
             {/* Avatar + Identity Hero */}
             <div style={{ padding: '24px', background: 'linear-gradient(135deg, rgba(99,102,241,0.06) 0%, transparent 60%)', display: 'flex', alignItems: 'center', gap: '16px', borderBottom: '1px solid var(--border)' }}>
-              {selectedEmp.photoUrl ? (
-                <img src={selectedEmp.photoUrl} alt="Avatar" style={{ width: '60px', height: '60px', borderRadius: '12px', objectFit: 'cover', border: '2px solid var(--border)', flexShrink: 0 }} />
-              ) : (
-                <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: `linear-gradient(135deg, ${selectedEmp.school?.primaryColor || 'var(--primary)'} 0%, ${selectedEmp.school?.primaryColor || 'var(--primary)'}88 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 4px 12px ${selectedEmp.school?.primaryColor || 'var(--primary)'}40` }}>
-                  <span style={{ fontSize: '22px', fontWeight: 800, color: '#fff' }}>
-                    {selectedEmp.user?.fullName?.charAt(0)?.toUpperCase() || '?'}
-                  </span>
-                </div>
-              )}
+              <img
+                src={selectedEmp.photoUrl || '/icons/default_profile_photo.jpg'}
+                alt="Avatar"
+                style={{ width: '60px', height: '60px', borderRadius: '12px', objectFit: 'cover', border: '2px solid var(--border)', flexShrink: 0 }}
+              />
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{selectedEmp.user?.fullName || 'Unknown'}</div>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '3px', fontFamily: 'monospace', letterSpacing: '0.03em' }}>{selectedEmp.employeeCode}{selectedEmp.position ? ` · ${selectedEmp.position}` : ''}</div>

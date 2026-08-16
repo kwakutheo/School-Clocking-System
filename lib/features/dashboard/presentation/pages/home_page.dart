@@ -510,17 +510,8 @@ class _DashboardTabState extends State<_DashboardTab> {
                             backgroundColor: colorScheme.primaryContainer,
                             backgroundImage: user?.photoUrl != null
                                 ? NetworkImage(user!.photoUrl!)
-                                : null,
-                            child: user?.photoUrl == null
-                                ? Text(
-                                    user?.initials ?? '?',
-                                    style: TextStyle(
-                                      color: colorScheme.onPrimaryContainer,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 14,
-                                    ),
-                                  )
-                                : null,
+                                : const AssetImage('assets/images/default_profile_photo.jpg') as ImageProvider,
+                            child: null,
                           ),
                         ),
                       ),

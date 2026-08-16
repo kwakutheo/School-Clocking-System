@@ -278,13 +278,11 @@ export default function ArchivedEmployeesPage() {
                   <tr key={emp.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}>
                     <td style={{ padding: '16px 24px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {emp.photoUrl ? (
-                          <img src={emp.photoUrl} alt="Avatar" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', opacity: 0.7, filter: 'grayscale(30%)' }} />
-                        ) : (
-                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--bg-input)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.7 }}>
-                            <UserCircle size={20} color="var(--text-secondary)" />
-                          </div>
-                        )}
+                        <img
+                          src={emp.photoUrl || '/icons/default_profile_photo.jpg'}
+                          alt="Avatar"
+                          style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', opacity: 0.7, filter: 'grayscale(30%)' }}
+                        />
                         <div>
                           <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>{emp.user?.fullName || 'Unknown'}</div>
                           <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>

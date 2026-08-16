@@ -369,7 +369,11 @@ export default function EmployeesPage() {
                           <td>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                               <div className="avatar">
-                                {(emp.user?.fullName ?? '').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
+                                {emp.photoUrl ? (
+                                  <img src={emp.photoUrl} alt={emp.user?.fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                  (emp.user?.fullName ?? '').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
+                                )}
                               </div>
                               <div>
                                 <div style={{ fontWeight: 600 }}>{emp.user?.fullName}</div>

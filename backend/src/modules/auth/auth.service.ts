@@ -161,6 +161,7 @@ export class AuthService {
 
     if (employee) {
       (publicUser as any).employeeId = employee.id;
+      (publicUser as any).photoUrl = employee.photoUrl;
     }
 
     await this.users.update(user.id, { lastLoginAt: new Date() });
@@ -234,6 +235,7 @@ export class AuthService {
       .catch(() => null);
     if (employee) {
       (publicUser as any).employeeId = employee.id;
+      (publicUser as any).photoUrl = employee.photoUrl;
     }
     return publicUser;
   }

@@ -371,9 +371,16 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             style={{ cursor: 'pointer' }}
           >
             <div className="user-avatar" style={{ 
-              background: 'linear-gradient(135deg, var(--primary), #a855f7)',
-              boxShadow: '0 4px 12px rgba(59,130,246,0.3)'
-            }}>{initials(user.fullName)}</div>
+              background: user.photoUrl ? 'transparent' : 'linear-gradient(135deg, var(--primary), #a855f7)',
+              boxShadow: user.photoUrl ? 'none' : '0 4px 12px rgba(59,130,246,0.3)',
+              overflow: 'hidden'
+            }}>
+              {user.photoUrl ? (
+                <img src={user.photoUrl} alt={user.fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                initials(user.fullName)
+              )}
+            </div>
             {(!collapsed || mobileOpen) && (
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="user-name" style={{ 

@@ -516,6 +516,94 @@ export default function ProfilePage() {
         </form>
       </div>
 
+      {/* ── Full-image lightbox ─────────────────────────────────────────── */}
+      {showFullImage && user.photoUrl && (
+        <div
+          onClick={() => setShowFullImage(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.85)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'zoom-out',
+          }}
+        >
+          <button
+            onClick={() => setShowFullImage(false)}
+            style={{
+              position: 'absolute', top: 20, right: 20,
+              background: 'rgba(255,255,255,0.15)', border: 'none',
+              borderRadius: '50%', width: 40, height: 40,
+              color: 'white', fontSize: 22, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            ✕
+          </button>
+          <img
+            src={user.photoUrl}
+            alt="Profile"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '90vw', maxHeight: '90vh',
+              borderRadius: 12, objectFit: 'contain',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
+            }}
+          />
+        </div>
+      )}
+
+      {/* ── Remove photo confirmation dialog ──────────────────────────────── */}
+      {showRemovePhotoConfirm && (
+        <div
+          onClick={() => setShowRemovePhotoConfirm(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'var(--bg-card)', borderRadius: 12,
+              padding: 28, maxWidth: 380, width: '90%',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.3)',
+              border: '1px solid var(--border)',
+            }}
+          >
+            <h3 style={{ margin: '0 0 8px', color: 'var(--text-primary)', fontSize: 17 }}>
+              Remove Profile Photo
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: '0 0 24px' }}>
+              Are you sure you want to remove your profile photo? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setShowRemovePhotoConfirm(false)}
+                style={{
+                  background: 'var(--bg-input)', border: '1px solid var(--border)',
+                  borderRadius: 8, padding: '8px 18px', cursor: 'pointer',
+                  color: 'var(--text-primary)', fontWeight: 500,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={executeRemovePhoto}
+                style={{
+                  background: 'var(--danger, #ef4444)', border: 'none',
+                  borderRadius: 8, padding: '8px 18px', cursor: 'pointer',
+                  color: 'white', fontWeight: 600,
+                }}
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

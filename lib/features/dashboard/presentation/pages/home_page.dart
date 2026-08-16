@@ -512,9 +512,13 @@ class _DashboardTabState extends State<_DashboardTab> {
                                 ? NetworkImage(user!.photoUrl!)
                                 : const AssetImage('assets/images/default_profile_photo.jpg') as ImageProvider,
                             onForegroundImageError: (_, __) {},
-                            child: Image.asset(
-                              'assets/images/default_profile_photo.jpg',
-                              fit: BoxFit.cover,
+                            child: ClipOval(
+                              child: Image.asset(
+                                'assets/images/default_profile_photo.jpg',
+                                fit: BoxFit.cover,
+                                width: 40,
+                                height: 40,
+                              ),
                             ),
                           ),
                         ),

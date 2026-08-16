@@ -14,7 +14,6 @@ import 'package:tk_clocking_system/features/auth/data/models/user_model.dart';
 import 'package:tk_clocking_system/features/auth/domain/entities/user_entity.dart';
 import 'package:tk_clocking_system/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:tk_clocking_system/features/auth/presentation/bloc/auth_event.dart';
-import 'package:tk_clocking_system/shared/widgets/face_capture_page.dart';
 import 'package:tk_clocking_system/features/auth/presentation/bloc/auth_state.dart';
 import 'package:tk_clocking_system/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:tk_clocking_system/features/profile/presentation/bloc/profile_event.dart';
@@ -132,7 +131,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _pickAndUploadPhoto() async {
     // Show source picker bottom sheet
-    final source = await showModalBottomSheet<String>(
+    final source = await showModalBottomSheet<ImageSource>(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -145,12 +144,12 @@ class _ProfilePageState extends State<ProfilePage> {
             ListTile(
               leading: const Icon(Icons.camera_alt_rounded),
               title: const Text('Take a Photo'),
-              onTap: () => Navigator.pop(ctx, 'camera'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_rounded),
               title: const Text('Choose from Gallery'),
-              onTap: () => Navigator.pop(ctx, 'gallery'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             const SizedBox(height: 8),
           ],
@@ -160,22 +159,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (source == null || !mounted) return;
 
-    XFile? pickedFile;
-
-    if (source == 'camera') {
-      pickedFile = await Navigator.push<XFile>(
-        context,
-        MaterialPageRoute(builder: (_) => const FaceCapturePage()),
-      );
-    } else if (source == 'gallery') {
-      final picker = ImagePicker();
-      pickedFile = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 85,
-      );
-    }
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: source,
+      preferredCameraDevice: source == ImageSource.camera ? CameraDevice.front : CameraDevice.rear,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 85,
+    );
 
     if (pickedFile == null || !mounted) return;
 
@@ -603,9 +594,13 @@ class _ProfilePageState extends State<ProfilePage> {
                                                           ? NetworkImage(user.photoUrl!)
                                                           : const AssetImage('assets/images/default_profile_photo.jpg') as ImageProvider,
                                                       onForegroundImageError: (_, __) {},
-                                                      child: Image.asset(
-                                                        'assets/images/default_profile_photo.jpg',
-                                                        fit: BoxFit.cover,
+                                                      child: ClipOval(
+                                                        child: Image.asset(
+                                                          'assets/images/default_profile_photo.jpg',
+                                                          fit: BoxFit.cover,
+                                                          width: 84,
+                                                          height: 84,
+                                                        ),
                                                       ),
                                                     ),
                                             ),

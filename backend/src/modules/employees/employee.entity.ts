@@ -56,7 +56,7 @@ export class Employee extends TenantBaseEntity {
   @Column({ name: 'hire_date', type: 'date', nullable: true })
   hireDate: Date;
 
-  @Column({ name: 'photo_url', nullable: true })
+  @Column({ name: 'photo_url', type: 'varchar', nullable: true })
   photoUrl: string | null;
 
   @Column({

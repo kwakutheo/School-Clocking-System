@@ -211,8 +211,9 @@ export class EmployeesController {
       throw new BadRequestException(`Failed to upload photo: ${err}`);
     }
 
-    // Build the permanent public CDN URL
-    const photoUrl = `${supabaseUrl}/storage/v1/object/public/${BUCKET}/${storagePath}`;
+    // Build the permanent public CDN URL.
+    // Append a timestamp to break the cache on mobile and web clients so they immediately show the new photo.
+    const photoUrl = `${supabaseUrl}/storage/v1/object/public/${BUCKET}/${storagePath}?t=${Date.now()}`;
 
     return this.service.updateProfile(user.id, { photoUrl });
   }

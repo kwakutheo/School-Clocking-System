@@ -172,6 +172,7 @@ class AuthRepositoryImpl implements AuthRepository {
         ...userMap,
         'employee_id': data['id'] ?? userMap['employee_id'],
         'employee_code': data['employeeCode'] ?? userMap['employee_code'],
+        'photo_url': data['photoUrl'] ?? data['photo_url'], // employee-level
         'branch': data['branch'],
         'department': data['department'],
         'position': data['position'],

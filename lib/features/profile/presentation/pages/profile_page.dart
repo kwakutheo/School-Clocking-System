@@ -187,14 +187,29 @@ class _ProfilePageState extends State<ProfilePage> {
       );
 
       final data = response.data!;
-      // The endpoint returns the full Employee object with nested user
-      final updatedUser = UserModel.fromJson(
-        data['user'] as Map<String, dynamic>? ?? data,
-      );
+      // The endpoint returns an Employee object: photoUrl is at the top level
+      // and user fields are nested under data['user']. Mirror the same merge
+      // logic used in syncProfile (auth_repository_impl.dart) so every
+      // employee-level field is picked up by UserModel.fromJson.
+      final userMap =
+          Map<String, dynamic>.from(data['user'] as Map<String, dynamic>? ?? data);
+      final merged = <String, dynamic>{
+        ...userMap,
+        'employee_id': data['id'] ?? userMap['employee_id'],
+        'employee_code': data['employeeCode'] ?? userMap['employee_code'],
+        'photo_url': data['photoUrl'] ?? data['photo_url'],
+        'branch': data['branch'],
+        'department': data['department'],
+        'position': data['position'],
+        'hire_date': data['hireDate'],
+      };
+      final updatedUser = UserModel.fromJson(merged);
 
       // Persist updated user and refresh Bloc
       final storage = sl<StorageService>();
       await storage.saveUserJson(updatedUser.toJsonString());
+      // Also update the offline cache so the photo survives offline mode
+      await storage.saveOfflineUserJson(updatedUser.toJsonString());
 
       if (mounted) {
         context.read<AuthBloc>().add(const AuthCheckSessionEvent());
@@ -202,6 +217,7 @@ class _ProfilePageState extends State<ProfilePage> {
           const SnackBar(content: Text('Profile photo updated.')),
         );
       }
+
     } on DioException catch (e) {
       final msg = e.response?.data?['message'];
       final errorText = msg is String

@@ -227,32 +227,39 @@ export default function ProfilePage() {
           {success && <div className="alert alert-success">{success}</div>}
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 32 }}>
-            <div style={{ position: 'relative', width: 100, height: 100, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 36, fontWeight: 'bold', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-              {isUploadingPhoto ? (
-                <Loader2 size={32} className="spinner-lucide" />
-              ) : user.photoUrl ? (
-                <img src={user.photoUrl} alt={user.fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                initials(user.fullName)
-              )}
-              
-              <div 
-                style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'space-around', padding: '4px 0', opacity: 0, transition: 'opacity 0.2s', cursor: 'pointer' }}
-                onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-                onMouseLeave={e => e.currentTarget.style.opacity = '0'}
-              >
-                <button type="button" onClick={() => fileInputRef.current?.click()} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: 4 }} title="Upload Photo">
-                  <Camera size={16} />
-                </button>
-                {user.photoUrl && (
-                  <button type="button" onClick={() => setShowRemovePhotoConfirm(true)} style={{ background: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer', padding: 4 }} title="Remove Photo">
-                    <Trash2 size={16} />
-                  </button>
+            <div style={{ position: 'relative', width: 100, height: 100, marginBottom: 8 }}>
+              <div style={{ width: 100, height: 100, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 36, fontWeight: 'bold', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+                {isUploadingPhoto ? (
+                  <Loader2 size={32} className="spinner-lucide" />
+                ) : user.photoUrl ? (
+                  <img src={user.photoUrl} alt={user.fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  initials(user.fullName)
                 )}
               </div>
+              
+              <button 
+                type="button" 
+                onClick={() => fileInputRef.current?.click()} 
+                style={{ position: 'absolute', bottom: -4, right: -4, background: 'var(--primary)', border: '2px solid var(--bg-card)', borderRadius: '50%', color: 'white', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} 
+                title="Upload Photo"
+              >
+                <Camera size={14} />
+              </button>
+
+              {user.photoUrl && (
+                <button 
+                  type="button" 
+                  onClick={() => setShowRemovePhotoConfirm(true)} 
+                  style={{ position: 'absolute', top: -4, right: -4, background: 'var(--danger)', border: '2px solid var(--bg-card)', borderRadius: '50%', color: 'white', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} 
+                  title="Remove Photo"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </div>
             <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/jpeg, image/png, image/webp" style={{ display: 'none' }} />
-            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 8 }}>Profile Photo</div>
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Profile Photo</div>
           </div>
 
           <div className="form-grid">

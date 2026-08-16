@@ -270,7 +270,6 @@ export default function ProfilePage() {
               )}
             </div>
             <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/jpeg, image/png, image/webp" style={{ display: 'none' }} />
-            <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Profile Photo</div>
           </div>
 
           <div className="form-grid">

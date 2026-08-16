@@ -176,7 +176,8 @@ export class EmployeesController {
       }),
     });
 
-    // Upload the file buffer directly (upsert=true overwrites existing)
+    // Upload the file buffer directly (upsert=true overwrites existing).
+    // Wrap Buffer in Uint8Array so TypeScript is happy with fetch's BodyInit type.
     const uploadRes = await fetch(
       `${storageBase}/object/${BUCKET}/${storagePath}`,
       {
@@ -186,10 +187,7 @@ export class EmployeesController {
           'Content-Type': file.mimetype,
           'x-upsert': 'true',
         },
-        body: file.buffer.buffer.slice(
-          file.buffer.byteOffset,
-          file.buffer.byteOffset + file.buffer.byteLength,
-        ) as ArrayBuffer,
+        body: new Uint8Array(file.buffer),
       },
     );
 

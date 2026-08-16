@@ -165,7 +165,10 @@ export class EmployeesController {
       apikey: serviceKey,
     };
 
-    // Ensure the bucket exists (409 Conflict is fine — it already exists)
+    // Ensure the bucket exists and is public.
+    // First try to create it; if it already exists (409) that's fine.
+    // Then always PUT to make sure the public flag is set correctly —
+    // the initial bucket may have been created as private.
     await fetch(`${storageBase}/bucket`, {
       method: 'POST',
       headers: { ...authHeaders, 'Content-Type': 'application/json' },
@@ -173,6 +176,18 @@ export class EmployeesController {
         id: BUCKET,
         name: BUCKET,
         public: true,
+        file_size_limit: 5 * 1024 * 1024,
+        allowed_mime_types: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+      }),
+    });
+    // Always update to ensure the bucket is public (idempotent)
+    await fetch(`${storageBase}/bucket/${BUCKET}`, {
+      method: 'PUT',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        public: true,
+        file_size_limit: 5 * 1024 * 1024,
+        allowed_mime_types: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
       }),
     });
 

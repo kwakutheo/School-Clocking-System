@@ -221,8 +221,8 @@ class _ProfilePageState extends State<ProfilePage> {
       final msg = e.response?.data?['message'];
       final errorText = msg is String
           ? msg
-          : msg is List
-              ? (msg as List<dynamic>).join(', ')
+          : msg is List<dynamic>
+              ? msg.join(', ')
               : e.message ?? 'Failed to upload photo.';
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -303,8 +303,8 @@ class _ProfilePageState extends State<ProfilePage> {
       final msg = e.response?.data?['message'];
       final errorText = msg is String
           ? msg
-          : msg is List
-              ? (msg as List<dynamic>).join(', ')
+          : msg is List<dynamic>
+              ? msg.join(', ')
               : e.message ?? 'Failed to remove photo.';
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

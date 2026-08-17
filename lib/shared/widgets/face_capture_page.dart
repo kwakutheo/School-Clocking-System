@@ -1,6 +1,9 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 
 class FaceCapturePage extends StatefulWidget {
   const FaceCapturePage({super.key});
@@ -123,10 +126,15 @@ class _FaceCapturePageState extends State<FaceCapturePage> {
     setState(() => _isCapturing = true);
 
     try {
-      final XFile photo = await _controller!.takePicture();
+      // 1. Capture raw photo from sensor (native ratio, e.g. 9:16 or 4:3)
+      final XFile rawPhoto = await _controller!.takePicture();
+
+      // 2. Crop the raw bytes to a true 1:1 square (center crop)
+      final XFile squarePhoto = await _cropToSquare(rawPhoto);
+
       if (mounted) {
         setState(() {
-          _capturedPhoto = photo;
+          _capturedPhoto = squarePhoto;
           _isCapturing = false;
         });
       }
@@ -139,6 +147,36 @@ class _FaceCapturePageState extends State<FaceCapturePage> {
         setState(() => _isCapturing = false);
       }
     }
+  }
+
+  /// Reads the raw captured image, center-crops it to a square at the
+  /// pixel level, and returns a new [XFile] pointing to the cropped file.
+  Future<XFile> _cropToSquare(XFile rawFile) async {
+    final Uint8List bytes = await rawFile.readAsBytes();
+    final img.Image? original = img.decodeImage(bytes);
+    if (original == null) return rawFile; // fallback: return original
+
+    final int w = original.width;
+    final int h = original.height;
+    final int size = w < h ? w : h; // shortest side becomes the square edge
+    final int x = (w - size) ~/ 2;  // center horizontally
+    final int y = (h - size) ~/ 2;  // center vertically
+
+    final img.Image cropped = img.copyCrop(
+      original,
+      x: x,
+      y: y,
+      width: size,
+      height: size,
+    );
+
+    // Save to a temp file
+    final Directory tmpDir = await getTemporaryDirectory();
+    final String outPath = '${tmpDir.path}/profile_square_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final File outFile = File(outPath);
+    await outFile.writeAsBytes(img.encodeJpg(cropped, quality: 90));
+
+    return XFile(outPath);
   }
 
   void _retakePhoto() {
@@ -190,41 +228,70 @@ class _FaceCapturePageState extends State<FaceCapturePage> {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            Image.file(
-              File(_capturedPhoto!.path),
-              fit: BoxFit.contain,
+            Center(
+              child: AspectRatio(
+                aspectRatio: 3 / 4,
+                child: Image.file(
+                  File(_capturedPhoto!.path),
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
+            // Retake Button
             Positioned(
               bottom: 40,
               left: 20,
+              child: GestureDetector(
+                onTap: _retakePhoto,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Colors.white24, width: 1),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.refresh, color: Colors.white, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Retake',
+                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            
+            // Use Photo Button
+            Positioned(
+              bottom: 40,
               right: 20,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton.icon(
-                    onPressed: _retakePhoto,
-                    icon: const Icon(Icons.refresh, color: Colors.white),
-                    label: const Text(
-                      'Retake',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      backgroundColor: Colors.black54,
-                    ),
+              child: GestureDetector(
+                onTap: _confirmPhoto,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4)),
+                    ],
                   ),
-                  ElevatedButton.icon(
-                    onPressed: _confirmPhoto,
-                    icon: const Icon(Icons.check),
-                    label: const Text(
-                      'Use Photo',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check, color: Colors.white, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Use Photo',
+                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ],
@@ -237,7 +304,7 @@ class _FaceCapturePageState extends State<FaceCapturePage> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ── Full Screen Camera Preview ────────────────────────────────────
+          // ── Full Screen Camera Preview (no artificial crop) ───────────────
           Center(
             child: CameraPreview(_controller!),
           ),

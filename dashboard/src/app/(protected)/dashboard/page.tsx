@@ -576,9 +576,6 @@ export default function DashboardPage() {
                   onMouseEnter={e => (e.currentTarget.style.background = 'rgba(245,158,11,0.04)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <div className="avatar" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', flexShrink: 0 }}>
-                    {emp.fullName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
-                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {emp.fullName}

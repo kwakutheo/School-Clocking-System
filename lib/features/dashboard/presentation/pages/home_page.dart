@@ -66,7 +66,8 @@ class HomePageState extends State<HomePage> {
                 },
               ),
               ListTile(
-                title: const Text('Permissions & Leaves', textAlign: TextAlign.right),
+                title: const Text('Permissions & Leaves',
+                    textAlign: TextAlign.right),
                 trailing: const Icon(Icons.calendar_month_rounded),
                 onTap: () {
                   Navigator.pop(context);
@@ -220,13 +221,14 @@ class _DashboardTabState extends State<_DashboardTab> {
       try {
         final cachedData =
             HomeDataModel.fromJson(Map<String, dynamic>.from(cached));
-            
+
         _serverBaseline = cachedData;
         final now = sl<TimeService>().currentGhanaTime;
-        
-        // Always pass through the offline engine so that any pending 
+
+        // Always pass through the offline engine so that any pending
         // local records created after the cache snapshot are overlaid.
-        final effectiveData = OfflineStateEngine.recomputeForOfflineDay(cachedData, now);
+        final effectiveData =
+            OfflineStateEngine.recomputeForOfflineDay(cachedData, now);
 
         setState(() {
           _data = effectiveData;
@@ -286,7 +288,7 @@ class _DashboardTabState extends State<_DashboardTab> {
 
             // Fetch holidays quietly to ensure offline state engine has them cached
             sl<CalendarRepository>().getHolidays().then((_) {});
-            
+
             // Re-schedule OS-level local notifications to mirror the banners.
             // This is idempotent — safe to call on every refresh.
             sl<NotificationService>().scheduleShiftReminders(data);
@@ -329,7 +331,7 @@ class _DashboardTabState extends State<_DashboardTab> {
       listener: (context, state) {
         if (state is AttendanceRecorded) {
           _checkPending();
-          
+
           // Optimistically update the UI immediately with the local record
           if (_serverBaseline != null) {
             final now = sl<TimeService>().currentGhanaTime;
@@ -338,7 +340,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                   _serverBaseline!, now);
             });
           }
-          
+
           _loadData(silent: true);
 
           // Cancel shift reminders that are no longer relevant based on
@@ -506,18 +508,20 @@ class _DashboardTabState extends State<_DashboardTab> {
                             ),
                           ),
                           child: CircleAvatar(
-                            radius: 20,
+                            radius: 25,
                             backgroundColor: colorScheme.primaryContainer,
                             foregroundImage: user?.photoUrl != null
                                 ? NetworkImage(user!.photoUrl!)
-                                : const AssetImage('assets/images/default_profile_photo.jpg') as ImageProvider,
+                                : const AssetImage(
+                                        'assets/images/default_profile_photo.jpg')
+                                    as ImageProvider,
                             onForegroundImageError: (_, __) {},
                             child: ClipOval(
                               child: Image.asset(
                                 'assets/images/default_profile_photo.jpg',
                                 fit: BoxFit.cover,
-                                width: 40,
-                                height: 40,
+                                width: 50,
+                                height: 50,
                               ),
                             ),
                           ),

@@ -18,6 +18,7 @@ import 'package:tk_clocking_system/features/auth/presentation/bloc/auth_state.da
 import 'package:tk_clocking_system/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:tk_clocking_system/features/profile/presentation/bloc/profile_event.dart';
 import 'package:tk_clocking_system/features/profile/presentation/bloc/profile_state.dart';
+import 'package:tk_clocking_system/shared/widgets/face_capture_page.dart';
 import 'package:tk_clocking_system/shared/enums/user_role.dart';
 import 'package:intl/intl.dart';
 import 'package:tk_clocking_system/shared/widgets/app_text_field.dart';
@@ -131,7 +132,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _pickAndUploadPhoto() async {
     // Show source picker bottom sheet
-    final source = await showModalBottomSheet<ImageSource>(
+    final source = await showModalBottomSheet<String>(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -144,12 +145,12 @@ class _ProfilePageState extends State<ProfilePage> {
             ListTile(
               leading: const Icon(Icons.camera_alt_rounded),
               title: const Text('Take a Photo'),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              onTap: () => Navigator.pop(ctx, 'camera'),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_rounded),
               title: const Text('Choose from Gallery'),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              onTap: () => Navigator.pop(ctx, 'gallery'),
             ),
             const SizedBox(height: 8),
           ],
@@ -159,14 +160,22 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (source == null || !mounted) return;
 
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(
-      source: source,
-      preferredCameraDevice: source == ImageSource.camera ? CameraDevice.front : CameraDevice.rear,
-      maxWidth: 800,
-      maxHeight: 800,
-      imageQuality: 85,
-    );
+    XFile? pickedFile;
+
+    if (source == 'camera') {
+      pickedFile = await Navigator.push<XFile>(
+        context,
+        MaterialPageRoute(builder: (_) => const FaceCapturePage()),
+      );
+    } else if (source == 'gallery') {
+      final picker = ImagePicker();
+      pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+    }
 
     if (pickedFile == null || !mounted) return;
 

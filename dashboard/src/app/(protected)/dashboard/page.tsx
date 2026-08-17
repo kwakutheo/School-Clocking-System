@@ -682,9 +682,6 @@ export default function DashboardPage() {
                   <tr key={log.id} style={log.isAdminOverride ? { background: 'rgba(59,130,246,0.04)' } : {}}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div className="avatar">
-                          {(log.employee?.user?.fullName ?? '?').split(' ').map((w: string) => w[0]).join('').slice(0, 2)}
-                        </div>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: 14 }}>{log.employee?.user?.fullName ?? 'Unknown'}</div>
                           <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{log.employee?.employeeCode}</div>

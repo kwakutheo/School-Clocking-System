@@ -508,7 +508,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                             ),
                           ),
                           child: CircleAvatar(
-                            radius: 25,
+                            radius: 30,
                             backgroundColor: colorScheme.primaryContainer,
                             foregroundImage: user?.photoUrl != null
                                 ? NetworkImage(user!.photoUrl!)
@@ -520,8 +520,8 @@ class _DashboardTabState extends State<_DashboardTab> {
                               child: Image.asset(
                                 'assets/images/default_profile_photo.jpg',
                                 fit: BoxFit.cover,
-                                width: 50,
-                                height: 50,
+                                width: 60,
+                                height: 60,
                               ),
                             ),
                           ),

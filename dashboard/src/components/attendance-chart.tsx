@@ -110,7 +110,7 @@ export function AttendanceChart({ data, onHourClick }: AttendanceChartProps) {
     setMounted(true);
   }, []);
 
-  const hours = Array.from({ length: 12 }, (_, i) => i + 6); // 6am to 5pm
+  const hours = Array.from({ length: 13 }, (_, i) => i + 6); // 6am to 6pm
 
   const chartData = hours.map((h) => {
     const label = `${h}:00`;

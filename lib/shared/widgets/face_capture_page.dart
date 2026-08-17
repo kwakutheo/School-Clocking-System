@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
@@ -14,6 +15,7 @@ class _FaceCapturePageState extends State<FaceCapturePage> {
   int _selectedCameraIndex = 0;
   bool _isInitializing = true;
   bool _isCapturing = false;
+  XFile? _capturedPhoto;
   FlashMode _flashMode = FlashMode.off;
 
   @override
@@ -123,7 +125,10 @@ class _FaceCapturePageState extends State<FaceCapturePage> {
     try {
       final XFile photo = await _controller!.takePicture();
       if (mounted) {
-        Navigator.pop(context, photo);
+        setState(() {
+          _capturedPhoto = photo;
+          _isCapturing = false;
+        });
       }
     } catch (e) {
       debugPrint('Error capturing photo: $e');
@@ -133,6 +138,18 @@ class _FaceCapturePageState extends State<FaceCapturePage> {
         );
         setState(() => _isCapturing = false);
       }
+    }
+  }
+
+  void _retakePhoto() {
+    setState(() {
+      _capturedPhoto = null;
+    });
+  }
+
+  void _confirmPhoto() {
+    if (_capturedPhoto != null) {
+      Navigator.pop(context, _capturedPhoto);
     }
   }
 
@@ -163,6 +180,54 @@ class _FaceCapturePageState extends State<FaceCapturePage> {
             'No camera available.',
             style: TextStyle(color: Colors.white, fontSize: 18),
           ),
+        ),
+      );
+    }
+
+    if (_capturedPhoto != null) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.file(
+              File(_capturedPhoto!.path),
+              fit: BoxFit.contain,
+            ),
+            Positioned(
+              bottom: 40,
+              left: 20,
+              right: 20,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton.icon(
+                    onPressed: _retakePhoto,
+                    icon: const Icon(Icons.refresh, color: Colors.white),
+                    label: const Text(
+                      'Retake',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      backgroundColor: Colors.black54,
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _confirmPhoto,
+                    icon: const Icon(Icons.check),
+                    label: const Text(
+                      'Use Photo',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       );
     }

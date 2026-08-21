@@ -92,7 +92,10 @@ const releaseNotes = envString(
   'APP_ANDROID_RELEASE_NOTES',
   existing.releaseNotes ?? 'Bug fixes and improvements.',
 );
-const updatedAt = envString('APP_ANDROID_UPDATED_AT', new Date().toISOString());
+const updatedAt = envString(
+  'APP_ANDROID_UPDATED_AT',
+  existing.updatedAt ?? new Date().toISOString(),
+);
 
 const manifest = {
   platform: 'android',

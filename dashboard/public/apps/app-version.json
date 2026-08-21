@@ -6,7 +6,7 @@
   "apkFileName": "school-clocking-universal.apk",
   "required": true,
   "releaseNotes": "text shown in the app update prompt",
-  "updatedAt": "2026-08-21T21:28:01.787Z",
+  "updatedAt": "2026-08-21T21:40:35.000Z",
   "downloads": {
     "arm64": {
       "label": "Android 64-bit",

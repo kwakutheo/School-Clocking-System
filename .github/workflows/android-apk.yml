@@ -7,13 +7,7 @@ on:
       - main
       - master
     paths:
-      - .github/workflows/android-apk.yml
-      - android/**
-      - assets/**
-      - lib/**
       - pubspec.yaml
-      - pubspec.lock
-      - scripts/**
 
 permissions:
   contents: write
@@ -38,19 +32,60 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check Flutter version bump
+        id: version_gate
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+            echo "Manual run requested; APK build will continue."
+            exit 0
+          fi
+
+          CURRENT_VERSION="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
+          CURRENT_CODE="${CURRENT_VERSION##*+}"
+          PREVIOUS_VERSION="$(git show "$BEFORE_SHA:pubspec.yaml" 2>/dev/null | grep '^version:' | awk '{print $2}' || true)"
+          PREVIOUS_CODE="${PREVIOUS_VERSION##*+}"
+
+          if ! [[ "$CURRENT_CODE" =~ ^[0-9]+$ ]]; then
+            echo "Invalid current Flutter version: $CURRENT_VERSION"
+            exit 1
+          fi
+
+          if ! [[ "$PREVIOUS_CODE" =~ ^[0-9]+$ ]]; then
+            echo "No previous Flutter version found; APK build will continue."
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$CURRENT_CODE" -gt "$PREVIOUS_CODE" ]; then
+            echo "Flutter build number increased: $PREVIOUS_VERSION -> $CURRENT_VERSION"
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Flutter build number did not increase: $PREVIOUS_VERSION -> $CURRENT_VERSION"
+            echo "Skipping APK build."
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Set up Java
+        if: steps.version_gate.outputs.should_build == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Set up Flutter
+        if: steps.version_gate.outputs.should_build == 'true'
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
       - name: Configure release signing
+        if: steps.version_gate.outputs.should_build == 'true'
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -71,6 +106,7 @@ jobs:
           EOF
 
       - name: Configure Firebase Android
+        if: steps.version_gate.outputs.should_build == 'true'
         env:
           GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
         run: |
@@ -83,12 +119,15 @@ jobs:
           echo "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > android/app/google-services.json
 
       - name: Install Flutter dependencies
+        if: steps.version_gate.outputs.should_build == 'true'
         run: flutter pub get
 
       - name: Analyze Flutter code
+        if: steps.version_gate.outputs.should_build == 'true'
         run: flutter analyze --no-pub
 
       - name: Build release APK
+        if: steps.version_gate.outputs.should_build == 'true'
         run: |
           flutter build apk --release \
             --split-per-abi \
@@ -99,6 +138,7 @@ jobs:
             --dart-define=APP_DOWNLOAD_BASE_URL="$APP_DOWNLOAD_BASE_URL"
 
       - name: Publish APK and update manifests
+        if: steps.version_gate.outputs.should_build == 'true'
         run: |
           set -euo pipefail
           mkdir -p dashboard/public/apps
@@ -111,6 +151,7 @@ jobs:
           node scripts/sync-mobile-app-version.mjs
 
       - name: Commit generated APK
+        if: steps.version_gate.outputs.should_build == 'true'
         run: |
           set -euo pipefail
           CHANGES="$(git status --porcelain -- dashboard/public/apps/school-clocking-arm64.apk dashboard/public/apps/school-clocking-arm32.apk dashboard/public/apps/school-clocking-universal.apk dashboard/public/apps/tk_clocking.apk dashboard/public/apps/app-version.json backend/src/modules/mobile-app/mobile-app.manifest.ts)"

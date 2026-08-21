@@ -6,7 +6,7 @@ export const androidAppManifest = {
   apkFileName: 'school-clocking-universal.apk',
   required: true,
   releaseNotes: 'text shown in the app update prompt',
-  updatedAt: '2026-08-21T23:01:07.000Z',
+  updatedAt: '2026-08-21T23:33:47.000Z',
   downloads: {
     arm64: {
       label: 'Android 64-bit',

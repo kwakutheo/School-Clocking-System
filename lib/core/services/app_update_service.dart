@@ -8,6 +8,7 @@ import 'package:tk_clocking_system/core/constants/app_constants.dart';
 import 'package:tk_clocking_system/core/network/api_client.dart';
 import 'package:tk_clocking_system/core/network/api_endpoints.dart';
 import 'package:tk_clocking_system/core/services/storage_service.dart';
+import 'package:tk_clocking_system/core/utils/app_version_utils.dart';
 
 class AppUpdateInfo {
   const AppUpdateInfo({
@@ -107,7 +108,9 @@ class AppUpdateService {
 
     try {
       final packageInfo = await PackageInfo.fromPlatform();
-      final currentVersionCode = int.tryParse(packageInfo.buildNumber) ?? 0;
+      final currentVersionCode = normalizeAndroidVersionCode(
+        int.tryParse(packageInfo.buildNumber) ?? 0,
+      );
       final response = await _api.get<Map<String, dynamic>>(
         ApiEndpoints.latestMobileApp,
       );

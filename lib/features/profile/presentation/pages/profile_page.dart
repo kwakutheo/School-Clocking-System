@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tk_clocking_system/core/network/api_client.dart';
 import 'package:tk_clocking_system/core/network/api_endpoints.dart';
 import 'package:tk_clocking_system/core/services/storage_service.dart';
+import 'package:tk_clocking_system/core/utils/app_version_utils.dart';
 import 'package:tk_clocking_system/features/auth/data/models/user_model.dart';
 import 'package:tk_clocking_system/features/auth/domain/entities/user_entity.dart';
 import 'package:tk_clocking_system/features/auth/presentation/bloc/auth_bloc.dart';
@@ -60,11 +61,11 @@ class _ProfilePageState extends State<ProfilePage> {
     final packageInfo = await PackageInfo.fromPlatform();
     if (!mounted) return;
 
-    final buildNumber = packageInfo.buildNumber.trim();
     setState(() {
-      _appVersionLabel = buildNumber.isEmpty
-          ? packageInfo.version
-          : '${packageInfo.version}+$buildNumber';
+      _appVersionLabel = formatAppVersionLabel(
+        versionName: packageInfo.version,
+        buildNumber: packageInfo.buildNumber,
+      );
     });
   }
 

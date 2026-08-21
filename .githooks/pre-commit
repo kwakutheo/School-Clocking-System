@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+changed_files="$(git diff --cached --name-only)"
+
+if printf "%s\n" "$changed_files" | grep -Eq '^(pubspec.yaml|dashboard/public/apps/.*\.apk)$'; then
+  echo "Syncing mobile app version metadata from pubspec.yaml..."
+  node scripts/sync-mobile-app-version.mjs
+  git add dashboard/public/apps/app-version.json backend/src/modules/mobile-app/mobile-app.manifest.ts
+fi

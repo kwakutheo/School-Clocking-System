@@ -13,6 +13,7 @@ on:
       - lib/**
       - pubspec.yaml
       - pubspec.lock
+      - scripts/**
 
 permissions:
   contents: write
@@ -106,106 +107,8 @@ jobs:
           cp build/app/outputs/flutter-apk/app-release.apk dashboard/public/apps/school-clocking-universal.apk
           cp build/app/outputs/flutter-apk/app-release.apk dashboard/public/apps/tk_clocking.apk
 
-          VERSION_LINE="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
-          VERSION_NAME="${VERSION_LINE%%+*}"
-          VERSION_CODE="${VERSION_LINE##*+}"
-          UPDATED_AT="$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")"
-          ARM64_SIZE="$(stat -c%s dashboard/public/apps/school-clocking-arm64.apk)"
-          ARM32_SIZE="$(stat -c%s dashboard/public/apps/school-clocking-arm32.apk)"
-          UNIVERSAL_SIZE="$(stat -c%s dashboard/public/apps/school-clocking-universal.apk)"
-
-          VERSION_NAME="$VERSION_NAME" \
-          VERSION_CODE="$VERSION_CODE" \
-          UPDATED_AT="$UPDATED_AT" \
-          ARM64_SIZE="$ARM64_SIZE" \
-          ARM32_SIZE="$ARM32_SIZE" \
-          UNIVERSAL_SIZE="$UNIVERSAL_SIZE" \
-          APP_DOWNLOAD_BASE_URL="$APP_DOWNLOAD_BASE_URL" \
-          APP_ANDROID_UPDATE_REQUIRED="$APP_ANDROID_UPDATE_REQUIRED" \
-          APP_ANDROID_RELEASE_NOTES="$APP_ANDROID_RELEASE_NOTES" \
-          node <<'NODE'
-          const fs = require('fs');
-
-          const baseUrl = process.env.APP_DOWNLOAD_BASE_URL.replace(/\/$/, '');
-          const manifest = {
-            platform: 'android',
-            versionName: process.env.VERSION_NAME,
-            versionCode: Number(process.env.VERSION_CODE),
-            apkUrl: '/apps/school-clocking-universal.apk',
-            apkFileName: 'school-clocking-universal.apk',
-            required: process.env.APP_ANDROID_UPDATE_REQUIRED === 'true',
-            releaseNotes: process.env.APP_ANDROID_RELEASE_NOTES,
-            updatedAt: process.env.UPDATED_AT,
-            downloads: {
-              arm64: {
-                label: 'Android 64-bit',
-                abi: 'arm64-v8a',
-                apkUrl: '/apps/school-clocking-arm64.apk',
-                apkFileName: 'school-clocking-arm64.apk',
-                sizeBytes: Number(process.env.ARM64_SIZE),
-              },
-              arm32: {
-                label: 'Android 32-bit',
-                abi: 'armeabi-v7a',
-                apkUrl: '/apps/school-clocking-arm32.apk',
-                apkFileName: 'school-clocking-arm32.apk',
-                sizeBytes: Number(process.env.ARM32_SIZE),
-              },
-              universal: {
-                label: 'Universal Android',
-                abi: 'universal',
-                apkUrl: '/apps/school-clocking-universal.apk',
-                apkFileName: 'school-clocking-universal.apk',
-                sizeBytes: Number(process.env.UNIVERSAL_SIZE),
-              },
-            },
-          };
-
-          fs.writeFileSync(
-            'dashboard/public/apps/app-version.json',
-            `${JSON.stringify(manifest, null, 2)}\n`,
-          );
-
-          const backendManifest = {
-            ...manifest,
-            apkUrl: `${baseUrl}/apps/school-clocking-universal.apk`,
-            downloads: Object.fromEntries(
-              Object.entries(manifest.downloads).map(([key, download]) => [
-                key,
-                {
-                  ...download,
-                  apkUrl: `${baseUrl}${download.apkUrl}`,
-                },
-              ]),
-            ),
-          };
-          const escaped = (value) => String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-          const downloadBlock = Object.entries(backendManifest.downloads)
-            .map(([key, download]) =>
-              `    ${key}: {\n` +
-              `      label: '${escaped(download.label)}',\n` +
-              `      abi: '${escaped(download.abi)}',\n` +
-              `      apkUrl: '${escaped(download.apkUrl)}',\n` +
-              `      apkFileName: '${escaped(download.apkFileName)}',\n` +
-              `      sizeBytes: ${download.sizeBytes},\n` +
-              `    },`
-            )
-            .join('\n');
-          fs.writeFileSync(
-            'backend/src/modules/mobile-app/mobile-app.manifest.ts',
-            `export const androidAppManifest = {\n` +
-              `  platform: 'android',\n` +
-              `  versionName: '${escaped(backendManifest.versionName)}',\n` +
-              `  versionCode: ${backendManifest.versionCode},\n` +
-              `  apkUrl: '${escaped(backendManifest.apkUrl)}',\n` +
-              `  apkFileName: 'school-clocking-universal.apk',\n` +
-              `  required: ${backendManifest.required},\n` +
-              `  releaseNotes: '${escaped(backendManifest.releaseNotes)}',\n` +
-              `  updatedAt: '${escaped(backendManifest.updatedAt)}',\n` +
-              `  downloads: {\n${downloadBlock}\n  },\n` +
-              `};\n`,
-          );
-          NODE
+          APP_ANDROID_UPDATED_AT="$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")" \
+          node scripts/sync-mobile-app-version.mjs
 
       - name: Commit generated APK
         run: |

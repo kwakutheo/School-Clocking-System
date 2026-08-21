@@ -1,4 +1,10 @@
 {
+  "scripts": {
+    "bump:mobile": "powershell -ExecutionPolicy Bypass -File scripts/bump-mobile-version.ps1",
+    "setup:hooks": "powershell -ExecutionPolicy Bypass -File scripts/install-git-hooks.ps1",
+    "sync:github": "powershell -ExecutionPolicy Bypass -File scripts/sync-local-with-github.ps1",
+    "sync:mobile-app": "node scripts/sync-mobile-app-version.mjs"
+  },
   "dependencies": {
     "@nestjs/throttler": "^6.5.0"
   }

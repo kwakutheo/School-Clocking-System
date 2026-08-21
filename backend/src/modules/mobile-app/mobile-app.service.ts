@@ -10,16 +10,6 @@ export class MobileAppService {
     const baseUrl = this.config
       .get<string>('APP_DOWNLOAD_BASE_URL', 'https://tkclocking.online')
       .replace(/\/$/, '');
-    const configuredVersionCode = parseInt(
-      this.config.get<string>('APP_LATEST_ANDROID_VERSION_CODE') ?? '',
-      10,
-    );
-    const versionName =
-      this.config.get<string>('APP_LATEST_ANDROID_VERSION_NAME') ??
-      androidAppManifest.versionName;
-    const versionCode = Number.isFinite(configuredVersionCode)
-      ? configuredVersionCode
-      : androidAppManifest.versionCode;
     const required =
       this.config.get<string>('APP_ANDROID_UPDATE_REQUIRED') === 'true' ||
       androidAppManifest.required;
@@ -45,8 +35,8 @@ export class MobileAppService {
 
     return {
       ...androidAppManifest,
-      versionName,
-      versionCode,
+      versionName: androidAppManifest.versionName,
+      versionCode: androidAppManifest.versionCode,
       apkUrl: downloads.universal.apkUrl,
       apkFileName: downloads.universal.apkFileName,
       required,

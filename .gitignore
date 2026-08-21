@@ -60,5 +60,6 @@ google-services.json
 *.jks
 *.keystore
 
-# Online deployment info
-/online_deployment.txt
+# Local deployment notes
+online_deployment.txt
+

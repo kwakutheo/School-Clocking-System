@@ -62,3 +62,5 @@ google-services.json
 
 # Local deployment notes
 online_deployment.txt
+
+diagnose-apk-install.ps1

@@ -1,33 +1,33 @@
 {
   "platform": "android",
   "versionName": "1.0.1",
-  "versionCode": 5,
+  "versionCode": 6,
   "apkUrl": "/apps/school-clocking-universal.apk",
   "apkFileName": "school-clocking-universal.apk",
   "required": true,
   "releaseNotes": "text shown in the app update prompt",
-  "updatedAt": "2026-08-21T20:10:26.000Z",
+  "updatedAt": "2026-08-21T20:58:08.000Z",
   "downloads": {
     "arm64": {
       "label": "Android 64-bit",
       "abi": "arm64-v8a",
       "apkUrl": "/apps/school-clocking-arm64.apk",
       "apkFileName": "school-clocking-arm64.apk",
-      "sizeBytes": 31780468
+      "sizeBytes": 31780508
     },
     "arm32": {
       "label": "Android 32-bit",
       "abi": "armeabi-v7a",
       "apkUrl": "/apps/school-clocking-arm32.apk",
       "apkFileName": "school-clocking-arm32.apk",
-      "sizeBytes": 28010726
+      "sizeBytes": 28010762
     },
     "universal": {
       "label": "Universal Android",
       "abi": "universal",
       "apkUrl": "/apps/school-clocking-universal.apk",
       "apkFileName": "school-clocking-universal.apk",
-      "sizeBytes": 83210961
+      "sizeBytes": 83211001
     }
   }
 }

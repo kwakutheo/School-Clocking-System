@@ -3,6 +3,7 @@ import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 
+export const dynamic = 'force-dynamic';
 
 // Hex → { r, g, b }
 function hexToRgb(hex: string): { r: number; g: number; b: number } {

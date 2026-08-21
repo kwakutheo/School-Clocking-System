@@ -196,8 +196,8 @@ class _ProfilePageState extends State<ProfilePage> {
       );
 
       final data = response.data!;
-      final userMap =
-          Map<String, dynamic>.from(data['user'] as Map<String, dynamic>? ?? data);
+      final userMap = Map<String, dynamic>.from(
+          data['user'] as Map<String, dynamic>? ?? data);
       final merged = <String, dynamic>{
         ...userMap,
         'employee_id': data['id'] ?? userMap['employee_id'],
@@ -222,7 +222,6 @@ class _ProfilePageState extends State<ProfilePage> {
           const SnackBar(content: Text('Profile photo updated.')),
         );
       }
-
     } on DioException catch (e) {
       final msg = e.response?.data?['message'];
       final errorText = msg is String
@@ -255,7 +254,8 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Remove Photo'),
-          content: const Text('Are you sure you want to remove your profile photo?'),
+          content:
+              const Text('Are you sure you want to remove your profile photo?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -281,8 +281,8 @@ class _ProfilePageState extends State<ProfilePage> {
       );
 
       final data = response.data!;
-      final userMap =
-          Map<String, dynamic>.from(data['user'] as Map<String, dynamic>? ?? data);
+      final userMap = Map<String, dynamic>.from(
+          data['user'] as Map<String, dynamic>? ?? data);
       final merged = <String, dynamic>{
         ...userMap,
         'employee_id': data['id'] ?? userMap['employee_id'],
@@ -388,7 +388,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             top: 40,
                             right: 20,
                             child: IconButton(
-                              icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                              icon: const Icon(Icons.close,
+                                  color: Colors.white, size: 30),
                               onPressed: () => Navigator.pop(context),
                             ),
                           ),
@@ -408,8 +409,10 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             if (hasPhoto)
               ListTile(
-                leading: const Icon(Icons.delete_outline_rounded, color: Colors.red),
-                title: const Text('Remove Photo', style: TextStyle(color: Colors.red)),
+                leading:
+                    const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                title: const Text('Remove Photo',
+                    style: TextStyle(color: Colors.red)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _removePhoto();
@@ -573,7 +576,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                     const SizedBox(height: 30),
                                     // ── Avatar ──────────────────────────────────
                                     GestureDetector(
-                                      onTap: _isUploadingPhoto ? null : _showPhotoOptions,
+                                      onTap: _isUploadingPhoto
+                                          ? null
+                                          : _showPhotoOptions,
                                       child: Stack(
                                         alignment: Alignment.bottomRight,
                                         children: [
@@ -582,7 +587,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                             decoration: BoxDecoration(
                                               shape: BoxShape.circle,
                                               border: Border.all(
-                                                color: cs.primary.withValues(alpha: 0.3),
+                                                color: cs.primary
+                                                    .withValues(alpha: 0.3),
                                                 width: 2,
                                               ),
                                             ),
@@ -591,18 +597,28 @@ class _ProfilePageState extends State<ProfilePage> {
                                               child: _isUploadingPhoto
                                                   ? CircleAvatar(
                                                       radius: 42,
-                                                      backgroundColor: cs.primaryContainer,
-                                                      child: const CircularProgressIndicator(strokeWidth: 2),
+                                                      backgroundColor:
+                                                          cs.primaryContainer,
+                                                      child:
+                                                          const CircularProgressIndicator(
+                                                              strokeWidth: 2),
                                                     )
                                                   : CircleAvatar(
                                                       radius: 42,
-                                                      backgroundColor: cs.primaryContainer,
+                                                      backgroundColor:
+                                                          cs.primaryContainer,
                                                       // foregroundImage with error callback prevents
                                                       // a bad/expired URL from crashing the widget.
-                                                      foregroundImage: user.photoUrl != null
-                                                          ? NetworkImage(user.photoUrl!)
-                                                          : const AssetImage('assets/images/default_profile_photo.jpg') as ImageProvider,
-                                                      onForegroundImageError: (_, __) {},
+                                                      foregroundImage: user
+                                                                  .photoUrl !=
+                                                              null
+                                                          ? NetworkImage(
+                                                              user.photoUrl!)
+                                                          : const AssetImage(
+                                                                  'assets/images/default_profile_photo.jpg')
+                                                              as ImageProvider,
+                                                      onForegroundImageError:
+                                                          (_, __) {},
                                                       child: ClipOval(
                                                         child: Image.asset(
                                                           'assets/images/default_profile_photo.jpg',
@@ -653,7 +669,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                             horizontal: 14, vertical: 4),
                                         decoration: BoxDecoration(
                                           color: cs.secondaryContainer,
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                           border: Border.all(
                                               color: cs.onSecondaryContainer
                                                   .withValues(alpha: 0.2)),
@@ -1067,38 +1084,6 @@ class _ProfilePageState extends State<ProfilePage> {
                                     const SizedBox(height: 16),
                                   ],
                                 ],
-                                _InfoSection(
-                                  title: 'App Settings',
-                                  items: [
-                                    _InfoItem(
-                                      icon: Icons.fingerprint_rounded,
-                                      label: 'Require Biometrics',
-                                      value: ' Required for clocking',
-                                      trailing: const Icon(
-                                          Icons.check_circle_rounded,
-                                          color: Colors.green,
-                                          size: 20),
-                                    ),
-                                    _InfoItem(
-                                      icon: Icons.gps_fixed_outlined,
-                                      label: 'Location Services',
-                                      value: 'Required for clocking',
-                                      trailing: const Icon(
-                                          Icons.check_circle_rounded,
-                                          color: Colors.green,
-                                          size: 20),
-                                    ),
-                                    _InfoItem(
-                                      icon: Icons.notifications_outlined,
-                                      label: 'In-app notifications',
-                                      value: 'Enabled',
-                                      trailing: const Icon(
-                                          Icons.check_circle_rounded,
-                                          color: Colors.green,
-                                          size: 20),
-                                    ),
-                                  ],
-                                ),
                                 const SizedBox(height: 32),
                                 SizedBox(
                                   width: double.infinity,

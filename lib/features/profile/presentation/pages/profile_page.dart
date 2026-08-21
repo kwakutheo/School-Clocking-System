@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:tk_clocking_system/core/di/injection_container.dart';
 import 'package:tk_clocking_system/core/router/app_router.dart';
@@ -40,6 +41,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _lastSyncedUserId;
   String _usernameStatus = 'idle'; // 'idle', 'checking', 'available', 'taken'
   List<String> _usernameSuggestions = [];
+  String _appVersionLabel = 'Loading...';
   Timer? _usernameDebounce;
   final _formKey = GlobalKey<FormState>();
 
@@ -47,6 +49,24 @@ class _ProfilePageState extends State<ProfilePage> {
   late TextEditingController _usernameController;
   late TextEditingController _passwordController;
   late TextEditingController _confirmPasswordController;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    if (!mounted) return;
+
+    final buildNumber = packageInfo.buildNumber.trim();
+    setState(() {
+      _appVersionLabel = buildNumber.isEmpty
+          ? packageInfo.version
+          : '${packageInfo.version}+$buildNumber';
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -894,6 +914,11 @@ class _ProfilePageState extends State<ProfilePage> {
                                             label: 'School',
                                             value: user.schoolName!,
                                           ),
+                                        _InfoItem(
+                                          icon: Icons.info_outline_rounded,
+                                          label: 'App Version',
+                                          value: _appVersionLabel,
+                                        ),
                                       ],
                                     ),
                                     const SizedBox(height: 16),

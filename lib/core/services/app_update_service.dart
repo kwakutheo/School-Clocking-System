@@ -34,11 +34,13 @@ class AppUpdateInfo {
   }) {
     final versionCodeRaw = json['versionCode'];
 
+    final parsedVersionCode = versionCodeRaw is int
+        ? versionCodeRaw
+        : int.tryParse(versionCodeRaw?.toString() ?? '') ?? 0;
+
     return AppUpdateInfo(
       versionName: json['versionName']?.toString() ?? 'Unknown',
-      versionCode: versionCodeRaw is int
-          ? versionCodeRaw
-          : int.tryParse(versionCodeRaw?.toString() ?? '') ?? 0,
+      versionCode: normalizeAndroidVersionCode(parsedVersionCode),
       download: selectedDownload,
       downloads: downloads,
       required: json['required'] == true || json['required'] == 'true',

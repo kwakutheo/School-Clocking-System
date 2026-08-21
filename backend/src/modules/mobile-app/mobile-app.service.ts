@@ -36,12 +36,20 @@ export class MobileAppService {
     return {
       ...androidAppManifest,
       versionName: androidAppManifest.versionName,
-      versionCode: androidAppManifest.versionCode,
+      versionCode: this.getLegacyComparableVersionCode(
+        androidAppManifest.versionCode,
+      ),
       apkUrl: downloads.universal.apkUrl,
       apkFileName: downloads.universal.apkFileName,
       required,
       releaseNotes,
       downloads,
     };
+  }
+
+  private getLegacyComparableVersionCode(versionCode: number) {
+    return versionCode > 0 && versionCode < 1000
+      ? versionCode + 2000
+      : versionCode;
   }
 }

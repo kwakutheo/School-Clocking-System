@@ -91,22 +91,47 @@ class _AppUpdateGate extends StatefulWidget {
   State<_AppUpdateGate> createState() => _AppUpdateGateState();
 }
 
-class _AppUpdateGateState extends State<_AppUpdateGate> {
-  bool _hasCheckedForUpdate = false;
+class _AppUpdateGateState extends State<_AppUpdateGate>
+    with WidgetsBindingObserver {
+  bool _isCheckingForUpdate = false;
+  DateTime? _lastUpdateCheckAt;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_hasCheckedForUpdate) return;
-    _hasCheckedForUpdate = true;
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkForAppUpdate();
     });
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkForAppUpdate();
+    }
+  }
+
   Future<void> _checkForAppUpdate() async {
+    if (_isCheckingForUpdate) return;
+
+    final lastCheck = _lastUpdateCheckAt;
+    if (lastCheck != null &&
+        DateTime.now().difference(lastCheck) < const Duration(minutes: 10)) {
+      return;
+    }
+
+    _isCheckingForUpdate = true;
+    _lastUpdateCheckAt = DateTime.now();
     final update = await sl<AppUpdateService>().checkForUpdate();
+    _isCheckingForUpdate = false;
     if (!mounted || update == null) return;
 
     _showAppUpdateDialog(update);

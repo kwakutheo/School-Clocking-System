@@ -1,12 +1,12 @@
 export const androidAppManifest = {
   platform: 'android',
   versionName: '1.0.1',
-  versionCode: 4,
+  versionCode: 5,
   apkUrl: 'https://tkclocking.online/apps/school-clocking-universal.apk',
   apkFileName: 'school-clocking-universal.apk',
   required: true,
   releaseNotes: 'text shown in the app update prompt',
-  updatedAt: '2026-08-21T19:38:07.000Z',
+  updatedAt: '2026-08-21T20:10:26.000Z',
   downloads: {
     arm64: {
       label: 'Android 64-bit',
@@ -20,7 +20,7 @@ export const androidAppManifest = {
       abi: 'armeabi-v7a',
       apkUrl: 'https://tkclocking.online/apps/school-clocking-arm32.apk',
       apkFileName: 'school-clocking-arm32.apk',
-      sizeBytes: 28010722,
+      sizeBytes: 28010726,
     },
     universal: {
       label: 'Universal Android',

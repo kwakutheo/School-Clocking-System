@@ -92,7 +92,8 @@ export class TenantMiddleware implements NestMiddleware {
       req.originalUrl.includes('/auth/complete-password-reset') ||
       req.originalUrl.includes('/api/docs') ||
       req.originalUrl.includes('/health') ||
-      req.originalUrl === '/api/v1/time'; // Public clock sync — no tenant context needed
+      req.originalUrl === '/api/v1/time' || // Public clock sync — no tenant context needed
+      req.originalUrl === '/api/v1/mobile-app/latest'; // Public app update metadata
     if (isGlobalRoute) {
       tenantId = null;
       hasResolved = true;

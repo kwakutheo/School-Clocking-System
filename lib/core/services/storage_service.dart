@@ -64,6 +64,34 @@ class StorageService {
 
   String? getTenantId() => _prefs.getString(AppConstants.tenantIdKey);
 
+  // ── App update reminders ─────────────────────────────────────────────────
+  Future<void> snoozeAppUpdate({
+    required int versionCode,
+    required DateTime until,
+  }) async {
+    await Future.wait([
+      _prefs.setInt(AppConstants.appUpdateSnoozedVersionCodeKey, versionCode),
+      _prefs.setString(
+        AppConstants.appUpdateSnoozedUntilKey,
+        until.toIso8601String(),
+      ),
+    ]);
+  }
+
+  bool isAppUpdateSnoozed(int versionCode) {
+    final snoozedVersion =
+        _prefs.getInt(AppConstants.appUpdateSnoozedVersionCodeKey);
+    final snoozedUntilRaw =
+        _prefs.getString(AppConstants.appUpdateSnoozedUntilKey);
+    final snoozedUntil = snoozedUntilRaw == null
+        ? null
+        : DateTime.tryParse(snoozedUntilRaw);
+
+    return snoozedVersion == versionCode &&
+        snoozedUntil != null &&
+        DateTime.now().isBefore(snoozedUntil);
+  }
+
   // ── Offline login credentials (non-sensitive hash, prefs) ─────────────────
   Future<void> saveOfflineIdentifier(String identifier) =>
       _prefs.setString(AppConstants.offlineIdentifierKey, identifier);

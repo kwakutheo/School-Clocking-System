@@ -18,6 +18,7 @@ import { LeavesModule } from './modules/leaves/leaves.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
 import { SaasAdminModule } from './modules/saas-admin/saas-admin.module';
+import { MobileAppModule } from './modules/mobile-app/mobile-app.module';
 import { APP_GUARD } from '@nestjs/core';
 import { ReadonlyImpersonationGuard } from './modules/auth/guards/readonly-impersonation.guard';
 import { TenantSubscriber } from './common/tenant/tenant.subscriber';
@@ -84,6 +85,7 @@ import { AppService } from './app.service';
     NotificationsModule,
     TenantsModule,
     SaasAdminModule,
+    MobileAppModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],

@@ -15,6 +15,16 @@ abstract final class AppConstants {
   static const String themeKey = 'app_theme';
   static const String serverUrlKey = 'server_url';
   static const String tenantIdKey = 'tenant_id';
+  static const String appUpdateSnoozedVersionCodeKey =
+      'app_update_snoozed_version_code';
+  static const String appUpdateSnoozedUntilKey = 'app_update_snoozed_until';
+
+  // ── Mobile app updates ───────────────────────────────────────────────────
+  static const String appDownloadBaseUrl = String.fromEnvironment(
+    'APP_DOWNLOAD_BASE_URL',
+    defaultValue: 'https://tkclocking.online',
+  );
+  static const String apkMimeType = 'application/vnd.android.package-archive';
 
   // ── Offline login keys ───────────────────────────────────────────────────
   static const String offlineIdentifierKey = 'offline_identifier';

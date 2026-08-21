@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { 
   Download, 
@@ -7,8 +10,39 @@ import {
   Info
 } from 'lucide-react';
 import styles from './page.module.css';
+import {
+  detectPreferredDownload,
+  fallbackMobileAppManifest,
+  fetchMobileAppManifest,
+  formatApkSize,
+  type ApkDownloadKey,
+  type MobileAppManifest,
+} from '@/lib/mobile-app-downloads';
 
 export default function DownloadPage() {
+  const [manifest, setManifest] = useState<MobileAppManifest>(
+    fallbackMobileAppManifest,
+  );
+  const [preferredKey, setPreferredKey] =
+    useState<ApkDownloadKey>('universal');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchMobileAppManifest().then((nextManifest) => {
+      if (cancelled) return;
+      const preferred = detectPreferredDownload(nextManifest, navigator);
+      setManifest(nextManifest);
+      setPreferredKey(preferred.key);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const preferredDownload = manifest.downloads[preferredKey];
+
   return (
     <div className={styles.container}>
       <div className={styles.card}>
@@ -23,17 +57,38 @@ export default function DownloadPage() {
         
         <h1 className={styles.title}>TK CLOCKING SYSTEM</h1>
         <p className={styles.subtitle}>
-          Official Staff Mobile Application
+          Official Staff Mobile Application v{manifest.versionName}
         </p>
 
         <a 
-          href="/apps/tk_clocking.apk" 
-          download="tk_clocking_app.apk"
+          href={preferredDownload.apkUrl} 
+          download={preferredDownload.apkFileName}
           className={styles.downloadButton}
         >
           <Download size={24} />
           Download APK
         </a>
+        <p className={styles.downloadMeta}>
+          {preferredDownload.label} · {formatApkSize(preferredDownload.sizeBytes)}
+        </p>
+
+        <div className={styles.apkOptions}>
+          {Object.entries(manifest.downloads).map(([key, download]) => (
+            <a
+              key={key}
+              href={download.apkUrl}
+              download={download.apkFileName}
+              className={
+                key === preferredKey
+                  ? styles.apkOptionActive
+                  : styles.apkOption
+              }
+            >
+              <span>{download.label}</span>
+              <small>{formatApkSize(download.sizeBytes)}</small>
+            </a>
+          ))}
+        </div>
 
         <div className={styles.divider} />
 

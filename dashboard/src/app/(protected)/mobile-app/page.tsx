@@ -19,11 +19,24 @@ import styles from './page.module.css';
 import { useAuthStore, usePwaStore } from '@/lib/store';
 import { can } from '@/lib/permissions';
 import { useRouter } from 'next/navigation';
+import {
+  detectPreferredDownload,
+  fallbackMobileAppManifest,
+  fetchMobileAppManifest,
+  formatApkSize,
+  type ApkDownloadKey,
+  type MobileAppManifest,
+} from '@/lib/mobile-app-downloads';
 
 export default function MobileAppPage() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState('');
+  const [manifest, setManifest] = useState<MobileAppManifest>(
+    fallbackMobileAppManifest,
+  );
+  const [preferredKey, setPreferredKey] =
+    useState<ApkDownloadKey>('universal');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const { user, isHydrated } = useAuthStore();
@@ -35,6 +48,21 @@ export default function MobileAppPage() {
       router.push('/dashboard');
     }
   }, [isHydrated, user, router]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchMobileAppManifest().then((nextManifest) => {
+      if (cancelled) return;
+      const preferred = detectPreferredDownload(nextManifest, navigator);
+      setManifest(nextManifest);
+      setPreferredKey(preferred.key);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     // Generate the full download URL based on the current origin
@@ -100,6 +128,8 @@ export default function MobileAppPage() {
 
   if (!isHydrated || !user) return null;
 
+  const preferredDownload = manifest.downloads[preferredKey];
+
   return (
     <div className="dashboard-container">
       <div className="page-header" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
@@ -143,8 +173,8 @@ export default function MobileAppPage() {
 
           <div className={styles.buttonGroup}>
             <a 
-              href="/apps/tk_clocking.apk" 
-              download="tk_clocking_app.apk"
+              href={preferredDownload.apkUrl} 
+              download={preferredDownload.apkFileName}
               className={styles.secondaryButton}
             >
               <Download size={18} />
@@ -179,6 +209,24 @@ export default function MobileAppPage() {
                 </p>
               </div>
             )}
+          </div>
+
+          <div className={styles.apkOptions}>
+            {Object.entries(manifest.downloads).map(([key, download]) => (
+              <a
+                key={key}
+                href={download.apkUrl}
+                download={download.apkFileName}
+                className={
+                  key === preferredKey
+                    ? styles.apkOptionActive
+                    : styles.apkOption
+                }
+              >
+                <span>{download.label}</span>
+                <small>{formatApkSize(download.sizeBytes)}</small>
+              </a>
+            ))}
           </div>
         </div>
 

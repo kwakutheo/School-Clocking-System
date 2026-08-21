@@ -175,6 +175,45 @@
   color: var(--primary);
 }
 
+.apkOptions {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.apkOption,
+.apkOptionActive {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.apkOption small,
+.apkOptionActive small {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: right;
+}
+
+.apkOption:hover,
+.apkOptionActive {
+  background: var(--bg-card-hover, rgba(59, 130, 246, 0.05));
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
 .iconWrapper {
   width: 64px;
   height: 64px;

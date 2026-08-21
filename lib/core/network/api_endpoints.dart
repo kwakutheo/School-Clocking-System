@@ -43,4 +43,7 @@ abstract final class ApiEndpoints {
 
   // ── Branches ─────────────────────────────────────────────────────────────
   static const String branches = '/branches';
+
+  // ── Mobile App Updates ───────────────────────────────────────────────────
+  static const String latestMobileApp = '/mobile-app/latest';
 }

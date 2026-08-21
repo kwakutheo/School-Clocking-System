@@ -66,6 +66,51 @@
   filter: brightness(1.05);
 }
 
+.downloadMeta {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.apkOptions {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.apkOption,
+.apkOptionActive {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  color: #111827;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.apkOption small,
+.apkOptionActive small {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: right;
+}
+
+.apkOption:hover,
+.apkOptionActive {
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--primary);
+}
+
 .divider {
   width: 100%;
   height: 1px;

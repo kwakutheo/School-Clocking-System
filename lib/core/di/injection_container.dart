@@ -11,6 +11,7 @@ import 'package:tk_clocking_system/core/services/location_service.dart';
 import 'package:tk_clocking_system/core/services/geofence_service.dart';
 import 'package:tk_clocking_system/core/services/storage_service.dart';
 import 'package:tk_clocking_system/core/services/biometric_service.dart';
+import 'package:tk_clocking_system/core/services/app_update_service.dart';
 import 'package:tk_clocking_system/core/services/notification_service.dart';
 import 'package:tk_clocking_system/core/services/time_service.dart';
 import 'package:tk_clocking_system/core/services/uptime_service.dart';
@@ -76,6 +77,12 @@ Future<void> init() async {
     () => ApiClient(storage: sl<StorageService>()),
   );
   sl.registerLazySingleton<NotificationService>(() => NotificationService());
+  sl.registerLazySingleton<AppUpdateService>(
+    () => AppUpdateService(
+      apiClient: sl<ApiClient>(),
+      storage: sl<StorageService>(),
+    ),
+  );
 
   sl.registerLazySingleton<LocationService>(() => LocationService());
   sl.registerLazySingleton<GeofenceService>(

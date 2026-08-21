@@ -1,0 +1,212 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - .github/workflows/android-apk.yml
+      - android/**
+      - assets/**
+      - lib/**
+      - pubspec.yaml
+      - pubspec.lock
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message || '', '[skip apk]') }}
+    runs-on: ubuntu-latest
+    env:
+      API_BASE_URL: ${{ vars.API_BASE_URL || 'https://school-clocking-system.onrender.com/api/v1' }}
+      APP_DOWNLOAD_BASE_URL: ${{ vars.APP_DOWNLOAD_BASE_URL || 'https://tkclocking.online' }}
+      APP_ANDROID_UPDATE_REQUIRED: ${{ vars.APP_ANDROID_UPDATE_REQUIRED || 'false' }}
+      APP_ANDROID_RELEASE_NOTES: ${{ vars.APP_ANDROID_RELEASE_NOTES || 'Bug fixes and improvements.' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Configure release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ANDROID_KEYSTORE_BASE64:-}" ]; then
+            echo "ANDROID_KEYSTORE_BASE64 is not set; building with the local debug signing fallback."
+            exit 0
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storeFile=${{ github.workspace }}/android/app/upload-keystore.jks
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Analyze Flutter code
+        run: flutter analyze --no-pub
+
+      - name: Build release APK
+        run: |
+          flutter build apk --release \
+            --split-per-abi \
+            --dart-define=API_BASE_URL="$API_BASE_URL" \
+            --dart-define=APP_DOWNLOAD_BASE_URL="$APP_DOWNLOAD_BASE_URL"
+          flutter build apk --release \
+            --dart-define=API_BASE_URL="$API_BASE_URL" \
+            --dart-define=APP_DOWNLOAD_BASE_URL="$APP_DOWNLOAD_BASE_URL"
+
+      - name: Publish APK and update manifests
+        run: |
+          set -euo pipefail
+          mkdir -p dashboard/public/apps
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk dashboard/public/apps/school-clocking-arm64.apk
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk dashboard/public/apps/school-clocking-arm32.apk
+          cp build/app/outputs/flutter-apk/app-release.apk dashboard/public/apps/school-clocking-universal.apk
+          cp build/app/outputs/flutter-apk/app-release.apk dashboard/public/apps/tk_clocking.apk
+
+          VERSION_LINE="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
+          VERSION_NAME="${VERSION_LINE%%+*}"
+          VERSION_CODE="${VERSION_LINE##*+}"
+          UPDATED_AT="$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")"
+          ARM64_SIZE="$(stat -c%s dashboard/public/apps/school-clocking-arm64.apk)"
+          ARM32_SIZE="$(stat -c%s dashboard/public/apps/school-clocking-arm32.apk)"
+          UNIVERSAL_SIZE="$(stat -c%s dashboard/public/apps/school-clocking-universal.apk)"
+
+          VERSION_NAME="$VERSION_NAME" \
+          VERSION_CODE="$VERSION_CODE" \
+          UPDATED_AT="$UPDATED_AT" \
+          ARM64_SIZE="$ARM64_SIZE" \
+          ARM32_SIZE="$ARM32_SIZE" \
+          UNIVERSAL_SIZE="$UNIVERSAL_SIZE" \
+          APP_DOWNLOAD_BASE_URL="$APP_DOWNLOAD_BASE_URL" \
+          APP_ANDROID_UPDATE_REQUIRED="$APP_ANDROID_UPDATE_REQUIRED" \
+          APP_ANDROID_RELEASE_NOTES="$APP_ANDROID_RELEASE_NOTES" \
+          node <<'NODE'
+          const fs = require('fs');
+
+          const baseUrl = process.env.APP_DOWNLOAD_BASE_URL.replace(/\/$/, '');
+          const manifest = {
+            platform: 'android',
+            versionName: process.env.VERSION_NAME,
+            versionCode: Number(process.env.VERSION_CODE),
+            apkUrl: '/apps/school-clocking-universal.apk',
+            apkFileName: 'school-clocking-universal.apk',
+            required: process.env.APP_ANDROID_UPDATE_REQUIRED === 'true',
+            releaseNotes: process.env.APP_ANDROID_RELEASE_NOTES,
+            updatedAt: process.env.UPDATED_AT,
+            downloads: {
+              arm64: {
+                label: 'Android 64-bit',
+                abi: 'arm64-v8a',
+                apkUrl: '/apps/school-clocking-arm64.apk',
+                apkFileName: 'school-clocking-arm64.apk',
+                sizeBytes: Number(process.env.ARM64_SIZE),
+              },
+              arm32: {
+                label: 'Android 32-bit',
+                abi: 'armeabi-v7a',
+                apkUrl: '/apps/school-clocking-arm32.apk',
+                apkFileName: 'school-clocking-arm32.apk',
+                sizeBytes: Number(process.env.ARM32_SIZE),
+              },
+              universal: {
+                label: 'Universal Android',
+                abi: 'universal',
+                apkUrl: '/apps/school-clocking-universal.apk',
+                apkFileName: 'school-clocking-universal.apk',
+                sizeBytes: Number(process.env.UNIVERSAL_SIZE),
+              },
+            },
+          };
+
+          fs.writeFileSync(
+            'dashboard/public/apps/app-version.json',
+            `${JSON.stringify(manifest, null, 2)}\n`,
+          );
+
+          const backendManifest = {
+            ...manifest,
+            apkUrl: `${baseUrl}/apps/school-clocking-universal.apk`,
+            downloads: Object.fromEntries(
+              Object.entries(manifest.downloads).map(([key, download]) => [
+                key,
+                {
+                  ...download,
+                  apkUrl: `${baseUrl}${download.apkUrl}`,
+                },
+              ]),
+            ),
+          };
+          const escaped = (value) => String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          const downloadBlock = Object.entries(backendManifest.downloads)
+            .map(([key, download]) =>
+              `    ${key}: {\n` +
+              `      label: '${escaped(download.label)}',\n` +
+              `      abi: '${escaped(download.abi)}',\n` +
+              `      apkUrl: '${escaped(download.apkUrl)}',\n` +
+              `      apkFileName: '${escaped(download.apkFileName)}',\n` +
+              `      sizeBytes: ${download.sizeBytes},\n` +
+              `    },`
+            )
+            .join('\n');
+          fs.writeFileSync(
+            'backend/src/modules/mobile-app/mobile-app.manifest.ts',
+            `export const androidAppManifest = {\n` +
+              `  platform: 'android',\n` +
+              `  versionName: '${escaped(backendManifest.versionName)}',\n` +
+              `  versionCode: ${backendManifest.versionCode},\n` +
+              `  apkUrl: '${escaped(backendManifest.apkUrl)}',\n` +
+              `  apkFileName: 'school-clocking-universal.apk',\n` +
+              `  required: ${backendManifest.required},\n` +
+              `  releaseNotes: '${escaped(backendManifest.releaseNotes)}',\n` +
+              `  updatedAt: '${escaped(backendManifest.updatedAt)}',\n` +
+              `  downloads: {\n${downloadBlock}\n  },\n` +
+              `};\n`,
+          );
+          NODE
+
+      - name: Commit generated APK
+        run: |
+          set -euo pipefail
+          CHANGES="$(git status --porcelain -- dashboard/public/apps/school-clocking-arm64.apk dashboard/public/apps/school-clocking-arm32.apk dashboard/public/apps/school-clocking-universal.apk dashboard/public/apps/tk_clocking.apk dashboard/public/apps/app-version.json backend/src/modules/mobile-app/mobile-app.manifest.ts)"
+          if [ -z "$CHANGES" ]; then
+            echo "No APK or manifest changes to commit."
+            exit 0
+          fi
+
+          VERSION_LINE="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dashboard/public/apps/school-clocking-arm64.apk dashboard/public/apps/school-clocking-arm32.apk dashboard/public/apps/school-clocking-universal.apk dashboard/public/apps/tk_clocking.apk dashboard/public/apps/app-version.json backend/src/modules/mobile-app/mobile-app.manifest.ts
+          git commit -m "chore: publish Android APK v$VERSION_LINE [skip apk]"
+          git push

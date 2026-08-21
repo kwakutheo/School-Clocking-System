@@ -1,7 +1,7 @@
 name: tk_clocking_system
 description: "TK Clocking System — Your Digital Time Keeper."
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ^3.5.0
@@ -73,6 +73,7 @@ dependencies:
   device_info_plus: ^12.4.0
   android_id: ^0.5.1
   flutter_background_service: ^5.1.0
+  package_info_plus: ^9.0.1
 
 dev_dependencies:
   flutter_test:

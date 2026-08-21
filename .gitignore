@@ -63,3 +63,6 @@ google-services.json
 # Local deployment notes
 online_deployment.txt
 
+# Downloaded GitHub Actions logs
+github_build/
+

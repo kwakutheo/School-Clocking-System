@@ -29,8 +29,15 @@ Add these repository secrets:
 - `ANDROID_KEYSTORE_PASSWORD`: password used when creating the keystore.
 - `ANDROID_KEY_ALIAS`: usually `upload`.
 - `ANDROID_KEY_PASSWORD`: key password used when creating the keystore.
+- `GOOGLE_SERVICES_JSON_BASE64`: base64 value of `android/app/google-services.json`.
 
 Keep the original `upload-keystore.jks` somewhere private and backed up. If it is lost, future APKs cannot update apps installed with the old key.
+
+Create the Firebase Android secret from the existing local file:
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("android/app/google-services.json")) | Set-Clipboard
+```
 
 ## Optional GitHub Variables
 

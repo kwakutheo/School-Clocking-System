@@ -24,7 +24,7 @@ jobs:
       API_BASE_URL: ${{ vars.API_BASE_URL || 'https://school-clocking-system.onrender.com/api/v1' }}
       APP_DOWNLOAD_BASE_URL: ${{ vars.APP_DOWNLOAD_BASE_URL || 'https://tkclocking.online' }}
       APP_ANDROID_UPDATE_REQUIRED: ${{ vars.APP_ANDROID_UPDATE_REQUIRED || 'false' }}
-      APP_ANDROID_RELEASE_NOTES: ${{ vars.APP_ANDROID_RELEASE_NOTES || 'Bug fixes and improvements.' }}
+      APP_ANDROID_RELEASE_NOTES: ${{ vars.APP_ANDROID_RELEASE_NOTES || 'A new version of TK Clocking System is ready. Update now to get the latest fixes and improvements.' }}
 
     steps:
       - name: Check out repository

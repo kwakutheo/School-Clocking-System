@@ -27,6 +27,11 @@ class AppUpdateInfo {
   final bool required;
   final String releaseNotes;
 
+  static const _defaultReleaseNotes =
+      'A new version of TK Clocking System is ready. Update now to get the latest fixes and improvements.';
+  static const _releaseNotesPlaceholder =
+      'text shown in the app update prompt';
+
   factory AppUpdateInfo.fromJson(
     Map<String, dynamic> json, {
     required AppUpdateDownload selectedDownload,
@@ -44,8 +49,17 @@ class AppUpdateInfo {
       download: selectedDownload,
       downloads: downloads,
       required: json['required'] == true || json['required'] == 'true',
-      releaseNotes: json['releaseNotes']?.toString() ?? '',
+      releaseNotes: _normalizeReleaseNotes(json['releaseNotes']),
     );
+  }
+
+  static String _normalizeReleaseNotes(Object? value) {
+    final text = value?.toString().trim() ?? '';
+    if (text.isEmpty || text == _releaseNotesPlaceholder) {
+      return _defaultReleaseNotes;
+    }
+
+    return text;
   }
 }
 

@@ -13,9 +13,10 @@ export class MobileAppService {
     const required =
       this.config.get<string>('APP_ANDROID_UPDATE_REQUIRED') === 'true' ||
       androidAppManifest.required;
-    const releaseNotes =
+    const releaseNotes = this.getReleaseNotes(
       this.config.get<string>('APP_ANDROID_RELEASE_NOTES') ??
-      androidAppManifest.releaseNotes;
+        androidAppManifest.releaseNotes,
+    );
     const downloads = {
       arm64: {
         ...androidAppManifest.downloads.arm64,
@@ -51,5 +52,13 @@ export class MobileAppService {
     return versionCode > 0 && versionCode < 1000
       ? versionCode + 2000
       : versionCode;
+  }
+
+  private getReleaseNotes(value: string) {
+    if (!value || value === 'text shown in the app update prompt') {
+      return 'A new version of TK Clocking System is ready. Update now to get the latest fixes and improvements.';
+    }
+
+    return value;
   }
 }

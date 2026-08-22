@@ -1,11 +1,11 @@
 {
   "platform": "android",
   "versionName": "1.0.1",
-  "versionCode": 16,
+  "versionCode": 17,
   "apkUrl": "/apps/school-clocking-universal.apk",
   "apkFileName": "school-clocking-universal.apk",
   "required": false,
-  "releaseNotes": "text shown in the app update prompt",
+  "releaseNotes": "A new version of TK Clocking System is ready. Update now to get the latest fixes and improvements.",
   "updatedAt": "2026-08-22T19:15:30.000Z",
   "downloads": {
     "arm64": {

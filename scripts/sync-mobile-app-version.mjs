@@ -17,6 +17,9 @@ const apkFiles = {
   arm32: 'dashboard/public/apps/school-clocking-arm32.apk',
   universal: 'dashboard/public/apps/school-clocking-universal.apk',
 };
+const defaultReleaseNotes =
+  'A new version of TK Clocking System is ready. Update now to get the latest fixes and improvements.';
+const releaseNotesPlaceholder = 'text shown in the app update prompt';
 
 function readPubspecVersion() {
   const pubspec = fs.readFileSync(pubspecPath, 'utf8');
@@ -55,6 +58,11 @@ function envString(name, fallback) {
   return value === undefined || value === '' ? fallback : value;
 }
 
+function normalizeReleaseNotes(value) {
+  if (!value || value === releaseNotesPlaceholder) return defaultReleaseNotes;
+  return value;
+}
+
 function fileSize(fileName, fallback = 0) {
   const fullPath = path.join(rootDir, fileName);
   if (!fs.existsSync(fullPath)) return fallback;
@@ -88,9 +96,8 @@ const baseUrl = envString(
   'https://tkclocking.online',
 ).replace(/\/$/, '');
 const required = envBoolean('APP_ANDROID_UPDATE_REQUIRED', existing.required ?? false);
-const releaseNotes = envString(
-  'APP_ANDROID_RELEASE_NOTES',
-  existing.releaseNotes ?? 'Bug fixes and improvements.',
+const releaseNotes = normalizeReleaseNotes(
+  envString('APP_ANDROID_RELEASE_NOTES', existing.releaseNotes),
 );
 const updatedAt = envString(
   'APP_ANDROID_UPDATED_AT',

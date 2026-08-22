@@ -213,6 +213,7 @@ class _AppUpdateProgressDialogState extends State<_AppUpdateProgressDialog>
   String? _pendingInstallPath;
   bool _isWaitingForInstallPermission = false;
   bool _isOpeningInstaller = false;
+  bool _downloadFailed = false;
 
   @override
   void initState() {
@@ -235,6 +236,16 @@ class _AppUpdateProgressDialogState extends State<_AppUpdateProgressDialog>
   }
 
   Future<void> _startDownload() async {
+    if (!mounted) return;
+    setState(() {
+      _progress = null;
+      _errorMessage = null;
+      _pendingInstallPath = null;
+      _isWaitingForInstallPermission = false;
+      _isOpeningInstaller = false;
+      _downloadFailed = false;
+    });
+
     try {
       await sl<AppUpdateService>().downloadAndOpenInstaller(
         widget.update,
@@ -257,14 +268,17 @@ class _AppUpdateProgressDialogState extends State<_AppUpdateProgressDialog>
       setState(() {
         _pendingInstallPath = e.apkPath;
         _isWaitingForInstallPermission = true;
+        _downloadFailed = false;
         _errorMessage = e.message;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(
-        () => _errorMessage =
-            'Update download failed. Please try again from the dashboard link.',
-      );
+      setState(() {
+        _downloadFailed = true;
+        _isWaitingForInstallPermission = false;
+        _errorMessage =
+            'The update download could not finish. Check your internet connection, then tap Retry.';
+      });
       debugPrint('[AppUpdate] Download/install failed: $e');
     }
   }
@@ -321,13 +335,16 @@ class _AppUpdateProgressDialogState extends State<_AppUpdateProgressDialog>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final progress = _progress;
+    final title = _errorMessage == null
+        ? _isOpeningInstaller
+            ? 'Opening installer'
+            : 'Downloading update'
+        : _downloadFailed
+            ? 'Download failed'
+            : 'Allow app installation';
 
     return AlertDialog(
-      title: Text(_errorMessage == null
-          ? _isOpeningInstaller
-              ? 'Opening installer'
-              : 'Downloading update'
-          : 'Allow app installation'),
+      title: Text(title),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -351,8 +368,10 @@ class _AppUpdateProgressDialogState extends State<_AppUpdateProgressDialog>
       actions: [
         if (_errorMessage != null)
           TextButton(
-            onPressed: _resumePendingInstallIfAllowed,
-            child: const Text('Continue'),
+            onPressed: _downloadFailed
+                ? _startDownload
+                : _resumePendingInstallIfAllowed,
+            child: Text(_downloadFailed ? 'Retry' : 'Continue'),
           ),
         if (_errorMessage != null)
           TextButton(

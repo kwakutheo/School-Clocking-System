@@ -178,6 +178,24 @@ class AppUpdateService {
     AppUpdateInfo update, {
     void Function(int received, int total)? onReceiveProgress,
   }) async {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      await _downloadWithAndroidDownloadManager(
+        update,
+        onReceiveProgress: onReceiveProgress,
+      );
+      return;
+    }
+
+    await _downloadWithDio(
+      update,
+      onReceiveProgress: onReceiveProgress,
+    );
+  }
+
+  Future<void> _downloadWithDio(
+    AppUpdateInfo update, {
+    void Function(int received, int total)? onReceiveProgress,
+  }) async {
     final dir = await getTemporaryDirectory();
     final safeFileName = update.download.apkFileName.replaceAll(
       RegExp(r'[^A-Za-z0-9._-]'),
@@ -194,6 +212,60 @@ class AppUpdateService {
     );
 
     await openDownloadedApk(savePath);
+  }
+
+  Future<void> _downloadWithAndroidDownloadManager(
+    AppUpdateInfo update, {
+    void Function(int received, int total)? onReceiveProgress,
+  }) async {
+    final safeFileName = update.download.apkFileName.replaceAll(
+      RegExp(r'[^A-Za-z0-9._-]'),
+      '_',
+    );
+    final apkUri = _resolveApkUri(update.download.apkUrl);
+    final started = await _installerChannel.invokeMapMethod<String, dynamic>(
+      'startApkDownload',
+      {
+        'url': apkUri.toString(),
+        'fileName': safeFileName,
+      },
+    );
+    final downloadId = _asInt(started?['id']);
+    var downloadedPath = started?['path']?.toString();
+    if (downloadId <= 0) {
+      throw Exception('The APK download could not be started.');
+    }
+
+    while (true) {
+      await Future<void>.delayed(const Duration(seconds: 1));
+
+      final status = await _installerChannel.invokeMapMethod<String, dynamic>(
+        'getApkDownloadStatus',
+        {'id': downloadId},
+      );
+      final statusText = status?['status']?.toString() ?? 'unknown';
+      final received = _asInt(status?['downloadedBytes']);
+      final total = _asInt(status?['totalBytes']);
+      downloadedPath = status?['path']?.toString() ?? downloadedPath;
+
+      if (total > 0) {
+        onReceiveProgress?.call(received, total);
+      }
+
+      if (statusText == 'successful') {
+        final path = downloadedPath;
+        if (path == null || path.isEmpty) {
+          throw Exception('The downloaded APK path was unavailable.');
+        }
+
+        await openDownloadedApk(path);
+        return;
+      }
+
+      if (statusText == 'failed') {
+        throw Exception('The Android download manager failed to download APK.');
+      }
+    }
   }
 
   Future<void> openDownloadedApk(String savePath) async {
@@ -218,6 +290,12 @@ class AppUpdateService {
     if (parsed.hasScheme) return parsed;
 
     return Uri.parse(AppConstants.appDownloadBaseUrl).resolve(rawUrl);
+  }
+
+  int _asInt(Object? value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
   Map<String, AppUpdateDownload> _parseDownloads(Map<String, dynamic> json) {

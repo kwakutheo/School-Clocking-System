@@ -1,8 +1,11 @@
 package com.kwakutheo.tk_clocking_system
 
+import android.app.DownloadManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.os.SystemClock
 import android.provider.Settings
 import androidx.core.content.FileProvider
@@ -31,6 +34,38 @@ class MainActivity: FlutterFragmentActivity() {
                     Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
                         packageManager.canRequestPackageInstalls()
                 )
+                return@setMethodCallHandler
+            }
+
+            if (call.method == "startApkDownload") {
+                val url = call.argument<String>("url")
+                val fileName = call.argument<String>("fileName") ?: "tk_clocking.apk"
+                if (url.isNullOrBlank()) {
+                    result.error("INVALID_APK_URL", "The APK download URL was empty.", null)
+                    return@setMethodCallHandler
+                }
+
+                try {
+                    val download = startApkDownload(url, fileName)
+                    result.success(download)
+                } catch (e: Exception) {
+                    result.error("DOWNLOAD_START_FAILED", e.message, null)
+                }
+                return@setMethodCallHandler
+            }
+
+            if (call.method == "getApkDownloadStatus") {
+                val id = call.argument<Number>("id")?.toLong()
+                if (id == null) {
+                    result.error("INVALID_DOWNLOAD_ID", "The APK download ID was empty.", null)
+                    return@setMethodCallHandler
+                }
+
+                try {
+                    result.success(getApkDownloadStatus(id))
+                } catch (e: Exception) {
+                    result.error("DOWNLOAD_STATUS_FAILED", e.message, null)
+                }
                 return@setMethodCallHandler
             }
 
@@ -77,6 +112,76 @@ class MainActivity: FlutterFragmentActivity() {
             }
             startActivity(installIntent)
             result.success(null)
+        }
+    }
+
+    private fun startApkDownload(url: String, fileName: String): Map<String, Any> {
+        val safeFileName = fileName.replace(Regex("[^A-Za-z0-9._-]"), "_")
+        val downloadsDir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: cacheDir
+        if (!downloadsDir.exists()) {
+            downloadsDir.mkdirs()
+        }
+
+        val apkFile = File(downloadsDir, safeFileName)
+        if (apkFile.exists()) {
+            apkFile.delete()
+        }
+
+        val request = DownloadManager.Request(Uri.parse(url)).apply {
+            setTitle("TK Clocking System update")
+            setDescription("Downloading app update")
+            setMimeType("application/vnd.android.package-archive")
+            setAllowedOverMetered(true)
+            setAllowedOverRoaming(true)
+            setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
+            setDestinationUri(Uri.fromFile(apkFile))
+        }
+
+        val downloadManager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        val id = downloadManager.enqueue(request)
+        return mapOf(
+            "id" to id,
+            "path" to apkFile.absolutePath
+        )
+    }
+
+    private fun getApkDownloadStatus(id: Long): Map<String, Any?> {
+        val downloadManager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        val query = DownloadManager.Query().setFilterById(id)
+        val cursor = downloadManager.query(query)
+            ?: return mapOf("status" to "failed", "reason" to "Download status was unavailable.")
+
+        cursor.use {
+            if (!it.moveToFirst()) {
+                return mapOf("status" to "failed", "reason" to "Download was not found.")
+            }
+
+            val status = it.getInt(it.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+            val reason = it.getInt(it.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
+            val downloadedBytes = it.getLong(
+                it.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
+            )
+            val totalBytes = it.getLong(
+                it.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
+            )
+            val localUri = it.getString(it.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI))
+            val path = localUri?.let { uri -> Uri.parse(uri).path }
+            val statusText = when (status) {
+                DownloadManager.STATUS_PENDING -> "pending"
+                DownloadManager.STATUS_RUNNING -> "running"
+                DownloadManager.STATUS_PAUSED -> "paused"
+                DownloadManager.STATUS_SUCCESSFUL -> "successful"
+                DownloadManager.STATUS_FAILED -> "failed"
+                else -> "unknown"
+            }
+
+            return mapOf(
+                "status" to statusText,
+                "reason" to reason,
+                "downloadedBytes" to downloadedBytes,
+                "totalBytes" to totalBytes,
+                "path" to path
+            )
         }
     }
 }

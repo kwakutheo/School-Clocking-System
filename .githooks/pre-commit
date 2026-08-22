@@ -3,8 +3,11 @@ set -e
 
 changed_files="$(git diff --cached --name-only)"
 
-if printf "%s\n" "$changed_files" | grep -Eq '^(pubspec.yaml|dashboard/public/apps/.*\.apk)$'; then
-  echo "Syncing mobile app version metadata from pubspec.yaml..."
-  node scripts/sync-mobile-app-version.mjs
-  git add dashboard/public/apps/app-version.json backend/src/modules/mobile-app/mobile-app.manifest.ts
+if printf "%s\n" "$changed_files" | grep -Eq '^pubspec.yaml$'; then
+  echo "Mobile version changed. GitHub Actions will publish app manifests after the APK build succeeds."
+fi
+
+if printf "%s\n" "$changed_files" | grep -Eq '^(dashboard/public/apps/.*\.apk|dashboard/public/apps/app-version\.json|backend/src/modules/mobile-app/mobile-app\.manifest\.ts)$'; then
+  echo "Validating mobile app publication metadata..."
+  node scripts/validate-mobile-app-publication.mjs
 fi

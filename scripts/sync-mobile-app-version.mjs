@@ -20,6 +20,23 @@ const apkFiles = {
 const defaultReleaseNotes =
   'A new version of TK Clocking System is ready. Update now to get the latest fixes and improvements.';
 const releaseNotesPlaceholder = 'text shown in the app update prompt';
+const canPublishManifests =
+  process.argv.includes('--publish') ||
+  process.env.GITHUB_ACTIONS === 'true' ||
+  process.env.ALLOW_LOCAL_MOBILE_APP_PUBLISH === 'true';
+
+if (!canPublishManifests) {
+  console.error(
+    'Refusing to update public mobile app manifests from a local command.',
+  );
+  console.error(
+    'GitHub Actions updates these files only after the matching APK build succeeds.',
+  );
+  console.error(
+    'If you intentionally built the APKs locally, rerun with ALLOW_LOCAL_MOBILE_APP_PUBLISH=true.',
+  );
+  process.exit(1);
+}
 
 function readPubspecVersion() {
   const pubspec = fs.readFileSync(pubspecPath, 'utf8');

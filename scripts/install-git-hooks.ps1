@@ -14,4 +14,4 @@ if (-not (Test-Path ".githooks/pre-commit")) {
 git config core.hooksPath .githooks
 
 Write-Host "Git hooks installed for this repository."
-Write-Host "Mobile app manifests will now sync automatically before commits when pubspec.yaml changes."
+Write-Host "Mobile app manifests will now be validated before commits, not auto-published from local version bumps."

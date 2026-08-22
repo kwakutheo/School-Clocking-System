@@ -22,6 +22,5 @@ if ($pubspec -notmatch '(?m)^version:\s*[^\r\n]+') {
 $updated = $pubspec -replace '(?m)^version:\s*[^\r\n]+', "version: $Version"
 Set-Content -Path $pubspecPath -Value $updated -NoNewline
 
-node scripts/sync-mobile-app-version.mjs
-
-Write-Host "Mobile version bumped and synced to $Version."
+Write-Host "Mobile version bumped to $Version."
+Write-Host "Public app manifests will update only after GitHub Actions builds and publishes the matching APK."

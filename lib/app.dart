@@ -151,10 +151,10 @@ class _AppUpdateGateState extends State<_AppUpdateGate>
           Icons.system_update_alt_rounded,
           color: theme.colorScheme.primary,
         ),
-        title: Text('Update available: v${update.versionName}'),
+        title: Text('Update Available'),
         content: Text(
           update.releaseNotes.isEmpty
-              ? 'A newer version of TK Clocking System is ready to install.'
+              ? 'A newer version of this app is ready to install. Update to the latest version'
               : update.releaseNotes,
         ),
         actions: [
@@ -171,8 +171,7 @@ class _AppUpdateGateState extends State<_AppUpdateGate>
           FilledButton.icon(
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              final progressContext =
-                  AppRouter.rootNavigatorKey.currentContext;
+              final progressContext = AppRouter.rootNavigatorKey.currentContext;
               if (progressContext == null) return;
               showDialog<void>(
                 context: progressContext,

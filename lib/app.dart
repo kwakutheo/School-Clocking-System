@@ -95,6 +95,7 @@ class _AppUpdateGateState extends State<_AppUpdateGate>
     with WidgetsBindingObserver {
   bool _isCheckingForUpdate = false;
   DateTime? _lastUpdateCheckAt;
+  final Set<int> _sessionSnoozedVersionCodes = <int>{};
 
   @override
   void initState() {
@@ -132,7 +133,11 @@ class _AppUpdateGateState extends State<_AppUpdateGate>
     _lastUpdateCheckAt = DateTime.now();
     final update = await sl<AppUpdateService>().checkForUpdate();
     _isCheckingForUpdate = false;
-    if (!mounted || update == null) return;
+    if (!mounted ||
+        update == null ||
+        _sessionSnoozedVersionCodes.contains(update.versionCode)) {
+      return;
+    }
 
     _showAppUpdateDialog(update);
   }
@@ -160,8 +165,8 @@ class _AppUpdateGateState extends State<_AppUpdateGate>
         actions: [
           if (!update.required)
             TextButton(
-              onPressed: () async {
-                await sl<AppUpdateService>().snooze(update);
+              onPressed: () {
+                _sessionSnoozedVersionCodes.add(update.versionCode);
                 if (dialogContext.mounted) {
                   Navigator.of(dialogContext).pop();
                 }
@@ -201,14 +206,32 @@ class _AppUpdateProgressDialog extends StatefulWidget {
       _AppUpdateProgressDialogState();
 }
 
-class _AppUpdateProgressDialogState extends State<_AppUpdateProgressDialog> {
+class _AppUpdateProgressDialogState extends State<_AppUpdateProgressDialog>
+    with WidgetsBindingObserver {
   double? _progress;
   String? _errorMessage;
+  String? _pendingInstallPath;
+  bool _isWaitingForInstallPermission = false;
+  bool _isOpeningInstaller = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _startDownload();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _resumePendingInstallIfAllowed();
+    }
   }
 
   Future<void> _startDownload() async {
@@ -231,7 +254,11 @@ class _AppUpdateProgressDialogState extends State<_AppUpdateProgressDialog> {
       );
     } on InstallPermissionRequiredException catch (e) {
       if (!mounted) return;
-      setState(() => _errorMessage = e.message);
+      setState(() {
+        _pendingInstallPath = e.apkPath;
+        _isWaitingForInstallPermission = true;
+        _errorMessage = e.message;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(
@@ -242,22 +269,71 @@ class _AppUpdateProgressDialogState extends State<_AppUpdateProgressDialog> {
     }
   }
 
+  Future<void> _resumePendingInstallIfAllowed() async {
+    final pendingPath = _pendingInstallPath;
+    if (!_isWaitingForInstallPermission ||
+        _isOpeningInstaller ||
+        pendingPath == null) {
+      return;
+    }
+
+    final updateService = sl<AppUpdateService>();
+    final canInstall = await updateService.canRequestPackageInstalls();
+    if (!mounted || !canInstall) return;
+
+    setState(() {
+      _isOpeningInstaller = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await updateService.openDownloadedApk(pendingPath);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Installer opened. Tap Install to finish updating.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } on InstallPermissionRequiredException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _pendingInstallPath = e.apkPath;
+        _isWaitingForInstallPermission = true;
+        _errorMessage = e.message;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(
+        () => _errorMessage =
+            'Update install failed. Please try again from the dashboard link.',
+      );
+      debugPrint('[AppUpdate] Install retry failed: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isOpeningInstaller = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final progress = _progress;
 
     return AlertDialog(
-      title: Text(
-        _errorMessage == null ? 'Downloading update' : 'Update needs attention',
-      ),
+      title: Text(_errorMessage == null
+          ? _isOpeningInstaller
+              ? 'Opening installer'
+              : 'Downloading update'
+          : 'Allow app installation'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _errorMessage ??
-                'Preparing TK Clocking System v${widget.update.versionName}...',
+            _errorMessage ?? 'Preparing TK Clocking System...',
           ),
           const SizedBox(height: 16),
           if (_errorMessage == null) ...[
@@ -273,6 +349,11 @@ class _AppUpdateProgressDialogState extends State<_AppUpdateProgressDialog> {
         ],
       ),
       actions: [
+        if (_errorMessage != null)
+          TextButton(
+            onPressed: _resumePendingInstallIfAllowed,
+            child: const Text('Continue'),
+          ),
         if (_errorMessage != null)
           TextButton(
             onPressed: () => Navigator.of(context).pop(),

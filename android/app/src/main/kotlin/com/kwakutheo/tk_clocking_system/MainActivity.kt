@@ -26,6 +26,14 @@ class MainActivity: FlutterFragmentActivity() {
         }
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, INSTALLER_CHANNEL).setMethodCallHandler { call, result ->
+            if (call.method == "canRequestPackageInstalls") {
+                result.success(
+                    Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
+                        packageManager.canRequestPackageInstalls()
+                )
+                return@setMethodCallHandler
+            }
+
             if (call.method != "installApk") {
                 result.notImplemented()
                 return@setMethodCallHandler
@@ -45,7 +53,7 @@ class MainActivity: FlutterFragmentActivity() {
                 startActivity(settingsIntent)
                 result.error(
                     "INSTALL_PERMISSION_REQUIRED",
-                    "Allow TK Clocking System to install unknown apps, then tap Update Now again.",
+                    "Allow TK Clocking System to install unknown apps, then return to continue.",
                     null
                 )
                 return@setMethodCallHandler

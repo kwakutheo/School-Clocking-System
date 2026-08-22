@@ -83,9 +83,13 @@ class AppUpdateDownload {
 }
 
 class InstallPermissionRequiredException implements Exception {
-  const InstallPermissionRequiredException(this.message);
+  const InstallPermissionRequiredException({
+    required this.message,
+    required this.apkPath,
+  });
 
   final String message;
+  final String apkPath;
 
   @override
   String toString() => message;
@@ -127,9 +131,7 @@ class AppUpdateService {
         downloads: downloads,
       );
       if (latest.download.apkUrl.isEmpty ||
-          latest.versionCode <= currentVersionCode ||
-          (!latest.required &&
-              _storage.isAppUpdateSnoozed(latest.versionCode))) {
+          latest.versionCode <= currentVersionCode) {
         return null;
       }
 
@@ -145,6 +147,17 @@ class AppUpdateService {
       versionCode: update.versionCode,
       until: DateTime.now().add(const Duration(days: 1)),
     );
+  }
+
+  Future<bool> canRequestPackageInstalls() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return true;
+    }
+
+    final canInstall = await _installerChannel.invokeMethod<bool>(
+      'canRequestPackageInstalls',
+    );
+    return canInstall ?? false;
   }
 
   Future<void> downloadAndOpenInstaller(
@@ -166,6 +179,10 @@ class AppUpdateService {
       options: Options(responseType: ResponseType.bytes),
     );
 
+    await openDownloadedApk(savePath);
+  }
+
+  Future<void> openDownloadedApk(String savePath) async {
     try {
       await _installerChannel.invokeMethod<void>('installApk', {
         'path': savePath,
@@ -173,8 +190,9 @@ class AppUpdateService {
     } on PlatformException catch (e) {
       if (e.code == 'INSTALL_PERMISSION_REQUIRED') {
         throw InstallPermissionRequiredException(
-          e.message ??
+          message: e.message ??
               'Allow TK Clocking System to install unknown apps, then try again.',
+          apkPath: savePath,
         );
       }
       rethrow;

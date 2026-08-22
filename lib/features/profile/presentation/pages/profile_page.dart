@@ -3,7 +3,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:tk_clocking_system/core/di/injection_container.dart';
 import 'package:tk_clocking_system/core/router/app_router.dart';
@@ -11,7 +10,6 @@ import 'package:go_router/go_router.dart';
 import 'package:tk_clocking_system/core/network/api_client.dart';
 import 'package:tk_clocking_system/core/network/api_endpoints.dart';
 import 'package:tk_clocking_system/core/services/storage_service.dart';
-import 'package:tk_clocking_system/core/utils/app_version_utils.dart';
 import 'package:tk_clocking_system/features/auth/data/models/user_model.dart';
 import 'package:tk_clocking_system/features/auth/domain/entities/user_entity.dart';
 import 'package:tk_clocking_system/features/auth/presentation/bloc/auth_bloc.dart';
@@ -42,7 +40,6 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _lastSyncedUserId;
   String _usernameStatus = 'idle'; // 'idle', 'checking', 'available', 'taken'
   List<String> _usernameSuggestions = [];
-  String _appVersionLabel = 'Loading...';
   Timer? _usernameDebounce;
   final _formKey = GlobalKey<FormState>();
 
@@ -50,24 +47,6 @@ class _ProfilePageState extends State<ProfilePage> {
   late TextEditingController _usernameController;
   late TextEditingController _passwordController;
   late TextEditingController _confirmPasswordController;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadAppVersion();
-  }
-
-  Future<void> _loadAppVersion() async {
-    final packageInfo = await PackageInfo.fromPlatform();
-    if (!mounted) return;
-
-    setState(() {
-      _appVersionLabel = formatAppVersionLabel(
-        versionName: packageInfo.version,
-        buildNumber: packageInfo.buildNumber,
-      );
-    });
-  }
 
   @override
   void didChangeDependencies() {
@@ -915,11 +894,6 @@ class _ProfilePageState extends State<ProfilePage> {
                                             label: 'School',
                                             value: user.schoolName!,
                                           ),
-                                        _InfoItem(
-                                          icon: Icons.info_outline_rounded,
-                                          label: 'App Version',
-                                          value: _appVersionLabel,
-                                        ),
                                       ],
                                     ),
                                     const SizedBox(height: 16),

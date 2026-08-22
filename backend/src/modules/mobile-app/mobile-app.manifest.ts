@@ -6,7 +6,7 @@ export const androidAppManifest = {
   apkFileName: 'school-clocking-universal.apk',
   required: true,
   releaseNotes: 'text shown in the app update prompt',
-  updatedAt: '2026-08-22T06:43:16.000Z',
+  updatedAt: '2026-08-22T07:51:09.000Z',
   downloads: {
     arm64: {
       label: 'Android 64-bit',
@@ -20,7 +20,7 @@ export const androidAppManifest = {
       abi: 'armeabi-v7a',
       apkUrl: 'https://tkclocking.online/apps/school-clocking-arm32.apk',
       apkFileName: 'school-clocking-arm32.apk',
-      sizeBytes: 28023294,
+      sizeBytes: 28023298,
     },
     universal: {
       label: 'Universal Android',

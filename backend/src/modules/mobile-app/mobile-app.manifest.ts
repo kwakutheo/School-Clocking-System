@@ -5,7 +5,7 @@ export const androidAppManifest = {
   apkUrl: 'https://tkclocking.online/apps/school-clocking-universal.apk',
   apkFileName: 'school-clocking-universal.apk',
   required: true,
-  releaseNotes: 'text shown in the app update prompt',
+  releaseNotes: 'A newer version of TK Clocking System is ready to install.',
   updatedAt: '2026-08-22T18:24:51.000Z',
   downloads: {
     arm64: {

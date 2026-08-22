@@ -22,6 +22,8 @@ import 'package:tk_clocking_system/core/router/go_router_refresh_stream.dart';
 abstract final class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
+  static GlobalKey<NavigatorState> get rootNavigatorKey => _rootNavigatorKey;
+
   static final GoRouter router = GoRouter(
         navigatorKey: _rootNavigatorKey,
         initialLocation: '/splash',

@@ -138,10 +138,13 @@ class _AppUpdateGateState extends State<_AppUpdateGate>
   }
 
   void _showAppUpdateDialog(AppUpdateInfo update) {
-    final theme = Theme.of(context);
+    final navigatorContext = AppRouter.rootNavigatorKey.currentContext;
+    if (navigatorContext == null) return;
+
+    final theme = Theme.of(navigatorContext);
 
     showDialog<void>(
-      context: context,
+      context: navigatorContext,
       barrierDismissible: !update.required,
       builder: (dialogContext) => AlertDialog(
         icon: Icon(
@@ -168,8 +171,11 @@ class _AppUpdateGateState extends State<_AppUpdateGate>
           FilledButton.icon(
             onPressed: () {
               Navigator.of(dialogContext).pop();
+              final progressContext =
+                  AppRouter.rootNavigatorKey.currentContext;
+              if (progressContext == null) return;
               showDialog<void>(
-                context: context,
+                context: progressContext,
                 barrierDismissible: false,
                 builder: (_) => _AppUpdateProgressDialog(update: update),
               );

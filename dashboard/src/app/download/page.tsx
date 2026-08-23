@@ -100,8 +100,8 @@ export default function DownloadPage() {
           </div>
 
           {/* Hidden Alternatives Box */}
-          {showOptions && (
-            <div className={styles.alternativeDownloads} style={{ marginTop: '1rem' }}>
+          <div className={`${styles.optionsWrapper} ${showOptions ? styles.optionsExpanded : ''}`}>
+            <div className={styles.alternativeDownloads}>
               <div className={styles.optionList}>
                 {downloadOptions.map((option) => (
                   <a
@@ -124,7 +124,7 @@ export default function DownloadPage() {
                 ))}
               </div>
             </div>
-          )}
+          </div>
         </section>
 
         <div className={styles.divider} />

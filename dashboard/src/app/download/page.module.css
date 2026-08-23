@@ -4,16 +4,16 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: var(--bg-default);
+  background-color: white;
   padding: 32px;
   font-family: var(--font-sans), sans-serif;
 }
 
 .card {
   background: white;
-  border-radius: 20px;
+  border-radius: 0;
   padding: 32px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
   max-width: 1120px;
   width: 100%;
   display: grid;
@@ -92,10 +92,26 @@
   color: #4b5563;
 }
 
-.alternativeDownloads {
+.optionsWrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in-out, margin-top 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 0;
+  overflow: hidden;
   width: 100%;
   max-width: 640px;
-  margin-top: 20px;
+}
+
+.optionsExpanded {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 1rem;
+}
+
+.alternativeDownloads {
+  min-height: 0;
+  width: 100%;
   padding: 16px;
   border: 1px solid #e5e7eb;
   border-radius: 12px;

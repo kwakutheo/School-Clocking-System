@@ -5,21 +5,40 @@
   align-items: center;
   justify-content: center;
   background-color: var(--bg-default);
-  padding: 24px;
+  padding: 32px;
   font-family: var(--font-sans), sans-serif;
 }
 
 .card {
   background: white;
   border-radius: 20px;
-  padding: 40px;
+  padding: 32px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-  max-width: 500px;
+  max-width: 1120px;
   width: 100%;
-  text-align: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  gap: 32px;
+  align-items: stretch;
+}
+
+.downloadPanel,
+.guidePanel {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+}
+
+.downloadPanel {
   align-items: center;
+  text-align: center;
+}
+
+.guidePanel {
+  justify-content: center;
+  border-left: 1px solid #e5e7eb;
+  padding-left: 32px;
+  text-align: left;
 }
 
 .logo {
@@ -56,6 +75,7 @@
   font-weight: 600;
   text-decoration: none;
   width: 100%;
+  max-width: 520px;
   transition: all 0.2s ease;
   box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
 }
@@ -74,6 +94,7 @@
 
 .alternativeDownloads {
   width: 100%;
+  max-width: 640px;
   margin-top: 20px;
   padding: 16px;
   border: 1px solid #e5e7eb;
@@ -175,10 +196,7 @@
 }
 
 .divider {
-  width: 100%;
-  height: 1px;
-  background: #e5e7eb;
-  margin: 32px 0;
+  display: none;
 }
 
 .instructionsTitle {
@@ -186,7 +204,6 @@
   font-weight: 700;
   color: #111827;
   margin: 0 0 20px 0;
-  align-self: flex-start;
 }
 
 .instructionsList {
@@ -238,7 +255,8 @@
 }
 
 .footerNote {
-  margin-top: 24px;
+  margin-top: auto;
+  padding-top: 24px;
   font-size: 13px;
   color: #6b7280;
   display: flex;
@@ -251,6 +269,33 @@
   width: 100%;
 }
 
+@media (max-width: 900px) {
+  .container {
+    justify-content: flex-start;
+  }
+
+  .card {
+    max-width: 720px;
+    grid-template-columns: 1fr;
+  }
+
+  .guidePanel {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .divider {
+    display: block;
+    width: 100%;
+    height: 1px;
+    background: #e5e7eb;
+  }
+
+  .footerNote {
+    margin-top: 24px;
+  }
+}
+
 @media (max-width: 520px) {
   .container {
     padding: 16px;
@@ -258,6 +303,20 @@
 
   .card {
     padding: 28px 20px;
+    border-radius: 16px;
+  }
+
+  .logo {
+    width: 96px;
+    height: 96px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .subtitle {
+    margin-bottom: 24px;
   }
 
   .optionLink {

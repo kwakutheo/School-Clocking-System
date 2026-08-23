@@ -52,9 +52,10 @@ export default function MobileAppPage() {
   useEffect(() => {
     let cancelled = false;
 
-    fetchMobileAppManifest().then((nextManifest) => {
+    fetchMobileAppManifest().then(async (nextManifest) => {
       if (cancelled) return;
-      const preferred = detectPreferredDownload(nextManifest, navigator);
+      const preferred = await detectPreferredDownload(nextManifest, navigator);
+      if (cancelled) return;
       setManifest(nextManifest);
       setPreferredKey(preferred.key);
     });
@@ -129,6 +130,8 @@ export default function MobileAppPage() {
   if (!isHydrated || !user) return null;
 
   const preferredDownload = manifest.downloads[preferredKey];
+  const universalDownload = manifest.downloads.universal;
+  const showFallbackDownload = preferredKey !== 'universal';
 
   return (
     <div className="dashboard-container">
@@ -211,23 +214,27 @@ export default function MobileAppPage() {
             )}
           </div>
 
-          <div className={styles.apkOptions}>
-            {Object.entries(manifest.downloads).map(([key, download]) => (
+          <p className={styles.downloadMeta}>
+            Smart download link selects the best APK for the staff phone.
+          </p>
+
+          {showFallbackDownload && (
+            <div className={styles.fallbackPanel}>
+              <p className={styles.fallbackText}>
+                If the first APK does not install on a phone, use the
+                compatibility APK below.
+              </p>
               <a
-                key={key}
-                href={download.apkUrl}
-                download={download.apkFileName}
-                className={
-                  key === preferredKey
-                    ? styles.apkOptionActive
-                    : styles.apkOption
-                }
+                href={universalDownload.apkUrl}
+                download={universalDownload.apkFileName}
+                className={styles.fallbackButton}
               >
-                <span>{download.label}</span>
-                <small>{formatApkSize(download.sizeBytes)}</small>
+                <Download size={18} />
+                Download compatibility APK
+                <small>{formatApkSize(universalDownload.sizeBytes)}</small>
               </a>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Info Card */}

@@ -29,9 +29,10 @@ export default function DownloadPage() {
   useEffect(() => {
     let cancelled = false;
 
-    fetchMobileAppManifest().then((nextManifest) => {
+    fetchMobileAppManifest().then(async (nextManifest) => {
       if (cancelled) return;
-      const preferred = detectPreferredDownload(nextManifest, navigator);
+      const preferred = await detectPreferredDownload(nextManifest, navigator);
+      if (cancelled) return;
       setManifest(nextManifest);
       setPreferredKey(preferred.key);
     });
@@ -42,6 +43,8 @@ export default function DownloadPage() {
   }, []);
 
   const preferredDownload = manifest.downloads[preferredKey];
+  const universalDownload = manifest.downloads.universal;
+  const showFallbackDownload = preferredKey !== 'universal';
 
   return (
     <div className={styles.container}>
@@ -69,26 +72,26 @@ export default function DownloadPage() {
           Download APK
         </a>
         <p className={styles.downloadMeta}>
-          {preferredDownload.label} · {formatApkSize(preferredDownload.sizeBytes)}
+          Recommended for this phone · {formatApkSize(preferredDownload.sizeBytes)}
         </p>
 
-        <div className={styles.apkOptions}>
-          {Object.entries(manifest.downloads).map(([key, download]) => (
+        {showFallbackDownload && (
+          <div className={styles.fallbackPanel}>
+            <p className={styles.fallbackText}>
+              If the first download does not install on this phone, use the
+              compatibility APK instead.
+            </p>
             <a
-              key={key}
-              href={download.apkUrl}
-              download={download.apkFileName}
-              className={
-                key === preferredKey
-                  ? styles.apkOptionActive
-                  : styles.apkOption
-              }
+              href={universalDownload.apkUrl}
+              download={universalDownload.apkFileName}
+              className={styles.fallbackButton}
             >
-              <span>{download.label}</span>
-              <small>{formatApkSize(download.sizeBytes)}</small>
+              <Download size={18} />
+              Download compatibility APK
+              <small>{formatApkSize(universalDownload.sizeBytes)}</small>
             </a>
-          ))}
-        </div>
+          </div>
+        )}
 
         <div className={styles.divider} />
 

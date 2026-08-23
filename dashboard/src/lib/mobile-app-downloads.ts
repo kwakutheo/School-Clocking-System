@@ -75,21 +75,44 @@ export async function fetchMobileAppManifest(): Promise<MobileAppManifest> {
   }
 }
 
-export function detectPreferredDownload(
+type UserAgentDataLike = {
+  platform?: string;
+  architecture?: string;
+  bitness?: string;
+  getHighEntropyValues?: (
+    hints: string[],
+  ) => Promise<{
+    platform?: string;
+    architecture?: string;
+    bitness?: string;
+  }>;
+};
+
+export async function detectPreferredDownload(
   manifest: MobileAppManifest,
   nav: Navigator,
-): { key: ApkDownloadKey; download: ApkDownload } {
-  const uaData = nav as Navigator & {
-    userAgentData?: {
-      platform?: string;
-      architecture?: string;
-      bitness?: string;
-    };
-  };
+): Promise<{ key: ApkDownloadKey; download: ApkDownload }> {
+  const uaData = (nav as Navigator & { userAgentData?: UserAgentDataLike })
+    .userAgentData;
+  const highEntropy = await uaData
+    ?.getHighEntropyValues?.(['platform', 'architecture', 'bitness'])
+    .catch(() => undefined);
   const ua = nav.userAgent.toLowerCase();
-  const platform = uaData.userAgentData?.platform?.toLowerCase() ?? '';
-  const architecture = uaData.userAgentData?.architecture?.toLowerCase() ?? '';
-  const bitness = uaData.userAgentData?.bitness?.toLowerCase() ?? '';
+  const platform = (
+    highEntropy?.platform ??
+    uaData?.platform ??
+    ''
+  ).toLowerCase();
+  const architecture = (
+    highEntropy?.architecture ??
+    uaData?.architecture ??
+    ''
+  ).toLowerCase();
+  const bitness = (
+    highEntropy?.bitness ??
+    uaData?.bitness ??
+    ''
+  ).toLowerCase();
   const isAndroid = ua.includes('android') || platform.includes('android');
 
   if (isAndroid) {

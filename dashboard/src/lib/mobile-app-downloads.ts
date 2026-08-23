@@ -20,6 +20,35 @@ export type MobileAppManifest = {
   downloads: Record<ApkDownloadKey, ApkDownload>;
 };
 
+export type FriendlyApkDownloadOption = {
+  key: ApkDownloadKey;
+  title: string;
+  description: string;
+  download: ApkDownload;
+  isRecommended: boolean;
+};
+
+const friendlyDownloadCopy: Record<
+  ApkDownloadKey,
+  { title: string; description: string }
+> = {
+  arm64: {
+    title: 'Best for newer Android phones',
+    description:
+      'Use this for most recent Samsung, Tecno, Infinix, Xiaomi and similar phones.',
+  },
+  arm32: {
+    title: 'For older Android phones',
+    description:
+      'Use this if the phone is older, or if the newer-phone download does not install.',
+  },
+  universal: {
+    title: 'Compatibility download',
+    description:
+      'Largest file, but most likely to work when the other downloads do not install.',
+  },
+};
+
 export const fallbackMobileAppManifest: MobileAppManifest = {
   platform: 'android',
   versionName: '1.0.0',
@@ -137,6 +166,18 @@ export async function detectPreferredDownload(
   }
 
   return { key: 'universal', download: manifest.downloads.universal };
+}
+
+export function getFriendlyDownloadOptions(
+  manifest: MobileAppManifest,
+  preferredKey: ApkDownloadKey,
+): FriendlyApkDownloadOption[] {
+  return (['arm64', 'arm32', 'universal'] as const).map((key) => ({
+    key,
+    ...friendlyDownloadCopy[key],
+    download: manifest.downloads[key],
+    isRecommended: key === preferredKey,
+  }));
 }
 
 export function formatApkSize(sizeBytes: number): string {

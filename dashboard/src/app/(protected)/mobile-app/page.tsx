@@ -24,6 +24,7 @@ import {
   fallbackMobileAppManifest,
   fetchMobileAppManifest,
   formatApkSize,
+  getFriendlyDownloadOptions,
   type ApkDownloadKey,
   type MobileAppManifest,
 } from '@/lib/mobile-app-downloads';
@@ -130,8 +131,7 @@ export default function MobileAppPage() {
   if (!isHydrated || !user) return null;
 
   const preferredDownload = manifest.downloads[preferredKey];
-  const universalDownload = manifest.downloads.universal;
-  const showFallbackDownload = preferredKey !== 'universal';
+  const downloadOptions = getFriendlyDownloadOptions(manifest, preferredKey);
 
   return (
     <div className="dashboard-container">
@@ -218,23 +218,36 @@ export default function MobileAppPage() {
             Smart download link selects the best APK for the staff phone.
           </p>
 
-          {showFallbackDownload && (
-            <div className={styles.fallbackPanel}>
-              <p className={styles.fallbackText}>
-                If the first APK does not install on a phone, use the
-                compatibility APK below.
+          <div className={styles.alternativeDownloads}>
+            <div className={styles.alternativeHeader}>
+              <p className={styles.alternativeTitle}>Other download options</p>
+              <p className={styles.alternativeDesc}>
+                The main link auto-selects for the staff phone. If installation
+                fails, use these simple alternatives.
               </p>
-              <a
-                href={universalDownload.apkUrl}
-                download={universalDownload.apkFileName}
-                className={styles.fallbackButton}
-              >
-                <Download size={18} />
-                Download compatibility APK
-                <small>{formatApkSize(universalDownload.sizeBytes)}</small>
-              </a>
             </div>
-          )}
+            <div className={styles.optionList}>
+              {downloadOptions.map((option) => (
+                <a
+                  key={option.key}
+                  href={option.download.apkUrl}
+                  download={option.download.apkFileName}
+                  className={`${styles.optionLink} ${
+                    option.isRecommended ? styles.optionLinkRecommended : ''
+                  }`}
+                >
+                  <span className={styles.optionText}>
+                    <strong>{option.title}</strong>
+                    <span>{option.description}</span>
+                  </span>
+                  <span className={styles.optionMeta}>
+                    {option.isRecommended && <em>Recommended</em>}
+                    <small>{formatApkSize(option.download.sizeBytes)}</small>
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Info Card */}

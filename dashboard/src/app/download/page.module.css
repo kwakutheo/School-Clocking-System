@@ -72,48 +72,103 @@
   color: #4b5563;
 }
 
-.fallbackPanel {
+.alternativeDownloads {
   width: 100%;
   margin-top: 20px;
-  padding: 14px;
-  border: 1px solid #dbeafe;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
-  background: #eff6ff;
+  background: #f9fafb;
   text-align: left;
 }
 
-.fallbackText {
-  margin: 0 0 10px;
+.alternativeHeader {
+  margin-bottom: 12px;
+}
+
+.alternativeTitle {
+  margin: 0 0 4px;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.alternativeDesc {
+  margin: 0;
   color: #334155;
   font-size: 13px;
   line-height: 1.5;
 }
 
-.fallbackButton {
+.optionList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.optionLink {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
+  justify-content: space-between;
+  gap: 16px;
   width: 100%;
-  padding: 12px 14px;
+  padding: 12px;
   border-radius: 8px;
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
+  border: 1px solid #e5e7eb;
+  color: #111827;
   background: white;
   text-decoration: none;
-  font-size: 14px;
-  font-weight: 700;
   transition: all 0.2s ease;
 }
 
-.fallbackButton small {
+.optionLinkRecommended {
+  border-color: var(--primary);
+  background: #eff6ff;
+}
+
+.optionText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.optionText strong {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.optionText span {
+  color: #4b5563;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.optionMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.optionMeta em {
+  border-radius: 999px;
+  background: var(--primary);
+  color: white;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.optionMeta small {
   color: #6b7280;
   font-size: 12px;
   font-weight: 500;
-  margin-left: auto;
 }
 
-.fallbackButton:hover {
+.optionLink:hover {
   border-color: var(--primary);
   box-shadow: 0 4px 14px rgba(59, 130, 246, 0.16);
   color: var(--primary);
@@ -194,4 +249,24 @@
   padding: 12px;
   border-radius: 8px;
   width: 100%;
+}
+
+@media (max-width: 520px) {
+  .container {
+    padding: 16px;
+  }
+
+  .card {
+    padding: 28px 20px;
+  }
+
+  .optionLink {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .optionMeta {
+    align-items: flex-start;
+    flex-direction: row;
+  }
 }

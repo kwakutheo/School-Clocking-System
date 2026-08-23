@@ -15,6 +15,7 @@ import {
   fallbackMobileAppManifest,
   fetchMobileAppManifest,
   formatApkSize,
+  getFriendlyDownloadOptions,
   type ApkDownloadKey,
   type MobileAppManifest,
 } from '@/lib/mobile-app-downloads';
@@ -43,8 +44,7 @@ export default function DownloadPage() {
   }, []);
 
   const preferredDownload = manifest.downloads[preferredKey];
-  const universalDownload = manifest.downloads.universal;
-  const showFallbackDownload = preferredKey !== 'universal';
+  const downloadOptions = getFriendlyDownloadOptions(manifest, preferredKey);
 
   return (
     <div className={styles.container}>
@@ -75,23 +75,36 @@ export default function DownloadPage() {
           Recommended for this phone · {formatApkSize(preferredDownload.sizeBytes)}
         </p>
 
-        {showFallbackDownload && (
-          <div className={styles.fallbackPanel}>
-            <p className={styles.fallbackText}>
-              If the first download does not install on this phone, use the
-              compatibility APK instead.
+        <div className={styles.alternativeDownloads}>
+          <div className={styles.alternativeHeader}>
+            <p className={styles.alternativeTitle}>Other download options</p>
+            <p className={styles.alternativeDesc}>
+              The main button chooses automatically. If it does not install,
+              try one of these simple alternatives.
             </p>
-            <a
-              href={universalDownload.apkUrl}
-              download={universalDownload.apkFileName}
-              className={styles.fallbackButton}
-            >
-              <Download size={18} />
-              Download compatibility APK
-              <small>{formatApkSize(universalDownload.sizeBytes)}</small>
-            </a>
           </div>
-        )}
+          <div className={styles.optionList}>
+            {downloadOptions.map((option) => (
+              <a
+                key={option.key}
+                href={option.download.apkUrl}
+                download={option.download.apkFileName}
+                className={`${styles.optionLink} ${
+                  option.isRecommended ? styles.optionLinkRecommended : ''
+                }`}
+              >
+                <span className={styles.optionText}>
+                  <strong>{option.title}</strong>
+                  <span>{option.description}</span>
+                </span>
+                <span className={styles.optionMeta}>
+                  {option.isRecommended && <em>Recommended</em>}
+                  <small>{formatApkSize(option.download.sizeBytes)}</small>
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
 
         <div className={styles.divider} />
 

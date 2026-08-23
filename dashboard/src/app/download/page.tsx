@@ -57,7 +57,7 @@ export default function DownloadPage() {
         
         <h1 className={styles.title}>TK CLOCKING SYSTEM</h1>
         <p className={styles.subtitle}>
-          Official Staff Mobile Application v{manifest.versionName}
+          Official Staff Mobile Application
         </p>
 
         <a 

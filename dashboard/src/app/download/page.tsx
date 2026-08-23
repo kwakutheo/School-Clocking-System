@@ -77,10 +77,10 @@ export default function DownloadPage() {
 
         <div className={styles.alternativeDownloads}>
           <div className={styles.alternativeHeader}>
-            <p className={styles.alternativeTitle}>Other download options</p>
+            <p className={styles.alternativeTitle}>Other download alternatives</p>
             <p className={styles.alternativeDesc}>
-              The main button chooses automatically. If it does not install,
-              try one of these simple alternatives.
+              The main button auto-selects the best APK for your device. If installation
+              fails, try one of these simple alternatives.
             </p>
           </div>
           <div className={styles.optionList}>

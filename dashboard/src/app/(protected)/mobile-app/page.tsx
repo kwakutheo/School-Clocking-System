@@ -220,9 +220,9 @@ export default function MobileAppPage() {
 
           <div className={styles.alternativeDownloads}>
             <div className={styles.alternativeHeader}>
-              <p className={styles.alternativeTitle}>Other download options</p>
+              <p className={styles.alternativeTitle}>Other download alternatives</p>
               <p className={styles.alternativeDesc}>
-                The main link auto-selects for the staff phone. If installation
+                The main link auto-selects the best APK for your device. If installation
                 fails, use these simple alternatives.
               </p>
             </div>

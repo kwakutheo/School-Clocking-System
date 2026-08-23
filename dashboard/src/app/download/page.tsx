@@ -71,9 +71,6 @@ export default function DownloadPage() {
           <Download size={24} />
           Download APK
         </a>
-        <p className={styles.downloadMeta}>
-          Recommended for this phone · {formatApkSize(preferredDownload.sizeBytes)}
-        </p>
 
         {showFallbackDownload && (
           <div className={styles.fallbackPanel}>

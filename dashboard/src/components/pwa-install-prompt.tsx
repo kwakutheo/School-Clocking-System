@@ -115,10 +115,10 @@ export function PwaInstallPrompt() {
       {/* Text */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '2px' }}>
-          Install TK Dashboard
+          Install Admin Dashboard
         </div>
         <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-          Add to your home screen for faster loading
+          Add to your home screen for faster loading. This is for admin users only.
         </div>
       </div>
 

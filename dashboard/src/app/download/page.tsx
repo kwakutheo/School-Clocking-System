@@ -5,10 +5,11 @@ import Image from 'next/image';
 import { 
   Download, 
   ShieldCheck, 
-  CheckCircle2, 
   Zap,
   Info,
   TriangleAlert,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import styles from './page.module.css';
 import {
@@ -27,6 +28,7 @@ export default function DownloadPage() {
   );
   const [preferredKey, setPreferredKey] =
     useState<ApkDownloadKey>('universal');
+  const [showOptions, setShowOptions] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,6 +52,8 @@ export default function DownloadPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
+        
+        {/* --- LEFT COLUMN: DOWNLOAD PANEL --- */}
         <section className={styles.downloadPanel}>
           <Image
             src="/app_logo.png"
@@ -71,92 +75,115 @@ export default function DownloadPage() {
             className={styles.downloadButton}
           >
             <Download size={24} />
-            Download APK
+            Download APK ({formatApkSize(preferredDownload.sizeBytes)})
           </a>
 
-          <div className={styles.alternativeDownloads}>
-            <div className={styles.alternativeHeader}>
-              <p className={styles.alternativeTitle}>Other download alternatives</p>
-              <p className={styles.alternativeDesc}>
-                The main button auto-selects the best APK for your device. If installation
-                fails, try one of these simple alternatives.
-              </p>
-            </div>
-            <div className={styles.optionList}>
-              {downloadOptions.map((option) => (
-                <a
-                  key={option.key}
-                  href={option.download.apkUrl}
-                  download={option.download.apkFileName}
-                  className={`${styles.optionLink} ${
-                    option.isRecommended ? styles.optionLinkRecommended : ''
-                  }`}
-                >
-                  <span className={styles.optionText}>
-                    <strong>{option.title}</strong>
-                    <span>{option.description}</span>
-                  </span>
-                  <span className={styles.optionMeta}>
-                    {option.isRecommended && <em>Recommended</em>}
-                    <small>{formatApkSize(option.download.sizeBytes)}</small>
-                  </span>
-                </a>
-              ))}
-            </div>
+          {/* Toggle for Alternatives */}
+          <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+            <button
+              onClick={() => setShowOptions(!showOptions)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#666',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.9rem',
+                fontWeight: '500'
+              }}
+            >
+              {showOptions ? 'Hide advanced options' : 'Need a different version?'}
+              {showOptions ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
           </div>
+
+          {/* Hidden Alternatives Box */}
+          {showOptions && (
+            <div className={styles.alternativeDownloads} style={{ marginTop: '1rem' }}>
+              <div className={styles.optionList}>
+                {downloadOptions.map((option) => (
+                  <a
+                    key={option.key}
+                    href={option.download.apkUrl}
+                    download={option.download.apkFileName}
+                    className={`${styles.optionLink} ${
+                      option.isRecommended ? styles.optionLinkRecommended : ''
+                    }`}
+                  >
+                    <span className={styles.optionText}>
+                      <strong>{option.title}</strong>
+                      <span style={{ fontSize: '0.85rem' }}>{option.description}</span>
+                    </span>
+                    <span className={styles.optionMeta}>
+                      {option.isRecommended && <em>Recommended</em>}
+                      <small>{formatApkSize(option.download.sizeBytes)}</small>
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
         <div className={styles.divider} />
 
+        {/* --- RIGHT COLUMN: GUIDE PANEL --- */}
         <section className={styles.guidePanel}>
           <h2 className={styles.instructionsTitle}>Installation Guide</h2>
           <ul className={styles.instructionsList}>
+            
+            {/* Condensed Step 1 & 2 */}
             <li className={styles.instructionItem}>
               <div className={styles.iconWrapper}><Download size={18} /></div>
               <div className={styles.instructionText}>
-                <p className={styles.instructionStep}>1. Download the App</p>
-                <p className={styles.instructionDesc}>Click the download button above. The APK file will be saved to your device.</p>
+                <p className={styles.instructionStep}>1. Download & Open</p>
+                <p className={styles.instructionDesc}>Save the APK file to your device and tap to open it.</p>
               </div>
             </li>
 
+            {/* Condensed Step 3 */}
             <li className={styles.instructionItem}>
               <div className={styles.iconWrapper}><ShieldCheck size={18} /></div>
               <div className={styles.instructionText}>
                 <p className={styles.instructionStep}>2. Allow Unknown Sources</p>
-                <p className={styles.instructionDesc}>When opening the file, your device may prompt you to allow installations from unknown sources in Settings.</p>
+                <p className={styles.instructionDesc}>If prompted by your device, tap Settings and allow installation from this source.</p>
               </div>
             </li>
 
-            <li className={styles.instructionItem}>
-              <div className={styles.iconWrapper}><CheckCircle2 size={18} /></div>
-              <div className={styles.instructionText}>
-                <p className={styles.instructionStep}>3. Install & Open</p>
-                <p className={styles.instructionDesc}>Follow the prompts to install. Once done, open the app and log in with your credentials.</p>
-              </div>
-            </li>
-
+            {/* Condensed Step 4 */}
             <li className={styles.instructionItem}>
               <div className={styles.iconWrapper}><Zap size={18} /></div>
               <div className={styles.instructionText}>
-                <p className={styles.instructionStep}>4. Grant Permissions</p>
-                <p className={styles.instructionDesc}>The app requires Camera (to scan branch QR code) and Location (for geofencing) permissions to function correctly.</p>
-              </div>
-            </li>
-
-            <li className={styles.instructionItem}>
-              <div className={styles.iconWrapper}><TriangleAlert size={18} /></div>
-              <div className={styles.instructionText}>
-                <p className={styles.instructionStep}>5. Important Security Notice</p>
-                <p className={styles.instructionDesc}>
-                  Your device may display a safety warning during installation. This is standard protocol for applications downloaded outside the official Google Play Store. 
-                  Please proceed with the installation; this enterprise application is fully verified and secure.</p>
+                <p className={styles.instructionStep}>3. Grant Permissions</p>
+                <p className={styles.instructionDesc}>Accept Camera (QR code scanner) and Location (geofencing) permissions to sign in.</p>
               </div>
             </li>
           </ul>
 
-          <div className={styles.footerNote}>
-            <Info size={16} color="var(--primary)" />
-            <span>This is an internal enterprise application and is not available on public app stores.</span>
+          {/* Repurposed instructionItem to keep your styling for the security warning */}
+          <div 
+            className={styles.instructionItem} 
+            style={{ 
+              marginTop: '1.5rem', 
+              padding: '1rem', 
+              backgroundColor: 'rgba(255, 170, 0, 0.1)', 
+              borderRadius: '8px' 
+            }}
+          >
+            <div className={styles.iconWrapper}><TriangleAlert size={18} color="#d97706" /></div>
+            <div className={styles.instructionText}>
+              <p className={styles.instructionStep} style={{ color: '#d97706' }}>Security Notice</p>
+              <p className={styles.instructionDesc}>
+                Safety warnings are standard for enterprise applications outside the Play Store. This app is fully verified and secure.
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.footerNote} style={{ marginTop: '1rem' }}>
+            <Info size={16} />
+            <span>Internal enterprise application. Not available on public app stores.</span>
           </div>
         </section>
       </div>

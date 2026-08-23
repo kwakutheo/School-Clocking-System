@@ -165,7 +165,7 @@ jobs:
           cp dashboard/public/apps/app-version.json "$GENERATED_DIR/app-version.json"
           cp backend/src/modules/mobile-app/mobile-app.manifest.ts "$GENERATED_DIR/mobile-app.manifest.ts"
 
-          git restore --source=HEAD -- dashboard/public/apps/school-clocking-arm64.apk dashboard/public/apps/school-clocking-arm32.apk dashboard/public/apps/school-clocking-universal.apk dashboard/public/apps/tk_clocking.apk dashboard/public/apps/app-version.json backend/src/modules/mobile-app/mobile-app.manifest.ts
+          git reset --hard HEAD
           git fetch origin "$GITHUB_REF_NAME"
           git rebase "origin/$GITHUB_REF_NAME"
 

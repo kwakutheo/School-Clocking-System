@@ -72,7 +72,7 @@ export default function DownloadPage() {
           Download APK
         </a>
         <p className={styles.downloadMeta}>
-          Recommended for this phone · {formatApkSize(preferredDownload.sizeBytes)}
+          Recommended for this device · {formatApkSize(preferredDownload.sizeBytes)}
         </p>
 
         <div className={styles.alternativeDownloads}>

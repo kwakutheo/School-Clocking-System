@@ -35,17 +35,17 @@ const friendlyDownloadCopy: Record<
   arm64: {
     title: 'Best for newer Android phones',
     description:
-      'Use this for most recent Samsung, Tecno, Infinix, Xiaomi and similar phones.',
+      'Use this for most recent and high performing devices especially for devices with arm64-v8a (64-bit) architecture.',
   },
   arm32: {
     title: 'For older Android phones',
     description:
-      'Use this if the phone is older, or if the newer-phone download does not install.',
+      'Use this for older devices or low-end devices especially devices with armeabi-v7a (32-bit) architecture.',
   },
   universal: {
-    title: 'Compatibility download',
+    title: 'Universal compatibility download',
     description:
-      'Largest file, but most likely to work when the other downloads do not install.',
+      'Largest file, but most likely to work on all devices especially when the other downloads do not install.',
   },
 };
 

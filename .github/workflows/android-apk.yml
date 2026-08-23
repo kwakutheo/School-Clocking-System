@@ -155,13 +155,42 @@ jobs:
         if: steps.version_gate.outputs.should_build == 'true'
         run: |
           set -euo pipefail
+          VERSION_LINE="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
+          GENERATED_DIR="$(mktemp -d)"
+
+          cp dashboard/public/apps/school-clocking-arm64.apk "$GENERATED_DIR/school-clocking-arm64.apk"
+          cp dashboard/public/apps/school-clocking-arm32.apk "$GENERATED_DIR/school-clocking-arm32.apk"
+          cp dashboard/public/apps/school-clocking-universal.apk "$GENERATED_DIR/school-clocking-universal.apk"
+          cp dashboard/public/apps/tk_clocking.apk "$GENERATED_DIR/tk_clocking.apk"
+          cp dashboard/public/apps/app-version.json "$GENERATED_DIR/app-version.json"
+          cp backend/src/modules/mobile-app/mobile-app.manifest.ts "$GENERATED_DIR/mobile-app.manifest.ts"
+
+          git restore --source=HEAD -- dashboard/public/apps/school-clocking-arm64.apk dashboard/public/apps/school-clocking-arm32.apk dashboard/public/apps/school-clocking-universal.apk dashboard/public/apps/tk_clocking.apk dashboard/public/apps/app-version.json backend/src/modules/mobile-app/mobile-app.manifest.ts
+          git fetch origin "$GITHUB_REF_NAME"
+          git rebase "origin/$GITHUB_REF_NAME"
+
+          CURRENT_VERSION_LINE="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
+          if [ "$CURRENT_VERSION_LINE" != "$VERSION_LINE" ]; then
+            echo "Remote pubspec.yaml changed while this APK was building: $VERSION_LINE -> $CURRENT_VERSION_LINE"
+            echo "Not publishing the older APK. Push or rerun the workflow for the newest version."
+            exit 1
+          fi
+
+          cp "$GENERATED_DIR/school-clocking-arm64.apk" dashboard/public/apps/school-clocking-arm64.apk
+          cp "$GENERATED_DIR/school-clocking-arm32.apk" dashboard/public/apps/school-clocking-arm32.apk
+          cp "$GENERATED_DIR/school-clocking-universal.apk" dashboard/public/apps/school-clocking-universal.apk
+          cp "$GENERATED_DIR/tk_clocking.apk" dashboard/public/apps/tk_clocking.apk
+          cp "$GENERATED_DIR/app-version.json" dashboard/public/apps/app-version.json
+          cp "$GENERATED_DIR/mobile-app.manifest.ts" backend/src/modules/mobile-app/mobile-app.manifest.ts
+
+          node scripts/validate-mobile-app-publication.mjs
+
           CHANGES="$(git status --porcelain -- dashboard/public/apps/school-clocking-arm64.apk dashboard/public/apps/school-clocking-arm32.apk dashboard/public/apps/school-clocking-universal.apk dashboard/public/apps/tk_clocking.apk dashboard/public/apps/app-version.json backend/src/modules/mobile-app/mobile-app.manifest.ts)"
           if [ -z "$CHANGES" ]; then
             echo "No APK or manifest changes to commit."
             exit 0
           fi
 
-          VERSION_LINE="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add dashboard/public/apps/school-clocking-arm64.apk dashboard/public/apps/school-clocking-arm32.apk dashboard/public/apps/school-clocking-universal.apk dashboard/public/apps/tk_clocking.apk dashboard/public/apps/app-version.json backend/src/modules/mobile-app/mobile-app.manifest.ts

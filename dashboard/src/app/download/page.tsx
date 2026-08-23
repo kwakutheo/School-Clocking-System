@@ -7,7 +7,8 @@ import {
   ShieldCheck, 
   CheckCircle2, 
   Zap,
-  Info
+  Info,
+  TriangleAlert,
 } from 'lucide-react';
 import styles from './page.module.css';
 import {
@@ -143,7 +144,7 @@ export default function DownloadPage() {
             </li>
 
             <li className={styles.instructionItem}>
-              <div className={styles.iconWrapper}><Zap size={18} /></div>
+              <div className={styles.iconWrapper}><TriangleAlert size={18} /></div>
               <div className={styles.instructionText}>
                 <p className={styles.instructionStep}>5. Important Security Notice</p>
                 <p className={styles.instructionDesc}>

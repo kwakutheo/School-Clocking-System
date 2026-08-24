@@ -15,7 +15,8 @@ import {
   Share2,
   MonitorPlay,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  TriangleAlert
 } from 'lucide-react';
 import styles from './page.module.css';
 import { useAuthStore, usePwaStore } from '@/lib/store';
@@ -293,6 +294,23 @@ export default function MobileAppPage() {
               </div>
             </li>
           </ul>
+
+          <div 
+            className={styles.infoListItem} 
+            style={{ 
+              marginTop: '1.5rem', 
+              padding: '1rem', 
+              backgroundColor: 'rgba(255, 170, 0, 0.1)', 
+              borderRadius: '8px',
+              marginBottom: 0
+            }}
+          >
+            <div className={styles.infoListItemIcon}><TriangleAlert size={18} color="#d97706" /></div>
+            <div>
+              <strong style={{ color: '#d97706' }}>Security Notice</strong>
+              <br />Safety warnings are standard for enterprise applications outside the Play Store. This app is fully verified and secure.
+            </div>
+          </div>
 
           <div style={{ marginTop: 'auto', paddingTop: '24px', width: '100%' }}>
             <div style={{ 

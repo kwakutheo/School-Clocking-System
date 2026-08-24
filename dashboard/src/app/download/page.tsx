@@ -134,7 +134,6 @@ export default function DownloadPage() {
           <h2 className={styles.instructionsTitle}>Installation Guide</h2>
           <ul className={styles.instructionsList}>
             
-            {/* Condensed Step 1 & 2 */}
             <li className={styles.instructionItem}>
               <div className={styles.iconWrapper}><Download size={18} /></div>
               <div className={styles.instructionText}>
@@ -143,7 +142,6 @@ export default function DownloadPage() {
               </div>
             </li>
 
-            {/* Condensed Step 3 */}
             <li className={styles.instructionItem}>
               <div className={styles.iconWrapper}><ShieldCheck size={18} /></div>
               <div className={styles.instructionText}>
@@ -152,7 +150,6 @@ export default function DownloadPage() {
               </div>
             </li>
 
-            {/* Condensed Step 4 */}
             <li className={styles.instructionItem}>
               <div className={styles.iconWrapper}><Zap size={18} /></div>
               <div className={styles.instructionText}>
@@ -162,7 +159,6 @@ export default function DownloadPage() {
             </li>
           </ul>
 
-          {/* Repurposed instructionItem to keep your styling for the security warning */}
           <div 
             className={styles.instructionItem} 
             style={{ 

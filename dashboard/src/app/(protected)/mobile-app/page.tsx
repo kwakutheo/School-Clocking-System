@@ -138,7 +138,7 @@ export default function MobileAppPage() {
   const downloadOptions = getFriendlyDownloadOptions(manifest, preferredKey);
 
   return (
-    <div className="dashboard-container">
+    <div className={`dashboard-container ${styles.printContainer}`}>
       <div className={`page-header ${styles.pageHeaderWrapper}`} style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--primary)' }}>

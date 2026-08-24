@@ -213,11 +213,7 @@ export default function MobileAppPage() {
               </div>
             )}
           </div>
-
-          <p className={styles.downloadMeta}>
-            Smart download link selects the best APK for the staff phone.
-          </p>
-
+          
           <div className={styles.alternativeDownloads}>
             <div className={styles.alternativeHeader}>
               <p className={styles.alternativeTitle}>Other download alternatives</p>

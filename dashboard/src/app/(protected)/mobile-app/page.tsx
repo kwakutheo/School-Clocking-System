@@ -269,37 +269,27 @@ export default function MobileAppPage() {
         {/* Info Card */}
         <div className={styles.card}>
           <h2 className={styles.cardTitle} style={{ alignSelf: 'flex-start' }}>Installation Guide</h2>
-          <p className={styles.cardDesc} style={{ textAlign: 'left', width: '100%' }}>
-            Follow these steps to successfully install the application on Android devices:
-          </p>
 
           <ul className={styles.infoList}>
             <li className={styles.infoListItem}>
               <div className={styles.infoListItemIcon}><Download size={18} /></div>
               <div>
                 <strong>1. Download the App</strong>
-                <br />Scan the QR code or click the download link. The file (APK) will be saved to your device's Downloads folder.
+                <br />Scan the QR code or click the download link.
               </div>
             </li>
             <li className={styles.infoListItem}>
               <div className={styles.infoListItemIcon}><ShieldCheck size={18} /></div>
               <div>
                 <strong>2. Allow Unknown Sources</strong>
-                <br />When opening the downloaded file, your device might prompt you to allow installations from unknown sources. Go to Settings and enable this for your browser or file manager.
-              </div>
-            </li>
-            <li className={styles.infoListItem}>
-              <div className={styles.infoListItemIcon}><CheckCircle2 size={18} /></div>
-              <div>
-                <strong>3. Install & Open</strong>
-                <br />Follow the on-screen prompts to complete the installation. Once done, open the app and log in with your employee credentials.
+                <br />If prompted by your device, tap Settings and allow installation from this source.
               </div>
             </li>
             <li className={styles.infoListItem}>
               <div className={styles.infoListItemIcon}><Zap size={18} /></div>
               <div>
-                <strong>4. Grant Permissions</strong>
-                <br />The app requires Camera (to scan branch QR code) and Location (for geofencing) permissions to function correctly. Please grant these when prompted.
+                <strong>3. Grant Permissions</strong>
+                <br />Accept Camera (QR code scanner) and Location (geofencing) permissions to sign in.
               </div>
             </li>
           </ul>
@@ -318,7 +308,7 @@ export default function MobileAppPage() {
             }}>
               <Info size={24} color="var(--primary)" style={{ flexShrink: 0 }} />
               <p style={{ margin: 0 }}>
-                This is an internal enterprise application and is not available on the various public Store.
+                Internal enterprise application. Not available on public app stores.
               </p>
             </div>
           </div>

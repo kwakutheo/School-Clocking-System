@@ -139,7 +139,7 @@ export default function MobileAppPage() {
 
   return (
     <div className="dashboard-container">
-      <div className="page-header" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+      <div className={`page-header ${styles.pageHeaderWrapper}`} style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--primary)' }}>
             <Smartphone size={28} style={{ color: 'var(--primary)' }} /> 
@@ -158,6 +158,7 @@ export default function MobileAppPage() {
           <div className={styles.printHeader}>
             <Image src="/app_logo.png" alt="TK Clocking Logo" width={100} height={100} style={{ borderRadius: '20px', marginBottom: '16px' }} priority={true} />
             <h1 className={styles.printTitle}>TK CLOCKING SYSTEM</h1>
+            <h2 className={styles.printSubtitle}>Mobile App Download</h2>
           </div>
 
           <h2 className={styles.cardTitle}>Scan to Download</h2>
@@ -213,7 +214,7 @@ export default function MobileAppPage() {
           </div>
           
           {/* Toggle for Alternatives */}
-          <div style={{ marginTop: '1.5rem', textAlign: 'center', width: '100%' }}>
+          <div className={styles.toggleWrapper} style={{ marginTop: '1.5rem', textAlign: 'center', width: '100%' }}>
             <button
               onClick={() => setShowOptions(!showOptions)}
               style={{

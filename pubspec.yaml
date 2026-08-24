@@ -1,7 +1,7 @@
 name: tk_clocking_system
 description: "TK Clocking System — Your Digital Time Keeper."
-publish_to: 'none'
-version: 1.0.1+22
+publish_to: "none"
+version: 1.0.1+23
 
 environment:
   sdk: ^3.5.0
@@ -54,8 +54,8 @@ dependencies:
   # Camera (selfie verification)
   camera: ^0.11.0+2
   image_picker: ^1.1.2
-  image: ^4.5.4  # For post-capture pixel-level cropping
-  path_provider: ^2.1.5  # For writing cropped image to temp directory
+  image: ^4.5.4 # For post-capture pixel-level cropping
+  path_provider: ^2.1.5 # For writing cropped image to temp directory
 
   # QR code scanning
   mobile_scanner: ^6.0.0

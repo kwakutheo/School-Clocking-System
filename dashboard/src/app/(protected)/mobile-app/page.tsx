@@ -159,9 +159,6 @@ export default function MobileAppPage() {
             <h1 className={styles.printTitle}>TK CLOCKING SYSTEM</h1>
           </div>
 
-          <div className={styles.iconWrapper}>
-            <Smartphone size={32} />
-          </div>
           <h2 className={styles.cardTitle}>Scan to Download</h2>
           <p className={styles.cardDesc}>
             Have your staff scan this QR code with their mobile device to instantly download and install the clocking app.

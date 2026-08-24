@@ -170,9 +170,6 @@ export default function MobileAppPage() {
           <div className={styles.qrContainerWrapper}>
             <div className={styles.qrContainer}>
               <canvas ref={canvasRef}></canvas>
-              <div className={styles.qrCenterIcon}>
-                <Smartphone size={36} color="var(--primary)" />
-              </div>
             </div>
             <p className={styles.printFooterText}>Scan to download the mobile app.</p>
           </div>

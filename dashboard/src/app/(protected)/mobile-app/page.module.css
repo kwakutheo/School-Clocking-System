@@ -379,7 +379,7 @@
 
   /* Make container take full page height for centering */
   .printContainer {
-    padding: 0;
+    padding: 0 0 8vh 0;
     margin: 0;
     height: 100vh;
     width: 100vw;

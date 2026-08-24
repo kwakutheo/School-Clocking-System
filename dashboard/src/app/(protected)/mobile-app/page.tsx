@@ -13,7 +13,9 @@ import {
   Info,
   Printer,
   Share2,
-  MonitorPlay
+  MonitorPlay,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import styles from './page.module.css';
 import { useAuthStore, usePwaStore } from '@/lib/store';
@@ -38,6 +40,7 @@ export default function MobileAppPage() {
   );
   const [preferredKey, setPreferredKey] =
     useState<ApkDownloadKey>('universal');
+  const [showOptions, setShowOptions] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const { user, isHydrated } = useAuthStore();
@@ -214,34 +217,57 @@ export default function MobileAppPage() {
             )}
           </div>
           
-          <div className={styles.alternativeDownloads}>
-            <div className={styles.alternativeHeader}>
-              <p className={styles.alternativeTitle}>Other download alternatives</p>
-              <p className={styles.alternativeDesc}>
-                The main link auto-selects the best APK for your device. If installation
-                fails, use these simple alternatives.
-              </p>
-            </div>
-            <div className={styles.optionList}>
-              {downloadOptions.map((option) => (
-                <a
-                  key={option.key}
-                  href={option.download.apkUrl}
-                  download={option.download.apkFileName}
-                  className={`${styles.optionLink} ${
-                    option.isRecommended ? styles.optionLinkRecommended : ''
-                  }`}
-                >
-                  <span className={styles.optionText}>
-                    <strong>{option.title}</strong>
-                    <span>{option.description}</span>
-                  </span>
-                  <span className={styles.optionMeta}>
-                    {option.isRecommended && <em>Recommended</em>}
-                    <small>{formatApkSize(option.download.sizeBytes)}</small>
-                  </span>
-                </a>
-              ))}
+          {/* Toggle for Alternatives */}
+          <div style={{ marginTop: '1.5rem', textAlign: 'center', width: '100%' }}>
+            <button
+              onClick={() => setShowOptions(!showOptions)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.9rem',
+                fontWeight: '500'
+              }}
+            >
+              {showOptions ? 'Hide advanced options' : 'Need a different version?'}
+              {showOptions ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+          </div>
+          
+          <div className={`${styles.optionsWrapper} ${showOptions ? styles.optionsExpanded : ''}`}>
+            <div className={styles.alternativeDownloads}>
+              <div className={styles.alternativeHeader}>
+                <p className={styles.alternativeTitle}>Other download alternatives</p>
+                <p className={styles.alternativeDesc}>
+                  The main link auto-selects the best APK for your device. If installation
+                  fails, use these simple alternatives.
+                </p>
+              </div>
+              <div className={styles.optionList}>
+                {downloadOptions.map((option) => (
+                  <a
+                    key={option.key}
+                    href={option.download.apkUrl}
+                    download={option.download.apkFileName}
+                    className={`${styles.optionLink} ${
+                      option.isRecommended ? styles.optionLinkRecommended : ''
+                    }`}
+                  >
+                    <span className={styles.optionText}>
+                      <strong>{option.title}</strong>
+                      <span>{option.description}</span>
+                    </span>
+                    <span className={styles.optionMeta}>
+                      {option.isRecommended && <em>Recommended</em>}
+                      <small>{formatApkSize(option.download.sizeBytes)}</small>
+                    </span>
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
         </div>

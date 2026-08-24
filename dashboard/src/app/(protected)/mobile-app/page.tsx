@@ -302,7 +302,8 @@ export default function MobileAppPage() {
               padding: '1rem', 
               backgroundColor: 'rgba(255, 170, 0, 0.1)', 
               borderRadius: '8px',
-              marginBottom: 0
+              marginBottom: 0,
+              textAlign: 'left'
             }}
           >
             <div className={styles.infoListItemIcon}><TriangleAlert size={18} color="#d97706" /></div>

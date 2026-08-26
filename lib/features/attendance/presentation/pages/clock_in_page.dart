@@ -50,13 +50,6 @@ class _ClockInPageState extends State<ClockInPage> {
       body: BlocConsumer<AttendanceBloc, AttendanceState>(
         listener: (context, state) {
           if (state is AttendanceRecorded) {
-            // Notification logic: Schedule reminder on clock-in, cancel on clock-out
-            if (state.record.type == AttendanceType.clockIn) {
-              sl<NotificationService>().scheduleCachedShiftReminders();
-            } else if (state.record.type == AttendanceType.clockOut) {
-              sl<NotificationService>().cancelClockOutReminder();
-            }
-
             final isOffline = state.record.syncStatus == SyncStatus.pending;
             showDialog(
               context: context,

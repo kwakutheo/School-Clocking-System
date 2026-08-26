@@ -222,29 +222,88 @@ class _SettingsPageState extends State<SettingsPage> {
   void _promptUpdate(AppUpdateInfo update) {
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.system_update_rounded),
-        title: const Text('Update Available'),
-        content: Text(
-          'A new version (v${update.versionName}.${update.versionCode}) is available.\n\n${update.releaseNotes}',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Later'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _showSnack('Downloading update in background...');
-              _updateService.downloadAndOpenInstaller(update).catchError((e) {
-                if (mounted) _showSnack('Failed to start download: $e');
-              });
-            },
-            child: const Text('Download & Install'),
-          ),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (ctx) {
+        bool isDownloading = false;
+        double progress = 0.0;
+        String? errorMessage;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              icon: const Icon(Icons.system_update_rounded),
+              title: Text(
+                  isDownloading ? 'Downloading Update...' : 'Update Available'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (!isDownloading && errorMessage == null)
+                    Text(
+                      'A new version (${update.versionName}.${update.versionCode}) is available.\n\n${update.releaseNotes}',
+                    ),
+                  if (errorMessage != null)
+                    Text(
+                      errorMessage!,
+                      style:
+                          TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                  if (isDownloading) ...[
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 8,
+                        borderRadius: BorderRadius.circular(4)),
+                    const SizedBox(height: 16),
+                    Text(
+                      '${(progress * 100).toStringAsFixed(1)}% completed',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                if (!isDownloading)
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Later'),
+                  ),
+                if (!isDownloading)
+                  FilledButton(
+                    onPressed: () {
+                      setDialogState(() {
+                        isDownloading = true;
+                        errorMessage = null;
+                        progress = 0.0;
+                      });
+
+                      _updateService.downloadAndOpenInstaller(
+                        update,
+                        onReceiveProgress: (received, total) {
+                          if (total > 0) {
+                            setDialogState(() {
+                              progress = received / total;
+                            });
+                          }
+                        },
+                      ).then((_) {
+                        if (mounted) Navigator.pop(ctx);
+                      }).catchError((e) {
+                        setDialogState(() {
+                          isDownloading = false;
+                          errorMessage = 'Failed to download: $e';
+                        });
+                      });
+                    },
+                    child: Text(
+                        errorMessage != null ? 'Retry' : 'Download & Install'),
+                  ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

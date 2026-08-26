@@ -17,6 +17,7 @@ import 'package:tk_clocking_system/features/attendance/presentation/bloc/attenda
 import 'package:tk_clocking_system/features/attendance/presentation/bloc/attendance_event.dart';
 import 'package:tk_clocking_system/features/attendance/presentation/bloc/attendance_state.dart';
 import 'package:tk_clocking_system/core/services/notification_service.dart';
+import 'package:tk_clocking_system/core/services/time_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -92,6 +93,27 @@ class _SettingsPageState extends State<SettingsPage> {
       }
       _appVersion = '${info.version}.$buildNum';
       _serverUrl = portalUrl;
+      _timeStatus = timeStatus;
+    });
+  }
+
+  // ── Manual Time Check ─────────────────────────────────────────────────────
+  Future<void> _checkTime() async {
+    if (!mounted) return;
+    setState(() => _timeStatus = 'Checking…');
+
+    final timeService = sl<TimeService>();
+    await timeService.syncTime();
+
+    final offset = _storage.getLastKnownTimeOffset();
+    final timeStatus = offset == null
+        ? 'Not checked yet'
+        : offset.abs() > 30000
+            ? '⚠ Out of Sync'
+            : '✓ Valid';
+
+    if (!mounted) return;
+    setState(() {
       _timeStatus = timeStatus;
     });
   }
@@ -411,7 +433,11 @@ class _SettingsPageState extends State<SettingsPage> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : null,
+                    : IconButton(
+                        icon: const Icon(Icons.refresh_rounded),
+                        onPressed: _checkTime,
+                        tooltip: 'Check time sync',
+                      ),
               ),
             ),
           ),

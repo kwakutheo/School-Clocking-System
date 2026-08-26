@@ -44,7 +44,6 @@ class TimeService {
   /// Syncs with the NTP server if online.
   /// Should be called on app startup.
   Future<void> syncTime() async {
-    if (!_connectivity.isOnline) return;
 
     try {
       final ntpTime = await NTP.now(timeout: const Duration(seconds: 10));

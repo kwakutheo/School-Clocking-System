@@ -334,7 +334,7 @@ class NotificationService {
       if (cached == null) return;
 
       final cachedData =
-          HomeDataModel.fromJson(Map<String, dynamic>.from(cached));
+          HomeDataModel.fromJson(deepCastMap(cached));
       final trueNow = await sl<TimeService>().getGhanaTimeAsync();
       final effectiveData =
           OfflineStateEngine.recomputeForOfflineDay(cachedData, trueNow);

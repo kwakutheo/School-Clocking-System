@@ -1,6 +1,16 @@
 import 'package:tk_clocking_system/features/dashboard/domain/entities/home_data_entity.dart';
 import 'package:tk_clocking_system/shared/enums/attendance_type.dart';
 
+/// Recursively converts a [Map<dynamic, dynamic>] (as returned by Hive)
+/// into a [Map<String, dynamic>] so that [fromJson] casts don't throw.
+Map<String, dynamic> deepCastMap(Map<dynamic, dynamic> map) {
+  return map.map((key, value) {
+    final castKey = key as String;
+    final castValue = value is Map ? deepCastMap(value) : value;
+    return MapEntry(castKey, castValue);
+  });
+}
+
 class HomeDataModel extends HomeDataEntity {
   const HomeDataModel({
     super.lastActivityType,

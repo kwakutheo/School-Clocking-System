@@ -231,7 +231,7 @@ class _DashboardTabState extends State<_DashboardTab> {
     if (cached != null) {
       try {
         final cachedData =
-            HomeDataModel.fromJson(Map<String, dynamic>.from(cached));
+            HomeDataModel.fromJson(deepCastMap(cached));
 
         _serverBaseline = cachedData;
         final now = sl<TimeService>().currentGhanaTime;

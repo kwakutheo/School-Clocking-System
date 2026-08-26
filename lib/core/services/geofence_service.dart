@@ -29,7 +29,7 @@ class GeofenceService extends ChangeNotifier {
     final cached = box.get('home_data_cache');
     if (cached != null) {
       try {
-        _data = HomeDataModel.fromJson(Map<String, dynamic>.from(cached));
+        _data = HomeDataModel.fromJson(deepCastMap(cached));
         checkGeofence();
       } catch (_) {
         // Cache corrupted

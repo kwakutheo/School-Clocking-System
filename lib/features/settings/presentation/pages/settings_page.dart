@@ -271,30 +271,31 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 if (!isDownloading)
                   FilledButton(
-                    onPressed: () {
+                    onPressed: () async {
                       setDialogState(() {
                         isDownloading = true;
                         errorMessage = null;
                         progress = 0.0;
                       });
 
-                      _updateService.downloadAndOpenInstaller(
-                        update,
-                        onReceiveProgress: (received, total) {
-                          if (total > 0) {
-                            setDialogState(() {
-                              progress = received / total;
-                            });
-                          }
-                        },
-                      ).then((_) {
-                        if (mounted) Navigator.pop(ctx);
-                      }).catchError((e) {
+                      try {
+                        await _updateService.downloadAndOpenInstaller(
+                          update,
+                          onReceiveProgress: (received, total) {
+                            if (total > 0) {
+                              setDialogState(() {
+                                progress = received / total;
+                              });
+                            }
+                          },
+                        );
+                        if (ctx.mounted) Navigator.pop(ctx);
+                      } catch (e) {
                         setDialogState(() {
                           isDownloading = false;
                           errorMessage = 'Failed to download: $e';
                         });
-                      });
+                      }
                     },
                     child: Text(
                         errorMessage != null ? 'Retry' : 'Download & Install'),

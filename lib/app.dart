@@ -7,7 +7,9 @@ import 'package:tk_clocking_system/core/network/api_client.dart';
 import 'package:tk_clocking_system/core/router/app_router.dart';
 import 'package:tk_clocking_system/core/services/app_update_service.dart';
 import 'package:tk_clocking_system/core/services/connectivity_service.dart';
+import 'package:tk_clocking_system/core/services/storage_service.dart';
 import 'package:tk_clocking_system/core/theme/app_theme.dart';
+import 'package:tk_clocking_system/core/theme/theme_cubit.dart';
 import 'package:tk_clocking_system/features/attendance/presentation/bloc/attendance_bloc.dart';
 import 'package:tk_clocking_system/features/attendance/presentation/bloc/attendance_event.dart';
 import 'package:tk_clocking_system/features/auth/presentation/bloc/auth_bloc.dart';
@@ -26,6 +28,7 @@ class _AppState extends State<App> {
   late final AuthBloc _authBloc;
   late final AttendanceBloc _attendanceBloc;
   late final ConnectivityService _connectivity;
+  late final ThemeCubit _themeCubit;
   late final StreamSubscription<bool> _connectivitySub;
   late final StreamSubscription<void> _unauthorizedSub;
 
@@ -36,6 +39,7 @@ class _AppState extends State<App> {
     _authBloc = sl<AuthBloc>()..add(const AuthCheckSessionEvent());
     _attendanceBloc = sl<AttendanceBloc>();
     _connectivity = sl<ConnectivityService>();
+    _themeCubit = ThemeCubit(sl<StorageService>());
 
     // When network is restored, drain any pending offline records.
     _connectivitySub = _connectivity.onConnectivityChanged.listen((isOnline) {
@@ -56,6 +60,7 @@ class _AppState extends State<App> {
     _connectivitySub.cancel();
     _authBloc.close();
     _attendanceBloc.close();
+    _themeCubit.close();
     super.dispose();
   }
 
@@ -65,17 +70,21 @@ class _AppState extends State<App> {
       providers: [
         BlocProvider<AuthBloc>.value(value: _authBloc),
         BlocProvider<AttendanceBloc>.value(value: _attendanceBloc),
+        BlocProvider<ThemeCubit>.value(value: _themeCubit),
       ],
-      child: MaterialApp.router(
-        title: 'TK Clocking System',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.system,
-        routerConfig: AppRouter.router,
-        builder: (context, child) => ConnectivityBanner(
-          connectivityService: _connectivity,
-          child: _AppUpdateGate(child: child!),
+      child: BlocBuilder<ThemeCubit, ThemeMode>(
+        bloc: _themeCubit,
+        builder: (context, themeMode) => MaterialApp.router(
+          title: 'TK Clocking System',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: themeMode,
+          routerConfig: AppRouter.router,
+          builder: (context, child) => ConnectivityBanner(
+            connectivityService: _connectivity,
+            child: _AppUpdateGate(child: child!),
+          ),
         ),
       ),
     );

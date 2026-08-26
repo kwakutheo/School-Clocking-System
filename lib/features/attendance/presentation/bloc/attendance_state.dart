@@ -56,6 +56,10 @@ class AttendanceFailure extends AttendanceState {
   List<Object?> get props => [message];
 }
 
+class AttendanceSyncInProgress extends AttendanceState {
+  const AttendanceSyncInProgress();
+}
+
 class AttendanceSyncFailure extends AttendanceState {
   const AttendanceSyncFailure(this.message);
 

@@ -15,6 +15,8 @@ abstract final class AppConstants {
   static const String themeKey = 'app_theme';
   static const String serverUrlKey = 'server_url';
   static const String tenantIdKey = 'tenant_id';
+  static const String subdomainSlugKey = 'subdomain_slug';
+  static const String notificationsEnabledKey = 'notifications_enabled';
   static const String appUpdateSnoozedVersionCodeKey =
       'app_update_snoozed_version_code';
   static const String appUpdateSnoozedUntilKey = 'app_update_snoozed_until';
@@ -35,9 +37,10 @@ abstract final class AppConstants {
   static const String holidaysCacheKey = 'holidays_cache';
   static const String vacationDatesCacheKey = 'vacation_dates_cache';
 
-  // ── Biometric login keys (Secure Storage) ────────────────────────────────
+  // ── Biometric login keys (Secure Storage / Prefs) ────────────────────────
   static const String secureIdentifierKey = 'secure_identifier';
   static const String securePasswordKey = 'secure_password';
+  static const String biometricEnabledKey = 'biometric_enabled';
 
   // ── Time Tampering keys ──────────────────────────────────────────────────
   static const String lastKnownTimeOffsetKey = 'last_known_time_offset';
@@ -59,22 +62,3 @@ abstract final class AppConstants {
   // ── Retry ─────────────────────────────────────────────────────────────────
   static const int maxSyncRetries = 3;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

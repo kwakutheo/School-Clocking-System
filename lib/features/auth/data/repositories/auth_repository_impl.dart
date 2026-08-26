@@ -44,9 +44,12 @@ class AuthRepositoryImpl implements AuthRepository {
       await _storage.saveRefreshToken(data['refresh_token'] as String);
       await _storage.saveUserJson(user.toJsonString());
 
-      // Persist the school tenant ID for automatic header injection
+      // Persist the school tenant ID and subdomain slug for automatic header injection
       if (user.tenantId != null) {
         await _storage.saveTenantId(user.tenantId!);
+      }
+      if (user.subdomainSlug != null) {
+        await _storage.saveSubdomainSlug(user.subdomainSlug!);
       }
 
       // Cache credentials hash for offline login fallback
@@ -55,9 +58,14 @@ class AuthRepositoryImpl implements AuthRepository {
       await _storage.saveOfflinePasswordHash(_hashPassword(password));
       await _storage.saveOfflineUserJson(user.toJsonString());
 
-      // Securely save actual credentials for Biometric login
-      await _storage.saveSecureIdentifier(username);
-      await _storage.saveSecurePassword(password);
+      // Securely save actual credentials for Biometric login if enabled
+      final isBiometricEnabled = _storage.getBiometricEnabled() ?? true;
+      if (isBiometricEnabled) {
+        await _storage.saveSecureIdentifier(username);
+        await _storage.saveSecurePassword(password);
+      } else {
+        await _storage.clearSecureCredentials();
+      }
 
       return Right(LoginResult(user: user));
     } on DioException catch (e) {
@@ -187,6 +195,7 @@ class AuthRepositoryImpl implements AuthRepository {
             final cachedUser = UserModel.fromJsonString(cachedJsonStr);
             merged['tenantId'] = cachedUser.tenantId;
             merged['schoolName'] = cachedUser.schoolName;
+            merged['subdomainSlug'] = cachedUser.subdomainSlug;
           } catch (_) {}
         }
       }
@@ -194,6 +203,9 @@ class AuthRepositoryImpl implements AuthRepository {
       final user = UserModel.fromJson(merged);
       await _storage.saveUserJson(user.toJsonString());
       await _storage.saveOfflineUserJson(user.toJsonString());
+      // Keep slug + tenant in dedicated prefs so Settings page always has them
+      if (user.tenantId != null) await _storage.saveTenantId(user.tenantId!);
+      if (user.subdomainSlug != null) await _storage.saveSubdomainSlug(user.subdomainSlug!);
       return Right(user);
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {

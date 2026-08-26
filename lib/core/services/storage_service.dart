@@ -64,6 +64,17 @@ class StorageService {
 
   String? getTenantId() => _prefs.getString(AppConstants.tenantIdKey);
 
+  Future<void> saveSubdomainSlug(String slug) =>
+      _prefs.setString(AppConstants.subdomainSlugKey, slug);
+
+  String? getSubdomainSlug() => _prefs.getString(AppConstants.subdomainSlugKey);
+
+  // ── Notifications ─────────────────────────────────────────────────────────
+  Future<void> saveNotificationsEnabled(bool enabled) =>
+      _prefs.setBool(AppConstants.notificationsEnabledKey, enabled);
+
+  bool? getNotificationsEnabled() => _prefs.getBool(AppConstants.notificationsEnabledKey);
+
   // ── App update reminders ─────────────────────────────────────────────────
   Future<void> snoozeAppUpdate({
     required int versionCode,
@@ -137,6 +148,13 @@ class StorageService {
       _secure.delete(key: AppConstants.securePasswordKey),
     ]);
   }
+
+  // ── Biometric Preference (prefs) ──────────────────────────────────────────
+  Future<void> saveBiometricEnabled(bool enabled) =>
+      _prefs.setBool(AppConstants.biometricEnabledKey, enabled);
+
+  bool? getBiometricEnabled() =>
+      _prefs.getBool(AppConstants.biometricEnabledKey);
 
   // ── Time Tampering ────────────────────────────────────────────────────────
   Future<void> saveLastKnownTimeOffset(int offsetMillis) =>

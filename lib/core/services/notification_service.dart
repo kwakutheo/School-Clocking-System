@@ -9,6 +9,7 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:tk_clocking_system/core/constants/app_constants.dart';
 import 'package:tk_clocking_system/core/di/injection_container.dart';
+import 'package:tk_clocking_system/core/services/storage_service.dart';
 import 'package:tk_clocking_system/core/services/time_service.dart';
 import 'package:tk_clocking_system/core/utils/offline_state_engine.dart';
 import 'package:tk_clocking_system/features/dashboard/data/models/home_data_model.dart';
@@ -289,6 +290,12 @@ class NotificationService {
 
   Future<void> scheduleShiftReminders(HomeDataEntity data) async {
     try {
+      final isEnabled = sl<StorageService>().getNotificationsEnabled() ?? true;
+      if (!isEnabled) {
+        await cancelShiftReminders();
+        return;
+      }
+
       final canNotify = await ensureReminderPermissions();
       if (!canNotify) return;
 

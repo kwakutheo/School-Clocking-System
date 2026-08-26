@@ -14,6 +14,7 @@ class UserModel extends UserEntity {
     required super.role,
     super.tenantId,
     super.schoolName,
+    super.subdomainSlug,
     super.employeeId,
     super.employeeCode,
     super.photoUrl,
@@ -35,11 +36,19 @@ class UserModel extends UserEntity {
     final tenantObj = json['tenant'] as Map<String, dynamic>?;
     final tenantId = (tenantObj?['id'] ?? json['tenantId'] ?? json['tenant_id']) as String?;
     final schoolName = (tenantObj?['name'] ?? json['schoolName'] ?? json['school_name']) as String?;
+    final subdomainSlug = (tenantObj?['subdomainSlug']
+            ?? tenantObj?['subdomain_slug']
+            ?? tenantObj?['slug']
+            ?? tenantObj?['domain']
+            ?? json['subdomainSlug']
+            ?? json['subdomain_slug']
+            ?? json['slug']) as String?;
 
     return UserModel(
       id: json['id'] as String,
       tenantId: tenantId,
       schoolName: schoolName,
+      subdomainSlug: subdomainSlug,
       employeeId: (json['employee_id'] ?? json['employeeId']) as String?,
       fullName: (json['full_name'] ?? json['fullName']) as String,
       email: (json['email'] as String?) ?? '',
@@ -63,6 +72,7 @@ class UserModel extends UserEntity {
         'id': id,
         'tenantId': tenantId,
         'schoolName': schoolName,
+        'subdomainSlug': subdomainSlug,
         'employee_id': employeeId,
         'full_name': fullName,
         'email': email,

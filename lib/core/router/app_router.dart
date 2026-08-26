@@ -11,6 +11,7 @@ import 'package:tk_clocking_system/features/attendance/presentation/pages/my_rep
 import 'package:tk_clocking_system/features/leaves/presentation/pages/leaves_page.dart';
 import 'package:tk_clocking_system/features/calendar/presentation/pages/calendar_page.dart';
 import 'package:tk_clocking_system/features/profile/presentation/pages/work_history_page.dart';
+import 'package:tk_clocking_system/features/settings/presentation/pages/settings_page.dart';
 import 'package:tk_clocking_system/shared/widgets/loading_indicator.dart';
 import 'package:tk_clocking_system/core/di/injection_container.dart';
 import 'package:tk_clocking_system/core/router/go_router_refresh_stream.dart';
@@ -65,6 +66,10 @@ abstract final class AppRouter {
               GoRoute(
                 path: 'work-history',
                 builder: (_, __) => const WorkHistoryPage(),
+              ),
+              GoRoute(
+                path: 'settings',
+                builder: (_, __) => const SettingsPage(),
               ),
             ],
           ),

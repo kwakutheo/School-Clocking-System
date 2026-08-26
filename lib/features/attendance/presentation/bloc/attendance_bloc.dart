@@ -121,6 +121,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     AttendanceSyncEvent event,
     Emitter<AttendanceState> emit,
   ) async {
+    emit(const AttendanceSyncInProgress());
     final result = await _sync();
     result.fold(
       (failure) => emit(AttendanceSyncFailure(_mapFailure(failure))),

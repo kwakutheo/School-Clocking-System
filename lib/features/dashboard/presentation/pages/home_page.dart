@@ -23,6 +23,7 @@ import 'package:tk_clocking_system/features/attendance/presentation/pages/histor
 import 'package:tk_clocking_system/features/attendance/presentation/pages/my_report_page.dart';
 import 'package:tk_clocking_system/features/leaves/presentation/pages/leaves_page.dart';
 import 'package:tk_clocking_system/features/calendar/presentation/pages/calendar_page.dart';
+import 'package:tk_clocking_system/features/settings/presentation/pages/settings_page.dart';
 import 'package:tk_clocking_system/shared/enums/attendance_type.dart';
 import 'package:tk_clocking_system/shared/enums/sync_status.dart';
 import 'package:tk_clocking_system/core/services/geofence_service.dart';
@@ -82,6 +83,14 @@ class HomePageState extends State<HomePage> {
                   setState(() => _selectedIndex = 5);
                 },
               ),
+              ListTile(
+                title: const Text('Settings', textAlign: TextAlign.right),
+                trailing: const Icon(Icons.settings_rounded),
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() => _selectedIndex = 6);
+                },
+              ),
               const SizedBox(height: 8),
             ],
           ),
@@ -102,6 +111,7 @@ class HomePageState extends State<HomePage> {
           ProfilePage(),
           LeavesPage(),
           CalendarPage(),
+          SettingsPage(),
         ],
       ),
       bottomNavigationBar: NavigationBar(

@@ -14,6 +14,7 @@ class UserEntity extends Equatable {
     required this.role,
     this.tenantId,
     this.schoolName,
+    this.subdomainSlug,
     this.employeeId,
     this.employeeCode,
     this.photoUrl,
@@ -28,6 +29,7 @@ class UserEntity extends Equatable {
   final String id;
   final String? tenantId;
   final String? schoolName;
+  final String? subdomainSlug;
   final String? employeeId;
   final String fullName;
   final String email;
@@ -55,6 +57,7 @@ class UserEntity extends Equatable {
         id,
         tenantId,
         schoolName,
+        subdomainSlug,
         employeeId,
         fullName,
         username,

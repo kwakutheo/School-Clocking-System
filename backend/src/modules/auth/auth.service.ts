@@ -324,7 +324,7 @@ export class AuthService {
                   html: `
                     <h3>Password Reset</h3>
                     <p>Hello ${user.fullName},</p>
-                    <p>You requested a password reset. Your reset PIN is:</p>
+                    <p>You requested a password reset. Your reset OTP is:</p>
                     <h2 style="color: #4F46E5; letter-spacing: 2px;">${pin}</h2>
                     <p>If you did not request this, please ignore this email.</p>
                   `,
@@ -356,7 +356,7 @@ export class AuthService {
                 html: `
                   <h3>Password Reset</h3>
                   <p>Hello ${user.fullName},</p>
-                  <p>You requested a password reset. Your reset PIN is:</p>
+                  <p>You requested a password reset. Your reset OTP is:</p>
                   <h2 style="color: #4F46E5; letter-spacing: 2px;">${pin}</h2>
                   <p>If you did not request this, please ignore this email.</p>
                 `,

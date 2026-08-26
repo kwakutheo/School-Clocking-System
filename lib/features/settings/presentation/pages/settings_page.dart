@@ -210,13 +210,42 @@ class _SettingsPageState extends State<SettingsPage> {
       if (update == null) {
         _showSnack('You\'re on the latest version.');
       } else {
-        _showSnack('Update available: v${update.versionName}');
+        _promptUpdate(update);
       }
     } catch (_) {
       if (mounted) _showSnack('Could not check for updates.');
     } finally {
       if (mounted) setState(() => _checkingUpdate = false);
     }
+  }
+
+  void _promptUpdate(AppUpdateInfo update) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.system_update_rounded),
+        title: const Text('Update Available'),
+        content: Text(
+          'A new version (v${update.versionName}.${update.versionCode}) is available.\n\n${update.releaseNotes}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Later'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _showSnack('Downloading update in background...');
+              _updateService.downloadAndOpenInstaller(update).catchError((e) {
+                if (mounted) _showSnack('Failed to start download: $e');
+              });
+            },
+            child: const Text('Download & Install'),
+          ),
+        ],
+      ),
+    );
   }
 
   // ── Clear cache ───────────────────────────────────────────────────────────

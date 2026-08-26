@@ -326,7 +326,7 @@ export default function LoginPage() {
         {step === 'forgot-request' && (
           <>
             <h1 className="login-title">Reset Password</h1>
-            <p className="login-sub">Enter your username and email address to receive a reset PIN</p>
+            <p className="login-sub">Enter your username and email address to receive a reset OTP</p>
 
             <form className="login-form" onSubmit={handleForgotRequestSubmit}>
               {error && <div className="login-error">{error}</div>}
@@ -363,7 +363,7 @@ export default function LoginPage() {
                 disabled={loading}
                 style={{ justifyContent: 'center', marginTop: 8 }}
               >
-                {loading ? 'Sending…' : 'Send Reset PIN'}
+                {loading ? 'Sending…' : 'Send Reset OTP'}
               </button>
               
               <button
@@ -381,7 +381,7 @@ export default function LoginPage() {
         {step === 'forgot-reset' && (
           <>
             <h1 className="login-title">Set New Password</h1>
-            <p className="login-sub">Enter your PIN and a new password</p>
+            <p className="login-sub">Enter the OTP sent to your email and create a new password</p>
 
             <form className="login-form" onSubmit={handleForgotResetSubmit}>
               {error && <div className="login-error">{error}</div>}
@@ -401,7 +401,7 @@ export default function LoginPage() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Reset PIN</label>
+                <label className="form-label">Reset OTP</label>
                 <input
                   className="form-input"
                   type="text"

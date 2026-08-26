@@ -1,12 +1,12 @@
 export const androidAppManifest = {
   platform: 'android',
   versionName: '1.0.1',
-  versionCode: 26,
+  versionCode: 28,
   apkUrl: 'https://tkclocking.online/apps/school-clocking-universal.apk',
   apkFileName: 'school-clocking-universal.apk',
   required: false,
   releaseNotes: 'A new version of TK Clocking System is ready. Update now to get the latest fixes and improvements.',
-  updatedAt: '2026-08-26T13:32:27.000Z',
+  updatedAt: '2026-08-26T16:53:35.000Z',
   downloads: {
     arm64: {
       label: 'Android 64-bit',

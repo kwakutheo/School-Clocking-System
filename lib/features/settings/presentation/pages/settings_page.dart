@@ -320,27 +320,30 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     Text('App Theme', style: tt.titleSmall),
                     const SizedBox(height: 12),
-                    SegmentedButton<ThemeMode>(
-                      segments: const [
-                        ButtonSegment(
-                          value: ThemeMode.light,
-                          icon: Icon(Icons.light_mode_outlined),
-                          label: Text('Light'),
-                        ),
-                        ButtonSegment(
-                          value: ThemeMode.dark,
-                          icon: Icon(Icons.dark_mode_outlined),
-                          label: Text('Dark'),
-                        ),
-                        ButtonSegment(
-                          value: ThemeMode.system,
-                          icon: Icon(Icons.brightness_auto_outlined),
-                          label: Text('Auto'),
-                        ),
-                      ],
-                      selected: {currentTheme},
-                      onSelectionChanged: (modes) =>
-                          context.read<ThemeCubit>().setTheme(modes.first),
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<ThemeMode>(
+                        segments: const [
+                          ButtonSegment(
+                            value: ThemeMode.light,
+                            icon: Icon(Icons.light_mode_outlined),
+                            label: Text('Light'),
+                          ),
+                          ButtonSegment(
+                            value: ThemeMode.dark,
+                            icon: Icon(Icons.dark_mode_outlined),
+                            label: Text('Dark'),
+                          ),
+                          ButtonSegment(
+                            value: ThemeMode.system,
+                            icon: Icon(Icons.brightness_auto_outlined),
+                            label: Text('Auto'),
+                          ),
+                        ],
+                        selected: {currentTheme},
+                        onSelectionChanged: (modes) =>
+                            context.read<ThemeCubit>().setTheme(modes.first),
+                      ),
                     ),
                   ],
                 ),
@@ -590,15 +593,15 @@ class _SettingsPageState extends State<SettingsPage> {
                                         strokeWidth: 2),
                                   )
                                 : unsynced > 0
-                                    ? OutlinedButton.icon(
+                                    ? IconButton(
                                         onPressed: () {
                                           context
                                               .read<AttendanceBloc>()
                                               .add(const AttendanceSyncEvent());
                                         },
-                                        icon: const Icon(Icons.sync_rounded,
-                                            size: 16),
-                                        label: const Text('Sync Now'),
+                                        icon: const Icon(Icons.sync_rounded),
+                                        tooltip: 'Sync Now',
+                                        color: cs.primary,
                                       )
                                     : null,
                           );

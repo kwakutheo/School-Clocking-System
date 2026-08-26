@@ -227,11 +227,11 @@ export default function EmployeesPage() {
     setIsSubmitting(true);
     try {
       const response = await employeesApi.resetPassword(resetPasswordConfirm, adminPasswordValue);
-      showAlert(`Account Unlocked!\n\nPlease give this temporary PIN to the employee: ${response.data.pin}\n\nThey must enter this PIN in the mobile app to create a new password.`, 'success');
+      showAlert(`OTP Generated!\n\nPlease give this OTP your staff:\n\n${response.data.pin}\n\nHe/She must enter this OTP in the mobile app to create a new password.`, 'success');
       setResetPasswordConfirm(null); setAdminPasswordValue('');
     } catch (err: any) {
       const msg = err.response?.data?.message;
-      showAlert(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Failed to request password reset.', 'error');
+      showAlert(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Failed to generate OTP.', 'error');
     } finally { setIsSubmitting(false); }
   };
 

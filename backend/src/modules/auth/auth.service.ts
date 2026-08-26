@@ -374,7 +374,7 @@ export class AuthService {
     });
 
     return {
-      message: 'If the credentials are valid, a reset link has been sent.',
+      message: 'OTP has been sent to your email',
       minPasswordLength: user.tenantId === null ? 8 : 6,
     };
   }

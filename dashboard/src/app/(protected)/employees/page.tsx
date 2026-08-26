@@ -320,7 +320,7 @@ export default function EmployeesPage() {
 
         {/* Search + Register */}
         <div className="table-header">
-          <span className="table-title">Employees List</span>
+          <span className="table-title">Staff List</span>
           <div className="table-controls">
             <input className="form-input" placeholder="Search by name, code or department…"
               value={searchInput} onChange={e => setSearchInput(e.target.value)} style={{ width: 280 }} />

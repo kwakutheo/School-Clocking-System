@@ -1,33 +1,33 @@
 {
   "platform": "android",
   "versionName": "1.0.1",
-  "versionCode": 28,
+  "versionCode": 29,
   "apkUrl": "/apps/school-clocking-universal.apk",
   "apkFileName": "school-clocking-universal.apk",
   "required": false,
   "releaseNotes": "A new version of TK Clocking System is ready. Update now to get the latest fixes and improvements.",
-  "updatedAt": "2026-08-26T16:53:35.000Z",
+  "updatedAt": "2026-08-26T17:29:42.000Z",
   "downloads": {
     "arm64": {
       "label": "Android 64-bit",
       "abi": "arm64-v8a",
       "apkUrl": "/apps/school-clocking-arm64.apk",
       "apkFileName": "school-clocking-arm64.apk",
-      "sizeBytes": 31991136
+      "sizeBytes": 31991200
     },
     "arm32": {
       "label": "Android 32-bit",
       "abi": "armeabi-v7a",
       "apkUrl": "/apps/school-clocking-arm32.apk",
       "apkFileName": "school-clocking-arm32.apk",
-      "sizeBytes": 28205006
+      "sizeBytes": 28205070
     },
     "universal": {
       "label": "Universal Android",
       "abi": "universal",
       "apkUrl": "/apps/school-clocking-universal.apk",
       "apkFileName": "school-clocking-universal.apk",
-      "sizeBytes": 83732925
+      "sizeBytes": 83732989
     }
   }
 }

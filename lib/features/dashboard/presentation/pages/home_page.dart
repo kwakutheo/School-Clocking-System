@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:tk_clocking_system/core/errors/failures.dart';
 import 'package:tk_clocking_system/features/calendar/domain/repositories/calendar_repository.dart';
 import 'package:tk_clocking_system/core/constants/app_constants.dart';
@@ -567,12 +568,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                           const SizedBox(height: 16),
                         ],
                         if (_isLoading && _data == null)
-                          const Center(
-                            child: Padding(
-                              padding: EdgeInsets.only(top: 40),
-                              child: CircularProgressIndicator(),
-                            ),
-                          )
+                          _buildSkeletonLoader(context)
                         else if (_data == null)
                           const Center(
                             child: Padding(
@@ -601,6 +597,51 @@ class _DashboardTabState extends State<_DashboardTab> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonLoader(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final baseColor = isDark ? Colors.grey[850]! : Colors.grey[300]!;
+    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Shimmer.fromColors(
+        baseColor: baseColor,
+        highlightColor: highlightColor,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildSkeletonCard(140),
+            const SizedBox(height: 16),
+            _buildSkeletonCard(100),
+            const SizedBox(height: 16),
+            _buildSkeletonCard(180),
+            const SizedBox(height: 16),
+            _buildSkeletonCard(120),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(child: _buildSkeletonCard(80)),
+                const SizedBox(width: 16),
+                Expanded(child: _buildSkeletonCard(80)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonCard(double height) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
       ),
     );
   }

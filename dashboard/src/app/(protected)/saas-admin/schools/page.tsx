@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { saasAdminApi } from '@/lib/api';
-import { Plus, Building2, Globe, Users, Power, X, ShieldAlert, Sparkles, Palette, Link as LinkIcon, Edit3, Trash2, Eye } from 'lucide-react';
+import { Plus, Building2, Globe, Users, Power, X, ShieldAlert, Sparkles, Palette, Link as LinkIcon, Edit3, Trash2, Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
 
@@ -109,6 +109,8 @@ export default function SchoolsRegistryPage() {
   const [deleteAdminPassword, setDeleteAdminPassword] = useState('');
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
 
   useEffect(() => {
     fetchSchools();
@@ -1075,14 +1077,30 @@ export default function SchoolsRegistryPage() {
 
               <div>
                 <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>School Admin Password</label>
-                <input
-                  type="password"
-                  className="form-input"
-                  placeholder="••••••••"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  required
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showAdminPassword ? 'text' : 'password'}
+                    className="form-input"
+                    placeholder="••••••••"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    required
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminPassword(!showAdminPassword)}
+                    tabIndex={-1}
+                    style={{
+                      position: 'absolute', right: 12, top: '50%',
+                      transform: 'translateY(-50%)', background: 'none',
+                      border: 'none', padding: 0, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', color: '#6b7280'
+                    }}
+                  >
+                    {showAdminPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               <button
@@ -1385,21 +1403,37 @@ export default function SchoolsRegistryPage() {
               <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '8px' }}>
                 Admin Password:
               </label>
-              <input
-                type="password"
-                className="form-input"
-                value={deleteAdminPassword}
-                onChange={(e) => setDeleteAdminPassword(e.target.value)}
-                placeholder="Enter your admin password"
-                style={{ 
-                  width: '100%', 
-                  padding: '12px', 
-                  borderRadius: '8px', 
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg-input)',
-                  color: 'var(--text-primary)'
-                }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showDeletePassword ? 'text' : 'password'}
+                  className="form-input"
+                  value={deleteAdminPassword}
+                  onChange={(e) => setDeleteAdminPassword(e.target.value)}
+                  placeholder="Enter your admin password"
+                  style={{ 
+                    width: '100%', 
+                    padding: '12px',
+                    paddingRight: '44px',
+                    borderRadius: '8px', 
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg-input)',
+                    color: 'var(--text-primary)'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowDeletePassword(!showDeletePassword)}
+                  tabIndex={-1}
+                  style={{
+                    position: 'absolute', right: 12, top: '50%',
+                    transform: 'translateY(-50%)', background: 'none',
+                    border: 'none', padding: 0, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', color: '#6b7280'
+                  }}
+                >
+                  {showDeletePassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>

@@ -37,6 +37,7 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isSaving = false;
   bool _isUploadingPhoto = false;
   bool _isChangingPassword = false;
+  bool _obscurePassword = true;
   String? _lastSyncedUserId;
   String _usernameStatus = 'idle'; // 'idle', 'checking', 'available', 'taken'
   List<String> _usernameSuggestions = [];
@@ -829,7 +830,16 @@ class _ProfilePageState extends State<ProfilePage> {
                                               controller: _passwordController,
                                               label: 'New Password',
                                               prefixIcon: Icons.lock_outline,
-                                              obscureText: true,
+                                              obscureText: _obscurePassword,
+                                              suffixIcon: IconButton(
+                                                icon: Icon(_obscurePassword
+                                                    ? Icons.visibility_outlined
+                                                    : Icons
+                                                        .visibility_off_outlined),
+                                                onPressed: () => setState(() =>
+                                                    _obscurePassword =
+                                                        !_obscurePassword),
+                                              ),
                                               validator: (v) =>
                                                   v == null || v.isEmpty
                                                       ? 'Password is required'
@@ -842,7 +852,16 @@ class _ProfilePageState extends State<ProfilePage> {
                                               label: 'Confirm New Password',
                                               prefixIcon:
                                                   Icons.lock_reset_outlined,
-                                              obscureText: true,
+                                              obscureText: _obscurePassword,
+                                              suffixIcon: IconButton(
+                                                icon: Icon(_obscurePassword
+                                                    ? Icons.visibility_outlined
+                                                    : Icons
+                                                        .visibility_off_outlined),
+                                                onPressed: () => setState(() =>
+                                                    _obscurePassword =
+                                                        !_obscurePassword),
+                                              ),
                                               validator: (v) {
                                                 if (v == null || v.isEmpty) {
                                                   return 'Please confirm your password';
@@ -1217,7 +1236,7 @@ class _ProfilePageState extends State<ProfilePage> {
             color: Theme.of(context).colorScheme.primary),
         title: const Text('Edit Profile'),
         content: const Text(
-            'Are you sure you want to change you username or password?'),
+            'Are you sure you want to change your username or password?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),

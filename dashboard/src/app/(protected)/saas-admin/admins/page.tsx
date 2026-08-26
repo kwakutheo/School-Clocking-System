@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import {
   CheckCircle2,
   Edit3,
+  Eye,
+  EyeOff,
   Lock,
   Plus,
   ShieldCheck,
@@ -69,6 +71,7 @@ export default function CentralAdminsPage() {
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [notification, setNotification] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' | 'info' }>({ isOpen: false, message: '', type: 'info' });
   const [confirmAction, setConfirmAction] = useState<{ isOpen: boolean; payload: any; message: string; onConfirm: (payload: any) => void }>({ isOpen: false, payload: null, message: '', onConfirm: () => {} });
+  const [showPassword, setShowPassword] = useState(false);
 
   const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setNotification({ isOpen: true, message, type });
@@ -747,15 +750,28 @@ export default function CentralAdminsPage() {
                     <input
                       id="password"
                       className="form-input"
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       minLength={8}
                       value={form.password}
                       placeholder={'At least 8 characters'}
                       onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
                       required
-                      style={{ paddingLeft: 42 }}
+                      style={{ paddingLeft: 42, paddingRight: 40 }}
                     />
                     <Lock size={16} style={{ position: 'absolute', left: 14, top: 13, color: 'var(--text-secondary)' }} />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex={-1}
+                      style={{
+                        position: 'absolute', right: 12, top: '50%',
+                        transform: 'translateY(-50%)', background: 'none',
+                        border: 'none', padding: 0, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', color: '#6b7280'
+                      }}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
                 </div>
               )}

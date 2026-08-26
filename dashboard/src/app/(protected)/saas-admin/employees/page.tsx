@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { saasAdminApi } from '@/lib/api';
-import { Search, User, Building2, UserCircle, UserX, UserCheck, ShieldAlert, X, Eye, Archive } from 'lucide-react';
+import { Search, User, Building2, UserCircle, UserX, UserCheck, ShieldAlert, X, Eye, EyeOff, Archive } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface EmployeeGlobal {
@@ -60,6 +60,7 @@ export default function GlobalEmployeeRegistryPage() {
   const [archivePasswordError, setArchivePasswordError] = useState<string | null>(null);
   const [archiveSubmitting, setArchiveSubmitting] = useState(false);
   const archivePasswordRef = useRef<HTMLInputElement>(null);
+  const [showArchivePassword, setShowArchivePassword] = useState(false);
   const [notification, setNotification] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' | 'info' }>({ isOpen: false, message: '', type: 'info' });
 
   const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -561,17 +562,32 @@ export default function GlobalEmployeeRegistryPage() {
               <label htmlFor="archive-password-input" style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>
                 Your Super Admin Password
               </label>
-              <input
-                id="archive-password-input"
-                ref={archivePasswordRef}
-                type="password"
-                className="form-input"
-                placeholder="Enter your password to confirm"
-                value={archivePassword}
-                onChange={(e) => { setArchivePassword(e.target.value); setArchivePasswordError(null); }}
-                onKeyDown={(e) => { if (e.key === 'Enter' && archivePassword) handleArchive(); }}
-                style={{ width: '100%', borderColor: archivePasswordError ? 'var(--danger)' : undefined }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="archive-password-input"
+                  ref={archivePasswordRef}
+                  type={showArchivePassword ? 'text' : 'password'}
+                  className="form-input"
+                  placeholder="Enter your password to confirm"
+                  value={archivePassword}
+                  onChange={(e) => { setArchivePassword(e.target.value); setArchivePasswordError(null); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && archivePassword) handleArchive(); }}
+                  style={{ width: '100%', paddingRight: '40px', borderColor: archivePasswordError ? 'var(--danger)' : undefined }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowArchivePassword(!showArchivePassword)}
+                  tabIndex={-1}
+                  style={{
+                    position: 'absolute', right: 12, top: '50%',
+                    transform: 'translateY(-50%)', background: 'none',
+                    border: 'none', padding: 0, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', color: '#6b7280'
+                  }}
+                >
+                  {showArchivePassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
               {archivePasswordError && (
                 <p style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '6px' }}>{archivePasswordError}</p>
               )}

@@ -381,6 +381,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     const Text('Get alerts for upcoming shifts & clock-outs'),
                 value: _notificationsEnabled,
                 onChanged: _toggleNotifications,
+                activeThumbColor: cs.onPrimary,
                 activeTrackColor: cs.primary,
               ),
             ),

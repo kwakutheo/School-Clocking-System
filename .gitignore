@@ -69,7 +69,6 @@ startApp.bat
 stopApp.bat
 project_architecture_walkthrough.md
 mobile_app_update_automation.md
-md_files/mobile_app_update_automation.md
 wireless_debugging.bat
 build_apk.bat
 apk_split_implementation_instructions.md

@@ -51,6 +51,7 @@ export default function EmployeesPage() {
   const [deleteInputName, setDeleteInputName] = useState('');
   const [resetPasswordConfirm, setResetPasswordConfirm] = useState<string | null>(null);
   const [adminPasswordValue, setAdminPasswordValue] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [notification, setNotification] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' | 'info' }>({ isOpen: false, message: '', type: 'info' });
 
   const showAlert = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -893,14 +894,38 @@ export default function EmployeesPage() {
             <form onSubmit={handleResetPassword}>
               <div className="form-group" style={{ marginTop: 16 }}>
                 <label>Confirm with your Admin Password</label>
-                <input
-                  type="password"
-                  className="form-input"
-                  value={adminPasswordValue}
-                  onChange={(e) => setAdminPasswordValue(e.target.value)}
-                  placeholder="Your admin password"
-                  required
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showAdminPassword ? "text" : "password"}
+                    className="form-input"
+                    value={adminPasswordValue}
+                    onChange={(e) => setAdminPasswordValue(e.target.value)}
+                    placeholder="Your admin password"
+                    style={{ paddingRight: '40px' }}
+                    required
+                  />
+                  <button
+                    type="button"
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#6b7280'
+                    }}
+                    onClick={() => setShowAdminPassword(!showAdminPassword)}
+                    tabIndex={-1}
+                  >
+                    {showAdminPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
               </div>
               <div className="modal-footer" style={{ marginTop: 24 }}>
                 <button type="button" className="btn" onClick={() => { setResetPasswordConfirm(null); setAdminPasswordValue(''); }}>Cancel</button>

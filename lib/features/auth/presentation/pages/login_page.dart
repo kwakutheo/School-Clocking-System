@@ -340,6 +340,8 @@ class _LoginPageState extends State<LoginPage> {
     final formKey = GlobalKey<FormState>();
     bool isSubmitting = false;
     String? errorMessage;
+    bool obscureNewPassword = true;
+    bool obscureConfirmPassword = true;
 
     showModalBottomSheet(
       context: context,
@@ -371,7 +373,7 @@ class _LoginPageState extends State<LoginPage> {
                             .titleLarge
                             ?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    Text('Enter the 6-digit PIN provided by HR.',
+                    Text('Enter the 6-digit OTP provided your admin.',
                         style: TextStyle(color: colorScheme.onSurfaceVariant)),
                     const SizedBox(height: 24),
                     AppTextField(
@@ -382,7 +384,7 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 16),
                     AppTextField(
                       controller: pinCtrl,
-                      label: '6-Digit PIN',
+                      label: '6-Digit OTP',
                       keyboardType: TextInputType.number,
                       validator: (v) =>
                           v!.length != 6 ? 'Must be exactly 6 digits' : null,
@@ -391,7 +393,19 @@ class _LoginPageState extends State<LoginPage> {
                     AppTextField(
                       controller: newPasswordCtrl,
                       label: 'New Password',
-                      obscureText: true,
+                      obscureText: obscureNewPassword,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscureNewPassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                        onPressed: () {
+                          setModalState(() {
+                            obscureNewPassword = !obscureNewPassword;
+                          });
+                        },
+                      ),
                       validator: (v) =>
                           v!.length < 6 ? 'Minimum 6 characters' : null,
                     ),
@@ -399,7 +413,19 @@ class _LoginPageState extends State<LoginPage> {
                     AppTextField(
                       controller: confirmPasswordCtrl,
                       label: 'Confirm Password',
-                      obscureText: true,
+                      obscureText: obscureConfirmPassword,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscureConfirmPassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                        onPressed: () {
+                          setModalState(() {
+                            obscureConfirmPassword = !obscureConfirmPassword;
+                          });
+                        },
+                      ),
                       validator: (v) {
                         if (v != newPasswordCtrl.text) {
                           return 'Passwords do not match';

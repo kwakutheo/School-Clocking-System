@@ -86,7 +86,11 @@ class _SettingsPageState extends State<SettingsPage> {
           isEnabledPref && (secureId != null && secureId.isNotEmpty);
       _notificationsEnabled = notifsEnabledPref;
       _deviceId = deviceId;
-      _appVersion = '${info.version}.${info.buildNumber}';
+      String buildNum = info.buildNumber;
+      if (buildNum.startsWith('20') && buildNum.length == 4) {
+        buildNum = buildNum.substring(2);
+      }
+      _appVersion = '${info.version}.$buildNum';
       _serverUrl = portalUrl;
       _timeStatus = timeStatus;
     });

@@ -227,7 +227,7 @@ export default function EmployeesPage() {
     setIsSubmitting(true);
     try {
       const response = await employeesApi.resetPassword(resetPasswordConfirm, adminPasswordValue);
-      showAlert(`OTP Generated!\n\nPlease give this OTP your staff:\n\n${response.data.pin}\n\nHe/She must enter this OTP in the mobile app to create a new password.`, 'success');
+      showAlert(`OTP Generated!\nPlease give this OTP your staff:\n\n${response.data.pin}\n\nHe/She must enter this OTP in the mobile app to create a new password.`, 'success');
       setResetPasswordConfirm(null); setAdminPasswordValue('');
     } catch (err: any) {
       const msg = err.response?.data?.message;

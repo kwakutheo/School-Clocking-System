@@ -101,7 +101,7 @@ export default function ShiftsPage() {
         setConfirmAction({
           isOpen: true,
           payload: id,
-          message: `This shift is currently assigned to ${usage.count} employee(s) (e.g. ${usage.names.slice(0, 3).join(', ')}${usage.count > 3 ? '...' : ''}). Deleting it will leave them without a shift. Please enter your password to confirm.`,
+          message: `This shift is currently assigned to ${usage.count} staff member(s) (e.g. ${usage.names.slice(0, 3).join(', ')}${usage.count > 3 ? '...' : ''}). Deleting it will leave them without a shift. Please enter your password to confirm.`,
           requiresPassword: true,
           error: undefined,
           onConfirm: executeDelete

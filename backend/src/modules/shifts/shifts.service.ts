@@ -92,7 +92,7 @@ export class ShiftsService {
       if (!confirmPassword) {
         throw new BadRequestException({
           code: 'SHIFT_IN_USE',
-          message: `This shift is assigned to ${count} employee(s). Provide your password to confirm deletion.`,
+          message: `This shift is assigned to ${count} staff mamber(s). Provide your password to confirm deletion.`,
           count,
         });
       }

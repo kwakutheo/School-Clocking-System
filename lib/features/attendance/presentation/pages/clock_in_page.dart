@@ -89,7 +89,7 @@ class _ClockInPageState extends State<ClockInPage> {
               builder: (ctx) => AlertDialog(
                 icon: const Icon(Icons.access_time_rounded,
                     size: 40, color: Colors.orange),
-                title: const Text('Clock Out Earl?'),
+                title: const Text('Clock Out Early?'),
                 content: Text(state.message),
                 actions: [
                   TextButton(

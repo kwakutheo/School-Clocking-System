@@ -227,27 +227,71 @@ class _SettingsPageState extends State<SettingsPage> {
         bool isDownloading = false;
         double progress = 0.0;
         String? errorMessage;
+        // Non-null when APK is downloaded but install needs permission retry.
+        String? downloadedApkPath;
+        bool needsPermission = false;
 
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            Future<void> tryInstall(String apkPath) async {
+              setDialogState(() {
+                needsPermission = false;
+                errorMessage = null;
+              });
+              try {
+                await _updateService.openDownloadedApk(apkPath);
+                if (ctx.mounted) Navigator.pop(ctx);
+              } on InstallPermissionRequiredException catch (e) {
+                setDialogState(() {
+                  needsPermission = true;
+                  downloadedApkPath = e.apkPath;
+                  errorMessage = e.message;
+                });
+              } catch (e) {
+                setDialogState(() {
+                  needsPermission = false;
+                  errorMessage = 'Install failed: $e';
+                });
+              }
+            }
+
             return AlertDialog(
-              icon: const Icon(Icons.system_update_rounded),
+              icon: Icon(
+                needsPermission
+                    ? Icons.security_rounded
+                    : Icons.system_update_rounded,
+                color: needsPermission ? Colors.orange : null,
+              ),
               title: Text(
-                  isDownloading ? 'Downloading Update...' : 'Update Available'),
+                isDownloading
+                    ? 'Downloading Update...'
+                    : needsPermission
+                        ? 'Permission Required'
+                        : 'Update Available',
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (!isDownloading && errorMessage == null)
+                  if (!isDownloading && !needsPermission && errorMessage == null)
                     Text(
-                      'A new version (${update.versionName}.${update.versionCode}) is available.\n\n${update.releaseNotes}',
+                      'A new version (v${update.versionName}.${update.versionCode}) is available.\n\n${update.releaseNotes}',
                     ),
-                  if (errorMessage != null)
+                  if (errorMessage != null && !needsPermission)
                     Text(
                       errorMessage!,
-                      style:
-                          TextStyle(color: Theme.of(context).colorScheme.error),
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error),
                     ),
+                  if (needsPermission) ...[
+                    Text(errorMessage ??
+                        'Allow TK Clocking System to install unknown apps, then tap "Try Again".'),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'The update has already been downloaded. Once you grant the permission, tap "Try Again" to complete the installation.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ],
                   if (isDownloading) ...[
                     const SizedBox(height: 8),
                     LinearProgressIndicator(
@@ -269,7 +313,14 @@ class _SettingsPageState extends State<SettingsPage> {
                     onPressed: () => Navigator.pop(ctx),
                     child: const Text('Later'),
                   ),
-                if (!isDownloading)
+                // "Try Again" when APK is downloaded but needs permission
+                if (!isDownloading && needsPermission && downloadedApkPath != null)
+                  FilledButton(
+                    onPressed: () => tryInstall(downloadedApkPath!),
+                    child: const Text('Try Again'),
+                  ),
+                // "Download & Install" / "Retry" for normal states
+                if (!isDownloading && !needsPermission)
                   FilledButton(
                     onPressed: () async {
                       setDialogState(() {
@@ -290,6 +341,13 @@ class _SettingsPageState extends State<SettingsPage> {
                           },
                         );
                         if (ctx.mounted) Navigator.pop(ctx);
+                      } on InstallPermissionRequiredException catch (e) {
+                        setDialogState(() {
+                          isDownloading = false;
+                          needsPermission = true;
+                          downloadedApkPath = e.apkPath;
+                          errorMessage = e.message;
+                        });
                       } catch (e) {
                         setDialogState(() {
                           isDownloading = false;
@@ -297,8 +355,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         });
                       }
                     },
-                    child: Text(
-                        errorMessage != null ? 'Retry' : 'Download & Install'),
+                    child: Text(errorMessage != null
+                        ? 'Retry Download'
+                        : 'Download & Install'),
                   ),
               ],
             );

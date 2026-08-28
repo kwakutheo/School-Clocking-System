@@ -1,5 +1,6 @@
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tk_clocking_system/core/errors/failures.dart';
 import 'package:tk_clocking_system/features/auth/domain/usecases/get_cached_user_usecase.dart';
@@ -91,9 +92,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         final token = await FirebaseMessaging.instance.getToken();
         if (token != null) {
           await _updateFcmToken(token: token);
+          debugPrint('[Auth] FCM token re-registered for new login user');
         }
-      } catch (_) {
-        // Ignore FCM failure so it doesn't break login
+      } catch (e) {
+        debugPrint('[Auth] FCM token registration failed on login: $e');
       }
     }
   }

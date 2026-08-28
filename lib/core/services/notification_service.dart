@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+import 'dart:ui';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -9,9 +11,12 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:tk_clocking_system/core/constants/app_constants.dart';
 import 'package:tk_clocking_system/core/di/injection_container.dart';
+import 'package:tk_clocking_system/core/di/injection_container.dart' as di;
+import 'package:tk_clocking_system/core/services/connectivity_service.dart';
 import 'package:tk_clocking_system/core/services/storage_service.dart';
 import 'package:tk_clocking_system/core/services/time_service.dart';
 import 'package:tk_clocking_system/core/utils/offline_state_engine.dart';
+import 'package:tk_clocking_system/features/attendance/domain/repositories/attendance_repository.dart';
 import 'package:tk_clocking_system/features/dashboard/data/models/home_data_model.dart';
 import 'package:tk_clocking_system/features/dashboard/domain/entities/home_data_entity.dart';
 
@@ -28,10 +33,67 @@ const _kScheduleDaysAhead = 14;
 const _kCancelLookBackDays = 2;
 const _kLegacyClockOutReminderId = 101;
 const _kReminderIdSeed = 200000000;
+// FCM push notification IDs live in a completely separate namespace (100M range)
+// so they can never collide with local shift reminder IDs (200M range).
+const _kFcmNotificationIdSeed = 100000000;
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('[FCM-BG] Handling background message: ${message.messageId}');
+  // This runs in a SEPARATE Dart isolate — we must reinitialize everything.
+  debugPrint('[FCM-BG] Message received: ${message.messageId}, data: ${message.data}');
+  try {
+    // Step 1: Initialize Flutter plugin registrant for this isolate.
+    DartPluginRegistrant.ensureInitialized();
+    WidgetsFlutterBinding.ensureInitialized();
+
+    // Step 2: Initialize Firebase in this isolate.
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
+
+    // Step 3: Initialize DI container if not already done in this isolate.
+    // The guard prevents double-registration if this isolate is reused.
+    if (!di.sl.isRegistered<ConnectivityService>()) {
+      await di.init();
+    }
+
+    // Step 4: Initialize the notification plugin for this isolate.
+    final notifService = di.sl<NotificationService>();
+    await notifService.initForBackgroundIsolate();
+
+    // Step 5: Only process data-only sync messages — notification messages are
+    // handled by the OS system tray when the app is killed.
+    if (!message.data.containsKey('action')) return;
+
+    // Step 6: Sync time and fetch fresh home data from the backend.
+    final timeService = di.sl<TimeService>();
+    await timeService.syncTime();
+
+    final attendanceRepo = di.sl<AttendanceRepository>();
+    final result = await attendanceRepo.getHomeData();
+
+    result.fold(
+      (failure) {
+        debugPrint('[FCM-BG] Home data fetch failed: $failure');
+      },
+      (data) async {
+        if (data is HomeDataModel) {
+          // Step 7: Update the local cache so the app has fresh data on next open.
+          final box = Hive.box<Map>(AppConstants.userBox);
+          final trustedNow = await timeService.getGhanaTimeAsync();
+          await box.put('home_data_cache', data.toJson(now: trustedNow));
+
+          // Step 8: Reschedule shift reminders from fresh server data.
+          final effectiveData = OfflineStateEngine.recomputeForOfflineDay(data, trustedNow);
+          await notifService.scheduleShiftReminders(effectiveData);
+          debugPrint('[FCM-BG] Reminders rescheduled successfully.');
+        }
+      },
+    );
+  } catch (e, st) {
+    // Background handlers must never throw — a crash here is unrecoverable.
+    debugPrint('[FCM-BG] Error: $e\n$st');
+  }
 }
 
 class _ReminderJob {
@@ -56,6 +118,11 @@ class NotificationService {
   final _syncEventController =
       StreamController<Map<String, dynamic>>.broadcast();
   Stream<Map<String, dynamic>> get onSyncEvent => _syncEventController.stream;
+
+  // Async mutex: chains concurrent calls to scheduleShiftReminders so that only
+  // one scheduling cycle runs at a time. This prevents the cancel→schedule
+  // sequence from overlapping and producing duplicate reminders.
+  Future<void>? _schedulingFuture;
 
   // ── Initialisation ──────────────────────────────────────────────────────────
 
@@ -201,8 +268,14 @@ class NotificationService {
     final android = message.notification?.android;
 
     if (notification != null && android != null) {
+      // Use a deterministic, namespaced ID to prevent collision with local
+      // shift reminder IDs which occupy the 200,000,000+ range.
+      final fcmId = _kFcmNotificationIdSeed +
+          (message.messageId?.hashCode.abs() ??
+                  DateTime.now().millisecondsSinceEpoch)
+              .remainder(1000000);
       await _notifications.show(
-        notification.hashCode,
+        fcmId,
         notification.title,
         notification.body,
         NotificationDetails(
@@ -289,6 +362,23 @@ class NotificationService {
       );
 
   Future<void> scheduleShiftReminders(HomeDataEntity data) async {
+    // Chain onto any in-progress scheduling call using a Completer-based
+    // async mutex. This ensures cancel→schedule sequences never overlap,
+    // preventing duplicate or missing reminders from concurrent callers
+    // (e.g. 30s timer, FCM sync event, and manual pull-to-refresh).
+    final previous = _schedulingFuture;
+    final completer = Completer<void>();
+    _schedulingFuture = completer.future;
+
+    // Wait for the previous scheduling cycle to complete before starting.
+    if (previous != null) {
+      try {
+        await previous;
+      } catch (_) {
+        // Ignore errors from a previous cycle — we still run our own.
+      }
+    }
+
     try {
       final isEnabled = sl<StorageService>().getNotificationsEnabled() ?? true;
       if (!isEnabled) {
@@ -301,7 +391,9 @@ class NotificationService {
 
       final ghanaZone = tz.getLocation(_kGhanaTz);
 
-      // Calculate the difference between device OS time and the app's True Time.
+      // Recalculate the true-time offset fresh on every scheduling call.
+      // This ensures clock drift (e.g. from manual device clock changes) is
+      // always corrected the next time reminders are rescheduled.
       final trueTimeUtc = await sl<TimeService>().getGhanaTimeAsync();
       final trueNow = tz.TZDateTime.from(trueTimeUtc, ghanaZone);
       final osNow = tz.TZDateTime.now(ghanaZone);
@@ -322,6 +414,8 @@ class NotificationService {
       debugPrint('[NOTIF] Scheduled ${jobs.length} shift reminder(s).');
     } catch (e) {
       debugPrint('[NOTIF] Failed to schedule shift reminders: $e');
+    } finally {
+      completer.complete();
     }
   }
 

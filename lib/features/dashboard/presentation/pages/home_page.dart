@@ -31,7 +31,6 @@ import 'package:tk_clocking_system/core/services/geofence_service.dart';
 import 'package:tk_clocking_system/core/services/notification_service.dart';
 import 'package:tk_clocking_system/core/services/time_service.dart';
 import 'package:tk_clocking_system/core/utils/offline_state_engine.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -171,7 +170,8 @@ class _DashboardTab extends StatefulWidget {
   State<_DashboardTab> createState() => _DashboardTabState();
 }
 
-class _DashboardTabState extends State<_DashboardTab> {
+class _DashboardTabState extends State<_DashboardTab>
+    with WidgetsBindingObserver {
   HomeDataModel? _serverBaseline;
   HomeDataEntity? _data;
   bool _isLoading = true;
@@ -183,6 +183,7 @@ class _DashboardTabState extends State<_DashboardTab> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initData();
     _checkPending();
 
@@ -191,37 +192,38 @@ class _DashboardTabState extends State<_DashboardTab> {
       _loadData(silent: true);
     });
 
-    // Listen for real-time silent sync events from Firebase Cloud Messaging
+    // Listen for real-time silent sync events from Firebase Cloud Messaging.
+    // When the app is in the foreground, FCM silent messages arrive here via
+    // the onSyncEvent stream and trigger a dashboard refresh.
     _syncSubscription = sl<NotificationService>().onSyncEvent.listen((_) {
       if (mounted) {
         debugPrint('Received silent sync event, refreshing dashboard...');
         _loadData(silent: true);
       }
     });
-
-    // Update FCM Token on login
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final token = await sl<NotificationService>().getFcmToken();
-      if (token != null && mounted) {
-        context.read<AuthBloc>().add(AuthUpdateFcmTokenEvent(token: token));
-      }
-
-      // Also listen for token refreshes
-      FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
-        if (mounted) {
-          context
-              .read<AuthBloc>()
-              .add(AuthUpdateFcmTokenEvent(token: newToken));
-        }
-      });
-    });
+    // FCM token registration and onTokenRefresh listener are now handled
+    // globally in main.dart at boot time, so they work regardless of which
+    // screen the user navigates to.
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _autoRefreshTimer?.cancel();
     _syncSubscription?.cancel();
     super.dispose();
+  }
+
+  /// Called by the OS when the app returns to the foreground.
+  /// Reschedules reminders so that any manual device clock change is
+  /// corrected immediately — the offset is recalculated fresh on every
+  /// call to scheduleShiftReminders.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      debugPrint('[Dashboard] App resumed — refreshing data and reminders.');
+      _loadData(silent: true);
+    }
   }
 
   Future<void> _initData() async {

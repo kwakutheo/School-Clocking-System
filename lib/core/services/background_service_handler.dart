@@ -39,7 +39,9 @@ void onBackgroundTaskStart(ServiceInstance service) async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Re-initialize Firebase in this separate isolate.
-  await Firebase.initializeApp();
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp();
+  }
 
   // Guard: only initialize DI if not already done in this isolate.
   if (!di.sl.isRegistered<ConnectivityService>()) {

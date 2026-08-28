@@ -18,7 +18,7 @@ export class SettingsService {
       const scopedRow = await this.repo.findOne({ where: { key: scopedKey } });
       if (scopedRow) return scopedRow.value;
     }
-    
+
     // Fallback to global row if scoped key doesn't exist (e.g. for new tenants inheriting defaults)
     const globalRow = await this.repo.findOne({ where: { key } });
     return globalRow?.value ?? null;

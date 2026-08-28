@@ -311,12 +311,16 @@ export class SaasAdminController {
     summary: 'Permanently remove a school tenant and all associated data',
   })
   async deleteTenant(
-    @Req() req: any, 
+    @Req() req: any,
     @Param('id') id: string,
-    @Body() body: { adminPassword?: string }
+    @Body() body: { adminPassword?: string },
   ) {
     this.verifyGlobalSuperAdmin(req);
-    await this.adminService.deleteTenant(id, req.user as User, body?.adminPassword);
+    await this.adminService.deleteTenant(
+      id,
+      req.user as User,
+      body?.adminPassword,
+    );
     return {
       success: true,
       message: 'School tenant and all associated data removed permanently.',

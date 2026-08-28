@@ -28,7 +28,9 @@ export class QrClockDto {
   @IsOptional()
   forceEarlyOut?: boolean;
 
-  @ApiPropertyOptional({ description: 'Unique device identifier for restriction checks' })
+  @ApiPropertyOptional({
+    description: 'Unique device identifier for restriction checks',
+  })
   @IsString()
   @IsOptional()
   deviceId?: string;

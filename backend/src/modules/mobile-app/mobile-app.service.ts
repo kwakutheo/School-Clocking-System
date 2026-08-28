@@ -7,9 +7,6 @@ export class MobileAppService {
   constructor(private readonly config: ConfigService) {}
 
   getLatestAndroidVersion() {
-    const baseUrl = this.config
-      .get<string>('APP_DOWNLOAD_BASE_URL', 'https://tkclocking.online')
-      .replace(/\/$/, '');
     const required =
       this.config.get<string>('APP_ANDROID_UPDATE_REQUIRED') === 'true' ||
       androidAppManifest.required;
@@ -17,20 +14,19 @@ export class MobileAppService {
       this.config.get<string>('APP_ANDROID_RELEASE_NOTES') ??
         androidAppManifest.releaseNotes,
     );
+
+    // APK URLs come from the manifest (set by CI to GitHub Releases URLs).
+    // APP_ANDROID_APK_URL is an optional env var override for the universal APK.
+    const universalApkUrl =
+      this.config.get<string>('APP_ANDROID_APK_URL') ??
+      androidAppManifest.downloads.universal.apkUrl;
+
     const downloads = {
-      arm64: {
-        ...androidAppManifest.downloads.arm64,
-        apkUrl: `${baseUrl}/apps/school-clocking-arm64.apk`,
-      },
-      arm32: {
-        ...androidAppManifest.downloads.arm32,
-        apkUrl: `${baseUrl}/apps/school-clocking-arm32.apk`,
-      },
+      arm64: { ...androidAppManifest.downloads.arm64 },
+      arm32: { ...androidAppManifest.downloads.arm32 },
       universal: {
         ...androidAppManifest.downloads.universal,
-        apkUrl:
-          this.config.get<string>('APP_ANDROID_APK_URL') ??
-          `${baseUrl}/apps/school-clocking-universal.apk`,
+        apkUrl: universalApkUrl,
       },
     };
 
@@ -40,7 +36,7 @@ export class MobileAppService {
       versionCode: this.getLegacyComparableVersionCode(
         androidAppManifest.versionCode,
       ),
-      apkUrl: downloads.universal.apkUrl,
+      apkUrl: universalApkUrl,
       apkFileName: downloads.universal.apkFileName,
       required,
       releaseNotes,

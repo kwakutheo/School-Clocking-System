@@ -136,7 +136,9 @@ export class EmployeesController {
     @UploadedFile() file: Express.Multer.File,
   ): Promise<Employee> {
     if (!file) {
-      throw new BadRequestException('No file uploaded. Include a "photo" field.');
+      throw new BadRequestException(
+        'No file uploaded. Include a "photo" field.',
+      );
     }
 
     // Look up the employee to get their stable ID for the filename
@@ -177,7 +179,12 @@ export class EmployeesController {
         name: BUCKET,
         public: true,
         file_size_limit: 5 * 1024 * 1024,
-        allowed_mime_types: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+        allowed_mime_types: [
+          'image/jpeg',
+          'image/png',
+          'image/webp',
+          'image/gif',
+        ],
       }),
     });
     // Always update to ensure the bucket is public (idempotent)
@@ -187,7 +194,12 @@ export class EmployeesController {
       body: JSON.stringify({
         public: true,
         file_size_limit: 5 * 1024 * 1024,
-        allowed_mime_types: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+        allowed_mime_types: [
+          'image/jpeg',
+          'image/png',
+          'image/webp',
+          'image/gif',
+        ],
       }),
     });
 
@@ -254,7 +266,6 @@ export class EmployeesController {
     // Update DB to nullify photoUrl
     return this.service.updateProfile(user.id, { photoUrl: null });
   }
-
 
   @Patch('me')
   @ApiOperation({ summary: 'Update own profile (self-service)' })

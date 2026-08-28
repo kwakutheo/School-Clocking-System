@@ -98,11 +98,21 @@ export class AttendanceLog extends TenantBaseEntity {
    */
 
   /** The shift start time active when this CLOCK_IN was recorded (e.g. "07:00:00"). */
-  @Column({ name: 'scheduled_start_time', type: 'varchar', length: 8, nullable: true })
+  @Column({
+    name: 'scheduled_start_time',
+    type: 'varchar',
+    length: 8,
+    nullable: true,
+  })
   scheduledStartTime: string | null;
 
   /** The shift end time active when this CLOCK_OUT was recorded (e.g. "14:00:00"). */
-  @Column({ name: 'scheduled_end_time', type: 'varchar', length: 8, nullable: true })
+  @Column({
+    name: 'scheduled_end_time',
+    type: 'varchar',
+    length: 8,
+    nullable: true,
+  })
   scheduledEndTime: string | null;
 
   /** The grace period in minutes active when this CLOCK_IN was recorded. */

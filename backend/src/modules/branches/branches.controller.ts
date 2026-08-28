@@ -43,7 +43,9 @@ export class BranchesController {
   @Get(':id/usage')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('branches.manage')
-  @ApiOperation({ summary: 'Check how many employees are assigned to a branch' })
+  @ApiOperation({
+    summary: 'Check how many employees are assigned to a branch',
+  })
   checkUsage(@Param('id') id: string) {
     return this.service.checkUsage(id);
   }
@@ -70,7 +72,9 @@ export class BranchesController {
   @Delete(':id')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('branches.manage')
-  @ApiOperation({ summary: 'Delete a branch (password required if employees are assigned)' })
+  @ApiOperation({
+    summary: 'Delete a branch (password required if employees are assigned)',
+  })
   remove(
     @Param('id') id: string,
     @CurrentUser() user: User,

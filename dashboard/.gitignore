@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# APKs are hosted on GitHub Releases — never commit them to the repo
+/public/apps/*.apk

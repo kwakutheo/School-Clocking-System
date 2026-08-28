@@ -62,14 +62,12 @@ export class ShiftsService {
   async checkUsage(id: string): Promise<{ count: number; names: string[] }> {
     await this.findOne(id); // enforce tenant scope / 404
     const employees = await this.employeeRepo.find({
-      where: { shift: { id } } as any,
+      where: { shift: { id } },
       relations: ['user'],
     });
     return {
       count: employees.length,
-      names: employees.map(
-        (e) => e.user?.fullName ?? e.employeeCode,
-      ),
+      names: employees.map((e) => e.user?.fullName ?? e.employeeCode),
     };
   }
 

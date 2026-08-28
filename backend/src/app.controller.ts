@@ -25,7 +25,7 @@ export class AppController {
     const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
     return {
       iso: now.toISOString(),
-      date: dateStr,        // e.g. "2026-07-08" — the authoritative "today"
+      date: dateStr, // e.g. "2026-07-08" — the authoritative "today"
       timezone: process.env.TZ ?? 'Africa/Accra',
     };
   }

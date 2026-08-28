@@ -12,10 +12,16 @@ const backendManifestPath = path.join(
   'backend/src/modules/mobile-app/mobile-app.manifest.ts',
 );
 
+// APKs are built to the Flutter output dir. In CI, APK_BUILD_DIR points there.
+// Locally (ALLOW_LOCAL_MOBILE_APP_PUBLISH=true), you must build APKs first.
+const apkBuildDir = process.env.APK_BUILD_DIR
+  ? path.join(rootDir, process.env.APK_BUILD_DIR)
+  : path.join(rootDir, 'build/app/outputs/flutter-apk');
+
 const apkFiles = {
-  arm64: 'dashboard/public/apps/school-clocking-arm64.apk',
-  arm32: 'dashboard/public/apps/school-clocking-arm32.apk',
-  universal: 'dashboard/public/apps/school-clocking-universal.apk',
+  arm64: path.join(apkBuildDir, 'school-clocking-arm64.apk'),
+  arm32: path.join(apkBuildDir, 'school-clocking-arm32.apk'),
+  universal: path.join(apkBuildDir, 'school-clocking-universal.apk'),
 };
 const defaultReleaseNotes =
   'A new version of TK Clocking System is ready. Update now to get the latest fixes and improvements.';
@@ -80,10 +86,9 @@ function normalizeReleaseNotes(value) {
   return value;
 }
 
-function fileSize(fileName, fallback = 0) {
-  const fullPath = path.join(rootDir, fileName);
-  if (!fs.existsSync(fullPath)) return fallback;
-  return fs.statSync(fullPath).size;
+function fileSize(filePath, fallback = 0) {
+  if (!fs.existsSync(filePath)) return fallback;
+  return fs.statSync(filePath).size;
 }
 
 function escapeTs(value) {
@@ -109,8 +114,8 @@ const { versionLine, versionName, versionCode } = readPubspecVersion();
 const existing = readExistingManifest();
 const existingDownloads = existing.downloads ?? {};
 const baseUrl = envString(
-  'APP_DOWNLOAD_BASE_URL',
-  'https://tkclocking.online',
+  'APK_BASE_URL',
+  'https://github.com/kwakutheo/School-Clocking-System/releases/download',
 ).replace(/\/$/, '');
 const required = envBoolean('APP_ANDROID_UPDATE_REQUIRED', existing.required ?? false);
 const releaseNotes = normalizeReleaseNotes(
@@ -125,7 +130,7 @@ const manifest = {
   platform: 'android',
   versionName,
   versionCode,
-  apkUrl: '/apps/school-clocking-universal.apk',
+  apkUrl: `${baseUrl}/v${versionLine}/school-clocking-universal.apk`,
   apkFileName: 'school-clocking-universal.apk',
   required,
   releaseNotes,
@@ -134,7 +139,7 @@ const manifest = {
     arm64: {
       label: 'Android 64-bit',
       abi: 'arm64-v8a',
-      apkUrl: '/apps/school-clocking-arm64.apk',
+      apkUrl: `${baseUrl}/v${versionLine}/school-clocking-arm64.apk`,
       apkFileName: 'school-clocking-arm64.apk',
       sizeBytes: fileSize(
         apkFiles.arm64,
@@ -144,7 +149,7 @@ const manifest = {
     arm32: {
       label: 'Android 32-bit',
       abi: 'armeabi-v7a',
-      apkUrl: '/apps/school-clocking-arm32.apk',
+      apkUrl: `${baseUrl}/v${versionLine}/school-clocking-arm32.apk`,
       apkFileName: 'school-clocking-arm32.apk',
       sizeBytes: fileSize(
         apkFiles.arm32,
@@ -154,7 +159,7 @@ const manifest = {
     universal: {
       label: 'Universal Android',
       abi: 'universal',
-      apkUrl: '/apps/school-clocking-universal.apk',
+      apkUrl: `${baseUrl}/v${versionLine}/school-clocking-universal.apk`,
       apkFileName: 'school-clocking-universal.apk',
       sizeBytes: fileSize(
         apkFiles.universal,
@@ -167,19 +172,7 @@ const manifest = {
 fs.mkdirSync(path.dirname(dashboardManifestPath), { recursive: true });
 fs.writeFileSync(dashboardManifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
-const backendManifest = {
-  ...manifest,
-  apkUrl: `${baseUrl}/apps/school-clocking-universal.apk`,
-  downloads: Object.fromEntries(
-    Object.entries(manifest.downloads).map(([key, download]) => [
-      key,
-      {
-        ...download,
-        apkUrl: `${baseUrl}${download.apkUrl}`,
-      },
-    ]),
-  ),
-};
+const backendManifest = manifest;
 
 fs.writeFileSync(
   backendManifestPath,

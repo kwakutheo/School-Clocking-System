@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { Holiday } from './holiday.entity';
@@ -30,7 +34,7 @@ export class HolidaysService {
   async findCurrentYear(targetYear?: number): Promise<any[]> {
     const currentYear = targetYear ?? new Date().getFullYear();
     const all = await this.findAll(); // already tenant-scoped
-    
+
     const activeHolidays = all.filter((h) => {
       if (h.isRecurring) return true;
       const year = parseInt(h.date.substring(0, 4), 10);
@@ -86,7 +90,7 @@ export class HolidaysService {
       const day = new Date(y, m - 1, d).getDay();
       if (day === 0 || day === 6) {
         throw new BadRequestException(
-          'You cannot manually move a holiday to a weekend. Please select a valid working day (Monday–Friday).'
+          'You cannot manually move a holiday to a weekend. Please select a valid working day (Monday–Friday).',
         );
       }
       if (data.date) {
@@ -95,7 +99,7 @@ export class HolidaysService {
           : data.date;
         if (data.observedDate <= origDateStr) {
           throw new BadRequestException(
-            'The custom observed date must be strictly after the original holiday date.'
+            'The custom observed date must be strictly after the original holiday date.',
           );
         }
       }
@@ -130,7 +134,7 @@ export class HolidaysService {
       const day = new Date(y, m - 1, d).getDay();
       if (day === 0 || day === 6) {
         throw new BadRequestException(
-          'You cannot manually move a holiday to a weekend. Please select a valid working day (Monday–Friday).'
+          'You cannot manually move a holiday to a weekend. Please select a valid working day (Monday–Friday).',
         );
       }
 
@@ -143,7 +147,7 @@ export class HolidaysService {
 
       if (data.observedDate <= origDateStr) {
         throw new BadRequestException(
-          'The custom observed date must be strictly after the original holiday date.'
+          'The custom observed date must be strictly after the original holiday date.',
         );
       }
     }
@@ -151,7 +155,6 @@ export class HolidaysService {
     Object.assign(holiday, data);
     return this.repo.save(holiday);
   }
-
 
   async getHolidayForDate(date: Date): Promise<{
     holiday: Holiday;
@@ -165,20 +168,21 @@ export class HolidaysService {
 
     // Filter to holidays relevant for this year
     const activeHolidays = holidays.filter(
-      (h) => h.isRecurring || h.date.substring(0, 4) === year.toString()
+      (h) => h.isRecurring || h.date.substring(0, 4) === year.toString(),
     );
 
     const computedHolidays = activeHolidays
       .map((h) => ({
         holiday: h,
-        origDateStr: h.isRecurring
-          ? `${year}-${h.date.substring(5)}`
-          : h.date,
+        origDateStr: h.isRecurring ? `${year}-${h.date.substring(5)}` : h.date,
       }))
       .sort((a, b) => a.origDateStr.localeCompare(b.origDateStr));
 
     // Map: effectiveDate → { holiday, originalDate }
-    const observedDates = new Map<string, { holiday: Holiday; originalDate: string }>();
+    const observedDates = new Map<
+      string,
+      { holiday: Holiday; originalDate: string }
+    >();
 
     for (const item of computedHolidays) {
       let effDate = item.origDateStr;
@@ -200,7 +204,10 @@ export class HolidaysService {
         effDate = effDateObj.toISOString().split('T')[0];
       }
 
-      observedDates.set(effDate, { holiday: item.holiday, originalDate: item.origDateStr });
+      observedDates.set(effDate, {
+        holiday: item.holiday,
+        originalDate: item.origDateStr,
+      });
     }
 
     const found = observedDates.get(dateStr);

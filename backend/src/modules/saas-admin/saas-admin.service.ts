@@ -555,7 +555,9 @@ export class SaasAdminService implements OnModuleInit {
     timeframe: string,
     academicYear?: string,
     termName?: string,
-  ): Promise<Map<string, { start: Date; end: Date; weekdays: number; periodEnd: Date }>> {
+  ): Promise<
+    Map<string, { start: Date; end: Date; weekdays: number; periodEnd: Date }>
+  > {
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
 
@@ -841,7 +843,6 @@ export class SaasAdminService implements OnModuleInit {
         .getRawMany();
     }
 
-
     const enrolledStatsRaw = await this.employeeRepo
       .createQueryBuilder('e')
       .select('e.tenantId', 'tenantId')
@@ -1049,7 +1050,7 @@ export class SaasAdminService implements OnModuleInit {
         const enrolledFallback = enrolledCount * rangeParams.weekdays;
         expectedInTimeframe = Math.max(enrolledFallback, presentCount);
       }
-      
+
       const approvedLeaveDays = leaveMap.get(tenant.id) || 0;
 
       // Use two-decimal precision for rates; keep values numeric so frontend can format as needed
@@ -1109,17 +1110,20 @@ export class SaasAdminService implements OnModuleInit {
         // to decide whether the school existed at all during the requested period.
         // A school registered on Jan 6 should appear in Second Term (Jan–Apr)
         // and the full academic year, but NOT in First Term (Sep–Dec).
-        const periodEndMs = range?.periodEnd?.getTime() ?? range?.end?.getTime() ?? 0;
+        const periodEndMs =
+          range?.periodEnd?.getTime() ?? range?.end?.getTime() ?? 0;
         if (periodEndMs > 0 && new Date(school.createdAt) > range!.periodEnd) {
           return false;
         }
         // Only exclude schools that have zero enrolled workforce AND zero presence
         // data. A school with enrolled employees but no logs yet should still
         // be visible (it will show a 0% or '—' rate).
-        return school.metrics.expectedEmployeeDays > 0 || school.metrics.employees > 0;
+        return (
+          school.metrics.expectedEmployeeDays > 0 ||
+          school.metrics.employees > 0
+        );
       });
     }
-
 
     if (cohort) {
       if (cohort === 'excellent') {
@@ -1951,14 +1955,22 @@ export class SaasAdminService implements OnModuleInit {
 
     const limitNum = Number(limit);
     const isUnlimited = limitNum === -1;
-    const safeLimit = isUnlimited ? finalResults.length : Math.min(Math.max(limitNum || 50, 1), 100);
+    const safeLimit = isUnlimited
+      ? finalResults.length
+      : Math.min(Math.max(limitNum || 50, 1), 100);
     const total = finalResults.length;
-    const totalPages = isUnlimited ? 1 : Math.max(1, Math.ceil(total / safeLimit));
-    const safePage = isUnlimited ? 1 : Math.min(Math.max(Number(page) || 1, 1), totalPages);
+    const totalPages = isUnlimited
+      ? 1
+      : Math.max(1, Math.ceil(total / safeLimit));
+    const safePage = isUnlimited
+      ? 1
+      : Math.min(Math.max(Number(page) || 1, 1), totalPages);
     const offset = isUnlimited ? 0 : (safePage - 1) * safeLimit;
 
     return {
-      data: isUnlimited ? finalResults : finalResults.slice(offset, offset + safeLimit),
+      data: isUnlimited
+        ? finalResults
+        : finalResults.slice(offset, offset + safeLimit),
       total,
       page: safePage,
       limit: safeLimit,
@@ -2444,10 +2456,12 @@ export class SaasAdminService implements OnModuleInit {
         const presenceDiff = b.metrics.presenceRate - a.metrics.presenceRate;
         if (presenceDiff !== 0) return presenceDiff;
         // Tie-break 2: punctuality rate (more on-time events wins)
-        const punctualityDiff = b.metrics.punctualityRate - a.metrics.punctualityRate;
+        const punctualityDiff =
+          b.metrics.punctualityRate - a.metrics.punctualityRate;
         if (punctualityDiff !== 0) return punctualityDiff;
         // Tie-break 3: hours completion rate (more hours completed wins)
-        const hoursDiff = b.metrics.hoursCompletionRate - a.metrics.hoursCompletionRate;
+        const hoursDiff =
+          b.metrics.hoursCompletionRate - a.metrics.hoursCompletionRate;
         if (hoursDiff !== 0) return hoursDiff;
         // Tie-break 4: alphabetical by name (deterministic final ordering)
         return String(a.name ?? '').localeCompare(String(b.name ?? ''));
@@ -2474,11 +2488,20 @@ export class SaasAdminService implements OnModuleInit {
   }
 
   /** Delete a school tenant permanently (hard-purge all associated tables via database cascade). */
-  async deleteTenant(id: string, adminUser: User, adminPassword?: string): Promise<void> {
+  async deleteTenant(
+    id: string,
+    adminUser: User,
+    adminPassword?: string,
+  ): Promise<void> {
     if (!adminPassword) {
-      throw new BadRequestException('Admin password is required to delete a tenant.');
+      throw new BadRequestException(
+        'Admin password is required to delete a tenant.',
+      );
     }
-    const isPasswordValid = await bcrypt.compare(adminPassword, adminUser.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      adminPassword,
+      adminUser.passwordHash,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid admin password.');
     }

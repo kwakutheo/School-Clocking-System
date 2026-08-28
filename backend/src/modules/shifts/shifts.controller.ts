@@ -64,7 +64,9 @@ export class ShiftsController {
   @Delete(':id')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('shifts.manage')
-  @ApiOperation({ summary: 'Delete a shift (password required if employees are assigned)' })
+  @ApiOperation({
+    summary: 'Delete a shift (password required if employees are assigned)',
+  })
   remove(
     @Param('id') id: string,
     @CurrentUser() user: User,

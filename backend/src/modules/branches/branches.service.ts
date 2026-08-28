@@ -96,7 +96,7 @@ export class BranchesService {
   async checkUsage(id: string): Promise<{ count: number; names: string[] }> {
     await this.findById(id); // enforce tenant scope / 404
     const employees = await this.employeeRepo.find({
-      where: { branch: { id } } as any,
+      where: { branch: { id } },
       relations: ['user'],
     });
     return {

@@ -12,10 +12,20 @@ const backendManifestPath = path.join(
   rootDir,
   'backend/src/modules/mobile-app/mobile-app.manifest.ts',
 );
+// In CI, APKs live in the Flutter build output directory.
+// Pass --apk-dir <path> to validate against a custom directory.
+const apkDirArg = (() => {
+  const idx = process.argv.indexOf('--apk-dir');
+  return idx !== -1 ? process.argv[idx + 1] : null;
+})();
+const apkDir = apkDirArg
+  ? path.resolve(apkDirArg)
+  : path.join(rootDir, 'build/app/outputs/flutter-apk');
+
 const apkFiles = {
-  arm64: 'dashboard/public/apps/school-clocking-arm64.apk',
-  arm32: 'dashboard/public/apps/school-clocking-arm32.apk',
-  universal: 'dashboard/public/apps/school-clocking-universal.apk',
+  arm64: path.join(apkDir, 'school-clocking-arm64.apk'),
+  arm32: path.join(apkDir, 'school-clocking-arm32.apk'),
+  universal: path.join(apkDir, 'school-clocking-universal.apk'),
 };
 
 function fail(message) {
@@ -111,10 +121,14 @@ if (dashboardManifest.versionCode !== backendManifest.versionCode) {
   );
 }
 
-for (const [key, relativePath] of Object.entries(apkFiles)) {
-  const apkPath = path.join(rootDir, relativePath);
+for (const [key, apkPath] of Object.entries(apkFiles)) {
   if (!fs.existsSync(apkPath)) {
-    fail(`${relativePath} does not exist.`);
+    if (process.env.GITHUB_ACTIONS === 'true') {
+      fail(`${path.relative(rootDir, apkPath)} does not exist.`);
+    } else {
+      console.warn(`[WARNING] Skipping APK validation for ${key}: ${path.relative(rootDir, apkPath)} does not exist locally.`);
+      continue;
+    }
   }
 
   const apkVersion = getApkVersion(apkPath);
@@ -125,13 +139,13 @@ for (const [key, relativePath] of Object.entries(apkFiles)) {
 
   if (apkVersion.versionName !== dashboardManifest.versionName) {
     fail(
-      `${relativePath} versionName ${apkVersion.versionName} does not match manifest ${dashboardManifest.versionName}.`,
+      `${path.relative(rootDir, apkPath)} versionName ${apkVersion.versionName} does not match manifest ${dashboardManifest.versionName}.`,
     );
   }
 
   if (apkVersion.versionCode !== expectedVersionCode) {
     fail(
-      `${relativePath} versionCode ${apkVersion.versionCode} does not match expected ${expectedVersionCode}.`,
+      `${path.relative(rootDir, apkPath)} versionCode ${apkVersion.versionCode} does not match expected ${expectedVersionCode}.`,
     );
   }
 
@@ -139,7 +153,7 @@ for (const [key, relativePath] of Object.entries(apkFiles)) {
   const actualSize = fs.statSync(apkPath).size;
   if (manifestSize !== actualSize) {
     fail(
-      `${relativePath} size ${actualSize} does not match manifest size ${manifestSize}.`,
+      `${path.relative(rootDir, apkPath)} size ${actualSize} does not match manifest size ${manifestSize}.`,
     );
   }
 }

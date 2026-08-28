@@ -520,9 +520,7 @@ export class AttendanceService {
     // ── Non-working day guard ─────────────────────────────────────────────
     const dayStatus = await this._checkNonWorkingDay(now);
     if (dayStatus.isNonWorking) {
-      throw new BadRequestException(
-        `Action denied: ${dayStatus.message}`,
-      );
+      throw new BadRequestException(`Action denied: ${dayStatus.message}`);
     }
 
     // ── Target employee Leave guard ───────────────────────────────────────
@@ -628,7 +626,9 @@ export class AttendanceService {
 
     if (dto.type === AttendanceType.CLOCK_IN && targetEmployee.shift) {
       const grace = targetEmployee.shift.graceMinutes || 0;
-      const [sHours, sMins] = targetEmployee.shift.startTime.split(':').map(Number);
+      const [sHours, sMins] = targetEmployee.shift.startTime
+        .split(':')
+        .map(Number);
       const shiftStart = new Date(now);
       shiftStart.setHours(sHours, sMins + grace, 0, 0);
       isLate = now > shiftStart;
@@ -642,7 +642,9 @@ export class AttendanceService {
     }
 
     if (dto.type === AttendanceType.CLOCK_OUT && targetEmployee.shift) {
-      const [eHours, eMins] = targetEmployee.shift.endTime.split(':').map(Number);
+      const [eHours, eMins] = targetEmployee.shift.endTime
+        .split(':')
+        .map(Number);
       const shiftEnd = new Date(now);
       shiftEnd.setHours(eHours, eMins, 0, 0);
       isEarlyOut = now < shiftEnd;
@@ -1479,16 +1481,26 @@ export class AttendanceService {
     let upcomingHolidayDate: string | null = null;
     const nowMs = today.getTime();
 
-    const currentYearHolidays = await this.holidays.findCurrentYear(today.getFullYear());
-    const nextYearHolidays = await this.holidays.findCurrentYear(today.getFullYear() + 1);
-    
+    const currentYearHolidays = await this.holidays.findCurrentYear(
+      today.getFullYear(),
+    );
+    const nextYearHolidays = await this.holidays.findCurrentYear(
+      today.getFullYear() + 1,
+    );
+
     const futureHolidays = [...currentYearHolidays, ...nextYearHolidays]
       .filter((h) => new Date(h.effectiveDate).getTime() > nowMs)
-      .sort((a, b) => new Date(a.effectiveDate).getTime() - new Date(b.effectiveDate).getTime());
+      .sort(
+        (a, b) =>
+          new Date(a.effectiveDate).getTime() -
+          new Date(b.effectiveDate).getTime(),
+      );
 
     if (futureHolidays.length > 0) {
       upcomingHolidayName = futureHolidays[0].name;
-      upcomingHolidayDate = new Date(futureHolidays[0].effectiveDate).toISOString();
+      upcomingHolidayDate = new Date(
+        futureHolidays[0].effectiveDate,
+      ).toISOString();
     }
 
     // 5. Determine Target Hours
@@ -1922,8 +1934,9 @@ export class AttendanceService {
       .getOne();
 
     if (deviceClaimedByOther) {
-      const claimedByName =
-        (deviceClaimedByOther.employee?.user?.fullName ?? 'ANOTHER EMPLOYEE').toUpperCase();
+      const claimedByName = (
+        deviceClaimedByOther.employee?.user?.fullName ?? 'ANOTHER EMPLOYEE'
+      ).toUpperCase();
       throw new BadRequestException(
         `This device has already been used to record attendance by ${claimedByName} for today. Each phone may only be used for one person's attendance per day. Please contact your admin. if you need assistance.`,
       );
@@ -1993,7 +2006,7 @@ export class AttendanceService {
     );
 
     const lowerSearch = search.toLowerCase();
-    
+
     let eligibleStaffRows = [...allStaffRows];
 
     // ── Eligibility filter (Applied Globally) ───────────────────────────────
@@ -2015,7 +2028,7 @@ export class AttendanceService {
       globalRank: index + 1,
     }));
 
-    let schoolStaff = staffWithGlobalRank.filter(
+    const schoolStaff = staffWithGlobalRank.filter(
       (row) => row.school?.id === tenantId,
     );
 
@@ -2025,8 +2038,12 @@ export class AttendanceService {
     }));
 
     const staffWithLocalRank = schoolStaffWithLocalRank.filter((row) => {
-      const nameMatch = String(row.name ?? '').toLowerCase().includes(lowerSearch);
-      const codeMatch = String(row.employeeCode ?? '').toLowerCase().includes(lowerSearch);
+      const nameMatch = String(row.name ?? '')
+        .toLowerCase()
+        .includes(lowerSearch);
+      const codeMatch = String(row.employeeCode ?? '')
+        .toLowerCase()
+        .includes(lowerSearch);
       return nameMatch || codeMatch;
     });
 
@@ -2054,7 +2071,7 @@ export class AttendanceService {
     const globalSchoolRankIndex = allTenants.results.findIndex(
       (t) => t.id === tenantId,
     );
-    
+
     const schoolGlobalData =
       globalSchoolRankIndex !== -1
         ? allTenants.results[globalSchoolRankIndex]
@@ -2089,7 +2106,13 @@ export class AttendanceService {
     // 1. Weekend
     const currentDay = date.getDay();
     if (currentDay === 0 || currentDay === 6) {
-      return { isNonWorking: true, type: 'weekend', name: 'Weekend', message: 'Today is a weekend. Clocking is not allowed on non-working days.' };
+      return {
+        isNonWorking: true,
+        type: 'weekend',
+        name: 'Weekend',
+        message:
+          'Today is a weekend. Clocking is not allowed on non-working days.',
+      };
     }
 
     // 2. Public Holiday
@@ -2100,19 +2123,36 @@ export class AttendanceService {
       if (isShifted) {
         // Format the original date as a readable string e.g. "Wednesday, 01 July"
         const orig = new Date(originalDate);
-        const dayName = orig.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' });
-        const formatted = orig.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', timeZone: 'UTC' });
+        const dayName = orig.toLocaleDateString('en-GB', {
+          weekday: 'long',
+          timeZone: 'UTC',
+        });
+        const formatted = orig.toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'long',
+          timeZone: 'UTC',
+        });
         message = `Today is the observed holiday for ${holiday.name} (postponed from ${dayName}, ${formatted}). Clocking is not allowed.`;
       } else {
         message = `Today is a public holiday (${holiday.name}). Clocking is not allowed on non-working days.`;
       }
-      return { isNonWorking: true, type: 'holiday', name: holiday.name, message };
+      return {
+        isNonWorking: true,
+        type: 'holiday',
+        name: holiday.name,
+        message,
+      };
     }
 
     // 3. Academic Calendar Break
     const breakName = await this.academicCalendar.isBreak(date);
     if (breakName) {
-      return { isNonWorking: true, type: 'break', name: breakName, message: `Today falls within a school break (${breakName}). Clocking is not allowed.` };
+      return {
+        isNonWorking: true,
+        type: 'break',
+        name: breakName,
+        message: `Today falls within a school break (${breakName}). Clocking is not allowed.`,
+      };
     }
 
     // 4. Vacation (Outside any term)
@@ -2122,7 +2162,13 @@ export class AttendanceService {
     if (allTerms && allTerms.length > 0) {
       const term = await this.academicCalendar.getTermForDate(date);
       if (!term) {
-        return { isNonWorking: true, type: 'vacation', name: 'Vacation', message: 'Today is outside of the academic term (vacation period). Clocking is not allowed.' };
+        return {
+          isNonWorking: true,
+          type: 'vacation',
+          name: 'Vacation',
+          message:
+            'Today is outside of the academic term (vacation period). Clocking is not allowed.',
+        };
       }
     }
 

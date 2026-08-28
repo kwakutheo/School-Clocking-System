@@ -180,14 +180,7 @@ export class AttendanceSummaryJob {
     for (const tenant of tenants) {
       const tSet = new Set<string>(globalSet);
       for (const h of schoolHolidays.filter((h) => h.tenantId === tenant.id)) {
-        this.expandHolidayDates(
-          h,
-          startYear,
-          endYear,
-          startStr,
-          endStr,
-          tSet,
-        );
+        this.expandHolidayDates(h, startYear, endYear, startStr, endStr, tSet);
       }
       holidayExclusionByTenant.set(tenant.id, tSet);
     }

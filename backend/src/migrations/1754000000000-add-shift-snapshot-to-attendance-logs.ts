@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddShiftSnapshotToAttendanceLogs1754000000000
-  implements MigrationInterface
-{
+export class AddShiftSnapshotToAttendanceLogs1754000000000 implements MigrationInterface {
   name = 'AddShiftSnapshotToAttendanceLogs1754000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

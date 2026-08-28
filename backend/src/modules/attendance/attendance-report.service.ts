@@ -487,7 +487,7 @@ export class AttendanceReportService {
 
     for (let year = startYear; year <= endYear; year++) {
       const activeHolidays = holidays.filter(
-        (h) => h.isRecurring || h.date.substring(0, 4) === year.toString()
+        (h) => h.isRecurring || h.date.substring(0, 4) === year.toString(),
       );
 
       const computedHolidays = activeHolidays
@@ -561,7 +561,6 @@ export class AttendanceReportService {
       let isExcusedLate = false;
       let excuseReason: string | null = null;
 
-
       if (clockIn || clockOut) {
         daysWorked++;
 
@@ -581,8 +580,7 @@ export class AttendanceReportService {
           const shiftStart = this._timeToMinutes(employee.shift.startTime);
           const grace = employee.shift.graceMinutes || 0;
           const actualIn =
-            clockIn.timestamp.getHours() * 60 +
-            clockIn.timestamp.getMinutes();
+            clockIn.timestamp.getHours() * 60 + clockIn.timestamp.getMinutes();
           if (actualIn > shiftStart + grace) {
             isLate = true;
             isExcusedLate = clockIn.isExcusedLate || false;

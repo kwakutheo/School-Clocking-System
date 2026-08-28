@@ -333,8 +333,7 @@ class NotificationService {
       final cached = box.get('home_data_cache');
       if (cached == null) return;
 
-      final cachedData =
-          HomeDataModel.fromJson(deepCastMap(cached));
+      final cachedData = HomeDataModel.fromJson(deepCastMap(cached));
       final trueNow = await sl<TimeService>().getGhanaTimeAsync();
       final effectiveData =
           OfflineStateEngine.recomputeForOfflineDay(cachedData, trueNow);

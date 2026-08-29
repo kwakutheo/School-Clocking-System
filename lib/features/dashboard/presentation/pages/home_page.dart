@@ -172,6 +172,8 @@ class _DashboardTab extends StatefulWidget {
 
 class _DashboardTabState extends State<_DashboardTab>
     with WidgetsBindingObserver {
+  static const Duration _homeDataRefreshTimeout = Duration(seconds: 8);
+
   HomeDataModel? _serverBaseline;
   HomeDataEntity? _data;
   bool _isLoading = true;
@@ -228,6 +230,13 @@ class _DashboardTabState extends State<_DashboardTab>
 
   Future<void> _initData() async {
     // 1. Try to load from cache immediately for "Instant-On"
+    final loadedFromCache = _loadCachedHomeData();
+
+    // 2. Refresh from network without blocking offline clock access.
+    await _loadData(silent: loadedFromCache);
+  }
+
+  bool _loadCachedHomeData() {
     final box = Hive.box<Map>(AppConstants.userBox);
     final cached = box.get('home_data_cache');
     if (cached != null) {
@@ -252,14 +261,39 @@ class _DashboardTabState extends State<_DashboardTab>
         // succeeds later, scheduleShiftReminders will be called again
         // (it cancels and re-schedules, so this is safe / idempotent).
         sl<NotificationService>().scheduleShiftReminders(effectiveData);
+        return true;
       } catch (e) {
         debugPrint('Cache corrupted: $e');
         // Cache corrupted, just move on to network load
       }
     }
 
-    // 2. Load from network
-    await _loadData();
+    return false;
+  }
+
+  void _showOfflineFallback({required bool silent}) {
+    if (!mounted) return;
+
+    if (_serverBaseline != null) {
+      final now = sl<TimeService>().currentGhanaTime;
+      setState(() {
+        _data = OfflineStateEngine.recomputeForOfflineDay(
+          _serverBaseline!,
+          now,
+        );
+        _isLoading = false;
+      });
+      return;
+    }
+
+    if (_data != null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    if (_loadCachedHomeData()) return;
+
+    setState(() => _isLoading = false);
   }
 
   Future<void> _loadData({bool silent = false}) async {
@@ -271,7 +305,9 @@ class _DashboardTabState extends State<_DashboardTab>
     }
 
     try {
-      final res = await sl<AttendanceRepository>().getHomeData();
+      final res = await sl<AttendanceRepository>()
+          .getHomeData()
+          .timeout(_homeDataRefreshTimeout);
 
       if (mounted && currentFetchVersion == _fetchVersion) {
         res.fold(
@@ -279,12 +315,9 @@ class _DashboardTabState extends State<_DashboardTab>
             if (!silent) {
               // Optional: show error snackbar
             }
-            if (_serverBaseline != null && f is NetworkFailure) {
-              final now = sl<TimeService>().currentGhanaTime;
-              setState(() {
-                _data = OfflineStateEngine.recomputeForOfflineDay(
-                    _serverBaseline!, now);
-              });
+            if (f is NetworkFailure || _serverBaseline != null || _data != null) {
+              _showOfflineFallback(silent: silent);
+              return;
             }
             setState(() => _isLoading = false);
           },
@@ -319,8 +352,15 @@ class _DashboardTabState extends State<_DashboardTab>
           },
         );
       }
+    } on TimeoutException {
+      if (mounted && currentFetchVersion == _fetchVersion) {
+        _showOfflineFallback(silent: silent);
+      }
     } catch (e) {
       debugPrint('Error loading home data: $e');
+      if (mounted && currentFetchVersion == _fetchVersion) {
+        _showOfflineFallback(silent: silent);
+      }
     }
   }
 
@@ -572,13 +612,7 @@ class _DashboardTabState extends State<_DashboardTab>
                         if (_isLoading && _data == null)
                           _buildSkeletonLoader(context)
                         else if (_data == null)
-                          const Center(
-                            child: Padding(
-                              padding: EdgeInsets.only(top: 40),
-                              child:
-                                  Text('Failed to load data. Pull to retry.'),
-                            ),
-                          )
+                          _buildOfflineAccessContent(context)
                         else
                           StreamBuilder<DateTime>(
                             stream: sl<TimeService>().trueTimeStream,
@@ -600,6 +634,79 @@ class _DashboardTabState extends State<_DashboardTab>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildOfflineAccessContent(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.orange.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.orange.withValues(alpha: 0.25)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.cloud_off_rounded,
+                      color: Colors.orange,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Offline Mode',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'The dashboard could not refresh because the internet connection is weak or unavailable. You can still open Time Clock and record attendance offline.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _loadData(),
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('Retry Dashboard'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        _QuickActionsCard(),
+        const SizedBox(height: 16),
+      ],
     );
   }
 

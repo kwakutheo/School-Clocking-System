@@ -88,10 +88,6 @@ const serwist = new Serwist({
       }),
     },
 
-    // ── 3. Read-safe API endpoints — Stale While Revalidate ─────────────────
-    // Serve the cached response immediately (zero network wait), then update
-    // the cache in the background. This makes the dashboard feel instant on
-    // repeat visits and keeps data available offline.
     {
       matcher: ({ url, request }) => {
         // Only intercept GET requests
@@ -123,8 +119,9 @@ const serwist = new Serwist({
           path.includes('/saas-admin/admin-users')
         );
       },
-      handler: new StaleWhileRevalidate({
+      handler: new NetworkFirst({
         cacheName: API_READ_CACHE,
+        networkTimeoutSeconds: 4,
         plugins: [
           {
             cacheWillUpdate: async ({ response }) =>
@@ -134,9 +131,6 @@ const serwist = new Serwist({
       }),
     },
 
-    // ── 4. Auth & permissions — Network First ────────────────────────────────
-    // Must be fresh when online; use a short timeout so it doesn't block the
-    // app for long if the backend is slow. Falls back to cache if offline.
     {
       matcher: ({ url, request }) => {
         if (request.method !== 'GET') return false;

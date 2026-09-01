@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tk_clocking_system/core/di/injection_container.dart';
 import 'package:tk_clocking_system/core/router/app_router.dart';
 import 'package:go_router/go_router.dart';
@@ -367,17 +368,16 @@ class _ProfilePageState extends State<ProfilePage> {
                             boundaryMargin: const EdgeInsets.all(20),
                             minScale: 0.5,
                             maxScale: 4,
-                            child: Image.network(
-                              user.photoUrl!,
+                            child: CachedNetworkImage(
+                              imageUrl: user.photoUrl!,
                               fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) =>
+                              errorWidget: (context, url, error) =>
                                   const Icon(
                                 Icons.broken_image_rounded,
                                 color: Colors.white54,
                                 size: 80,
                               ),
-                              loadingBuilder: (context, child, progress) {
-                                if (progress == null) return child;
+                              progressIndicatorBuilder: (context, url, progress) {
                                 return const Center(
                                   child: CircularProgressIndicator(
                                       color: Colors.white),
@@ -613,7 +613,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                                       foregroundImage: user
                                                                   .photoUrl !=
                                                               null
-                                                          ? NetworkImage(
+                                                          ? CachedNetworkImageProvider(
                                                               user.photoUrl!)
                                                           : const AssetImage(
                                                                   'assets/images/default_profile_photo.jpg')

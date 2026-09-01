@@ -6,6 +6,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tk_clocking_system/features/calendar/domain/repositories/calendar_repository.dart';
 import 'package:tk_clocking_system/core/constants/app_constants.dart';
 import 'package:tk_clocking_system/core/di/injection_container.dart';
@@ -550,7 +551,7 @@ class _DashboardTabState extends State<_DashboardTab>
                             radius: 30,
                             backgroundColor: colorScheme.primaryContainer,
                             foregroundImage: user?.photoUrl != null
-                                ? NetworkImage(user!.photoUrl!)
+                                ? CachedNetworkImageProvider(user!.photoUrl!)
                                 : const AssetImage(
                                         'assets/images/default_profile_photo.jpg')
                                     as ImageProvider,

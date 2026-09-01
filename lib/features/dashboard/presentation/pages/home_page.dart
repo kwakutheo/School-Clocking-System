@@ -6,7 +6,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:tk_clocking_system/core/errors/failures.dart';
 import 'package:tk_clocking_system/features/calendar/domain/repositories/calendar_repository.dart';
 import 'package:tk_clocking_system/core/constants/app_constants.dart';
 import 'package:tk_clocking_system/core/di/injection_container.dart';
@@ -29,6 +28,7 @@ import 'package:tk_clocking_system/shared/enums/attendance_type.dart';
 import 'package:tk_clocking_system/shared/enums/sync_status.dart';
 import 'package:tk_clocking_system/core/services/geofence_service.dart';
 import 'package:tk_clocking_system/core/services/notification_service.dart';
+import 'package:tk_clocking_system/core/services/connectivity_service.dart';
 import 'package:tk_clocking_system/core/services/time_service.dart';
 import 'package:tk_clocking_system/core/utils/offline_state_engine.dart';
 
@@ -180,7 +180,9 @@ class _DashboardTabState extends State<_DashboardTab>
   int _pendingCount = 0;
   Timer? _autoRefreshTimer;
   int _fetchVersion = 0;
+  bool _initialLoadFinished = false;
   StreamSubscription? _syncSubscription;
+  StreamSubscription<bool>? _connectivitySubscription;
 
   @override
   void initState() {
@@ -194,18 +196,20 @@ class _DashboardTabState extends State<_DashboardTab>
       _loadData(silent: true);
     });
 
-    // Listen for real-time silent sync events from Firebase Cloud Messaging.
-    // When the app is in the foreground, FCM silent messages arrive here via
-    // the onSyncEvent stream and trigger a dashboard refresh.
     _syncSubscription = sl<NotificationService>().onSyncEvent.listen((_) {
       if (mounted) {
         debugPrint('Received silent sync event, refreshing dashboard...');
         _loadData(silent: true);
       }
     });
-    // FCM token registration and onTokenRefresh listener are now handled
-    // globally in main.dart at boot time, so they work regardless of which
-    // screen the user navigates to.
+    _connectivitySubscription =
+        sl<ConnectivityService>().onConnectivityChanged.listen((isOnline) {
+      if (isOnline && mounted) {
+        debugPrint(
+            '[Dashboard] Connectivity restored — auto-retrying data load.');
+        _loadData(silent: _data != null);
+      }
+    });
   }
 
   @override
@@ -213,13 +217,10 @@ class _DashboardTabState extends State<_DashboardTab>
     WidgetsBinding.instance.removeObserver(this);
     _autoRefreshTimer?.cancel();
     _syncSubscription?.cancel();
+    _connectivitySubscription?.cancel();
     super.dispose();
   }
 
-  /// Called by the OS when the app returns to the foreground.
-  /// Reschedules reminders so that any manual device clock change is
-  /// corrected immediately — the offset is recalculated fresh on every
-  /// call to scheduleShiftReminders.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && mounted) {
@@ -233,7 +234,11 @@ class _DashboardTabState extends State<_DashboardTab>
     final loadedFromCache = _loadCachedHomeData();
 
     // 2. Refresh from network without blocking offline clock access.
-    await _loadData(silent: loadedFromCache);
+    try {
+      await _loadData(silent: loadedFromCache);
+    } finally {
+      _initialLoadFinished = true;
+    }
   }
 
   bool _loadCachedHomeData() {
@@ -241,8 +246,7 @@ class _DashboardTabState extends State<_DashboardTab>
     final cached = box.get('home_data_cache');
     if (cached != null) {
       try {
-        final cachedData =
-            HomeDataModel.fromJson(deepCastMap(cached));
+        final cachedData = HomeDataModel.fromJson(deepCastMap(cached));
 
         _serverBaseline = cachedData;
         final now = sl<TimeService>().currentGhanaTime;
@@ -257,21 +261,17 @@ class _DashboardTabState extends State<_DashboardTab>
           _isLoading = false;
         });
         sl<GeofenceService>().initData();
-        // Schedule reminders from cache immediately. If the network call
-        // succeeds later, scheduleShiftReminders will be called again
-        // (it cancels and re-schedules, so this is safe / idempotent).
         sl<NotificationService>().scheduleShiftReminders(effectiveData);
         return true;
       } catch (e) {
         debugPrint('Cache corrupted: $e');
-        // Cache corrupted, just move on to network load
       }
     }
 
     return false;
   }
 
-  void _showOfflineFallback({required bool silent}) {
+  void _showOfflineFallback() {
     if (!mounted) return;
 
     if (_serverBaseline != null) {
@@ -300,6 +300,12 @@ class _DashboardTabState extends State<_DashboardTab>
     _fetchVersion++;
     final currentFetchVersion = _fetchVersion;
 
+    if (!sl<ConnectivityService>().isOnline) {
+      if (mounted) setState(() => _isLoading = false);
+      debugPrint('[Dashboard] Device is offline — skipping network fetch.');
+      return;
+    }
+
     if (!silent && _data == null) {
       setState(() => _isLoading = true);
     }
@@ -309,19 +315,17 @@ class _DashboardTabState extends State<_DashboardTab>
           .getHomeData()
           .timeout(_homeDataRefreshTimeout);
 
-      if (mounted && currentFetchVersion == _fetchVersion) {
+      if (mounted) {
         res.fold(
           (f) {
             if (!silent) {
               // Optional: show error snackbar
             }
-            if (f is NetworkFailure || _serverBaseline != null || _data != null) {
-              _showOfflineFallback(silent: silent);
-              return;
-            }
-            setState(() => _isLoading = false);
+            _showOfflineFallback();
           },
           (data) {
+            if (currentFetchVersion != _fetchVersion) return;
+
             setState(() {
               if (data is HomeDataModel) {
                 _serverBaseline = data;
@@ -332,34 +336,20 @@ class _DashboardTabState extends State<_DashboardTab>
             sl<GeofenceService>().updateData(data);
             sl<GeofenceService>().checkGeofence(silent: silent);
 
-            // Fetch holidays quietly to ensure offline state engine has them cached
             sl<CalendarRepository>().getHolidays().then((_) {});
 
-            // Re-schedule OS-level local notifications to mirror the banners.
-            // This is idempotent — safe to call on every refresh.
             sl<NotificationService>().scheduleShiftReminders(data);
-
-            // Update cache safely
-            if (data is HomeDataModel) {
-              try {
-                final box = Hive.box<Map>(AppConstants.userBox);
-                final trustedNow = sl<TimeService>().currentGhanaTime;
-                box.put('home_data_cache', data.toJson(now: trustedNow));
-              } catch (e) {
-                debugPrint('Failed to save cache: $e');
-              }
-            }
           },
         );
       }
     } on TimeoutException {
-      if (mounted && currentFetchVersion == _fetchVersion) {
-        _showOfflineFallback(silent: silent);
+      if (mounted) {
+        _showOfflineFallback();
       }
     } catch (e) {
       debugPrint('Error loading home data: $e');
-      if (mounted && currentFetchVersion == _fetchVersion) {
-        _showOfflineFallback(silent: silent);
+      if (mounted) {
+        _showOfflineFallback();
       }
     }
   }
@@ -396,17 +386,11 @@ class _DashboardTabState extends State<_DashboardTab>
 
           _loadData(silent: true);
 
-          // Cancel shift reminders that are no longer relevant based on
-          // what action was just recorded.
           final notifService = sl<NotificationService>();
-          final type =
-              state.record.type; // AttendanceType from the recorded entity
+          final type = state.record.type;
           if (type == AttendanceType.clockIn) {
-            // Clocked in — cancel only the pre-shift / late warnings (IDs 200-203).
-            // Do NOT cancel ID 204; _loadData will schedule it correctly with fresh data.
             notifService.cancelPreShiftReminders();
           } else if (type == AttendanceType.clockOut) {
-            // Clocked out — cancel the "forgot to clock out" reminder.
             notifService.cancelClockOutReminder();
           }
         } else if (state is AttendanceSynced) {
@@ -473,7 +457,9 @@ class _DashboardTabState extends State<_DashboardTab>
           key: const Key('dashboard-tab'),
           onVisibilityChanged: (info) {
             if (info.visibleFraction > 0.5) {
-              _loadData(silent: true);
+              if (_initialLoadFinished || _data != null) {
+                _loadData(silent: true);
+              }
               _checkPending();
               context.read<AuthBloc>().add(const AuthSyncProfileEvent());
             }
@@ -612,7 +598,9 @@ class _DashboardTabState extends State<_DashboardTab>
                         if (_isLoading && _data == null)
                           _buildSkeletonLoader(context)
                         else if (_data == null)
-                          _buildOfflineAccessContent(context)
+                          _OfflineStatePlaceholder(
+                            onRetry: () => _loadData(),
+                          )
                         else
                           StreamBuilder<DateTime>(
                             stream: sl<TimeService>().trueTimeStream,
@@ -634,79 +622,6 @@ class _DashboardTabState extends State<_DashboardTab>
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildOfflineAccessContent(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.orange.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.orange.withValues(alpha: 0.25)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.cloud_off_rounded,
-                      color: Colors.orange,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Offline Mode',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'The dashboard could not refresh because the internet connection is weak or unavailable. You can still open Time Clock and record attendance offline.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _loadData(),
-                      icon: const Icon(Icons.refresh_rounded),
-                      label: const Text('Retry Dashboard'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        _QuickActionsCard(),
-        const SizedBox(height: 16),
-      ],
     );
   }
 
@@ -757,9 +672,6 @@ class _DashboardTabState extends State<_DashboardTab>
 
   Widget _buildHomeContent(
       BuildContext context, HomeDataEntity data, DateTime now) {
-    // ── Local Time Override ──────────────────────────────────────────────────
-    // Use the phone's own clock to decide if the shift has started.
-    // This removes the dependency on server timing for the Late banner.
     bool isPastStartTime = false;
     LateStatus effectiveLateStatus = data.lateStatus;
     DateTime? shiftStart;
@@ -768,18 +680,12 @@ class _DashboardTabState extends State<_DashboardTab>
     if (data.shiftStartTime != null) {
       shiftStart = _shiftStartForToday(data.shiftStartTime!, now);
       if (shiftStart != null) {
-        // Compute whether shift start is within the 2-hour pre-shift window.
         final diff = shiftStart.difference(now);
         isWithinTwoHours =
             diff.inSeconds > 0 && diff <= const Duration(hours: 2);
 
         isPastStartTime = now.isAfter(shiftStart);
 
-        // If the server hasn't caught up yet (still says 'none') but the
-        // phone clock says the shift has started, compute it locally.
-        // Use `hasClockedInToday` (server-provided) rather than `isClockedIn`.
-        // `isClockedIn` reflects the *current* state (last action), so after an
-        // early clock-out it would be false even though the user DID clock in.
         if (isPastStartTime &&
             !data.hasClockedInToday &&
             !data.forgotToClockOut &&
@@ -794,8 +700,6 @@ class _DashboardTabState extends State<_DashboardTab>
       }
     }
 
-    // Show countdown banner only in the 2-hour pre-shift window
-    // and only when the employee hasn't clocked in / it's a working day.
     final showCountdown = data.shiftStartTime != null &&
         isWithinTwoHours &&
         !isPastStartTime &&
@@ -814,14 +718,12 @@ class _DashboardTabState extends State<_DashboardTab>
           _ShiftCountdownBanner(
             shiftStartTime: data.shiftStartTime!,
             onFinished: () async {
-              // Wait 2s for the server clock to catch up before syncing.
               await Future.delayed(const Duration(seconds: 2));
               _loadData(silent: true);
             },
           ),
           const SizedBox(height: 16),
         ],
-        // Show admin override banner when today's clock-in was done by an admin
         if (data.adminOverrideName != null) ...[
           _AdminOverrideBanner(
             adminName: data.adminOverrideName!,
@@ -2022,6 +1924,81 @@ class _UpcomingScheduleCard extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Premium Offline State Placeholder ────────────────────────────────────────
+// Shown when _data == null and we are offline or the initial network call
+// failed. Disappears automatically when connectivity is restored because
+// _DashboardTabState listens to ConnectivityService and auto-retries.
+class _OfflineStatePlaceholder extends StatelessWidget {
+  const _OfflineStatePlaceholder({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Icon circle
+          Container(
+            width: 88,
+            height: 88,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: colorScheme.surfaceContainerHighest,
+              border: Border.all(
+                color: colorScheme.outline.withValues(alpha: 0.25),
+                width: 1.5,
+              ),
+            ),
+            child: Icon(
+              Icons.wifi_off_rounded,
+              size: 40,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Headline
+          Text(
+            'You\'re Offline',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Sub-headline
+          Text(
+            'Please check your internet connection.\nThe page will refresh automatically when you\'re back online.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 28),
+
+          // Retry button
+          FilledButton.tonalIcon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Try Again'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+            ),
+          ),
+        ],
       ),
     );
   }

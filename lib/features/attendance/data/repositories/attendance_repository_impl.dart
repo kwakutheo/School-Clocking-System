@@ -3,7 +3,8 @@ import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:tk_clocking_system/core/constants/app_constants.dart';
-import 'package:tk_clocking_system/core/errors/exceptions.dart' hide NetworkException;
+import 'package:tk_clocking_system/core/errors/exceptions.dart'
+    hide NetworkException;
 import 'package:tk_clocking_system/core/errors/failures.dart';
 import 'package:tk_clocking_system/core/network/api_client.dart';
 import 'package:tk_clocking_system/core/network/api_endpoints.dart';
@@ -44,6 +45,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
   final UptimeService _uptime;
 
   Box<Map> get _box => Hive.box<Map>(AppConstants.attendanceBox);
+  Box<Map> get _userBox => Hive.box<Map>(AppConstants.userBox);
 
   // ── Record attendance ─────────────────────────────────────────────────────
   @override
@@ -249,6 +251,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
         return const Left(ServerFailure('Empty home data.'));
       }
       final model = HomeDataModel.fromJson(response.data!);
+      await _cacheHomeData(model);
       return Right(model);
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionError ||
@@ -260,6 +263,16 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       return Left(ServerFailure(networkException.message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  Future<void> _cacheHomeData(HomeDataModel data) async {
+    try {
+      final trustedNow = _time.currentGhanaTime;
+      await _userBox.put('home_data_cache', data.toJson(now: trustedNow));
+      await _userBox.flush();
+    } catch (_) {
+      // Home data is still usable for the current screen even if persistence fails.
     }
   }
 

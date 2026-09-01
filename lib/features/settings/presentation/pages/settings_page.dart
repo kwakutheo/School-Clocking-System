@@ -273,15 +273,17 @@ class _SettingsPageState extends State<SettingsPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (!isDownloading && !needsPermission && errorMessage == null)
+                  if (!isDownloading &&
+                      !needsPermission &&
+                      errorMessage == null)
                     Text(
                       'A new version (v${update.versionName}.${update.versionCode}) is available.\n\n${update.releaseNotes}',
                     ),
                   if (errorMessage != null && !needsPermission)
                     Text(
                       errorMessage!,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error),
+                      style:
+                          TextStyle(color: Theme.of(context).colorScheme.error),
                     ),
                   if (needsPermission) ...[
                     Text(errorMessage ??
@@ -314,7 +316,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: const Text('Later'),
                   ),
                 // "Try Again" when APK is downloaded but needs permission
-                if (!isDownloading && needsPermission && downloadedApkPath != null)
+                if (!isDownloading &&
+                    needsPermission &&
+                    downloadedApkPath != null)
                   FilledButton(
                     onPressed: () => tryInstall(downloadedApkPath!),
                     child: const Text('Try Again'),
@@ -618,11 +622,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     statusColor = Colors.orange;
                     statusIcon = Icons.location_disabled_rounded;
                   } else if (inZone == true) {
-                    statusText = 'Inside School Boundary';
+                    statusText = 'Inside Work Zone';
                     statusColor = Colors.green;
                     statusIcon = Icons.domain_verification_rounded;
                   } else if (inZone == false) {
-                    statusText = 'Outside School Boundary';
+                    statusText = 'Outside Work Zone';
                     statusColor = cs.error;
                     statusIcon = Icons.wrong_location_rounded;
                   } else {

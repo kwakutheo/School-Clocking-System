@@ -82,6 +82,7 @@ class HomeDataModel extends HomeDataEntity {
       lastActivityType: lastActivityType,
       lastActivityTime: lastActivityTime,
       isClockedIn: json['isClockedIn'] as bool? ?? false,
+      isOnBreak: json['isOnBreak'] as bool? ?? false,
       clockedInTime: clockedInTime,
       forgotToClockOut: json['forgotToClockOut'] as bool? ?? false,
       hasClockedInToday: hasClockedInToday,

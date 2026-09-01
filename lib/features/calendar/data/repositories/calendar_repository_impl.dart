@@ -38,14 +38,16 @@ class CalendarRepositoryImpl implements CalendarRepository {
       final response = await apiClient.get('/holidays/current-year');
       final List<dynamic> data = response.data;
       final holidays = data
-          .cast<Map<String, dynamic>>()
-          .map((json) => HolidayModel.fromJson(json))
+          .whereType<Map>()
+          .map((json) => HolidayModel.fromJson(
+                Map<String, dynamic>.from(json),
+              ))
           .toList();
-      
+
       // Cache holidays for offline state engine
       final jsonList = holidays.map((h) => h.toJson()).toList();
       await box.put(AppConstants.holidaysCacheKey, {'data': jsonList});
-      
+
       return Right(holidays);
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionError ||
@@ -55,8 +57,10 @@ class CalendarRepositoryImpl implements CalendarRepository {
         if (cached != null && cached.containsKey('data')) {
           final data = cached['data'] as List<dynamic>;
           final holidays = data
-              .cast<Map<String, dynamic>>()
-              .map((json) => HolidayModel.fromJson(json))
+              .whereType<Map>()
+              .map((json) => HolidayModel.fromJson(
+                    Map<String, dynamic>.from(json),
+                  ))
               .toList();
           return Right(holidays);
         }

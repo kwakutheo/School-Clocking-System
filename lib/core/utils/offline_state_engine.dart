@@ -23,8 +23,10 @@ class OfflineStateEngine {
             '${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
         final holidays = cachedHolidays
-            .cast<Map<String, dynamic>>()
-            .map((json) => HolidayModel.fromJson(json))
+            .whereType<Map>()
+            .map((json) => HolidayModel.fromJson(
+                  Map<String, dynamic>.from(json),
+                ))
             .toList();
 
         for (final holiday in holidays) {

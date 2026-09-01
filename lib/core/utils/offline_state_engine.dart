@@ -30,8 +30,10 @@ class OfflineStateEngine {
             .toList();
 
         for (final holiday in holidays) {
-          if (holiday.date == nowStr ||
-              (holiday.isRecurring && holiday.date == nowStrNoYear)) {
+          final hDateStr = holiday.date.split('T').first;
+          final hDateStrNoYear = hDateStr.length >= 10 ? hDateStr.substring(5, 10) : hDateStr;
+          if (hDateStr == nowStr ||
+              (holiday.isRecurring && hDateStrNoYear == nowStrNoYear)) {
             isHoliday = true;
             holidayName = holiday.name;
             break;
@@ -93,7 +95,10 @@ class OfflineStateEngine {
 
     final validIncrementalRecords = todayRecords.where((record) {
       if (isStaleFromToday && stale.lastActivityTime != null) {
-        if (record.timestamp.isAfter(stale.lastActivityTime!)) return true;
+        // Add a 2-second buffer to prevent microsecond mismatches after JSON serialization
+        // from falsely triggering duplicate processing of the same synced record.
+        final staleWithBuffer = stale.lastActivityTime!.add(const Duration(seconds: 2));
+        if (record.timestamp.isAfter(staleWithBuffer)) return true;
         return false;
       }
       return true;
@@ -117,7 +122,7 @@ class OfflineStateEngine {
     final cacheTime =
         cacheTimestampStr != null ? DateTime.tryParse(cacheTimestampStr) : null;
 
-    if (isStaleFromToday && isClockedIn) {
+    if (isStaleFromToday && isClockedIn && !isOnBreak) {
       calcStart = cacheTime ?? clockedInTime;
     }
 
@@ -154,13 +159,31 @@ class OfflineStateEngine {
       } else if (record.type == AttendanceType.breakIn) {
         isOnBreak = true;
         isClockedIn = true;
+        
+        // Stop the clock
+        if (calcStart != null) {
+          DateTime calcEnd = record.timestamp;
+          if (shiftEnd != null && calcEnd.isAfter(shiftEnd)) {
+            calcEnd = shiftEnd;
+          }
+          if (calcEnd.isAfter(calcStart)) {
+            todayHours += calcEnd.difference(calcStart).inMinutes / 60.0;
+          }
+          calcStart = null;
+        }
       } else if (record.type == AttendanceType.breakOut) {
         isOnBreak = false;
         isClockedIn = true;
+        
+        // Restart the clock
+        calcStart = record.timestamp;
+        if (shiftStart != null && calcStart.isBefore(shiftStart)) {
+          calcStart = shiftStart;
+        }
       }
     }
 
-    if (isClockedIn && calcStart != null) {
+    if (isClockedIn && !isOnBreak && calcStart != null) {
       DateTime calcEnd = now;
       if (shiftEnd != null && calcEnd.isAfter(shiftEnd)) {
         calcEnd = shiftEnd;

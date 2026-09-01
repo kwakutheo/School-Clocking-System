@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -120,41 +122,71 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // ── Biometric toggle ──────────────────────────────────────────────────────
   Future<void> _toggleBiometric(bool value) async {
+    // Before applying the toggle, demand the user's password for verification.
+    final verified = await _verifyPasswordForBiometrics(value);
+
+    if (!verified) {
+      // If verification failed or dialog was dismissed, revert the visual toggle state
+      if (mounted) setState(() {});
+      return;
+    }
+
+    // Success! Update storage and state.
     await _storage.saveBiometricEnabled(value);
 
     if (value) {
-      // Enable: prompt for password to store credentials
-      await _showBiometricEnableDialog();
+      // Enabling: The password was already saved securely inside the dialog wrapper
+      if (mounted) setState(() => _biometricEnabled = true);
     } else {
-      // Disable: clear stored credentials
+      // Disabling: clear stored credentials
       await _storage.clearSecureCredentials();
       if (mounted) setState(() => _biometricEnabled = false);
     }
   }
 
-  Future<void> _showBiometricEnableDialog() async {
+  Future<bool> _verifyPasswordForBiometrics(bool enabling) async {
     final passwordController = TextEditingController();
+    final username = _storage.getOfflineIdentifier();
+
+    if (username == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('No active session found.'),
+              backgroundColor: Colors.red),
+        );
+      }
+      return false;
+    }
+
     bool obscure = true;
+    bool isVerifying = false;
+    String? errorText;
 
     final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (ctx, setStateDlg) => AlertDialog(
-          title: const Text('Enable Biometric Login'),
+          title: Text(
+              enabling ? 'Enable Biometric Login' : 'Disable Biometric Login'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Enter your password to store your credentials securely for biometric login.',
+              Text(
+                enabling
+                    ? 'Enter your password to verify your identity and securely store your credentials.'
+                    : 'Enter your password to verify your identity and disable biometric login.',
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: passwordController,
                 obscureText: obscure,
+                enabled: !isVerifying,
                 decoration: InputDecoration(
                   labelText: 'Password',
+                  errorText: errorText,
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
                     icon: Icon(obscure
@@ -169,38 +201,64 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, false),
+              onPressed:
+                  isVerifying ? null : () => Navigator.pop(dialogCtx, false),
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () {
-                if (passwordController.text.trim().isNotEmpty) {
-                  Navigator.pop(dialogCtx, true);
-                }
-              },
-              child: const Text('Enable'),
+              onPressed: isVerifying
+                  ? null
+                  : () async {
+                      final pwd = passwordController.text.trim();
+                      if (pwd.isEmpty) return;
+
+                      setStateDlg(() {
+                        isVerifying = true;
+                        errorText = null;
+                      });
+
+                      final storedHash = _storage.getOfflinePasswordHash();
+                      final enteredHash = _hashPassword(pwd);
+
+                      if (storedHash != null && enteredHash == storedHash) {
+                        Navigator.pop(dialogCtx, true);
+                      } else {
+                        setStateDlg(() {
+                          isVerifying = false;
+                          errorText = 'Incorrect password. Please try again.';
+                        });
+                      }
+                    },
+              child: isVerifying
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : Text(enabling ? 'Enable' : 'Disable'),
             ),
           ],
         ),
       ),
     );
 
-    if (confirmed == true && mounted) {
-      final username = _storage.getOfflineIdentifier();
-      if (username != null) {
-        await _storage.saveSecureIdentifier(username);
-        await _storage.saveSecurePassword(passwordController.text.trim());
-      }
-      setState(() => _biometricEnabled = true);
-    } else if (confirmed != true && mounted) {
-      // Revert preference if they canceled the dialog
-      await _storage.saveBiometricEnabled(false);
-      setState(() => _biometricEnabled = false);
-    }
+    final finalPassword = passwordController.text.trim();
     passwordController.dispose();
+
+    if (confirmed == true && enabling) {
+      await _storage.saveSecureIdentifier(username);
+      await _storage.saveSecurePassword(finalPassword);
+    }
+
+    return confirmed ?? false;
   }
 
-  // ── Check for updates ─────────────────────────────────────────────────────
+  String _hashPassword(String password) {
+    final bytes = utf8.encode(password);
+    return sha256.convert(bytes).toString();
+  }
+
   Future<void> _checkForUpdates() async {
     if (_checkingUpdate) return;
     setState(() => _checkingUpdate = true);
@@ -371,8 +429,103 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // ── Clear cache ───────────────────────────────────────────────────────────
   Future<void> _clearCache() async {
+    final username = _storage.getOfflineIdentifier();
+    if (username == null) {
+      _showSnack('No active session found.');
+      return;
+    }
+
+    final passwordController = TextEditingController();
+    bool obscure = true;
+    bool isVerifying = false;
+    String? errorText;
+
+    final passwordVerified = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setStateDlg) => AlertDialog(
+          title: const Text('Confirm Identity'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Enter your password to proceed. This action cannot be undone.',
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: obscure,
+                enabled: !isVerifying,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  errorText: errorText,
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(obscure
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined),
+                    onPressed: () => setStateDlg(() => obscure = !obscure),
+                  ),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed:
+                  isVerifying ? null : () => Navigator.pop(dialogCtx, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: isVerifying
+                  ? null
+                  : () async {
+                      final pwd = passwordController.text.trim();
+                      if (pwd.isEmpty) return;
+
+                      setStateDlg(() {
+                        isVerifying = true;
+                        errorText = null;
+                      });
+
+                      final storedHash = _storage.getOfflinePasswordHash();
+                      final enteredHash = _hashPassword(pwd);
+
+                      if (storedHash != null && enteredHash == storedHash) {
+                        Navigator.pop(dialogCtx, true);
+                      } else {
+                        setStateDlg(() {
+                          isVerifying = false;
+                          errorText = 'Incorrect password. Please try again.';
+                        });
+                      }
+                    },
+              child: isVerifying
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Confirm'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    passwordController.dispose();
+
+    if (passwordVerified != true || !mounted) return;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(

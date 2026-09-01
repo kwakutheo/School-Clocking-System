@@ -1,12 +1,9 @@
 import 'dart:async';
 import 'package:ntp/ntp.dart';
-import 'package:tk_clocking_system/core/errors/exceptions.dart';
 import 'package:tk_clocking_system/core/services/connectivity_service.dart';
 import 'package:tk_clocking_system/core/services/storage_service.dart';
 import 'package:tk_clocking_system/core/services/uptime_service.dart';
 
-/// Service responsible for validating device time against network time.
-/// Prevents time-tampering exploits (e.g. changing phone clock to clock in late).
 class TimeService {
   TimeService({
     required StorageService storage,
@@ -31,9 +28,8 @@ class TimeService {
 
   void _startTickerIfNeeded() {
     if (_ticker == null || !_ticker!.isActive) {
-      // Fire immediately so listeners get an initial value instantly
       getGhanaTimeAsync().then((now) => _trueTimeController.add(now));
-      
+
       _ticker = Timer.periodic(const Duration(seconds: 1), (_) async {
         final now = await getGhanaTimeAsync();
         _trueTimeController.add(now);
@@ -41,49 +37,34 @@ class TimeService {
     }
   }
 
-  /// Syncs with the NTP server if online.
-  /// Should be called on app startup.
   Future<void> syncTime() async {
-
     try {
       final ntpTime = await NTP.now(timeout: const Duration(seconds: 10));
       final deviceTime = DateTime.now();
-      
-      final offsetMillis = ntpTime.millisecondsSinceEpoch - deviceTime.millisecondsSinceEpoch;
-      
+
+      final offsetMillis =
+          ntpTime.millisecondsSinceEpoch - deviceTime.millisecondsSinceEpoch;
+
       await _storage.saveLastKnownTimeOffset(offsetMillis);
       await _storage.saveLastKnownTrueTime(ntpTime);
 
       final currentUptime = await _uptime.getUptimeMs();
       if (currentUptime > 0) {
-        final validatedBootTime = ntpTime.millisecondsSinceEpoch - currentUptime;
+        final validatedBootTime =
+            ntpTime.millisecondsSinceEpoch - currentUptime;
         await _storage.saveValidatedBootTime(validatedBootTime);
         await _storage.saveLastSavedUptime(currentUptime);
       }
-    } catch (_) {
-      // Silently fail if NTP is unreachable despite connectivity check
-    }
+    } catch (_) {}
   }
 
-  /// Calculates the safe, validated time.
-  /// Validates that time hasn't been tampered with backwards or unreasonably forwards.
-  /// Throws [TimeTamperingException] if manipulation is detected.
   Future<DateTime> getSafeDateTime() async {
     final trueTime = await getGhanaTimeAsync();
-    
-    // As a strict policy, we can choose to reject clocking if the phone's clock
-    // is wildly off (e.g., > 15 minutes), even though we know the true time.
-    // However, since we are fully independent of the phone's time now, we can 
-    // just securely use the true time and ignore their phone time completely.
     final deviceTime = DateTime.now().toUtc();
     final diffMins = deviceTime.difference(trueTime).inMinutes.abs();
-    
-    if (diffMins > 30) {
-      // We know their clock is wrong by more than 30 mins, but we will let them
-      // clock in anyway using the server/uptime time. We can just return trueTime.
-      // If we wanted to block them, we would throw TimeTamperingException here.
-    }
-    
+
+    if (diffMins > 30) {}
+
     return trueTime;
   }
 
@@ -93,14 +74,6 @@ class TimeService {
     return DateTime.now().add(Duration(milliseconds: offsetMillis)).toUtc();
   }
 
-  /// Asynchronously returns the hardware-backed true network time in Ghana (UTC).
-  /// This is the primary method used by the UI stream and clock-in logic.
-  ///
-  /// Priority order:
-  ///  1. NTP.now (online — perfect, anchors our boot time)
-  ///  2. validatedBootTime + currentUptime (same boot session — perfect offline)
-  ///  3. lastKnownTrueTime + currentUptime (post-reboot offline — good estimate)
-  ///  4. currentGhanaTime offset fallback (last resort)
   Future<DateTime> getGhanaTimeAsync() async {
     try {
       final currentUptime = await _uptime.getUptimeMs();
@@ -112,7 +85,8 @@ class TimeService {
           final ntpTime = await NTP.now(timeout: const Duration(seconds: 3));
           if (currentUptime > 0) {
             // Anchor the monotonic clock securely
-            await _storage.saveValidatedBootTime(ntpTime.millisecondsSinceEpoch - currentUptime);
+            await _storage.saveValidatedBootTime(
+                ntpTime.millisecondsSinceEpoch - currentUptime);
             await _storage.saveLastSavedUptime(currentUptime);
             await _storage.saveLastKnownTrueTime(ntpTime);
           }
@@ -129,9 +103,13 @@ class TimeService {
 
       // 2. Same boot session: uptime has only gone up
       //    Formula: trueNow = (ntpTime_at_sync - uptime_at_sync) + currentUptime
-      if (validatedBootTime != null && lastSavedUptime != null && currentUptime > 0) {
+      if (validatedBootTime != null &&
+          lastSavedUptime != null &&
+          currentUptime > 0) {
         if (currentUptime >= lastSavedUptime) {
-          final trueTime = DateTime.fromMillisecondsSinceEpoch(validatedBootTime + currentUptime).toUtc();
+          final trueTime = DateTime.fromMillisecondsSinceEpoch(
+                  validatedBootTime + currentUptime)
+              .toUtc();
           // Keep the saved uptime current so future ticks use the latest reference
           await _storage.saveLastSavedUptime(currentUptime);
           await _storage.saveLastKnownTrueTime(trueTime);
@@ -146,7 +124,8 @@ class TimeService {
         if (lastKnownTrueTime != null) {
           // We know the phone rebooted after lastKnownTrueTime.
           // The best we can do is: lastKnownTrueTime + currentUptime (time since this boot).
-          final estimatedTime = lastKnownTrueTime.add(Duration(milliseconds: currentUptime));
+          final estimatedTime =
+              lastKnownTrueTime.add(Duration(milliseconds: currentUptime));
           return estimatedTime.toUtc();
         }
       }
@@ -158,4 +137,3 @@ class TimeService {
     return currentGhanaTime;
   }
 }
-

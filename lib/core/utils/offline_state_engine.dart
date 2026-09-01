@@ -31,7 +31,8 @@ class OfflineStateEngine {
 
         for (final holiday in holidays) {
           final hDateStr = holiday.date.split('T').first;
-          final hDateStrNoYear = hDateStr.length >= 10 ? hDateStr.substring(5, 10) : hDateStr;
+          final hDateStrNoYear =
+              hDateStr.length >= 10 ? hDateStr.substring(5, 10) : hDateStr;
           if (hDateStr == nowStr ||
               (holiday.isRecurring && hDateStrNoYear == nowStrNoYear)) {
             isHoliday = true;
@@ -54,8 +55,7 @@ class OfflineStateEngine {
         final hour = int.tryParse(parts[0]);
         final minute = int.tryParse(parts[1]);
         if (hour != null && minute != null) {
-          shiftStart =
-              DateTime.utc(now.year, now.month, now.day, hour, minute);
+          shiftStart = DateTime.utc(now.year, now.month, now.day, hour, minute);
         }
       }
     }
@@ -95,9 +95,8 @@ class OfflineStateEngine {
 
     final validIncrementalRecords = todayRecords.where((record) {
       if (isStaleFromToday && stale.lastActivityTime != null) {
-        // Add a 2-second buffer to prevent microsecond mismatches after JSON serialization
-        // from falsely triggering duplicate processing of the same synced record.
-        final staleWithBuffer = stale.lastActivityTime!.add(const Duration(seconds: 2));
+        final staleWithBuffer =
+            stale.lastActivityTime!.add(const Duration(seconds: 2));
         if (record.timestamp.isAfter(staleWithBuffer)) return true;
         return false;
       }
@@ -107,7 +106,16 @@ class OfflineStateEngine {
     bool hasClockedInToday = isStaleFromToday ? stale.hasClockedInToday : false;
     bool isClockedIn = isStaleFromToday ? stale.isClockedIn : false;
     bool isOnBreak = isStaleFromToday ? stale.isOnBreak : false;
-    bool forgotToClockOut = isStaleFromToday ? stale.forgotToClockOut : false;
+
+    bool forgotToClockOut = stale.forgotToClockOut;
+    if (stale.isClockedIn &&
+        stale.clockedInTime != null &&
+        (stale.clockedInTime!.year != now.year ||
+            stale.clockedInTime!.month != now.month ||
+            stale.clockedInTime!.day != now.day)) {
+      forgotToClockOut = true;
+    }
+
     DateTime? clockedInTime = isStaleFromToday ? stale.clockedInTime : null;
     AttendanceType? lastActivityType =
         isStaleFromToday ? stale.lastActivityType : null;
@@ -159,7 +167,7 @@ class OfflineStateEngine {
       } else if (record.type == AttendanceType.breakIn) {
         isOnBreak = true;
         isClockedIn = true;
-        
+
         // Stop the clock
         if (calcStart != null) {
           DateTime calcEnd = record.timestamp;
@@ -174,7 +182,7 @@ class OfflineStateEngine {
       } else if (record.type == AttendanceType.breakOut) {
         isOnBreak = false;
         isClockedIn = true;
-        
+
         // Restart the clock
         calcStart = record.timestamp;
         if (shiftStart != null && calcStart.isBefore(shiftStart)) {
@@ -219,8 +227,12 @@ class OfflineStateEngine {
         lateStatus =
             minutesLate > 180 ? LateStatus.persistentLate : LateStatus.late;
       }
-    } else if (!hasClockedInToday && shiftStart != null && shiftEnd != null && isWorkingDay) {
-      if (now.isAfter(shiftStart) && (now.isBefore(shiftEnd) || now.isAtSameMomentAs(shiftEnd))) {
+    } else if (!hasClockedInToday &&
+        shiftStart != null &&
+        shiftEnd != null &&
+        isWorkingDay) {
+      if (now.isAfter(shiftStart) &&
+          (now.isBefore(shiftEnd) || now.isAtSameMomentAs(shiftEnd))) {
         final minutesLate = now.difference(shiftStart).inMinutes;
         lateStatus =
             minutesLate > 180 ? LateStatus.persistentLate : LateStatus.late;

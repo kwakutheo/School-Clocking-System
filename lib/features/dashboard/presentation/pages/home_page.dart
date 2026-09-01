@@ -607,11 +607,14 @@ class _DashboardTabState extends State<_DashboardTab>
                             stream: sl<TimeService>().trueTimeStream,
                             initialData: sl<TimeService>().currentGhanaTime,
                             builder: (context, snapshot) {
+                              final now = snapshot.data ?? sl<TimeService>().currentGhanaTime;
+                              final effectiveData = _serverBaseline != null
+                                  ? OfflineStateEngine.recomputeForOfflineDay(_serverBaseline!, now)
+                                  : _data!;
                               return _buildHomeContent(
                                   context,
-                                  _data!,
-                                  snapshot.data ??
-                                      sl<TimeService>().currentGhanaTime);
+                                  effectiveData,
+                                  now);
                             },
                           ),
                       ]),

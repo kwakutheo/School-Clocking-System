@@ -40,7 +40,8 @@ const _kFcmNotificationIdSeed = 100000000;
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // This runs in a SEPARATE Dart isolate — we must reinitialize everything.
-  debugPrint('[FCM-BG] Message received: ${message.messageId}, data: ${message.data}');
+  debugPrint(
+      '[FCM-BG] Message received: ${message.messageId}, data: ${message.data}');
   try {
     // Step 1: Initialize Flutter plugin registrant for this isolate.
     DartPluginRegistrant.ensureInitialized();
@@ -84,7 +85,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
           await box.put('home_data_cache', data.toJson(now: trustedNow));
 
           // Step 8: Reschedule shift reminders from fresh server data.
-          final effectiveData = OfflineStateEngine.recomputeForOfflineDay(data, trustedNow);
+          final effectiveData =
+              OfflineStateEngine.recomputeForOfflineDay(data, trustedNow);
           await notifService.scheduleShiftReminders(effectiveData);
           debugPrint('[FCM-BG] Reminders rescheduled successfully.');
         }
@@ -257,7 +259,9 @@ class NotificationService {
     final canExact =
         await androidImplementation?.canScheduleExactNotifications() ?? false;
     if (!canExact) {
-      await androidImplementation?.requestExactAlarmsPermission();
+      debugPrint(
+          '[NOTIF] Exact alarm not granted — requesting. Will use inexact fallback.');
+      androidImplementation?.requestExactAlarmsPermission();
     }
 
     return true;
@@ -268,8 +272,6 @@ class NotificationService {
     final android = message.notification?.android;
 
     if (notification != null && android != null) {
-      // Use a deterministic, namespaced ID to prevent collision with local
-      // shift reminder IDs which occupy the 200,000,000+ range.
       final fcmId = _kFcmNotificationIdSeed +
           (message.messageId?.hashCode.abs() ??
                   DateTime.now().millisecondsSinceEpoch)
@@ -310,9 +312,6 @@ class NotificationService {
   }
 
   // ── Shift reminder scheduling ───────────────────────────────────────────────
-
-  /// Parses a "HH:mm", "HH:mm:ss", "hh:mm AM", etc. string into a [tz.TZDateTime]
-  /// for the date represented by [baseDate]. Returns null if malformed.
   tz.TZDateTime? _atDate(String rawTime, tz.TZDateTime baseDate) {
     try {
       final ghanaZone = tz.getLocation(_kGhanaTz);
@@ -351,7 +350,6 @@ class NotificationService {
           importance: Importance.high,
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
-          // Keep notification visible on lock screen
           visibility: NotificationVisibility.public,
         ),
         iOS: DarwinNotificationDetails(
@@ -362,21 +360,13 @@ class NotificationService {
       );
 
   Future<void> scheduleShiftReminders(HomeDataEntity data) async {
-    // Chain onto any in-progress scheduling call using a Completer-based
-    // async mutex. This ensures cancel→schedule sequences never overlap,
-    // preventing duplicate or missing reminders from concurrent callers
-    // (e.g. 30s timer, FCM sync event, and manual pull-to-refresh).
     final previous = _schedulingFuture;
     final completer = Completer<void>();
     _schedulingFuture = completer.future;
-
-    // Wait for the previous scheduling cycle to complete before starting.
     if (previous != null) {
       try {
         await previous;
-      } catch (_) {
-        // Ignore errors from a previous cycle — we still run our own.
-      }
+      } catch (_) {}
     }
 
     try {
@@ -390,10 +380,6 @@ class NotificationService {
       if (!canNotify) return;
 
       final ghanaZone = tz.getLocation(_kGhanaTz);
-
-      // Recalculate the true-time offset fresh on every scheduling call.
-      // This ensures clock drift (e.g. from manual device clock changes) is
-      // always corrected the next time reminders are rescheduled.
       final trueTimeUtc = await sl<TimeService>().getGhanaTimeAsync();
       final trueNow = tz.TZDateTime.from(trueTimeUtc, ghanaZone);
       final osNow = tz.TZDateTime.now(ghanaZone);
@@ -464,6 +450,18 @@ class NotificationService {
           isToday ? !data.hasClockedInToday && !data.forgotToClockOut : true;
 
       if (shouldScheduleClockInReminders) {
+        Duration escalateAfter = const Duration(hours: 3);
+        if (data.shiftEndTime != null) {
+          final shiftEndForDay = _atDate(data.shiftEndTime!, date);
+          if (shiftEndForDay != null) {
+            final shiftDuration = shiftEndForDay.difference(shiftStart);
+            if (shiftDuration.inMinutes > 0) {
+              escalateAfter =
+                  Duration(minutes: (shiftDuration.inMinutes * 0.5).round());
+            }
+          }
+        }
+
         jobs.addAll([
           _clockInJob(
             date,
@@ -492,9 +490,9 @@ class NotificationService {
             date,
             slot: 3,
             title: '🚨 Still Not Clocked In',
-            body: 'Your attendance is at risk. Please clock in immediately!',
-            scheduledDate:
-                shiftStart.add(const Duration(hours: 2)).add(osOffset),
+            body:
+                'Your shift is already halfway over. Please clock in immediately.',
+            scheduledDate: shiftStart.add(escalateAfter).add(osOffset),
           ),
         ].where(
             (job) => job.scheduledDate.isAfter(tz.TZDateTime.now(ghanaZone))));
@@ -601,11 +599,16 @@ class NotificationService {
 
       for (final raw in rawHolidays) {
         final holiday = Map<String, dynamic>.from(raw as Map);
-        final holidayDate = holiday['date']?.toString();
+        final rawDate = holiday['date']?.toString() ?? '';
+        final holidayDate = rawDate.split('T').first;
         final isRecurring = holiday['isRecurring'] == true;
 
+        final holidayDateNoYear = holidayDate.length >= 10
+            ? holidayDate.substring(5, 10)
+            : holidayDate;
+
         if (holidayDate == dateStr ||
-            (isRecurring && holidayDate == recurringDateStr)) {
+            (isRecurring && holidayDateNoYear == recurringDateStr)) {
           return true;
         }
       }
@@ -621,12 +624,6 @@ class NotificationService {
     return _kReminderIdSeed + dateKey * 10 + slot;
   }
 
-  /// Schedules a single notification. Swallows errors so a scheduling
-  /// failure never crashes the app.
-  ///
-  /// IMPORTANT: If [scheduledDate] is already in the past from the OS
-  /// clock's perspective, `zonedSchedule` silently drops it without firing.
-  /// We guard against this by immediately showing the notification instead.
   Future<void> _schedule({
     required int id,
     required String title,
@@ -682,9 +679,6 @@ class NotificationService {
 
   // ── Cancellation helpers ────────────────────────────────────────────────────
 
-  /// Cancels ALL shift reminder notifications (200–204).
-  /// Call this whenever a clock-in or clock-out happens so stale alerts
-  /// are never shown to the user.
   Future<void> cancelShiftReminders({tz.TZDateTime? referenceTime}) async {
     final ghanaZone = tz.getLocation(_kGhanaTz);
     final ref = referenceTime ?? tz.TZDateTime.now(ghanaZone);

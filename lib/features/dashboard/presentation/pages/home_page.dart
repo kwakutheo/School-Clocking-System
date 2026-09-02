@@ -1153,10 +1153,6 @@ class _LiveStatusBanner extends StatelessWidget {
       );
     }
 
-    // ── Absent today: shift is over and employee never clocked in ────────────
-    // This MUST be checked before the lateStatus blocks because an absent
-    // employee will still have lateStatus == persistentLate when the shift ends,
-    // which would otherwise block this banner from ever showing.
     if (data.isAbsentToday) {
       return _buildBanner(
         context,

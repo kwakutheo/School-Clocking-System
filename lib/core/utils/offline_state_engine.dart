@@ -204,6 +204,9 @@ class OfflineStateEngine {
     bool isShiftOver = false;
     if (shiftEnd != null) {
       isShiftOver = now.isAfter(shiftEnd);
+    } else if (shiftStart != null) {
+      // Fallback to 8 hours so they eventually get flagged as Absent instead of being stuck indefinitely
+      isShiftOver = now.isAfter(shiftStart.add(const Duration(hours: 8)));
     }
 
     if (isClockedIn && hasClockedInToday && shiftEnd != null) {
@@ -224,18 +227,33 @@ class OfflineStateEngine {
       if (clockedInTime.isAfter(shiftStart)) {
         isLateToday = true;
         final minutesLate = clockedInTime.difference(shiftStart).inMinutes;
-        lateStatus =
-            minutesLate > 120 ? LateStatus.persistentLate : LateStatus.late;
+        if (shiftEnd != null) {
+          final shiftDuration = shiftEnd.difference(shiftStart).inMinutes;
+          final escalateAfter =
+              shiftDuration > 0 ? (shiftDuration * 0.5).round() : 180;
+          lateStatus = minutesLate > escalateAfter
+              ? LateStatus.persistentLate
+              : LateStatus.late;
+        } else {
+          lateStatus = minutesLate > 180 ? LateStatus.persistentLate : LateStatus.late;
+        }
       }
-    } else if (!hasClockedInToday &&
-        shiftStart != null &&
-        shiftEnd != null &&
-        isWorkingDay) {
+    } else if (!hasClockedInToday && shiftStart != null && isWorkingDay) {
       if (now.isAfter(shiftStart) &&
-          (now.isBefore(shiftEnd) || now.isAtSameMomentAs(shiftEnd))) {
+          (shiftEnd == null ||
+              now.isBefore(shiftEnd) ||
+              now.isAtSameMomentAs(shiftEnd))) {
         final minutesLate = now.difference(shiftStart).inMinutes;
-        lateStatus =
-            minutesLate > 120 ? LateStatus.persistentLate : LateStatus.late;
+        int escalateAfter = 180;
+        if (shiftEnd != null) {
+          final shiftDuration = shiftEnd.difference(shiftStart).inMinutes;
+          if (shiftDuration > 0) {
+            escalateAfter = (shiftDuration * 0.5).round();
+          }
+        }
+        lateStatus = minutesLate > escalateAfter
+            ? LateStatus.persistentLate
+            : LateStatus.late;
       }
     }
 

@@ -698,8 +698,21 @@ class _DashboardTabState extends State<_DashboardTab>
             !data.isVacation &&
             effectiveLateStatus == LateStatus.none) {
           final minutesLate = now.difference(shiftStart).inMinutes;
-          effectiveLateStatus =
-              minutesLate > 120 ? LateStatus.persistentLate : LateStatus.late;
+
+          int escalateAfter = 180;
+          if (data.shiftEndTime != null) {
+            final shiftEnd = _shiftStartForToday(data.shiftEndTime!, now);
+            if (shiftEnd != null) {
+              final shiftDuration = shiftEnd.difference(shiftStart).inMinutes;
+              if (shiftDuration > 0) {
+                escalateAfter = (shiftDuration * 0.5).round();
+              }
+            }
+          }
+
+          effectiveLateStatus = minutesLate > escalateAfter
+              ? LateStatus.persistentLate
+              : LateStatus.late;
         }
       }
     }

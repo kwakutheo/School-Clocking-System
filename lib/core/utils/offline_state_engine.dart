@@ -225,7 +225,7 @@ class OfflineStateEngine {
         isLateToday = true;
         final minutesLate = clockedInTime.difference(shiftStart).inMinutes;
         lateStatus =
-            minutesLate > 180 ? LateStatus.persistentLate : LateStatus.late;
+            minutesLate > 120 ? LateStatus.persistentLate : LateStatus.late;
       }
     } else if (!hasClockedInToday &&
         shiftStart != null &&
@@ -235,7 +235,7 @@ class OfflineStateEngine {
           (now.isBefore(shiftEnd) || now.isAtSameMomentAs(shiftEnd))) {
         final minutesLate = now.difference(shiftStart).inMinutes;
         lateStatus =
-            minutesLate > 180 ? LateStatus.persistentLate : LateStatus.late;
+            minutesLate > 120 ? LateStatus.persistentLate : LateStatus.late;
       }
     }
 

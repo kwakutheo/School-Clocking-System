@@ -607,14 +607,14 @@ class _DashboardTabState extends State<_DashboardTab>
                             stream: sl<TimeService>().trueTimeStream,
                             initialData: sl<TimeService>().currentGhanaTime,
                             builder: (context, snapshot) {
-                              final now = snapshot.data ?? sl<TimeService>().currentGhanaTime;
+                              final now = snapshot.data ??
+                                  sl<TimeService>().currentGhanaTime;
                               final effectiveData = _serverBaseline != null
-                                  ? OfflineStateEngine.recomputeForOfflineDay(_serverBaseline!, now)
+                                  ? OfflineStateEngine.recomputeForOfflineDay(
+                                      _serverBaseline!, now)
                                   : _data!;
                               return _buildHomeContent(
-                                  context,
-                                  effectiveData,
-                                  now);
+                                  context, effectiveData, now);
                             },
                           ),
                       ]),
@@ -1156,7 +1156,6 @@ class _LiveStatusBanner extends StatelessWidget {
 
     // ── Late banners — only shown while the shift is still active and user hasn't clocked in
     if (!data.hasClockedInToday && lateStatus == LateStatus.persistentLate) {
-      // > 3 hours late: escalated, deep-orange urgent alert
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(

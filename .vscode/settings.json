@@ -12,5 +12,6 @@
         "build/windows/x64/plugins/permission_handler_windows/permission_handler_windows.slnx",
         "build/windows/x64/_deps/nuget-subbuild/nuget-populate.slnx",
         "build/windows/x64/plugins/jni/shared/jni_library.slnx"
-    ]
+    ],
+    "cmake.sourceDirectory": "D:/source_codes/school_clocking_system/windows"
 }

@@ -138,7 +138,6 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     }
   }
 
-  // ── History ───────────────────────────────────────────────────────────────
   @override
   Future<Either<Failure, List<AttendanceEntity>>> getHistory({
     required String employeeId,
@@ -158,11 +157,30 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
           .cast<Map<String, dynamic>>()
           .map(AttendanceModel.fromJson)
           .toList();
+
+      if (page == 1) {
+        await _userBox.put(
+          AppConstants.historyPageCacheKey,
+          {'data': records.map((r) => r.toJson()).toList()},
+        );
+      }
+
       return Right(records);
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
+        if (page == 1) {
+          final cached = _userBox.get(AppConstants.historyPageCacheKey);
+          if (cached != null && cached.containsKey('data')) {
+            final list = cached['data'] as List<dynamic>;
+            final records = list
+                .whereType<Map>()
+                .map((e) => AttendanceModel.fromJson(Map<String, dynamic>.from(e)))
+                .toList();
+            return Right(records);
+          }
+        }
         return const Left(NetworkFailure());
       }
       final networkException = NetworkException.fromDioError(e);
@@ -176,10 +194,6 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
   @override
   Future<Either<Failure, TermReportEntity>> getMyTermReport() async {
     try {
-      // 1. Fetch terms to find the active one.
-      // Use <dynamic> — Dio does not correctly handle List<dynamic> as a
-      // generic type parameter; the raw response.data will already be a
-      // List<dynamic> when the server returns a JSON array.
       final termsResponse = await _api.get<dynamic>(ApiEndpoints.terms);
       final rawTerms = termsResponse.data;
       final termsList = rawTerms is List ? rawTerms : <dynamic>[];
@@ -188,12 +202,6 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
           .map(AcademicTermModel.fromJson)
           .toList();
 
-      // Pick the term that contains today's date.
-      // All terms have isActive:true by default (backend default), so sorting
-      // by isActive alone is unreliable — we'd end up with the newest term,
-      // which may be in the future.  Instead we prefer the term whose date
-      // range actually contains today, then fall back to the most-recent past
-      // term, then whatever is first in the list.
       final now = await _time.getGhanaTimeAsync();
 
       AcademicTermModel? activeTerm =
@@ -213,7 +221,6 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
         return const Left(ServerFailure('No active term found.'));
       }
 
-      // 2. Fetch the report for the active term.
       final reportResponse = await _api.get<dynamic>(
         ApiEndpoints.myReportTerm(activeTerm.id),
       );
@@ -224,6 +231,12 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       }
 
       final report = TermReportModel.fromJson(rawReport);
+
+      await _userBox.put(
+        AppConstants.termReportCacheKey,
+        Map<String, dynamic>.from(rawReport),
+      );
+
       return Right(report);
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
@@ -233,6 +246,15 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
+        final cached = _userBox.get(AppConstants.termReportCacheKey);
+        if (cached != null) {
+          try {
+            final report = TermReportModel.fromJson(
+              Map<String, dynamic>.from(cached),
+            );
+            return Right(report);
+          } catch (_) {}
+        }
         return const Left(NetworkFailure());
       }
       final networkException = NetworkException.fromDioError(e);

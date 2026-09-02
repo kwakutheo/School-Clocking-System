@@ -36,6 +36,12 @@ abstract final class AppConstants {
   // ── Offline calendar cache keys (stored in userBox) ──────────────────────
   static const String holidaysCacheKey = 'holidays_cache';
   static const String vacationDatesCacheKey = 'vacation_dates_cache';
+  static const String termsCacheKey = 'terms_cache';
+
+  // ── Offline feature cache keys (stored in userBox) ───────────────────────
+  static const String historyPageCacheKey = 'history_page_cache';
+  static const String termReportCacheKey = 'term_report_cache';
+  static const String leavesCacheKey = 'leaves_cache';
 
   // ── Biometric login keys (Secure Storage / Prefs) ────────────────────────
   static const String secureIdentifierKey = 'secure_identifier';

@@ -16,6 +16,13 @@ class TermBreakModel extends TermBreakEntity {
       endDate: json['endDate'] as String? ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'startDate': startDate,
+        'endDate': endDate,
+      };
 }
 
 class AcademicTermModel extends AcademicTermEntity {
@@ -44,6 +51,18 @@ class AcademicTermModel extends AcademicTermEntity {
           .toList(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'startDate': startDate,
+        'endDate': endDate,
+        'academicYear': academicYear,
+        'isActive': isActive,
+        'breaks': breaks
+            .map((b) => (b as TermBreakModel).toJson())
+            .toList(),
+      };
 }
 
 class HolidayModel extends HolidayEntity {

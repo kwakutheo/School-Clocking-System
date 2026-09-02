@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -476,6 +478,18 @@ class _ProfilePageState extends State<ProfilePage> {
       // Cache updated user
       final storage = sl<StorageService>();
       await storage.saveUserJson(updatedUser.toJsonString());
+
+      if (_isChangingPassword) {
+        final pwdHash = sha256.convert(utf8.encode(password)).toString();
+        await storage.saveOfflinePasswordHash(pwdHash);
+        
+        final isBiometricEnabled = storage.getBiometricEnabled() ?? true;
+        if (isBiometricEnabled) {
+          await storage.saveSecurePassword(password);
+        } else {
+          await storage.clearSecureCredentials();
+        }
+      }
 
       // Refresh auth bloc user
       if (mounted) {

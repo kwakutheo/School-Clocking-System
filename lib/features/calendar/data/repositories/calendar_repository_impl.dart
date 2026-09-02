@@ -15,6 +15,7 @@ class CalendarRepositoryImpl implements CalendarRepository {
 
   @override
   Future<Either<String, List<AcademicTermEntity>>> getTerms() async {
+    final box = Hive.box<Map>(AppConstants.userBox);
     try {
       final response = await apiClient.get('/academic-calendar/terms/current-year');
       final List<dynamic> data = response.data;
@@ -22,8 +23,29 @@ class CalendarRepositoryImpl implements CalendarRepository {
           .cast<Map<String, dynamic>>()
           .map((json) => AcademicTermModel.fromJson(json))
           .toList();
+
+      await box.put(
+        AppConstants.termsCacheKey,
+        {'data': terms.map((t) => t.toJson()).toList()},
+      );
+
       return Right(terms);
     } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        final cached = box.get(AppConstants.termsCacheKey);
+        if (cached != null && cached.containsKey('data')) {
+          final list = cached['data'] as List<dynamic>;
+          final terms = list
+              .whereType<Map>()
+              .map((json) => AcademicTermModel.fromJson(
+                    Map<String, dynamic>.from(json),
+                  ))
+              .toList();
+          return Right(terms);
+        }
+      }
       final networkException = NetworkException.fromDioError(e);
       return Left(networkException.message);
     } catch (e) {

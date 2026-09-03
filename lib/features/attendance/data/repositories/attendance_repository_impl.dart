@@ -251,9 +251,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
         final cached = _userBox.get(AppConstants.termReportCacheKey);
         if (cached != null) {
           try {
-            final report = TermReportModel.fromJson(
-              Map<String, dynamic>.from(cached),
-            );
+            final Map<String, dynamic> jsonMap = jsonDecode(jsonEncode(cached));
+            final report = TermReportModel.fromJson(jsonMap);
             return Right(report);
           } catch (_) {}
         }

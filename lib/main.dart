@@ -54,15 +54,18 @@ void main() async {
   // regardless of whether the user navigates to the dashboard.
   try {
     final updateFcmToken = sl<UpdateFcmTokenUseCase>();
+    final storage = sl<StorageService>();
     final token = await FirebaseMessaging.instance.getToken();
-    if (token != null) {
+    if (token != null && storage.isLoggedIn) {
       await updateFcmToken(token: token);
       debugPrint('[Startup] FCM token registered: ${token.substring(0, 10)}...');
     }
     // Keep listening permanently — Firebase can rotate tokens at any time.
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
-      updateFcmToken(token: newToken).ignore();
-      debugPrint('[Startup] FCM token refreshed and re-registered.');
+      if (sl<StorageService>().isLoggedIn) {
+        updateFcmToken(token: newToken).ignore();
+        debugPrint('[Startup] FCM token refreshed and re-registered.');
+      }
     });
   } catch (e) {
     debugPrint('[Startup] FCM token registration failed: $e');

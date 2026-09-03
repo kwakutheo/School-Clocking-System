@@ -161,7 +161,7 @@ class NotificationService {
     );
 
     await _createAndroidChannels();
-    await ensureReminderPermissions();
+    await ensureReminderPermissions(promptUser: true);
 
     // Firebase Messaging setup
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
@@ -202,6 +202,8 @@ class NotificationService {
         _kHighChannelName,
         description: 'This channel is used for important notifications.',
         importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
       ),
     );
 
@@ -211,11 +213,13 @@ class NotificationService {
         _kReminderChannelName,
         description: _kReminderChannelDesc,
         importance: Importance.high,
+        playSound: true,
+        enableVibration: true,
       ),
     );
   }
 
-  Future<bool> ensureReminderPermissions() async {
+  Future<bool> ensureReminderPermissions({bool promptUser = false}) async {
     if (!Platform.isAndroid) {
       final ios = _notifications.resolvePlatformSpecificImplementation<
           IOSFlutterLocalNotificationsPlugin>();
@@ -236,32 +240,33 @@ class NotificationService {
       return iosGranted && macosGranted;
     }
 
-    final androidImplementation =
-        _notifications.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-
-    final pluginGranted =
-        await androidImplementation?.requestNotificationsPermission();
-    if (pluginGranted == false) {
-      debugPrint('[NOTIF] Notification permission denied by user.');
-      return false;
-    }
-
     final notifStatus = await Permission.notification.status;
     if (!notifStatus.isGranted) {
-      final requested = await Permission.notification.request();
-      if (!requested.isGranted) {
-        debugPrint('[NOTIF] Android notification permission is not granted.');
+      if (promptUser) {
+        final requested = await Permission.notification.request();
+        if (!requested.isGranted) {
+          return false;
+        }
+      } else {
         return false;
       }
     }
 
+    final androidImplementation =
+        _notifications.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
     final canExact =
         await androidImplementation?.canScheduleExactNotifications() ?? false;
-    if (!canExact) {
-      debugPrint(
-          '[NOTIF] Exact alarm not granted — requesting. Will use inexact fallback.');
-      androidImplementation?.requestExactAlarmsPermission();
+    if (!canExact && promptUser) {
+      await androidImplementation?.requestExactAlarmsPermission();
+    }
+
+    if (promptUser) {
+      final batteryStatus = await Permission.ignoreBatteryOptimizations.status;
+      if (!batteryStatus.isGranted) {
+        await Permission.ignoreBatteryOptimizations.request();
+      }
     }
 
     return true;
@@ -269,18 +274,19 @@ class NotificationService {
 
   Future<void> _showForegroundNotification(RemoteMessage message) async {
     final notification = message.notification;
-    final android = message.notification?.android;
+    final title = notification?.title ?? message.data['title']?.toString();
+    final body = notification?.body ?? message.data['body']?.toString();
 
-    if (notification != null && android != null) {
+    if (title != null || body != null) {
       final fcmId = _kFcmNotificationIdSeed +
           (message.messageId?.hashCode.abs() ??
                   DateTime.now().millisecondsSinceEpoch)
               .remainder(1000000);
       await _notifications.show(
         fcmId,
-        notification.title,
-        notification.body,
-        NotificationDetails(
+        title,
+        body,
+        const NotificationDetails(
           android: AndroidNotificationDetails(
             _kHighChannelId,
             _kHighChannelName,
@@ -289,8 +295,10 @@ class NotificationService {
             icon: '@mipmap/ic_launcher',
             importance: Importance.max,
             priority: Priority.high,
+            playSound: true,
+            enableVibration: true,
           ),
-          iOS: const DarwinNotificationDetails(
+          iOS: DarwinNotificationDetails(
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
@@ -351,6 +359,8 @@ class NotificationService {
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
           visibility: NotificationVisibility.public,
+          playSound: true,
+          enableVibration: true,
         ),
         iOS: DarwinNotificationDetails(
           presentAlert: true,
@@ -386,8 +396,6 @@ class NotificationService {
       final osOffset = osNow.difference(trueNow);
 
       final jobs = _buildReminderJobs(data, trueNow, osOffset);
-
-      await cancelShiftReminders(referenceTime: trueNow);
 
       for (final job in jobs) {
         await _schedule(

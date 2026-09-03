@@ -28,7 +28,8 @@ class LeavesRepositoryImpl implements LeavesRepository {
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.unknown) {
         final cached = box.get(AppConstants.leavesCacheKey);
         if (cached != null && cached.containsKey('data')) {
           final list = cached['data'] as List<dynamic>;

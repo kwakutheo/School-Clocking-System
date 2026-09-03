@@ -1088,11 +1088,8 @@ class _ShiftCountdownBannerState extends State<_ShiftCountdownBanner> {
 class _LiveStatusBanner extends StatelessWidget {
   final HomeDataEntity data;
 
-  /// Local override for the late status — used when the phone clock says the
-  /// shift has started but the server hasn't caught up yet.
   final LateStatus? lateStatusOverride;
 
-  /// Whether to hide the "Upcoming Shift Today" banner (true when countdown is active)
   final bool hideUpcomingShift;
 
   const _LiveStatusBanner({
@@ -1104,7 +1101,6 @@ class _LiveStatusBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lateStatus = lateStatusOverride ?? data.lateStatus;
-    // ── Forgot to clock out (shift ended > 10 min ago, still clocked in) ──────
     if (data.noShiftAssigned) {
       return _buildBanner(
         context,

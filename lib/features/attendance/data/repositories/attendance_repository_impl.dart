@@ -169,7 +169,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.unknown) {
         if (page == 1) {
           final cached = _userBox.get(AppConstants.historyPageCacheKey);
           if (cached != null && cached.containsKey('data')) {
@@ -245,7 +246,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       }
       if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.unknown) {
         final cached = _userBox.get(AppConstants.termReportCacheKey);
         if (cached != null) {
           try {

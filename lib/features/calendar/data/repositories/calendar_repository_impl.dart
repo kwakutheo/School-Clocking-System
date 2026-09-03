@@ -33,7 +33,8 @@ class CalendarRepositoryImpl implements CalendarRepository {
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.unknown) {
         final cached = box.get(AppConstants.termsCacheKey);
         if (cached != null && cached.containsKey('data')) {
           final list = cached['data'] as List<dynamic>;
@@ -74,7 +75,8 @@ class CalendarRepositoryImpl implements CalendarRepository {
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.unknown) {
         final cached = box.get(AppConstants.holidaysCacheKey);
         if (cached != null && cached.containsKey('data')) {
           final data = cached['data'] as List<dynamic>;

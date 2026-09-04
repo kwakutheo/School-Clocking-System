@@ -522,7 +522,6 @@ export default function EmployeesPage() {
               <button className="modal-close" onClick={() => setShowModal(false)} aria-label="Close Modal">✕</button>
             </div>
             <form onSubmit={handleSubmit}>
-              {error && <div className="alert alert-danger">{error}</div>}
               <div className="form-grid">
                 <div className="form-group">
                   <label htmlFor="firstName">First Name <span style={{ color: 'var(--danger)' }}>*</span></label>
@@ -783,6 +782,11 @@ export default function EmployeesPage() {
                   </div>
                 )}
               </div>
+              {error && (
+                <div className="alert alert-danger" style={{ marginTop: 16, marginBottom: 8 }}>
+                  {error}
+                </div>
+              )}
               <div className="modal-footer">
                 <button type="button" className="btn" onClick={() => setShowModal(false)}>
                   Cancel

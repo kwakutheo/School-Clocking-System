@@ -161,6 +161,11 @@ export class AuthService {
 
     if (employee) {
       (publicUser as any).employeeId = employee.id;
+      (publicUser as any).employeeCode = employee.employeeCode;
+      (publicUser as any).branch = employee.branch;
+      (publicUser as any).department = employee.department;
+      (publicUser as any).position = employee.position;
+      (publicUser as any).hireDate = employee.hireDate;
       (publicUser as any).photoUrl = employee.photoUrl;
     }
 
@@ -235,6 +240,11 @@ export class AuthService {
       .catch(() => null);
     if (employee) {
       (publicUser as any).employeeId = employee.id;
+      (publicUser as any).employeeCode = employee.employeeCode;
+      (publicUser as any).branch = employee.branch;
+      (publicUser as any).department = employee.department;
+      (publicUser as any).position = employee.position;
+      (publicUser as any).hireDate = employee.hireDate;
       (publicUser as any).photoUrl = employee.photoUrl;
     }
     return publicUser;

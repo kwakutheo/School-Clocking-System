@@ -130,7 +130,7 @@ class AuthRepositoryImpl implements AuthRepository {
     // Restore the primary user key so `getCachedUser` finds it on next boot,
     // keeping the user logged in across app restarts while offline.
     await _storage.saveUserJson(user.toJsonString());
-    
+
     return Right(LoginResult(user: user, isOffline: true));
   }
 
@@ -204,8 +204,12 @@ class AuthRepositoryImpl implements AuthRepository {
       await _storage.saveUserJson(user.toJsonString());
       await _storage.saveOfflineUserJson(user.toJsonString());
       // Keep slug + tenant in dedicated prefs so Settings page always has them
-      if (user.tenantId != null) await _storage.saveTenantId(user.tenantId!);
-      if (user.subdomainSlug != null) await _storage.saveSubdomainSlug(user.subdomainSlug!);
+      if (user.tenantId != null) {
+        await _storage.saveTenantId(user.tenantId!);
+      }
+      if (user.subdomainSlug != null) {
+        await _storage.saveSubdomainSlug(user.subdomainSlug!);
+      }
       return Right(user);
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {

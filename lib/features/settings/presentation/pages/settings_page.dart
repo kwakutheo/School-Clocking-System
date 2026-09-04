@@ -94,8 +94,8 @@ class _SettingsPageState extends State<SettingsPage> {
     final userJson = _storage.getUserJson();
     if (userJson != null) {
       try {
-        currentUser = UserModel.fromJson(
-            jsonDecode(userJson) as Map<String, dynamic>);
+        currentUser =
+            UserModel.fromJson(jsonDecode(userJson) as Map<String, dynamic>);
       } catch (_) {}
     }
 
@@ -640,27 +640,33 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
 
+
           // ── Preferences ────────────────────────────────────────────────
-          _SectionHeader(title: 'Preferences'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Card(
-              child: SwitchListTile(
-                secondary: Icon(
-                  Icons.vibration_rounded,
-                  color: _hapticFeedbackEnabled ? cs.primary : null,
+          // section hidden for now (will be re-enabled when haptic feedback is fully configured)
+          // ignore: dead_code
+          if (false) ...[
+            _SectionHeader(title: 'Preferences'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Card(
+                child: SwitchListTile(
+                  secondary: Icon(
+                    Icons.vibration_rounded,
+                    color: _hapticFeedbackEnabled ? cs.primary : null,
+                  ),
+                  title: const Text('Haptic Feedback'),
+                  subtitle: const Text(
+                    'Vibrate on Clock In, Clock Out, and Break actions',
+                  ),
+                  value: _hapticFeedbackEnabled,
+                  onChanged: _toggleHapticFeedback,
+                  activeThumbColor: cs.onPrimary,
+                  activeTrackColor: cs.primary,
                 ),
-                title: const Text('Haptic Feedback'),
-                subtitle: const Text(
-                  'Vibrate on Clock In, Clock Out, and Break actions',
-                ),
-                value: _hapticFeedbackEnabled,
-                onChanged: _toggleHapticFeedback,
-                activeThumbColor: cs.onPrimary,
-                activeTrackColor: cs.primary,
               ),
             ),
-          ),
+          ],
+
 
           // ── Security ───────────────────────────────────────────────────
           _SectionHeader(title: 'Security'),

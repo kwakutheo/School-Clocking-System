@@ -34,15 +34,18 @@ class UserModel extends UserEntity {
 
     // Extract school/tenant info from the nested tenant object or flat fields
     final tenantObj = json['tenant'] as Map<String, dynamic>?;
-    final tenantId = (tenantObj?['id'] ?? json['tenantId'] ?? json['tenant_id']) as String?;
-    final schoolName = (tenantObj?['name'] ?? json['schoolName'] ?? json['school_name']) as String?;
-    final subdomainSlug = (tenantObj?['subdomainSlug']
-            ?? tenantObj?['subdomain_slug']
-            ?? tenantObj?['slug']
-            ?? tenantObj?['domain']
-            ?? json['subdomainSlug']
-            ?? json['subdomain_slug']
-            ?? json['slug']) as String?;
+    final tenantId =
+        (tenantObj?['id'] ?? json['tenantId'] ?? json['tenant_id']) as String?;
+    final schoolName = (tenantObj?['name'] ??
+        json['schoolName'] ??
+        json['school_name']) as String?;
+    final subdomainSlug = (tenantObj?['subdomainSlug'] ??
+        tenantObj?['subdomain_slug'] ??
+        tenantObj?['slug'] ??
+        tenantObj?['domain'] ??
+        json['subdomainSlug'] ??
+        json['subdomain_slug'] ??
+        json['slug']) as String?;
 
     return UserModel(
       id: json['id'] as String,
@@ -55,16 +58,15 @@ class UserModel extends UserEntity {
       phone: (json['phone'] as String?) ?? '',
       username: (json['username'] as String?) ?? '',
       role: UserRole.fromValue(json['role'] as String),
-      employeeCode:
-          (json['employee_code'] ?? json['employeeCode']) as String?,
+      employeeCode: (json['employee_code'] ?? json['employeeCode']) as String?,
       photoUrl: (json['photo_url'] ?? json['photoUrl']) as String?,
-      departmentId:
-          (json['department_id'] ?? json['departmentId']) as String?,
+      departmentId: (json['department_id'] ?? json['departmentId']) as String?,
       branchId: (json['branch_id'] ?? json['branchId']) as String?,
       branchName: (branchObj?['name'] ?? json['branchName']) as String?,
       departmentName: (deptObj?['name'] ?? json['departmentName']) as String?,
       position: (json['position']) as String?,
-      hireDate: hireDateRaw != null ? DateTime.tryParse(hireDateRaw as String) : null,
+      hireDate:
+          hireDateRaw != null ? DateTime.tryParse(hireDateRaw as String) : null,
     );
   }
 

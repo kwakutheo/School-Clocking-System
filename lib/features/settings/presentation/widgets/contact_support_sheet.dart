@@ -99,7 +99,8 @@ class _ContactSupportSheetState extends State<ContactSupportSheet> {
         setState(() {
           _loading = false;
           if (_admins.isEmpty) {
-            _errorMessage = 'Could not reach server to load administrator contacts.';
+            _errorMessage =
+                'Could not reach server to load administrator contacts.';
           }
         });
       }
@@ -115,12 +116,14 @@ class _ContactSupportSheetState extends State<ContactSupportSheet> {
       } else {
         final launched = await launchUrl(uri);
         if (!launched && context.mounted) {
-          await _copyToClipboard(context, phoneNumber, 'Phone number copied to clipboard');
+          await _copyToClipboard(
+              context, phoneNumber, 'Phone number copied to clipboard');
         }
       }
     } catch (_) {
       if (context.mounted) {
-        await _copyToClipboard(context, phoneNumber, 'Phone number copied to clipboard');
+        await _copyToClipboard(
+            context, phoneNumber, 'Phone number copied to clipboard');
       }
     }
   }
@@ -143,23 +146,20 @@ class _ContactSupportSheetState extends State<ContactSupportSheet> {
     final cleanPhone = _normalizeForWhatsApp(phoneNumber);
     if (cleanPhone.isEmpty) {
       if (context.mounted) {
-        _copyToClipboard(context, phoneNumber, 'Phone number copied to clipboard');
+        _copyToClipboard(
+            context, phoneNumber, 'Phone number copied to clipboard');
       }
       return;
     }
 
     final staffName = widget.user?.fullName ?? 'Staff Member';
-    final staffId = widget.user?.employeeCode ??
-        widget.user?.employeeId ??
-        widget.user?.username ??
-        'N/A';
-    final school = widget.user?.schoolName ?? 'School';
-    final branch = widget.user?.branchName ?? 'Campus';
+    final staffId = widget.user?.employeeCode ?? widget.user?.username ?? 'N/A';
+    final school = widget.user?.schoolName ?? 'N/A';
+    final branch = widget.user?.branchName ?? 'N/A';
 
-    final message =
-        'Hello $adminName,\n\n'
+    final message = 'Hello $adminName,\n'
         'I am $staffName (Staff ID: $staffId) from $school ($branch).\n'
-        'I require assistance regarding the School Clocking System with [Geofence / Device Reset / Attendance].\n\n'
+        'I require assistance regarding the School Clocking System with [Geofence / Device Reset / Attendance].\n'
         'Thank you.';
 
     final uri = Uri.parse(
@@ -179,7 +179,8 @@ class _ContactSupportSheetState extends State<ContactSupportSheet> {
       }
     } catch (_) {
       if (context.mounted) {
-        await _copyToClipboard(context, phoneNumber, 'Phone number copied to clipboard');
+        await _copyToClipboard(
+            context, phoneNumber, 'Phone number copied to clipboard');
       }
     }
   }
@@ -206,10 +207,7 @@ class _ContactSupportSheetState extends State<ContactSupportSheet> {
 
     final schoolName = widget.user?.schoolName ?? 'School Administration';
     final branchName = widget.user?.branchName ?? 'Campus Support Desk';
-    final staffCode = widget.user?.employeeCode ??
-        widget.user?.employeeId ??
-        widget.user?.username ??
-        '';
+    final staffCode = widget.user?.employeeCode ?? widget.user?.username ?? '';
 
     return Container(
       constraints: BoxConstraints(
@@ -308,7 +306,8 @@ class _ContactSupportSheetState extends State<ContactSupportSheet> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.school_rounded, size: 18, color: cs.primary),
+                          Icon(Icons.school_rounded,
+                              size: 18, color: cs.primary),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -330,7 +329,7 @@ class _ContactSupportSheetState extends State<ContactSupportSheet> {
                       if (staffCode.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Text(
-                          'Staff Code / ID: $staffCode',
+                          'Staff Code: $staffCode',
                           style: theme.textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: cs.primary,
@@ -519,8 +518,7 @@ class _ContactSupportSheetState extends State<ContactSupportSheet> {
                                       padding: const EdgeInsets.symmetric(
                                           vertical: 10),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
                                   ),
@@ -542,8 +540,7 @@ class _ContactSupportSheetState extends State<ContactSupportSheet> {
                                       padding: const EdgeInsets.symmetric(
                                           vertical: 10),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
                                   ),
@@ -555,12 +552,12 @@ class _ContactSupportSheetState extends State<ContactSupportSheet> {
                                     phone,
                                     'Phone number copied',
                                   ),
-                                  icon: const Icon(Icons.copy_rounded, size: 16),
+                                  icon:
+                                      const Icon(Icons.copy_rounded, size: 16),
                                   tooltip: 'Copy Number',
                                   style: IconButton.styleFrom(
                                     shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
                                 ),
@@ -572,40 +569,6 @@ class _ContactSupportSheetState extends State<ContactSupportSheet> {
                     ),
                   );
                 }),
-
-              const SizedBox(height: 8),
-
-              // ── Admin Note Box ───────────────────────────────────────────
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: cs.tertiaryContainer.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: cs.tertiary.withValues(alpha: 0.25),
-                  ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.info_outline_rounded,
-                      size: 18,
-                      color: cs.tertiary,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Requests for Geofence radius calibration or authorized device resets must be approved by your school\'s Super Admin or HR Admin.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: cs.onTertiaryContainer,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),

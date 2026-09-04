@@ -80,7 +80,8 @@ class StorageService {
   Future<void> saveNotificationsEnabled(bool enabled) =>
       _prefs.setBool(AppConstants.notificationsEnabledKey, enabled);
 
-  bool? getNotificationsEnabled() => _prefs.getBool(AppConstants.notificationsEnabledKey);
+  bool? getNotificationsEnabled() =>
+      _prefs.getBool(AppConstants.notificationsEnabledKey);
 
   // ── Haptic Feedback ───────────────────────────────────────────────────────
   Future<void> saveHapticFeedbackEnabled(bool enabled) =>
@@ -108,9 +109,8 @@ class StorageService {
         _prefs.getInt(AppConstants.appUpdateSnoozedVersionCodeKey);
     final snoozedUntilRaw =
         _prefs.getString(AppConstants.appUpdateSnoozedUntilKey);
-    final snoozedUntil = snoozedUntilRaw == null
-        ? null
-        : DateTime.tryParse(snoozedUntilRaw);
+    final snoozedUntil =
+        snoozedUntilRaw == null ? null : DateTime.tryParse(snoozedUntilRaw);
 
     return snoozedVersion == versionCode &&
         snoozedUntil != null &&

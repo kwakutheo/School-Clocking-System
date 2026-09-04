@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// An interactive, expandable bottom sheet displaying clocking FAQs
+/// An interactive, expandable bottom sheet displaying FAQs
 /// loaded from [assets/FAQ/faq.json].
 class FaqBottomSheet extends StatefulWidget {
   const FaqBottomSheet({super.key});
@@ -45,14 +45,12 @@ class _FaqBottomSheetState extends State<FaqBottomSheet> {
 
   Future<void> _loadFaqs() async {
     try {
-      final jsonString =
-          await rootBundle.loadString('assets/FAQ/faq.json');
+      final jsonString = await rootBundle.loadString('assets/FAQ/faq.json');
       final data = jsonDecode(jsonString) as Map<String, dynamic>;
       final rawList = data['faqs'] as List<dynamic>? ?? [];
 
-      final faqs = rawList
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
+      final faqs =
+          rawList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
 
       final categorySet = <String>{};
       for (final faq in faqs) {
@@ -93,10 +91,8 @@ class _FaqBottomSheetState extends State<FaqBottomSheet> {
 
         if (query.isEmpty) return true;
 
-        final question =
-            faq['question']?.toString().toLowerCase() ?? '';
-        final answer =
-            faq['answer']?.toString().toLowerCase() ?? '';
+        final question = faq['question']?.toString().toLowerCase() ?? '';
+        final answer = faq['answer']?.toString().toLowerCase() ?? '';
         final tags = (faq['tags'] as List<dynamic>?)
                 ?.map((t) => t.toString().toLowerCase())
                 .toList() ??
@@ -168,7 +164,7 @@ class _FaqBottomSheetState extends State<FaqBottomSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Clocking FAQ & Guide',
+                        'FAQ & Guide',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -313,8 +309,7 @@ class _FaqBottomSheetState extends State<FaqBottomSheet> {
                                   const SizedBox(height: 16),
                                   Text(
                                     'No matching questions found',
-                                    style:
-                                        theme.textTheme.titleSmall?.copyWith(
+                                    style: theme.textTheme.titleSmall?.copyWith(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -374,15 +369,15 @@ class _FaqBottomSheetState extends State<FaqBottomSheet> {
                                       horizontal: 16,
                                       vertical: 6,
                                     ),
-                                    childrenPadding:
-                                        const EdgeInsets.fromLTRB(
-                                            16, 0, 16, 16),
+                                    childrenPadding: const EdgeInsets.fromLTRB(
+                                        16, 0, 16, 16),
                                     leading: Container(
                                       width: 28,
                                       height: 28,
                                       alignment: Alignment.center,
                                       decoration: BoxDecoration(
-                                        color: cs.primary.withValues(alpha: 0.1),
+                                        color:
+                                            cs.primary.withValues(alpha: 0.1),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Text(

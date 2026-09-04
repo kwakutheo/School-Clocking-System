@@ -27,7 +27,7 @@ Here are thoughtful, high-value additions you could consider for the **Settings*
 ---
 
 ### 4. ℹ️ Help, Support & Compliance
-* **Clocking FAQ / Quick Guide**:
+* **FAQ / Quick Guide**:
   * A short expandable dialog addressing the most common teacher issues:
     * *"What if I'm at school but it says Outside Work Zone?"*
     * *"How does offline clocking work?"*

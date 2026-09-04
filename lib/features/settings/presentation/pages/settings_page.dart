@@ -640,7 +640,6 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
 
-
           // ── Preferences ────────────────────────────────────────────────
           // section hidden for now (will be re-enabled when haptic feedback is fully configured)
           // ignore: dead_code
@@ -666,7 +665,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
           ],
-
 
           // ── Security ───────────────────────────────────────────────────
           _SectionHeader(title: 'Security'),
@@ -706,7 +704,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       Icons.quiz_outlined,
                       color: cs.primary,
                     ),
-                    title: const Text('Clocking FAQ & Guide'),
+                    title: const Text('FAQ & Guide'),
                     subtitle: const Text(
                       'Troubleshooting, geofence & offline clocking answers',
                     ),
@@ -719,7 +717,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       Icons.support_agent_rounded,
                       color: cs.primary,
                     ),
-                    title: const Text('Contact School Administrators'),
+                    title: const Text('Contact Administrators'),
                     subtitle: const Text(
                       'Call or WhatsApp Super Admin & HR Admin for support',
                     ),
@@ -735,7 +733,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       Icons.privacy_tip_outlined,
                       color: cs.primary,
                     ),
-                    title: const Text('Privacy Policy & Location Notice'),
+                    title: const Text('Privacy Policy'),
                     subtitle: const Text(
                       'Location usage, on-device biometrics & data governance',
                     ),

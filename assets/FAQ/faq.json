@@ -62,14 +62,14 @@
       "id": "device_change_reset",
       "category": "Account & Security",
       "question": "What happens if I get a new phone or my device is changed?",
-      "answer": "For security reasons, your account is bound to your authorized mobile device.\n• If you switch to a new phone, install the app and log in.\n• If you receive a 'Device Not Authorized' message, contact your School Administrator to reset your device pairing on the server.",
+      "answer": "Just download and install the app on the new device and sign in.\nYou can contact your school administrator to assist you to install the app on the new device.\nRemember to use 'Clear App Cache' in the settings menu to wipe your locally saved data on the old device to prevent other people have access to your account.",
       "tags": ["new phone", "device reset", "device authorization", "switch device"]
     },
     {
       "id": "contact_support",
       "category": "Help & Support",
       "question": "Who should I contact if I need further assistance?",
-      "answer": "For any technical glitches, permission errors, or attendance disputes, tap 'Contact IT Support' or reach out directly to your school's administrative office or IT coordinator.",
+      "answer": "For any technical glitches, permission errors or any other form of assistance, tap 'Contact Administrators' in the settings menu or reach out directly to your school's administrative office or IT coordinator.",
       "tags": ["support", "help", "contact", "it desk", "admin", "assistance"]
     }
   ]

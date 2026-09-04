@@ -205,7 +205,7 @@ export default function EmployeesPage() {
     if (cleanPhone) {
       const ghanaPhoneRegex = /^0\d{9}$/;
       if (!ghanaPhoneRegex.test(cleanPhone)) {
-        setError('Phone number must be a single 10-digit Ghana phone number starting with 0 (e.g. 024XXXXXXX). Multiple phone numbers are not allowed.');
+        setError('Phone number must be a single 10-digit number starting with 0 (e.g. 024XXXXXXX).');
         setIsSubmitting(false);
         return;
       }

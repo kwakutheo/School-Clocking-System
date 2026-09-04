@@ -494,7 +494,7 @@ export class EmployeesService implements OnModuleInit {
       const ghanaPhoneRegex = /^0\d{9}$/;
       if (!ghanaPhoneRegex.test(cleanPhone)) {
         throw new BadRequestException(
-          'Phone number must be a single 10-digit Ghana number starting with 0 (e.g. 024XXXXXXX).',
+          'Phone number must be a single 10-digit number starting with 0 (e.g. 024XXXXXXX).',
         );
       }
       const existingPhone = await this.userRepo.findOne({
@@ -649,7 +649,7 @@ export class EmployeesService implements OnModuleInit {
       const ghanaPhoneRegex = /^0\d{9}$/;
       if (!ghanaPhoneRegex.test(cleanPhone)) {
         throw new BadRequestException(
-          'Phone number must be a single 10-digit Ghana number starting with 0 (e.g. 024XXXXXXX).',
+          'Phone number must be a single 10-digit number starting with 0 (e.g. 024XXXXXXX).',
         );
       }
       if (cleanPhone !== emp.user.phone) {

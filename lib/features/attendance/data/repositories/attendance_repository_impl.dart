@@ -251,9 +251,9 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
         final cached = _userBox.get(AppConstants.termReportCacheKey);
         if (cached != null) {
           try {
-            final report = TermReportModel.fromJson(
-              Map<String, dynamic>.from(cached),
-            );
+            // Deeply convert the Hive map to a standard JSON map to avoid type errors in fromJson
+            final standardMap = jsonDecode(jsonEncode(cached)) as Map<String, dynamic>;
+            final report = TermReportModel.fromJson(standardMap);
             return Right(report);
           } catch (_) {}
         }

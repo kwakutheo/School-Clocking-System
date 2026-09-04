@@ -46,8 +46,8 @@ class AcademicTermModel extends AcademicTermEntity {
       academicYear: json['academicYear'] as String?,
       isActive: json['isActive'] as bool?,
       breaks: breaksList
-          .cast<Map<String, dynamic>>()
-          .map(TermBreakModel.fromJson)
+          .whereType<Map>()
+          .map((e) => TermBreakModel.fromJson(Map<String, dynamic>.from(e)))
           .toList(),
     );
   }

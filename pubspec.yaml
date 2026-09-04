@@ -1,7 +1,7 @@
 name: tk_clocking_system
 description: "TK Clocking System — Your Digital Time Keeper."
 publish_to: "none"
-version: 1.0.1+52
+version: 1.0.1+53
 
 environment:
   sdk: ^3.5.0

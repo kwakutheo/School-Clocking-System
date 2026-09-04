@@ -20,8 +20,10 @@ class CalendarRepositoryImpl implements CalendarRepository {
       final response = await apiClient.get('/academic-calendar/terms/current-year');
       final List<dynamic> data = response.data;
       final terms = data
-          .cast<Map<String, dynamic>>()
-          .map((json) => AcademicTermModel.fromJson(json))
+          .whereType<Map>()
+          .map((json) => AcademicTermModel.fromJson(
+                Map<String, dynamic>.from(json),
+              ))
           .toList();
 
       await box.put(

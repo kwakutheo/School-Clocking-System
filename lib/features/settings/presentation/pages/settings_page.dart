@@ -314,12 +314,6 @@ class _SettingsPageState extends State<SettingsPage> {
             }
 
             return AlertDialog(
-              icon: Icon(
-                needsPermission
-                    ? Icons.security_rounded
-                    : Icons.system_update_rounded,
-                color: needsPermission ? Colors.orange : null,
-              ),
               title: Text(
                 isDownloading
                     ? 'Downloading Update...'
@@ -704,22 +698,26 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
 
           // ── Notifications ──────────────────────────────────────────────
-          _SectionHeader(title: 'Notifications'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Card(
-              child: SwitchListTile(
-                secondary: const Icon(Icons.notifications_active_rounded),
-                title: const Text('Shift Reminders'),
-                subtitle:
-                    const Text('Get alerts for upcoming shifts & clock-outs'),
-                value: _notificationsEnabled,
-                onChanged: _toggleNotifications,
-                activeThumbColor: cs.onPrimary,
-                activeTrackColor: cs.primary,
+          // section hidden for now (will be used in the future when the app is able to send notifications correctly)
+          // ignore: dead_code
+          if (false) ...[
+            _SectionHeader(title: 'Notifications'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Card(
+                child: SwitchListTile(
+                  secondary: const Icon(Icons.notifications_active_rounded),
+                  title: const Text('Shift Reminders'),
+                  subtitle:
+                      const Text('Get alerts for upcoming shifts & clock-outs'),
+                  value: _notificationsEnabled,
+                  onChanged: _toggleNotifications,
+                  activeThumbColor: cs.onPrimary,
+                  activeTrackColor: cs.primary,
+                ),
               ),
             ),
-          ),
+          ],
 
           // ── Device Time ────────────────────────────────────────────────
           _SectionHeader(title: 'Device Time Integrity'),
@@ -813,7 +811,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       if (_geofence.data?.branchRadius != null)
                         ListTile(
                           leading: const Icon(Icons.radar_rounded),
-                          title: const Text('Configured Geofence Radius'),
+                          title: const Text('Geofence Radius'),
                           subtitle: Text(
                               '${_geofence.data!.branchRadius!.toInt()} meters'),
                         ),

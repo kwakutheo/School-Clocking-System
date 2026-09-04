@@ -16,6 +16,7 @@ import 'package:tk_clocking_system/core/di/injection_container.dart';
 import 'package:tk_clocking_system/core/services/biometric_service.dart';
 import 'package:tk_clocking_system/core/services/time_service.dart';
 import 'package:tk_clocking_system/core/services/geofence_service.dart';
+import 'package:tk_clocking_system/core/services/storage_service.dart';
 
 /// The main clock-in / clock-out screen for employees.
 class ClockInPage extends StatefulWidget {
@@ -50,6 +51,9 @@ class _ClockInPageState extends State<ClockInPage> {
         listener: (context, state) {
           if (state is AttendanceRecorded) {
             final isOffline = state.record.syncStatus == SyncStatus.pending;
+            if (sl<StorageService>().getHapticFeedbackEnabled()) {
+              HapticFeedback.heavyImpact();
+            }
             showDialog(
               context: context,
               barrierDismissible: false,
@@ -720,11 +724,15 @@ class _ActionTile extends StatelessWidget {
       onTap: isDisabled
           ? null
           : () async {
-              HapticFeedback.lightImpact();
+              if (sl<StorageService>().getHapticFeedbackEnabled()) {
+                HapticFeedback.lightImpact();
+              }
               final confirmed =
                   await _showConfirmDialog(context, label, icon, color);
               if (confirmed == true && context.mounted) {
-                HapticFeedback.mediumImpact();
+                if (sl<StorageService>().getHapticFeedbackEnabled()) {
+                  HapticFeedback.mediumImpact();
+                }
                 // Biometric/PIN Verification
                 final biometricService = sl<BiometricService>();
                 if (await biometricService.isSecurityEnrolled()) {
@@ -801,7 +809,9 @@ class _QrScanButton extends StatelessWidget {
       onTap: (isLoading || isDisabled)
           ? null
           : () async {
-              HapticFeedback.lightImpact();
+              if (sl<StorageService>().getHapticFeedbackEnabled()) {
+                HapticFeedback.lightImpact();
+              }
               final qrCode = await Navigator.of(context).push<String>(
                 MaterialPageRoute(
                   builder: (_) => const QrScanPage(),
@@ -887,6 +897,9 @@ class _QrScanButton extends StatelessWidget {
                     final confirmed = await _showConfirmDialog(
                         ctx, 'Clock In', Icons.login_rounded, Colors.green);
                     if (confirmed == true && context.mounted) {
+                      if (sl<StorageService>().getHapticFeedbackEnabled()) {
+                        HapticFeedback.mediumImpact();
+                      }
                       // Biometric/PIN Verification
                       final biometricService = sl<BiometricService>();
                       if (await biometricService.isSecurityEnrolled()) {
@@ -918,6 +931,9 @@ class _QrScanButton extends StatelessWidget {
                     final confirmed = await _showConfirmDialog(
                         ctx, 'Clock Out', Icons.logout_rounded, Colors.red);
                     if (confirmed == true && context.mounted) {
+                      if (sl<StorageService>().getHapticFeedbackEnabled()) {
+                        HapticFeedback.mediumImpact();
+                      }
                       // Biometric/PIN Verification
                       final biometricService = sl<BiometricService>();
                       if (await biometricService.isSecurityEnrolled()) {
@@ -952,6 +968,9 @@ class _QrScanButton extends StatelessWidget {
                         Icons.free_breakfast_rounded,
                         Colors.orange);
                     if (confirmed == true && context.mounted) {
+                      if (sl<StorageService>().getHapticFeedbackEnabled()) {
+                        HapticFeedback.mediumImpact();
+                      }
                       // Biometric/PIN Verification
                       final biometricService = sl<BiometricService>();
                       if (await biometricService.isSecurityEnrolled()) {
@@ -983,6 +1002,9 @@ class _QrScanButton extends StatelessWidget {
                     final confirmed = await _showConfirmDialog(
                         ctx, 'Break End', Icons.replay_rounded, Colors.blue);
                     if (confirmed == true && context.mounted) {
+                      if (sl<StorageService>().getHapticFeedbackEnabled()) {
+                        HapticFeedback.mediumImpact();
+                      }
                       // Biometric/PIN Verification
                       final biometricService = sl<BiometricService>();
                       if (await biometricService.isSecurityEnrolled()) {

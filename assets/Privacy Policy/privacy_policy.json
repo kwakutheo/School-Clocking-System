@@ -1,0 +1,85 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-09-04",
+  "title": "Privacy Policy & Location Notice",
+  "app_name": "School Clocking System",
+  "summary": "This Privacy Policy describes how the School Clocking System collects, uses, and protects staff information, specifically concerning location access, biometrics, device integrity, and attendance data.",
+  "sections": [
+    {
+      "id": "overview",
+      "heading": "1. Overview & Purpose",
+      "content": "The School Clocking System is an official staff attendance and shift management application designed exclusively for school staff and administrators. Our primary objective is to verify attendance punctuality and facilitate duty scheduling while upholding the highest standards of data security and personal privacy.",
+      "highlights": [
+        "Used strictly for official staff attendance and duty management",
+        "Designed to protect staff privacy with minimal data footprint"
+      ]
+    },
+    {
+      "id": "location_notice",
+      "heading": "2. Location Data & Geofence Verification",
+      "content": "• Point-in-Time Capture: High-precision location (GPS) is accessed solely at the precise moment you perform a clocking event (Clock In, Clock Out, Break Start, or Break End).\n• No 24/7 Background Tracking: The app does NOT track, monitor, or record your physical movements throughout the day, nor does it access location services outside active clocking requests.\n• Geofence Verification: Coordinates are compared against the school branch's designated geographic radius to confirm your physical presence on campus.\n• Dual Verification for QR Clocking: To prevent anti-fraud risks (such as photocopying or remotely sharing QR codes), scanning the physical School Clocking QR code also verifies and requires an active GPS position within the school geofence.\n• Permission Control: Location permission is requested at runtime. You can revoke location access in your device settings at any time; however, location access is required for all clocking actions.",
+      "highlights": [
+        "Location accessed only when clocking in, taking breaks, or clocking out",
+        "No continuous or 24/7 background location tracking",
+        "GPS validation is mandatory for all clocking methods, including QR scanning, to prevent attendance fraud"
+      ]
+    },
+    {
+      "id": "biometrics",
+      "heading": "3. Biometrics & Authentication",
+      "content": "• Device-Level Security: When biometric login (Fingerprint or Face Unlock) is enabled, verification is executed entirely on your local device via Android's secure hardware-backed BiometricPrompt.\n• No Biometric Transmission: Your biological biometric features (fingerprint data or facial geometry) are never accessed, captured, stored, or transmitted by this application or sent to school servers.\n• Offline Credentials: A cryptographically secure hash of your login credentials is encrypted and stored locally in private application sandbox storage to support offline login when internet connectivity is lost.",
+      "highlights": [
+        "Biometric scans remain isolated in your device's secure hardware",
+        "No fingerprint or facial geometry data is ever collected or transmitted",
+        "Local credentials hash is encrypted in secure app storage"
+      ]
+    },
+    {
+      "id": "data_collection",
+      "heading": "4. Information We Collect",
+      "content": "We collect and process only the minimal information necessary for school attendance administration:\n• User Profile: Staff identification number, full name, email address, role, and assigned school branch.\n• Attendance Logs: Timestamps of clock-in, clock-out, and break intervals, punctuality status, and clocking method (GPS Geofence or QR Scan).\n• Device Diagnostics: Device model, Android OS version, and network connectivity state to ensure device authorization and prevent clock tampering.\n• Time Synchronization Data: Network Time Protocol (NTP) integrity timestamps to ensure device clocks reflect verified true time.",
+      "highlights": [
+        "Staff profile and branch assignments",
+        "Attendance timestamps and punctuality logs",
+        "Device model and NTP time verification metrics"
+      ]
+    },
+    {
+      "id": "offline_storage_security",
+      "heading": "5. Offline Storage & Data Protection",
+      "content": "• Encrypted Local Database: When working without an active internet connection, attendance events are queued in a local SQLite database protected by application sandboxing.\n• Background Synchronization: Pending records are encrypted during transit using standard TLS/HTTPS protocols and uploaded to the school's central database as soon as network connectivity is restored.\n• Data Wipe Option: Users can clear offline stored data and credentials at any time from the app's Settings menu.",
+      "highlights": [
+        "Encrypted local database for offline clocking reliability",
+        "Secure TLS/HTTPS encryption during network synchronization",
+        "Manual data wipe controls available in Settings"
+      ]
+    },
+    {
+      "id": "data_usage_sharing",
+      "heading": "6. Data Usage & Third-Party Disclosure",
+      "content": "• Strictly Internal Use: Your attendance data is utilized solely by authorized school administrators, department heads, and HR personnel for attendance records and duty management.\n• No Advertising or Data Selling: We do not integrate commercial third-party tracking libraries, advertising networks, or data brokers. Your personal information and location logs are never sold or rented.",
+      "highlights": [
+        "No commercial advertisements or marketing analytics",
+        "No sale, lease, or third-party sharing of personal data",
+        "Accessible only by authorized school administration"
+      ]
+    },
+    {
+      "id": "user_rights",
+      "heading": "7. Access to Your Records",
+      "content": "• Staff members have full access to view their own attendance logs and historical shift records via the 'My Report' and 'Calendar' sections of the application.\n• If you notice an error in your logged hours or require adjustments due to forgotten clock-outs or technical issues, you may submit a correction request to your school administrator.",
+      "highlights": [
+        "Transparent access to personal attendance records in the app",
+        "Procedure in place for reporting and resolving attendance disputes"
+      ]
+    },
+    {
+      "id": "contact_admin",
+      "heading": "8. Contact & Inquiries",
+      "content": "If you have questions, concerns, or requests regarding this Privacy Policy or your data usage, please contact:\n• Your School Administrative Office or Head of Department\n• School IT Support Desk\n• Direct support contact details are accessible in the Settings section of the app.",
+      "highlights": [
+        "Contact school administration or IT support for any privacy concerns"
+      ]
+    }
+  ]
+}

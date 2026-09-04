@@ -1,0 +1,76 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-09-04",
+  "faqs": [
+    {
+      "id": "outside_work_zone",
+      "category": "Location & Geofence",
+      "question": "What should I do if I am at school but the app says 'Outside Work Zone'?",
+      "answer": "1. Ensure High-Accuracy Location (GPS) is turned ON in your phone settings.\n2. Step away from thick concrete walls, metallic roofing, or basements to get a clear satellite line of sight.\n3. Tap the GPS icon or refresh button on the Clock-In page to re-check your position.\n4. Make sure you are physically within campus grounds, as all clocking methods verify your location.\n5. If multiple staff members experience this, notify your School Administrator to recalibrate or expand the school's geofence radius.",
+      "tags": ["location", "gps", "outside work zone", "geofence", "radius"]
+    },
+    {
+      "id": "offline_clocking",
+      "category": "Offline Attendance",
+      "question": "How does offline clocking work?",
+      "answer": "If your device has no internet connection (Wi-Fi or mobile data), the app automatically switches to Offline Mode:\n• You can still Clock In, Clock Out, and record breaks normally.\n• Your attendance records are securely encrypted and stored locally on your device.\n• As soon as your internet connection is restored, the app will automatically sync your pending records to the school server in the background.\n• You can also manually tap 'Tap to sync' on the pending records banner on your Dashboard or in Settings.",
+      "tags": ["offline", "no internet", "sync", "pending", "connection"]
+    },
+    {
+      "id": "clock_out_of_sync",
+      "category": "Time & Integrity",
+      "question": "What does 'Device Clock Out of Sync' mean?",
+      "answer": "To prevent accidental or intentional tampering with attendance times, the app cross-checks your phone's clock with trusted international Network Time Protocol (NTP) atomic servers.\n\nIf you see this warning:\n1. Open your phone's Settings app.\n2. Go to 'System' > 'Date & Time'.\n3. Turn ON 'Set time automatically' (Use network-provided time) and 'Automatic time zone'.\n4. Re-open the app and try clocking in again.",
+      "tags": ["time", "ntp", "clock out of sync", "tamper", "time zone", "automatic time"]
+    },
+    {
+      "id": "qr_code_clocking",
+      "category": "Clocking Methods",
+      "question": "Does scanning the School QR Code allow me to clock in without GPS?",
+      "answer": "No. For security and anti-fraud protection, scanning the School Clocking QR code still requires an active, verified GPS position within the school premises. This dual-verification prevents QR codes from being photocopied, photographed, or scanned remotely from outside the school.",
+      "tags": ["qr code", "kiosk", "scan", "gps required", "anti-fraud", "security"]
+    },
+    {
+      "id": "break_management",
+      "category": "Attendance & Shifts",
+      "question": "How do I record breaks during the school day?",
+      "answer": "When taking a recess or lunch break:\n1. Tap 'Break Start' on the Home screen or Clocking screen.\n2. When your break is over and you resume teaching/duties, tap 'Break End'.\n3. Note: The app tracks your total active duty time versus break duration accurately for school reporting.",
+      "tags": ["break", "lunch", "recess", "break start", "break end", "shift"]
+    },
+    {
+      "id": "forgot_to_clock_out",
+      "category": "Attendance & Shifts",
+      "question": "What should I do if I forgot to clock out at the end of the day?",
+      "answer": "If you left school without clocking out:\n• Do not attempt to fake GPS or clock out from home.\n• Notify your School Administrator or Head of Department as soon as possible with your actual departure time.\n• The administrator can review the logs and make an approved manual adjustment in the admin portal.",
+      "tags": ["forgot", "clock out", "departure", "manual correction", "admin"]
+    },
+    {
+      "id": "view_attendance_history",
+      "category": "Reports & Records",
+      "question": "How can I view my past attendance records?",
+      "answer": "Navigate to the 'My Report' or 'Calendar' tab at the bottom of the screen. Here you can:\n• View your daily clock-in, clock-out, and break timestamps.\n• Filter by month or academic term.\n• Check your punctuality status (On Time, Late, Excused, Absent).\n• Reports previously viewed are cached so you can inspect them even when offline.",
+      "tags": ["report", "history", "records", "calendar", "late", "cached"]
+    },
+    {
+      "id": "privacy_and_tracking",
+      "category": "Privacy & Security",
+      "question": "Does the app track my location when I am not at school?",
+      "answer": "No. Your privacy is paramount:\n• The app ONLY accesses your location momentarily at the exact time you perform a clocking action (Clock In, Clock Out, Break).\n• The app does NOT perform 24/7 background location tracking or track your movements outside school hours.\n• Location data is solely used to verify that attendance occurs within designated school bounds.",
+      "tags": ["privacy", "tracking", "gps tracking", "background", "data safety"]
+    },
+    {
+      "id": "device_change_reset",
+      "category": "Account & Security",
+      "question": "What happens if I get a new phone or my device is changed?",
+      "answer": "For security reasons, your account is bound to your authorized mobile device.\n• If you switch to a new phone, install the app and log in.\n• If you receive a 'Device Not Authorized' message, contact your School Administrator to reset your device pairing on the server.",
+      "tags": ["new phone", "device reset", "device authorization", "switch device"]
+    },
+    {
+      "id": "contact_support",
+      "category": "Help & Support",
+      "question": "Who should I contact if I need further assistance?",
+      "answer": "For any technical glitches, permission errors, or attendance disputes, tap 'Contact IT Support' or reach out directly to your school's administrative office or IT coordinator.",
+      "tags": ["support", "help", "contact", "it desk", "admin", "assistance"]
+    }
+  ]
+}

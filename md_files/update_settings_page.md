@@ -1,13 +1,3 @@
-Viewed settings_page.dart:1-250
-Viewed settings_page.dart:251-500
-Viewed settings_page.dart:501-750
-Viewed settings_page.dart:751-920
-Ran command: `flutter analyze lib/features/settings/presentation/pages/settings_page.dart`
-Listed directory features
-Listed directory services
-Searched for "AuthLogoutEvent"
-Viewed profile_page.dart:1210-1250
-Edited settings_page.dart
 
 Here are thoughtful, high-value additions you could consider for the **Settings** page, categorized by user benefit:
 
@@ -36,17 +26,7 @@ Here are thoughtful, high-value additions you could consider for the **Settings*
 
 ---
 
-### 4. 👤 Account & Session Card (Top of Settings)
-* Currently, the Settings page begins immediately with *Appearance*.
-* Adding a compact **Profile Banner** at the very top:
-  * Teacher/Staff Name & Staff ID
-  * School / Branch Name
-  * Current Role (e.g., *Teacher / Staff*)
-  * A standard **"Sign Out"** button (separate from the destructive *"Clear App Cache"* option at the bottom).
-
----
-
-### 5. ℹ️ Help, Support & Compliance
+### 4. ℹ️ Help, Support & Compliance
 * **Clocking FAQ / Quick Guide**:
   * A short expandable dialog addressing the most common teacher issues:
     * *"What if I'm at school but it says Outside Work Zone?"*

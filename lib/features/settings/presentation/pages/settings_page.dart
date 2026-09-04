@@ -20,6 +20,10 @@ import 'package:tk_clocking_system/features/attendance/presentation/bloc/attenda
 import 'package:tk_clocking_system/features/attendance/presentation/bloc/attendance_state.dart';
 import 'package:tk_clocking_system/core/services/notification_service.dart';
 import 'package:tk_clocking_system/core/services/time_service.dart';
+import 'package:tk_clocking_system/features/auth/data/models/user_model.dart';
+import 'package:tk_clocking_system/features/settings/presentation/widgets/faq_bottom_sheet.dart';
+import 'package:tk_clocking_system/features/settings/presentation/widgets/contact_support_sheet.dart';
+import 'package:tk_clocking_system/features/settings/presentation/widgets/privacy_policy_sheet.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -42,7 +46,9 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _biometricSupported = false;
   bool _checkingUpdate = false;
   bool _notificationsEnabled = true;
+  bool _hapticFeedbackEnabled = true;
 
+  UserModel? _currentUser;
   String _deviceId = '—';
   String _appVersion = '—';
   String _serverUrl = '—';
@@ -61,6 +67,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final secureId = await _storage.getSecureIdentifier();
     final isEnabledPref = _storage.getBiometricEnabled() ?? true;
     final notifsEnabledPref = _storage.getNotificationsEnabled() ?? true;
+    final hapticEnabled = _storage.getHapticFeedbackEnabled();
 
     // Load device ID
     final deviceId = await _deviceIdService.getDeviceId();
@@ -82,12 +89,24 @@ class _SettingsPageState extends State<SettingsPage> {
             ? '⚠ Out of Sync'
             : '✓ Valid';
 
+    // Load current user profile for school support context
+    UserModel? currentUser;
+    final userJson = _storage.getUserJson();
+    if (userJson != null) {
+      try {
+        currentUser = UserModel.fromJson(
+            jsonDecode(userJson) as Map<String, dynamic>);
+      } catch (_) {}
+    }
+
     if (!mounted) return;
     setState(() {
+      _currentUser = currentUser;
       _biometricSupported = supported;
       _biometricEnabled =
           isEnabledPref && (secureId != null && secureId.isNotEmpty);
       _notificationsEnabled = notifsEnabledPref;
+      _hapticFeedbackEnabled = hapticEnabled;
       _deviceId = deviceId;
       String buildNum = info.buildNumber;
       if (buildNum.startsWith('20') && buildNum.length == 4) {
@@ -621,6 +640,28 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
 
+          // ── Preferences ────────────────────────────────────────────────
+          _SectionHeader(title: 'Preferences'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Card(
+              child: SwitchListTile(
+                secondary: Icon(
+                  Icons.vibration_rounded,
+                  color: _hapticFeedbackEnabled ? cs.primary : null,
+                ),
+                title: const Text('Haptic Feedback'),
+                subtitle: const Text(
+                  'Vibrate on Clock In, Clock Out, and Break actions',
+                ),
+                value: _hapticFeedbackEnabled,
+                onChanged: _toggleHapticFeedback,
+                activeThumbColor: cs.onPrimary,
+                activeTrackColor: cs.primary,
+              ),
+            ),
+          ),
+
           // ── Security ───────────────────────────────────────────────────
           _SectionHeader(title: 'Security'),
           Padding(
@@ -641,6 +682,59 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     value: _biometricEnabled,
                     onChanged: _biometricSupported ? _toggleBiometric : null,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Help, Support & Compliance ─────────────────────────────────
+          _SectionHeader(title: 'Help, Support & Compliance'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: Icon(
+                      Icons.quiz_outlined,
+                      color: cs.primary,
+                    ),
+                    title: const Text('Clocking FAQ & Guide'),
+                    subtitle: const Text(
+                      'Troubleshooting, geofence & offline clocking answers',
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => FaqBottomSheet.show(context),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  ListTile(
+                    leading: Icon(
+                      Icons.support_agent_rounded,
+                      color: cs.primary,
+                    ),
+                    title: const Text('Contact School Administrators'),
+                    subtitle: const Text(
+                      'Call or WhatsApp Super Admin & HR Admin for support',
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => ContactSupportSheet.show(
+                      context,
+                      user: _currentUser,
+                    ),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  ListTile(
+                    leading: Icon(
+                      Icons.privacy_tip_outlined,
+                      color: cs.primary,
+                    ),
+                    title: const Text('Privacy Policy & Location Notice'),
+                    subtitle: const Text(
+                      'Location usage, on-device biometrics & data governance',
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => PrivacyPolicySheet.show(context),
                   ),
                 ],
               ),
@@ -913,6 +1007,17 @@ class _SettingsPageState extends State<SettingsPage> {
     } else {
       // Cancel existing ones
       await _notificationService.cancelShiftReminders();
+    }
+  }
+
+  // ── Haptic feedback toggle ────────────────────────────────────────────────
+  Future<void> _toggleHapticFeedback(bool value) async {
+    await _storage.saveHapticFeedbackEnabled(value);
+    if (value) {
+      HapticFeedback.mediumImpact();
+    }
+    if (mounted) {
+      setState(() => _hapticFeedbackEnabled = value);
     }
   }
 }

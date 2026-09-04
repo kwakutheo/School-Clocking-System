@@ -887,8 +887,6 @@ export class EmployeesService implements OnModuleInit {
       });
     }
 
-    // Delete the user; the employee row cascades because
-    // Employee.user has onDelete: 'CASCADE'.
     await this.userRepo.delete(emp.user.id);
   }
 
@@ -959,5 +957,44 @@ export class EmployeesService implements OnModuleInit {
       where: { employee: { id: employeeId } },
       order: { startDate: 'DESC' },
     });
+  }
+
+  /**
+   * Returns phone contact information for Super Admins and HR Admins
+   * in the specified school/tenant for teacher support.
+   * Supervisors and regular employees are strictly excluded.
+   */
+  async findSchoolAdmins(tenantId?: string | null): Promise<any[]> {
+    if (!tenantId) return [];
+
+    const admins = await this.userRepo.find({
+      where: [
+        {
+          tenantId,
+          role: UserRole.SUPER_ADMIN,
+          isActive: true,
+        },
+        {
+          tenantId,
+          role: UserRole.HR_ADMIN,
+          isActive: true,
+        },
+      ],
+      order: {
+        role: 'DESC', // super_admin first
+        fullName: 'ASC',
+      },
+    });
+
+    return admins
+      .filter((admin) => admin.phone && admin.phone.trim().length > 0)
+      .map((admin) => ({
+        id: admin.id,
+        fullName: admin.fullName,
+        role: admin.role,
+        roleLabel:
+          admin.role === UserRole.SUPER_ADMIN ? 'Super Admin' : 'HR Admin',
+        phone: admin.phone!.trim(),
+      }));
   }
 }

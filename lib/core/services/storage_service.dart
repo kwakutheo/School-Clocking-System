@@ -44,6 +44,13 @@ class StorageService {
 
   String? getUserJson() => _prefs.getString(AppConstants.userKey);
 
+  // ── School Admins Support Cache ──────────────────────────────────────────
+  Future<void> saveSchoolAdminsJson(String json) =>
+      _prefs.setString(AppConstants.schoolAdminsCacheKey, json);
+
+  String? getSchoolAdminsJson() =>
+      _prefs.getString(AppConstants.schoolAdminsCacheKey);
+
   // ── Theme preference ──────────────────────────────────────────────────────
   Future<void> saveTheme(String mode) =>
       _prefs.setString(AppConstants.themeKey, mode);
@@ -74,6 +81,13 @@ class StorageService {
       _prefs.setBool(AppConstants.notificationsEnabledKey, enabled);
 
   bool? getNotificationsEnabled() => _prefs.getBool(AppConstants.notificationsEnabledKey);
+
+  // ── Haptic Feedback ───────────────────────────────────────────────────────
+  Future<void> saveHapticFeedbackEnabled(bool enabled) =>
+      _prefs.setBool(AppConstants.hapticFeedbackEnabledKey, enabled);
+
+  bool getHapticFeedbackEnabled() =>
+      _prefs.getBool(AppConstants.hapticFeedbackEnabledKey) ?? true;
 
   // ── App update reminders ─────────────────────────────────────────────────
   Future<void> snoozeAppUpdate({

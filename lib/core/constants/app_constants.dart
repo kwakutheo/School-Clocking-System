@@ -17,6 +17,7 @@ abstract final class AppConstants {
   static const String tenantIdKey = 'tenant_id';
   static const String subdomainSlugKey = 'subdomain_slug';
   static const String notificationsEnabledKey = 'notifications_enabled';
+  static const String hapticFeedbackEnabledKey = 'haptic_feedback_enabled';
   static const String appUpdateSnoozedVersionCodeKey =
       'app_update_snoozed_version_code';
   static const String appUpdateSnoozedUntilKey = 'app_update_snoozed_until';
@@ -42,6 +43,7 @@ abstract final class AppConstants {
   static const String historyPageCacheKey = 'history_page_cache';
   static const String termReportCacheKey = 'term_report_cache';
   static const String leavesCacheKey = 'leaves_cache';
+  static const String schoolAdminsCacheKey = 'school_admins_cache';
 
   // ── Biometric login keys (Secure Storage / Prefs) ────────────────────────
   static const String secureIdentifierKey = 'secure_identifier';

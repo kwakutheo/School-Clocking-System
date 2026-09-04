@@ -85,6 +85,15 @@ export class EmployeesController {
     return emp;
   }
 
+  @Get('school-admins')
+  @ApiOperation({
+    summary: 'Get Super Admin & HR Admin contacts for school support',
+  })
+  async getSchoolAdmins(@CurrentUser() user: User): Promise<any[]> {
+    if (!user.tenantId) return [];
+    return this.service.findSchoolAdmins(user.tenantId);
+  }
+
   @Get(':id')
   @UseGuards(PermissionsGuard)
   @RequirePermissions('employees.view')

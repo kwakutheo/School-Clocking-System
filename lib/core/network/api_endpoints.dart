@@ -40,6 +40,7 @@ abstract final class ApiEndpoints {
   static const String employeeMe = '/employees/me';
   static const String employeeMeUpdate = '/employees/me';
   static const String employeeMePhoto = '/employees/me/photo';
+  static const String schoolAdmins = '/employees/school-admins';
 
   // ── Branches ─────────────────────────────────────────────────────────────
   static const String branches = '/branches';

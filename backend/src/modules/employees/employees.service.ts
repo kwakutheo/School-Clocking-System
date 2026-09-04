@@ -479,9 +479,26 @@ export class EmployeesService implements OnModuleInit {
       throw new ConflictException('Username already in use.');
     }
 
-    if (payload.phone) {
+    const isSuperOrHr =
+      payload.role === UserRole.SUPER_ADMIN ||
+      payload.role === UserRole.HR_ADMIN;
+
+    if (isSuperOrHr && (!payload.phone || !payload.phone.trim())) {
+      throw new BadRequestException(
+        'Phone number is required for Super Admin and HR Admin.',
+      );
+    }
+
+    if (payload.phone && payload.phone.trim()) {
+      const cleanPhone = payload.phone.trim();
+      const ghanaPhoneRegex = /^0\d{9}$/;
+      if (!ghanaPhoneRegex.test(cleanPhone)) {
+        throw new BadRequestException(
+          'Phone number must be a single 10-digit Ghana number starting with 0 (e.g. 024XXXXXXX).',
+        );
+      }
       const existingPhone = await this.userRepo.findOne({
-        where: { phone: payload.phone },
+        where: { phone: cleanPhone },
       });
       if (existingPhone) {
         throw new ConflictException('Phone number already in use.');
@@ -614,12 +631,34 @@ export class EmployeesService implements OnModuleInit {
       }
     }
 
-    if (data.phone && data.phone !== emp.user.phone) {
-      const existing = await this.userRepo.findOne({
-        where: { phone: data.phone },
-      });
-      if (existing && existing.id !== emp.user.id) {
-        throw new ConflictException('Phone number already in use.');
+    const targetRole = data.role ?? emp.user.role;
+    const isSuperOrHr =
+      targetRole === UserRole.SUPER_ADMIN || targetRole === UserRole.HR_ADMIN;
+
+    const newPhone =
+      data.phone !== undefined ? data.phone?.trim() : emp.user.phone?.trim();
+
+    if (isSuperOrHr && (!newPhone || newPhone.length === 0)) {
+      throw new BadRequestException(
+        'Phone number is required for Super Admin and HR Admin.',
+      );
+    }
+
+    if (data.phone && data.phone.trim()) {
+      const cleanPhone = data.phone.trim();
+      const ghanaPhoneRegex = /^0\d{9}$/;
+      if (!ghanaPhoneRegex.test(cleanPhone)) {
+        throw new BadRequestException(
+          'Phone number must be a single 10-digit Ghana number starting with 0 (e.g. 024XXXXXXX).',
+        );
+      }
+      if (cleanPhone !== emp.user.phone) {
+        const existing = await this.userRepo.findOne({
+          where: { phone: cleanPhone },
+        });
+        if (existing && existing.id !== emp.user.id) {
+          throw new ConflictException('Phone number already in use.');
+        }
       }
     }
 

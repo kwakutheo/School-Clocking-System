@@ -63,6 +63,11 @@ export class CreateEmployeeDto {
   @IsOptional()
   hireDate?: string;
 
+  @ApiPropertyOptional({ example: '0241234567' })
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
   @ApiPropertyOptional({ enum: UserRole, default: UserRole.EMPLOYEE })
   @IsEnum(UserRole)
   @IsOptional()

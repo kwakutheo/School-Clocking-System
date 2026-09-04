@@ -169,12 +169,21 @@ export default function EmployeesPage() {
 
   const openEdit = useCallback((emp: any) => {
     const nameParts = (emp.user?.fullName ?? '').split(' ');
+    const rawPhone = emp.user?.phone ?? '';
+    let normalizedPhone = rawPhone.trim();
+    if (normalizedPhone.startsWith('+233') && normalizedPhone.length === 13) {
+      normalizedPhone = '0' + normalizedPhone.slice(4);
+    } else if (normalizedPhone.startsWith('233') && normalizedPhone.length === 12) {
+      normalizedPhone = '0' + normalizedPhone.slice(3);
+    }
+    normalizedPhone = normalizedPhone.replace(/\D/g, '').slice(0, 10);
+
     setForm({
       firstName: nameParts[0] ?? '', lastName: nameParts.slice(1).join(' ') ?? '',
       username: emp.user?.username ?? '', email: emp.user?.email ?? '', password: '',
       departmentId: emp.department?.id ?? '', branchId: emp.branch?.id ?? '',
       shiftId: emp.shift?.id ?? '', position: emp.position ?? '',
-      phone: emp.user?.phone ?? '', hireDate: emp.hireDate ? emp.hireDate.slice(0, 10) : '',
+      phone: normalizedPhone, hireDate: emp.hireDate ? emp.hireDate.slice(0, 10) : '',
       role: emp.user?.role ?? 'employee', status: emp.status ?? 'active',
     });
     setEditingId(emp.id); setShowModal(true);
@@ -183,13 +192,32 @@ export default function EmployeesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setIsSubmitting(true); setError('');
     const fullName = `${form.firstName} ${form.lastName}`.trim();
+
+    const isSuperOrHr = ['super_admin', 'hr_admin'].includes(form.role);
+    const cleanPhone = form.phone.trim();
+
+    if (isSuperOrHr && !cleanPhone) {
+      setError('Phone number is required for Super Admin and HR Admin.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (cleanPhone) {
+      const ghanaPhoneRegex = /^0\d{9}$/;
+      if (!ghanaPhoneRegex.test(cleanPhone)) {
+        setError('Phone number must be a single 10-digit Ghana phone number starting with 0 (e.g. 024XXXXXXX). Multiple phone numbers are not allowed.');
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
     try {
       const { offlineApi } = await import('@/lib/offline-api');
       if (editingId) {
         const res = await offlineApi.updateEmployee(editingId, {
           fullName, email: form.email || undefined, departmentId: form.departmentId || undefined,
           branchId: form.branchId || undefined, shiftId: form.shiftId || undefined,
-          position: form.position || undefined, phone: form.phone || undefined,
+          position: form.position || undefined, phone: cleanPhone || undefined,
           hireDate: form.hireDate || undefined, role: form.role, status: form.status,
         });
         if (user && (res as any).data?.user?.id === user.id) {
@@ -211,7 +239,7 @@ export default function EmployeesPage() {
           fullName, username: form.username, email: form.email || undefined, password: form.password,
           departmentId: form.departmentId || undefined, branchId: form.branchId || undefined,
           shiftId: form.shiftId || undefined, position: form.position || undefined,
-          phone: form.phone || undefined, hireDate: form.hireDate || undefined, role: form.role,
+          phone: cleanPhone || undefined, hireDate: form.hireDate || undefined, role: form.role,
         });
       }
       await mutate(); setShowModal(false); resetForm();
@@ -711,14 +739,31 @@ export default function EmployeesPage() {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="phone">Phone Number</label>
+                  <label htmlFor="phone">
+                    Phone Number
+                    {['super_admin', 'hr_admin'].includes(form.role) && (
+                      <span style={{ color: 'var(--danger)' }}> *</span>
+                    )}
+                  </label>
                   <input
                     id="phone"
                     className="form-input"
+                    type="tel"
                     value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    placeholder="+233..."
+                    onChange={(e) => {
+                      // Allow only digits and limit to 10 chars (single Ghana 10-digit number)
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setForm({ ...form, phone: val });
+                    }}
+                    placeholder="024XXXXXXX"
+                    maxLength={10}
+                    required={['super_admin', 'hr_admin'].includes(form.role)}
                   />
+                  <small style={{ color: 'var(--text-secondary)', fontSize: '11.5px', marginTop: 4, display: 'block' }}>
+                    {['super_admin', 'hr_admin'].includes(form.role)
+                      ? 'Required for Super Admin & HR. Exactly 10 digits (e.g. 024XXXXXXX).'
+                      : 'Ghana 10-digit number (e.g. 024XXXXXXX). One number only.'}
+                  </small>
                 </div>
 
 

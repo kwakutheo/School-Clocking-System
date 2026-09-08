@@ -12,6 +12,7 @@ import 'package:tk_clocking_system/core/router/app_router.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tk_clocking_system/core/network/api_client.dart';
 import 'package:tk_clocking_system/core/network/api_endpoints.dart';
+import 'package:tk_clocking_system/core/network/network_exception.dart';
 import 'package:tk_clocking_system/core/services/storage_service.dart';
 import 'package:tk_clocking_system/features/auth/data/models/user_model.dart';
 import 'package:tk_clocking_system/features/auth/domain/entities/user_entity.dart';
@@ -227,12 +228,7 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       }
     } on DioException catch (e) {
-      final msg = e.response?.data?['message'];
-      final errorText = msg is String
-          ? msg
-          : msg is List<dynamic>
-              ? msg.join(', ')
-              : e.message ?? 'Failed to upload photo.';
+      final errorText = NetworkException.fromDioError(e).message;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorText), backgroundColor: Colors.red),
@@ -310,12 +306,7 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       }
     } on DioException catch (e) {
-      final msg = e.response?.data?['message'];
-      final errorText = msg is String
-          ? msg
-          : msg is List<dynamic>
-              ? msg.join(', ')
-              : e.message ?? 'Failed to remove photo.';
+      final errorText = NetworkException.fromDioError(e).message;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorText), backgroundColor: Colors.red),
@@ -504,12 +495,7 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       }
     } on DioException catch (e) {
-      final msg = e.response?.data?['message'];
-      final errorText = msg is String
-          ? msg
-          : msg is List
-              ? msg.join(', ')
-              : e.message ?? 'Failed to update profile.';
+      final errorText = NetworkException.fromDioError(e).message;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorText), backgroundColor: Colors.red),

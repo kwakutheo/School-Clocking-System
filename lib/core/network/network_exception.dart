@@ -26,7 +26,14 @@ class NetworkException implements Exception {
       case DioExceptionType.badResponse:
         final data = dioError.response?.data;
         if (data is Map<String, dynamic>) {
-          message = data['message'] ?? 'Received invalid status code: $statusCode';
+          final msg = data['message'];
+          if (msg is List) {
+            message = msg.join(', ');
+          } else if (msg is String) {
+            message = msg;
+          } else {
+            message = 'Received invalid status code: $statusCode';
+          }
           errorType = data['error'];
         } else {
           message = 'Received invalid status code: $statusCode';

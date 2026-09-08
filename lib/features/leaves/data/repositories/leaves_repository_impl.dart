@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:tk_clocking_system/core/constants/app_constants.dart';
 import 'package:tk_clocking_system/core/network/api_client.dart';
+import 'package:tk_clocking_system/core/network/network_exception.dart';
 import 'package:tk_clocking_system/features/leaves/data/models/leave_request_model.dart';
 import 'package:tk_clocking_system/features/leaves/domain/repositories/leaves_repository.dart';
 
@@ -40,7 +41,8 @@ class LeavesRepositoryImpl implements LeavesRepository {
           return Right(leaves);
         }
       }
-      return Left(e.response?.data?['message'] ?? 'Failed to load leaves');
+      final networkException = NetworkException.fromDioError(e);
+      return Left(networkException.message);
     } catch (e) {
       return Left('An unexpected error occurred');
     }
@@ -65,7 +67,8 @@ class LeavesRepositoryImpl implements LeavesRepository {
       );
       return Right(LeaveRequestModel.fromJson(response.data));
     } on DioException catch (e) {
-      return Left(e.response?.data?['message'] ?? 'Failed to submit leave request');
+      final networkException = NetworkException.fromDioError(e);
+      return Left(networkException.message);
     } catch (e) {
       return Left('An unexpected error occurred');
     }
@@ -77,7 +80,8 @@ class LeavesRepositoryImpl implements LeavesRepository {
       await apiClient.patch('/leaves/$leaveId/cancel');
       return const Right(null);
     } on DioException catch (e) {
-      return Left(e.response?.data?['message'] ?? 'Failed to cancel leave');
+      final networkException = NetworkException.fromDioError(e);
+      return Left(networkException.message);
     } catch (e) {
       return Left('An unexpected error occurred');
     }

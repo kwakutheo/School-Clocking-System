@@ -110,13 +110,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
         return Right(pending);
       }
       // Extract the actual server error message (e.g. geofence / duplicate).
-      final rawMsg = e.response?.data?['message'];
       final networkException = NetworkException.fromDioError(e);
-      final serverMsg = rawMsg is String
-          ? rawMsg
-          : rawMsg is List
-              ? rawMsg.join(', ')
-              : networkException.message;
+      final serverMsg = networkException.message;
 
       // Check for structured early-clock-out warning.
       try {
@@ -340,13 +335,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
           break;
         }
 
-        final rawMsg = e.response?.data?['message'];
         final networkException = NetworkException.fromDioError(e);
-        final serverMsg = rawMsg is String
-            ? rawMsg
-            : rawMsg is List
-                ? rawMsg.join(', ')
-                : networkException.message;
+        final serverMsg = networkException.message;
 
         firstError ??= serverMsg;
 
@@ -438,13 +428,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
         await _box.put(pending.id, pending.toJson());
         return Right(pending);
       }
-      final rawMsg = e.response?.data?['message'];
       final networkException = NetworkException.fromDioError(e);
-      final serverMsg = rawMsg is String
-          ? rawMsg
-          : rawMsg is List
-              ? rawMsg.join(', ')
-              : networkException.message;
+      final serverMsg = networkException.message;
 
       // Check for structured early-clock-out warning.
       try {

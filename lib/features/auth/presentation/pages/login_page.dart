@@ -7,6 +7,7 @@ import 'package:tk_clocking_system/features/auth/presentation/bloc/auth_state.da
 import 'package:dio/dio.dart';
 import 'package:tk_clocking_system/core/di/injection_container.dart';
 import 'package:tk_clocking_system/core/network/api_client.dart';
+import 'package:tk_clocking_system/core/network/network_exception.dart';
 import 'package:tk_clocking_system/core/services/storage_service.dart';
 import 'package:tk_clocking_system/core/services/biometric_service.dart';
 import 'package:tk_clocking_system/shared/widgets/app_text_field.dart';
@@ -491,13 +492,10 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             );
                           } on DioException catch (e) {
-                            final msg = e.response?.data['message'];
+                            final errorText = NetworkException.fromDioError(e).message;
                             setModalState(() {
                               isSubmitting = false;
-                              errorMessage = msg is List
-                                  ? msg.join(', ')
-                                  : msg?.toString() ??
-                                      'Failed to reset password';
+                              errorMessage = errorText;
                             });
                           } catch (e) {
                             setModalState(() {

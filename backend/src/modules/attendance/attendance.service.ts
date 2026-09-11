@@ -331,7 +331,7 @@ export class AttendanceService {
       );
       if (dist > branch.allowedRadius) {
         throw new BadRequestException(
-          `You are about ${Math.round(dist)}m away from ${branch.name} Department in your school. You should be within ${branch.allowedRadius}m.`,
+          `You are about ${dist >= 1000 ? (dist / 1000).toFixed(2) + 'km' : Math.round(dist) + 'm'} away from ${branch.name} Department in your school. You should be within ${branch.allowedRadius}m.`,
         );
       }
     }
@@ -963,7 +963,7 @@ export class AttendanceService {
       );
       if (dist > branch.allowedRadius) {
         throw new BadRequestException(
-          `You are about ${Math.round(dist)}m away from ${branch.name} Department in your school. You should be within ${branch.allowedRadius}m.`,
+          `You are about ${dist >= 1000 ? (dist / 1000).toFixed(2) + 'km' : Math.round(dist) + 'm'} away from ${branch.name} Department in your school. You should be within ${branch.allowedRadius}m.`,
         );
       }
     }

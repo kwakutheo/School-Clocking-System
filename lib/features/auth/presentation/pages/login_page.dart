@@ -250,30 +250,6 @@ class _LoginPageState extends State<LoginPage> {
               fontSize: 12.5,
             ),
           ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              icon: const Icon(Icons.support_agent_rounded, size: 18),
-              label: const Text('Contact HR Admin'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.orange.shade800,
-                side: BorderSide(color: Colors.orange.shade400),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'Please contact your HR Admin or School Administrator to unlock your account.'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-            ),
-          ),
         ],
       ),
     );

@@ -75,6 +75,15 @@ export class User extends TenantBaseEntity {
   @Column({ name: 'last_login_at', type: 'timestamp', nullable: true })
   lastLoginAt: Date | null;
 
+  @Column({ name: 'failed_login_attempts', type: 'int', default: 0 })
+  failedLoginAttempts: number;
+
+  @Column({ name: 'lock_until', type: 'timestamp', nullable: true })
+  lockUntil: Date | null;
+
+  @Column({ name: 'last_failed_at', type: 'timestamp', nullable: true })
+  lastFailedAt: Date | null;
+
   @Column({ name: 'mfa_enabled', default: false })
   mfaEnabled: boolean;
 

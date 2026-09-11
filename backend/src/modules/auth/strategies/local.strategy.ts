@@ -23,7 +23,7 @@ export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
     const context = req.body?.context as string | undefined;
     const user = await this.auth.validateUser(identifier, password, context);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials.');
+      throw new UnauthorizedException('Invalid username or password.');
     }
     return user;
   }

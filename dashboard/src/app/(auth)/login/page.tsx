@@ -116,10 +116,10 @@ export default function LoginPage() {
         router.push('/dashboard');
       }
     } catch (err: any) {
-      if (err?.response?.status !== 401) {
+      if (err?.response?.status !== 401 && err?.response?.status !== 429) {
         console.error('Login error:', err);
       }
-      const rawMsg = err?.response?.data?.message || err?.message || 'Invalid credentials. Please try again.';
+      const rawMsg = err?.response?.data?.message || err?.message || 'Invalid username or password. Please try again.';
       const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : rawMsg;
       setError(msg);
     } finally {

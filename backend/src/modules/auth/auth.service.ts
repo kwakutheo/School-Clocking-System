@@ -3,6 +3,8 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -41,8 +43,71 @@ export class AuthService {
     const user = await this.users.findByIdentifier(identifier?.trim());
     if (!user) return null;
 
+    // 1. Check Account Lockout
+    if (user.lockUntil && user.lockUntil > new Date()) {
+      const remainingSeconds = Math.ceil(
+        (user.lockUntil.getTime() - Date.now()) / 1000,
+      );
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.TOO_MANY_REQUESTS,
+          error: 'Too Many Requests',
+          code: 'ACCOUNT_LOCKED',
+          message: `Account temporarily locked due to consecutive failed attempts. Please try again in ${Math.ceil(remainingSeconds / 60)} minutes.`,
+          retryAfterSeconds: remainingSeconds,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    // 2. Verify Password
     const matches = await bcrypt.compare(password?.trim(), user.passwordHash);
-    if (!matches) return null;
+
+    if (!matches) {
+      const updatedAttempts = user.failedLoginAttempts + 1;
+      const maxAttempts = 5;
+      const isNowLocked = updatedAttempts >= maxAttempts;
+      const lockUntil = isNowLocked
+        ? new Date(Date.now() + 5 * 60 * 1000)
+        : null;
+
+      await this.users.update(user.id, {
+        failedLoginAttempts: updatedAttempts,
+        lockUntil: lockUntil,
+        lastFailedAt: new Date(),
+      });
+
+      if (isNowLocked) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.TOO_MANY_REQUESTS,
+            error: 'Too Many Requests',
+            code: 'ACCOUNT_LOCKED',
+            message:
+              'Account temporarily locked due to too many failed attempts. Please wait for 5 minutes or contact your HR Admin.',
+            retryAfterSeconds: 300,
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'Invalid username or password.',
+          attemptsRemaining: maxAttempts - updatedAttempts,
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    // 3. Successful Login: Reset Counters
+    if (user.failedLoginAttempts > 0 || user.lockUntil) {
+      await this.users.update(user.id, {
+        failedLoginAttempts: 0,
+        lockUntil: null,
+      });
+    }
 
     // Enforce tenant boundary only for web dashboard logins.
     // Mobile app logins do not send a context, so they bypass this check —

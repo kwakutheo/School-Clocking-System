@@ -72,3 +72,5 @@ mobile_app_update_automation.md
 wireless_debugging.bat
 build_apk.bat
 apk_split_implementation_instructions.md
+database.md
+update_settings_page.md

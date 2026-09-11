@@ -87,6 +87,14 @@ export class UsersService {
     await this.repo.update(id, { fcmToken: token });
   }
 
+  async unlockUser(id: string): Promise<User> {
+    await this.repo.update(id, {
+      failedLoginAttempts: 0,
+      lockUntil: null,
+    });
+    return this.findById(id);
+  }
+
   async checkUsernameAvailability(
     username: string,
     fullName?: string,

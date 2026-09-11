@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -31,11 +32,52 @@ class _LoginPageState extends State<LoginPage> {
   String? _savedUsername;
   String? _savedPassword;
 
+  // ── Rate-limiting countdown ──────────────────────────────────────────────
+  int _lockSecondsRemaining = 0;
+  Timer? _lockTimer;
+
   @override
   void initState() {
     super.initState();
     _checkBiometrics();
   }
+
+  @override
+  void dispose() {
+    _lockTimer?.cancel();
+    _identifierController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _startLockCountdown(int seconds) {
+    _lockTimer?.cancel();
+    setState(() {
+      _lockSecondsRemaining = seconds;
+    });
+    _lockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_lockSecondsRemaining <= 1) {
+        timer.cancel();
+        if (mounted) {
+          setState(() {
+            _lockSecondsRemaining = 0;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() => _lockSecondsRemaining--);
+        }
+      }
+    });
+  }
+
+  String get _formattedLockCountdown {
+    final m = (_lockSecondsRemaining ~/ 60).toString().padLeft(2, '0');
+    final s = (_lockSecondsRemaining % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  bool get _isLocked => _lockSecondsRemaining > 0;
 
   Future<void> _checkBiometrics() async {
     final storage = sl<StorageService>();
@@ -72,14 +114,8 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  @override
-  void dispose() {
-    _identifierController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
   void _submit() {
+    if (_isLocked) return;
     if (!_formKey.currentState!.validate()) return;
     context.read<AuthBloc>().add(
           AuthLoginEvent(
@@ -122,6 +158,8 @@ class _LoginPageState extends State<LoginPage> {
               );
             }
             context.go('/home');
+          } else if (state is AuthAccountLocked) {
+            _startLockCountdown(state.retryAfterSeconds);
           } else if (state is AuthFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -145,7 +183,9 @@ class _LoginPageState extends State<LoginPage> {
                 _buildHeader(theme, colorScheme),
                 const SizedBox(height: 48),
                 _buildForm(theme),
-                const SizedBox(height: 32),
+                const SizedBox(height: 16),
+                if (_isLocked) _buildLockBanner(colorScheme),
+                const SizedBox(height: 16),
                 _buildLoginButton(),
                 const SizedBox(height: 24),
                 _buildFooter(theme, colorScheme),
@@ -153,6 +193,88 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildLockBanner(ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.shade300, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.lock_clock_outlined,
+                  color: Colors.orange, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Account Temporarily Locked',
+                  style: TextStyle(
+                    color: Colors.orange.shade800,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade700,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  _formattedLockCountdown,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Too many failed attempts. Please wait for the timer to expire, or contact your HR Admin for an immediate unlock.',
+            style: TextStyle(
+              color: Colors.orange.shade800,
+              fontSize: 12.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.support_agent_rounded, size: 18),
+              label: const Text('Contact HR Admin'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.orange.shade800,
+                side: BorderSide(color: Colors.orange.shade400),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Please contact your HR Admin or School Administrator to unlock your account.'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -287,17 +409,18 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildLoginButton() {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
+        final isLoading = state is AuthLoading;
         return Row(
           children: [
             Expanded(
               child: PrimaryButton(
-                label: 'Sign In',
-                icon: Icons.login_rounded,
-                isLoading: state is AuthLoading,
-                onPressed: _submit,
+                label: _isLocked ? 'Account Locked' : 'Sign In',
+                icon: _isLocked ? Icons.lock_rounded : Icons.login_rounded,
+                isLoading: isLoading,
+                onPressed: _isLocked ? null : _submit,
               ),
             ),
-            if (_canUseBiometrics) ...[
+            if (_canUseBiometrics && !_isLocked) ...[
               const SizedBox(width: 16),
               SizedBox(
                 height: 56, // Match PrimaryButton standard height
@@ -309,7 +432,7 @@ class _LoginPageState extends State<LoginPage> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  onPressed: state is AuthLoading ? null : _loginWithBiometrics,
+                  onPressed: isLoading ? null : _loginWithBiometrics,
                   child: const Icon(Icons.fingerprint_rounded, size: 28),
                 ),
               ),

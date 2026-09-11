@@ -1,10 +1,7 @@
 import 'dart:convert';
-
 import 'package:crypto/crypto.dart';
-
 import 'package:dio/dio.dart';
 import 'package:dartz/dartz.dart';
-
 import 'package:tk_clocking_system/core/errors/failures.dart';
 import 'package:tk_clocking_system/core/network/api_client.dart';
 import 'package:tk_clocking_system/core/network/api_endpoints.dart';
@@ -69,6 +66,14 @@ class AuthRepositoryImpl implements AuthRepository {
 
       return Right(LoginResult(user: user));
     } on DioException catch (e) {
+      if (e.response?.statusCode == 429) {
+        // Account locked due to too many failed attempts.
+        final networkException = NetworkException.fromDioError(e);
+        return Left(AccountLockedFailure(
+          networkException.message,
+          networkException.retryAfterSeconds ?? 300,
+        ));
+      }
       if (e.response?.statusCode == 401) {
         // Extract the actual reason from the backend response body.
         // The backend sends e.g: { "message": "Your account has been deactivated..." }
@@ -118,7 +123,7 @@ class AuthRepositoryImpl implements AuthRepository {
         _hashPassword(password) != cachedHash) {
       return const Left(
         InvalidCredentialsFailure(
-          'Invalid username or password (offline mode).',
+          'Invalid username or password (offline mode).\nTurn on the internet connection if you want to switch to another user.',
         ),
       );
     }
@@ -127,8 +132,6 @@ class AuthRepositoryImpl implements AuthRepository {
     if (user.tenantId != null) {
       await _storage.saveTenantId(user.tenantId!);
     }
-    // Restore the primary user key so `getCachedUser` finds it on next boot,
-    // keeping the user logged in across app restarts while offline.
     await _storage.saveUserJson(user.toJsonString());
 
     return Right(LoginResult(user: user, isOffline: true));
@@ -167,15 +170,7 @@ class AuthRepositoryImpl implements AuthRepository {
         ApiEndpoints.employeeMe,
       );
       final data = response.data!;
-
-      // /employees/me returns the Employee entity directly.
-      // The user details live under data['user'], and employment details
-      // (branch, department, position, hireDate) are at the top level.
       final userMap = (data['user'] as Map<String, dynamic>?) ?? data;
-
-      // Merge employee-level fields into the user map so UserModel.fromJson
-      // can pick up branch/department names, position, and hire date.
-      // NOTE: userMap['tenant'] is now included by the backend (user.tenant join).
       final merged = <String, dynamic>{
         ...userMap,
         'employee_id': data['id'] ?? userMap['employee_id'],

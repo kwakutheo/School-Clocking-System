@@ -43,3 +43,18 @@ class AuthFailure extends AuthState {
   @override
   List<Object?> get props => [message];
 }
+
+/// Login failed because the account is temporarily locked.
+/// [retryAfterSeconds] drives the countdown timer on the login screen.
+class AuthAccountLocked extends AuthState {
+  const AuthAccountLocked({
+    required this.message,
+    required this.retryAfterSeconds,
+  });
+
+  final String message;
+  final int retryAfterSeconds;
+
+  @override
+  List<Object?> get props => [message, retryAfterSeconds];
+}

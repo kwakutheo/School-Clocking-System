@@ -70,7 +70,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
 
     if (result.isLeft()) {
-      emit(AuthFailure(result.swap().getOrElse(() => const ServerFailure()).message));
+      final failure = result.swap().getOrElse(() => const ServerFailure());
+      if (failure is AccountLockedFailure) {
+        emit(AuthAccountLocked(
+          message: failure.message,
+          retryAfterSeconds: failure.retryAfterSeconds,
+        ));
+      } else {
+        emit(AuthFailure(failure.message));
+      }
       return;
     }
 

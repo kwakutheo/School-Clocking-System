@@ -1,9 +1,5 @@
 import 'package:equatable/equatable.dart';
 
-/// Base class for all domain-layer failures.
-///
-/// Using [Failure] instead of raw exceptions lets the presentation layer
-/// display user-friendly messages without catching raw [Exception]s.
 abstract class Failure extends Equatable {
   const Failure(this.message);
 
@@ -37,6 +33,17 @@ class TimeoutFailure extends Failure {
 class InvalidCredentialsFailure extends Failure {
   const InvalidCredentialsFailure(
       [super.message = 'Invalid username or password.']);
+}
+
+/// Returned when the backend responds with HTTP 429 (ACCOUNT_LOCKED).
+/// Carries [retryAfterSeconds] so the UI can render a live countdown.
+class AccountLockedFailure extends Failure {
+  const AccountLockedFailure(super.message, this.retryAfterSeconds);
+
+  final int retryAfterSeconds;
+
+  @override
+  List<Object?> get props => [message, retryAfterSeconds];
 }
 
 // ── Location failures ─────────────────────────────────────────────────────────
@@ -74,5 +81,6 @@ class EarlyClockOutFailure extends Failure {
 
 class TimeTamperingFailure extends Failure {
   const TimeTamperingFailure(
-      [super.message = 'Device time has been manipulated. Please correct your system clock.']);
+      [super.message =
+          'Device time has been manipulated. Please correct your system clock.']);
 }

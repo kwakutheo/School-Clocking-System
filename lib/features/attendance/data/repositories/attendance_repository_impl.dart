@@ -22,9 +22,8 @@ import 'package:tk_clocking_system/features/attendance/data/models/term_report_m
 import 'package:tk_clocking_system/features/attendance/domain/entities/term_report_entity.dart';
 import 'package:tk_clocking_system/features/dashboard/data/models/home_data_model.dart';
 import 'package:tk_clocking_system/features/dashboard/domain/entities/home_data_entity.dart';
+import 'package:tk_clocking_system/core/utils/offline_state_engine.dart';
 
-/// Concrete implementation of [AttendanceRepository].
-///
 /// Strategy:
 /// - Online  → POST to backend, mark as synced.
 /// - Offline → Save to Hive with [SyncStatus.pending]; sync later.
@@ -85,6 +84,9 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     final isOnline = _connectivity.isOnline;
 
     if (!isOnline) {
+      final offlineBlock = _checkOfflineRules(type);
+      if (offlineBlock != null) return Left(offlineBlock);
+
       await _box.put(pending.id, pending.toJson());
       return Right(pending);
     }
@@ -105,6 +107,9 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
+        final offlineBlock = _checkOfflineRules(type);
+        if (offlineBlock != null) return Left(offlineBlock);
+
         // No reachability to backend — save offline for later sync.
         await _box.put(pending.id, pending.toJson());
         return Right(pending);
@@ -172,7 +177,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
             final list = cached['data'] as List<dynamic>;
             final records = list
                 .whereType<Map>()
-                .map((e) => AttendanceModel.fromJson(Map<String, dynamic>.from(e)))
+                .map((e) =>
+                    AttendanceModel.fromJson(Map<String, dynamic>.from(e)))
                 .toList();
             return Right(records);
           }
@@ -247,7 +253,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
         if (cached != null) {
           try {
             // Deeply convert the Hive map to a standard JSON map to avoid type errors in fromJson
-            final standardMap = jsonDecode(jsonEncode(cached)) as Map<String, dynamic>;
+            final standardMap =
+                jsonDecode(jsonEncode(cached)) as Map<String, dynamic>;
             final report = TermReportModel.fromJson(standardMap);
             return Right(report);
           } catch (_) {}
@@ -290,9 +297,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       final trustedNow = _time.currentGhanaTime;
       await _userBox.put('home_data_cache', data.toJson(now: trustedNow));
       await _userBox.flush();
-    } catch (_) {
-      // Home data is still usable for the current screen even if persistence fails.
-    }
+    } catch (_) {}
   }
 
   // ── Sync pending ──────────────────────────────────────────────────────────
@@ -340,10 +345,6 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
 
         firstError ??= serverMsg;
 
-        // If it's a 4xx error (business rule rejection like weekend clocking),
-        // delete it from local storage so it doesn't get stuck forever.
-        // DANGER: We MUST exclude 401 (Unauthorized) so we don't delete records
-        // just because the user's tokens expired while they were offline!
         if (e.response?.statusCode != null &&
             e.response!.statusCode! >= 400 &&
             e.response!.statusCode! < 500 &&
@@ -394,13 +395,18 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       deviceId: deviceId, // Preserved so device-lock rule is enforced on sync
       uptimeAtClockIn: currentUptime > 0 ? currentUptime : null,
       calculatedBootTime: calculatedBootTime,
+      qrCode: qrCode,
     );
 
     final isOnline = _connectivity.isOnline;
 
     if (!isOnline) {
-      // QR clock-ins still need online validation, so we can't fully support
-      // offline QR scans. Save with a flag indicating it needs QR validation.
+      final offlineBlock = _checkOfflineRules(type);
+      if (offlineBlock != null) return Left(offlineBlock);
+
+      final qrBlock = _checkQrCodeOffline(qrCode);
+      if (qrBlock != null) return Left(qrBlock);
+
       await _box.put(pending.id, pending.toJson());
       return Right(pending);
     }
@@ -425,6 +431,12 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
+        final offlineBlock = _checkOfflineRules(type);
+        if (offlineBlock != null) return Left(offlineBlock);
+
+        final qrBlock = _checkQrCodeOffline(qrCode);
+        if (qrBlock != null) return Left(qrBlock);
+
         await _box.put(pending.id, pending.toJson());
         return Right(pending);
       }
@@ -456,6 +468,119 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       final decoded = jsonDecode(s);
       if (decoded is Map<String, dynamic>) return decoded;
     } catch (_) {}
+    return null;
+  }
+
+  Failure? _checkQrCodeOffline(String scannedQrCode) {
+    try {
+      final raw = _userBox.get('home_data_cache');
+      if (raw == null) return null;
+
+      final json = deepCastMap(raw);
+      final cachedQrCode = json['branchQrCode'] as String?;
+
+      if (cachedQrCode == null) return null;
+
+      if (scannedQrCode != cachedQrCode) {
+        return const InvalidQrCodeFailure();
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Failure? _checkOfflineRules(AttendanceType type) {
+    try {
+      final trustedNow = _time.currentGhanaTime;
+
+      if (trustedNow.weekday == 6 || trustedNow.weekday == 7) {
+        return const WeekendFailure(
+            'Today is a weekend. Clocking is not allowed on non-working days.');
+      }
+
+      final raw = _userBox.get('home_data_cache');
+      if (raw == null) return null;
+
+      final json = deepCastMap(raw);
+      final staleData = HomeDataModel.fromJson(json);
+
+      // Compute the exact effective state for today using the central offline engine
+      final cachedData =
+          OfflineStateEngine.recomputeForOfflineDay(staleData, trustedNow);
+
+      if (cachedData.isHoliday) {
+        final name = cachedData.holidayName;
+        return HolidayFailure(
+          name != null && name.isNotEmpty
+              ? 'Today is a public holiday ($name). Clocking is not allowed on non-working days.'
+              : 'Today is a public holiday. Clocking is not allowed on non-working days.',
+        );
+      }
+
+      if (cachedData.isVacation) {
+        final name = cachedData.vacationName;
+        return LeaveOrVacationFailure(
+          name != null && name.isNotEmpty
+              ? 'Today is marked as $name. Clocking is not allowed.'
+              : 'Clocking is not allowed during vacation or approved leave.',
+        );
+      }
+
+      bool effectiveHasClockedIn = cachedData.hasClockedInToday;
+      bool effectiveIsOnBreak = cachedData.isOnBreak;
+
+      switch (type) {
+        case AttendanceType.clockIn:
+          if (effectiveHasClockedIn) {
+            return const DuplicateClockInFailure();
+          }
+          final sTime = cachedData.shiftStartTime;
+          final eTime = cachedData.shiftEndTime;
+          if (sTime != null && eTime != null) {
+            final sParts = sTime.split(':').map(int.parse).toList();
+            final eParts = eTime.split(':').map(int.parse).toList();
+            var shiftStart = DateTime(trustedNow.year, trustedNow.month,
+                trustedNow.day, sParts[0], sParts[1]);
+            var shiftEnd = DateTime(trustedNow.year, trustedNow.month,
+                trustedNow.day, eParts[0], eParts[1]);
+
+            if (shiftEnd.isBefore(shiftStart)) {
+              if (trustedNow.hour < eParts[0] ||
+                  (trustedNow.hour == eParts[0] &&
+                      trustedNow.minute < eParts[1])) {
+                shiftStart = shiftStart.subtract(const Duration(days: 1));
+              } else {
+                shiftEnd = shiftEnd.add(const Duration(days: 1));
+              }
+            }
+
+            final allowedStart = shiftStart.subtract(const Duration(hours: 2));
+            if (trustedNow.isBefore(allowedStart) ||
+                trustedNow.isAfter(shiftEnd)) {
+              return const OutsideShiftHoursFailure();
+            }
+          }
+          break;
+        case AttendanceType.clockOut:
+          if (!effectiveHasClockedIn) {
+            return const NotClockedInFailure();
+          }
+          break;
+        case AttendanceType.breakIn:
+          if (!effectiveHasClockedIn) {
+            return const NotClockedInFailure();
+          }
+          if (effectiveIsOnBreak) {
+            return const AlreadyOnBreakFailure();
+          }
+          break;
+        case AttendanceType.breakOut:
+          if (!effectiveIsOnBreak) {
+            return const NotOnBreakFailure();
+          }
+          break;
+      }
+    } catch (_) {}
+
     return null;
   }
 }

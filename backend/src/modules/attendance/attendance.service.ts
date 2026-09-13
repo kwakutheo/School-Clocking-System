@@ -194,8 +194,7 @@ export class AttendanceService {
           }
         }
 
-        // Rule: Early clock-out warning (soft block — user can override with forceEarlyOut).
-        if (!dto.forceEarlyOut) {
+        if (!dto.forceEarlyOut && !dto.isOfflineSync) {
           const fullEmp = await this.employees.findById(employee.id);
           const shift = fullEmp?.shift;
           if (shift) {
@@ -1370,10 +1369,6 @@ export class AttendanceService {
 
       // Track whether the shift window has ended
       isShiftOver = now > shiftEnd;
-
-      // Late alert: only show while shift is still ongoing and employee never clocked in today.
-      // Note: We use the raw shift start (sHours, sMins) for the banner so it appears
-      // immediately when the countdown hits zero, even if the grace period hasn't ended.
       const bannerLateStart = new Date(today);
       bannerLateStart.setHours(sHours, sMins, 0, 0);
 
@@ -1603,6 +1598,7 @@ export class AttendanceService {
       branchLat: branch?.latitude ? Number(branch.latitude) : null,
       branchLng: branch?.longitude ? Number(branch.longitude) : null,
       branchRadius: branch?.allowedRadius ? Number(branch.allowedRadius) : null,
+      branchQrCode: branch?.qrCode ?? null,
       // Admin override info — shown as a banner on the mobile app
       adminOverride: (() => {
         const overrideLog = todayLogs.find(
@@ -1887,29 +1883,6 @@ export class AttendanceService {
       dayStatus,
     };
   }
-
-  // ── Device Usage Restriction ─────────────────────────────────────────────
-  /**
-   * Enforces a two-way device lock for the current calendar day:
-   *
-   * Rule 1 — Device → Employee lock:
-   *   If Phone X was already used by Employee A today, no other employee
-   *   may use Phone X for any clocking action for the rest of the day.
-   *
-   * Rule 2 — Employee → Device lock:
-   *   If Employee A already clocked on Phone X today, Employee A may not
-   *   use any other phone for subsequent actions (break, clock-out, etc.)
-   *   for the rest of the day. The error message tells them exactly when
-   *   they first clocked in and on which session, without exposing IDs.
-   *
-   * ⚠️  OFFLINE SYNC BEHAVIOUR:
-   *   `now` is derived from dto.timestamp (original clock time), so the
-   *   day range is computed from the ORIGINAL event date, not the sync date.
-   *   This is correct — do not replace `now` with `new Date()` here.
-   *
-   * Skipped entirely when deviceId is null/undefined (backward compat).
-   * NOT called from adminManualClock() — admin overrides are always exempt.
-   */
   private async _checkDeviceUsageRestriction(
     deviceId: string | undefined,
     now: Date,
@@ -2009,15 +1982,10 @@ export class AttendanceService {
 
     let eligibleStaffRows = [...allStaffRows];
 
-    // ── Eligibility filter (Applied Globally) ───────────────────────────────
-    // Exclude employees whose active window covers less than minEligibilityPct
-    // of the FULL period's working days (totalPeriodDays), not just the max
-    // among employees. This correctly filters Issifu-style cases where an
-    // employee has only worked 16 out of 202 total expected days.
     if (minEligibilityPct > 0 && eligibleStaffRows.length > 0) {
       eligibleStaffRows = eligibleStaffRows.filter((row) => {
         const totalPeriod = row.metrics?.totalPeriodDays ?? 0;
-        if (totalPeriod === 0) return true; // cannot determine; include
+        if (totalPeriod === 0) return true;
         const coverage = (row.metrics?.expectedDays ?? 0) / totalPeriod;
         return coverage >= minEligibilityPct;
       });

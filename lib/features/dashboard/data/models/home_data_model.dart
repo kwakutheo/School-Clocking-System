@@ -43,6 +43,7 @@ class HomeDataModel extends HomeDataEntity {
     super.branchLat,
     super.branchLng,
     super.branchRadius,
+    super.branchQrCode,
     super.adminOverrideName,
     super.adminOverrideNote,
     super.hasClockedInToday,
@@ -115,6 +116,7 @@ class HomeDataModel extends HomeDataEntity {
       branchLat: (json['branchLat'] as num?)?.toDouble(),
       branchLng: (json['branchLng'] as num?)?.toDouble(),
       branchRadius: (json['branchRadius'] as num?)?.toDouble(),
+      branchQrCode: json['branchQrCode'] as String?,
       adminOverrideName: json['adminOverride'] != null
           ? json['adminOverride']['adminName'] as String?
           : null,
@@ -167,6 +169,7 @@ class HomeDataModel extends HomeDataEntity {
       'branchLat': branchLat,
       'branchLng': branchLng,
       'branchRadius': branchRadius,
+      'branchQrCode': branchQrCode,
       // Must match fromJson's nested structure exactly so the cache round-trips correctly
       'adminOverride': (adminOverrideName != null)
           ? {

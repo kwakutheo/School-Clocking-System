@@ -18,7 +18,10 @@ class AttendanceModel extends AttendanceEntity {
     super.deviceId,
     super.uptimeAtClockIn,
     super.calculatedBootTime,
+    this.qrCode,
   });
+
+  final String? qrCode;
 
   /// Creates a new pending (offline) attendance record with a local UUID.
   factory AttendanceModel.pending({
@@ -31,6 +34,7 @@ class AttendanceModel extends AttendanceEntity {
     String? deviceId,
     int? uptimeAtClockIn,
     int? calculatedBootTime,
+    String? qrCode,
   }) =>
       AttendanceModel(
         id: const Uuid().v4(),
@@ -44,6 +48,7 @@ class AttendanceModel extends AttendanceEntity {
         deviceId: deviceId,
         uptimeAtClockIn: uptimeAtClockIn,
         calculatedBootTime: calculatedBootTime,
+        qrCode: qrCode,
       );
 
   factory AttendanceModel.fromJson(Map<String, dynamic> json) {
@@ -75,7 +80,7 @@ class AttendanceModel extends AttendanceEntity {
       id: json['id']?.toString() ?? const Uuid().v4(),
       employeeId: employeeId,
       type: AttendanceType.fromValue(json['type'] as String? ?? 'CLOCK_IN'),
-      timestamp: json['timestamp'] != null 
+      timestamp: json['timestamp'] != null
           ? DateTime.tryParse(json['timestamp'].toString()) ?? DateTime.now()
           : DateTime.now(),
       syncStatus: syncStatus,
@@ -86,6 +91,7 @@ class AttendanceModel extends AttendanceEntity {
       deviceId: deviceId,
       uptimeAtClockIn: json['uptime_at_clock_in'] as int? ?? json['uptimeAtClockIn'] as int?,
       calculatedBootTime: json['calculated_boot_time'] as int? ?? json['calculatedBootTime'] as int?,
+      qrCode: json['qrCode'] as String? ?? json['qr_code'] as String?,
     );
   }
 
@@ -102,6 +108,7 @@ class AttendanceModel extends AttendanceEntity {
         'sync_status': syncStatus.value,
         'uptime_at_clock_in': uptimeAtClockIn,
         'calculated_boot_time': calculatedBootTime,
+        if (qrCode != null) 'qrCode': qrCode,
       };
 
   /// JSON for backend API (handles snake_case to camelCase conversion)
@@ -114,5 +121,6 @@ class AttendanceModel extends AttendanceEntity {
         'deviceId': deviceId,
         'uptimeAtClockIn': uptimeAtClockIn,
         'calculatedBootTime': calculatedBootTime,
+        if (qrCode != null) 'qrCode': qrCode,
       };
 }

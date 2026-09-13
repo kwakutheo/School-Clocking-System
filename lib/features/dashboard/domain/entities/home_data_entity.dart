@@ -49,6 +49,7 @@ class HomeDataEntity extends Equatable {
   final double? branchLat;
   final double? branchLng;
   final double? branchRadius;
+  final String? branchQrCode;
 
   /// When not null, today's clock-in was performed by an admin on behalf of the employee.
   final String? adminOverrideName;
@@ -87,6 +88,7 @@ class HomeDataEntity extends Equatable {
     this.branchLat,
     this.branchLng,
     this.branchRadius,
+    this.branchQrCode,
     this.adminOverrideName,
     this.adminOverrideNote,
     this.hasClockedInToday = false,
@@ -124,6 +126,7 @@ class HomeDataEntity extends Equatable {
         branchLat,
         branchLng,
         branchRadius,
+        branchQrCode,
         adminOverrideName,
         adminOverrideNote,
         hasClockedInToday,

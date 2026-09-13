@@ -84,3 +84,53 @@ class TimeTamperingFailure extends Failure {
       [super.message =
           'Device time has been manipulated. Please correct your system clock.']);
 }
+
+// ── Offline non-working-day failures ─────────────────────────────────────────
+/// Returned when the user tries to clock in/out on a weekend while offline.
+class WeekendFailure extends Failure {
+  const WeekendFailure(
+      [super.message =
+          'Clocking is not allowed on weekends. Enjoy your day off!']);
+}
+
+class HolidayFailure extends Failure {
+  const HolidayFailure(
+      [super.message = 'Clocking is not allowed on a public holiday.']);
+}
+
+class LeaveOrVacationFailure extends Failure {
+  const LeaveOrVacationFailure(
+      [super.message =
+          'Clocking is not allowed while you are on leave or vacation.']);
+}
+
+class DuplicateClockInFailure extends Failure {
+  const DuplicateClockInFailure(
+      [super.message = 'You have already clocked in today.']);
+}
+
+class OutsideShiftHoursFailure extends Failure {
+  const OutsideShiftHoursFailure(
+      [super.message =
+          'You can only clock in within your assigned shift hours (or up to 2 hours before).']);
+}
+
+class NotClockedInFailure extends Failure {
+  const NotClockedInFailure(
+      [super.message = 'You must clock in first before taking this action.']);
+}
+
+class AlreadyOnBreakFailure extends Failure {
+  const AlreadyOnBreakFailure([super.message = 'You are already on a break.']);
+}
+
+class NotOnBreakFailure extends Failure {
+  const NotOnBreakFailure(
+      [super.message = 'You are not currently on a break.']);
+}
+
+class InvalidQrCodeFailure extends Failure {
+  const InvalidQrCodeFailure(
+      [super.message =
+          'This QR code is invalid or does not belong to any registered school or your assigned branch. Please check and try again.']);
+}

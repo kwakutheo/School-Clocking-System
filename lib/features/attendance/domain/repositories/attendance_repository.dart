@@ -27,7 +27,8 @@ abstract interface class AttendanceRepository {
   });
 
   /// Pushes all pending offline records to the backend.
-  Future<Either<Failure, int>> syncPendingRecords();
+  /// Returns a record with [synced] count and [expired] count.
+  Future<Either<Failure, ({int synced, int expired})>> syncPendingRecords();
 
   Future<Either<Failure, TermReportEntity>> getMyTermReport();
 

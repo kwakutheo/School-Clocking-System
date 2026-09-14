@@ -71,7 +71,7 @@ class _ClockInPageState extends State<ClockInPage> {
                 ),
                 content: Text(
                   isOffline
-                      ? '${_label(state.record.type)} saved offline. It will sync automatically when you are connected to the internet.'
+                      ? '${_label(state.record.type)} saved offline. Please connect to the internet within 72 hours for a successful sync.'
                       : '${_label(state.record.type)} recorded successfully!',
                   textAlign: TextAlign.center,
                 ),

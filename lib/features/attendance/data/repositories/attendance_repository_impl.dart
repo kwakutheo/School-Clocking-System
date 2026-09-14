@@ -305,8 +305,9 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
 
   // ── Sync pending ──────────────────────────────────────────────────────────
   @override
-  Future<Either<Failure, int>> syncPendingRecords() async {
+  Future<Either<Failure, ({int synced, int expired})>> syncPendingRecords() async {
     var synced = 0;
+    var expired = 0;
     String? firstError;
 
     final keys = _box.keys.toList();
@@ -317,6 +318,14 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
 
       final model = AttendanceModel.fromJson(Map<String, dynamic>.from(raw));
       if (model.syncStatus != SyncStatus.pending) continue;
+
+      // Enforce 72-hour expiration for offline records.
+      // Use trusted NTP-anchored time so a manipulated device clock cannot delay expiry.
+      if (_time.currentGhanaTime.difference(model.timestamp).inHours >= 72) {
+        await _box.delete(key);
+        expired++;
+        continue;
+      }
 
       try {
         final currentUptime = await _uptime.getUptimeMs();
@@ -364,7 +373,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       return Left(ServerFailure(firstError));
     }
 
-    return Right(synced);
+    return Right((synced: synced, expired: expired));
   }
 
   // ── QR clock-in ───────────────────────────────────────────────────────────

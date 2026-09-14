@@ -4,11 +4,12 @@ import 'package:tk_clocking_system/features/attendance/domain/repositories/atten
 
 /// Flushes all locally stored pending attendance records to the backend.
 ///
-/// Returns the number of records successfully synced.
+/// Returns a record with the number of records [synced] and [expired].
 class SyncPendingAttendanceUseCase {
   const SyncPendingAttendanceUseCase(this._repository);
 
   final AttendanceRepository _repository;
 
-  Future<Either<Failure, int>> call() => _repository.syncPendingRecords();
+  Future<Either<Failure, ({int synced, int expired})>> call() =>
+      _repository.syncPendingRecords();
 }

@@ -396,23 +396,53 @@ class _DashboardTabState extends State<_DashboardTab>
         } else if (state is AttendanceSynced) {
           _checkPending();
           _loadData(silent: true);
-          if (state.count > 0) {
+
+          // Only show a dialog if something actually happened
+          if (state.count > 0 || state.expired > 0) {
+            final hasBoth = state.count > 0 && state.expired > 0;
+            final onlyExpired = state.count == 0 && state.expired > 0;
+
             showDialog(
               context: context,
               builder: (ctx) => AlertDialog(
-                title: const Row(
-                  children: [
-                    Icon(Icons.check_circle_rounded, color: Colors.green),
-                    SizedBox(width: 8),
-                    Text('Sync Successful'),
-                  ],
+                icon: Icon(
+                  onlyExpired
+                      ? Icons.warning_amber_rounded
+                      : hasBoth
+                          ? Icons.info_outline_rounded
+                          : Icons.check_circle_rounded,
+                  color: onlyExpired
+                      ? Colors.orange
+                      : hasBoth
+                          ? Colors.blue
+                          : Colors.green,
+                  size: 40,
+                ),
+                title: Text(
+                  onlyExpired
+                      ? 'Offline Record(s) Expired'
+                      : hasBoth
+                          ? 'Sync Summary'
+                          : 'Sync Successful',
+                  textAlign: TextAlign.center,
                 ),
                 content: Text(
-                    'Successfully synced ${state.count} offline record(s).'),
+                  [
+                    if (state.count > 0)
+                      '✅ ${state.count} offline record(s) synced successfully.',
+                    if (state.expired > 0)
+                      '⚠️ ${state.expired} offline record(s) expired (older than 72 hours) '
+                          'and have been removed.\n\nPlease contact HR to manually log the affected attendance.',
+                  ].join('\n\n'),
+                  textAlign: TextAlign.center,
+                ),
                 actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    child: const Text('OK'),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('OK, Understood'),
+                    ),
                   ),
                 ],
               ),

@@ -38,13 +38,15 @@ class AttendanceHistoryLoaded extends AttendanceState {
 }
 
 /// Emitted after a sync run completes.
+/// [count] = records pushed to server. [expired] = records discarded after 72 h.
 class AttendanceSynced extends AttendanceState {
-  const AttendanceSynced(this.count);
+  const AttendanceSynced({required this.count, this.expired = 0});
 
   final int count;
+  final int expired;
 
   @override
-  List<Object?> get props => [count];
+  List<Object?> get props => [count, expired];
 }
 
 class AttendanceFailure extends AttendanceState {

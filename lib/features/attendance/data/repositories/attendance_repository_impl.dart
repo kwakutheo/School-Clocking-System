@@ -12,6 +12,7 @@ import 'package:tk_clocking_system/core/network/network_exception.dart';
 import 'package:tk_clocking_system/core/services/connectivity_service.dart';
 import 'package:tk_clocking_system/core/services/time_service.dart';
 import 'package:tk_clocking_system/core/services/uptime_service.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:tk_clocking_system/features/attendance/data/models/attendance_model.dart';
 import 'package:tk_clocking_system/features/attendance/domain/entities/attendance_entity.dart';
 import 'package:tk_clocking_system/features/attendance/domain/repositories/attendance_repository.dart';
@@ -84,7 +85,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     final isOnline = _connectivity.isOnline;
 
     if (!isOnline) {
-      final offlineBlock = _checkOfflineRules(type);
+      final offlineBlock =
+          _checkOfflineRules(type, lat: latitude, lng: longitude);
       if (offlineBlock != null) return Left(offlineBlock);
 
       await _box.put(pending.id, pending.toJson());
@@ -107,7 +109,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
-        final offlineBlock = _checkOfflineRules(type);
+        final offlineBlock =
+            _checkOfflineRules(type, lat: latitude, lng: longitude);
         if (offlineBlock != null) return Left(offlineBlock);
 
         // No reachability to backend — save offline for later sync.
@@ -401,7 +404,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     final isOnline = _connectivity.isOnline;
 
     if (!isOnline) {
-      final offlineBlock = _checkOfflineRules(type);
+      final offlineBlock =
+          _checkOfflineRules(type, lat: latitude, lng: longitude);
       if (offlineBlock != null) return Left(offlineBlock);
 
       final qrBlock = _checkQrCodeOffline(qrCode);
@@ -431,7 +435,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
-        final offlineBlock = _checkOfflineRules(type);
+        final offlineBlock =
+            _checkOfflineRules(type, lat: latitude, lng: longitude);
         if (offlineBlock != null) return Left(offlineBlock);
 
         final qrBlock = _checkQrCodeOffline(qrCode);
@@ -488,7 +493,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     return null;
   }
 
-  Failure? _checkOfflineRules(AttendanceType type) {
+  Failure? _checkOfflineRules(AttendanceType type,
+      {double? lat, double? lng}) {
     try {
       final trustedNow = _time.currentGhanaTime;
 
@@ -507,6 +513,27 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       final cachedData =
           OfflineStateEngine.recomputeForOfflineDay(staleData, trustedNow);
 
+      if (lat != null &&
+          lng != null &&
+          cachedData.branchLat != null &&
+          cachedData.branchLng != null &&
+          cachedData.branchRadius != null) {
+        final dist = Geolocator.distanceBetween(
+          lat,
+          lng,
+          cachedData.branchLat!,
+          cachedData.branchLng!,
+        );
+        if (dist > cachedData.branchRadius!) {
+          final distStr = dist >= 1000
+              ? '${(dist / 1000).toStringAsFixed(2)}km'
+              : '${dist.round()}m';
+          return OutsideGeofenceFailure(
+            'You are about $distStr away from the Department in your school. You should be within ${cachedData.branchRadius!.toInt()}m.',
+          );
+        }
+      }
+
       if (cachedData.isHoliday) {
         final name = cachedData.holidayName;
         return HolidayFailure(
@@ -523,6 +550,10 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
               ? 'Today is marked as $name. Clocking is not allowed.'
               : 'Clocking is not allowed during vacation or approved leave.',
         );
+      }
+
+      if (cachedData.noShiftAssigned) {
+        return const NoShiftAssignedFailure();
       }
 
       bool effectiveHasClockedIn = cachedData.hasClockedInToday;
@@ -556,7 +587,9 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
             final allowedStart = shiftStart.subtract(const Duration(hours: 2));
             if (trustedNow.isBefore(allowedStart) ||
                 trustedNow.isAfter(shiftEnd)) {
-              return const OutsideShiftHoursFailure();
+              return OutsideShiftHoursFailure(
+                'Please try again when it is two hours prior to your next assigned working hours ($sTime - $eTime).',
+              );
             }
           }
           break;

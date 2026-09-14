@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:ntp/ntp.dart';
+import 'package:tk_clocking_system/core/errors/exceptions.dart';
 import 'package:tk_clocking_system/core/services/connectivity_service.dart';
 import 'package:tk_clocking_system/core/services/storage_service.dart';
 import 'package:tk_clocking_system/core/services/uptime_service.dart';
@@ -63,7 +64,12 @@ class TimeService {
     final deviceTime = DateTime.now().toUtc();
     final diffMins = deviceTime.difference(trueTime).inMinutes.abs();
 
-    if (diffMins > 30) {}
+    if (diffMins > 5) {
+      throw TimeTamperingException(
+        'Your device clock appears to be off by $diffMins minutes. '
+        'Please correct your system clock and try again.',
+      );
+    }
 
     return trueTime;
   }

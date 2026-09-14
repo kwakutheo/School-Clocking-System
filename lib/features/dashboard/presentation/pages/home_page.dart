@@ -298,8 +298,7 @@ class _DashboardTabState extends State<_DashboardTab>
   }
 
   Future<void> _loadData({bool silent = false}) async {
-    _fetchVersion++;
-    final currentFetchVersion = _fetchVersion;
+    final currentFetchVersion = ++_fetchVersion;
 
     if (!sl<ConnectivityService>().isOnline) {
       if (mounted) setState(() => _isLoading = false);

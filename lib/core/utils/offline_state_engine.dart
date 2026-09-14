@@ -71,12 +71,33 @@ class OfflineStateEngine {
       }
     }
 
+    // Handle overnight shifts (e.g., 22:00 to 06:00) — mirrors backend logic.
+    if (shiftStart != null && shiftEnd != null && shiftEnd.isBefore(shiftStart)) {
+      if (now.hour < shiftEnd.hour ||
+          (now.hour == shiftEnd.hour && now.minute < shiftEnd.minute)) {
+        // Post-midnight: we are in the early-morning part of the shift.
+        // The shift actually started yesterday — roll shiftStart back one day.
+        shiftStart = shiftStart.subtract(const Duration(days: 1));
+      } else {
+        // Pre-midnight: we are in the evening part of the shift.
+        // The shift ends tomorrow — roll shiftEnd forward one day.
+        shiftEnd = shiftEnd.add(const Duration(days: 1));
+      }
+    }
+
     final attendanceBox = Hive.box<Map>(AppConstants.attendanceBox);
+    // For overnight shifts shiftStart may now be on the previous calendar day,
+    // so we need to include records from that day as well.
+    final windowStart = shiftStart ?? now.subtract(const Duration(hours: 24));
     final todayRecords = attendanceBox.values
         .map((e) => AttendanceModel.fromJson(Map<String, dynamic>.from(e)))
         .where((record) {
       final t = record.timestamp;
-      return t.year == now.year && t.month == now.month && t.day == now.day;
+      // Always include records from today; for overnight shifts also include
+      // records from the start of the shift window (possibly yesterday).
+      final isToday = t.year == now.year && t.month == now.month && t.day == now.day;
+      final isWithinShiftWindow = !t.isBefore(windowStart) && !t.isAfter(shiftEnd ?? now);
+      return isToday || isWithinShiftWindow;
     }).toList();
 
     todayRecords.sort((a, b) => a.timestamp.compareTo(b.timestamp));

@@ -85,8 +85,6 @@ class TimeTamperingFailure extends Failure {
           'Device time has been manipulated. Please correct your system clock.']);
 }
 
-// ── Offline non-working-day failures ─────────────────────────────────────────
-/// Returned when the user tries to clock in/out on a weekend while offline.
 class WeekendFailure extends Failure {
   const WeekendFailure(
       [super.message =
@@ -107,6 +105,12 @@ class LeaveOrVacationFailure extends Failure {
 class DuplicateClockInFailure extends Failure {
   const DuplicateClockInFailure(
       [super.message = 'You have already clocked in today.']);
+}
+
+class NoShiftAssignedFailure extends Failure {
+  const NoShiftAssignedFailure(
+      [super.message =
+          'You have not been assigned a work shift. Please contact HR to assign you a shift before clocking in.']);
 }
 
 class OutsideShiftHoursFailure extends Failure {
@@ -132,5 +136,10 @@ class NotOnBreakFailure extends Failure {
 class InvalidQrCodeFailure extends Failure {
   const InvalidQrCodeFailure(
       [super.message =
-          'This QR code is invalid or does not belong to any registered school or your assigned branch. Please check and try again.']);
+          'This QR code seems to be invalid or does not belong to your school or assigned branch.\n\nPlease turn on your internet and try again for proper verification.']);
+}
+
+class OutsideGeofenceFailure extends Failure {
+  const OutsideGeofenceFailure(
+      [super.message = 'You are outside the assigned work zone.']);
 }

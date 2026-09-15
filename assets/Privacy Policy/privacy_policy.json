@@ -37,7 +37,7 @@
     {
       "id": "data_collection",
       "heading": "4. Information We Collect",
-      "content": "We collect and process only the minimal information necessary for school attendance administration:\n• User Profile: Staff identification number, full name, email address, role, and assigned school branch.\n• Attendance Logs: Timestamps of clock-in, clock-out, and break intervals, punctuality status, and clocking method (GPS Geofence or QR Scan).\n• Device Diagnostics: Device model, Android OS version, and network connectivity state to ensure device authorization and prevent clock tampering.\n• Time Synchronization Data: Network Time Protocol (NTP) integrity timestamps to ensure device clocks reflect verified true time.",
+      "content": "We collect and process only the minimal information necessary for school attendance administration:\n• User Profile: Full name, email address, role, and assigned school branch.\n• Attendance Logs: Timestamps of clock-in, clock-out, and break intervals, punctuality status, and clocking method (GPS Geofence or QR Scan).\n• Device Diagnostics: Device model, OS version, and network connectivity state to ensure device authorization and prevent clock tampering.\n• Time Synchronization Data: Network Time Protocol (NTP) integrity timestamps to ensure device clocks reflect verified true time.",
       "highlights": [
         "Staff profile and branch assignments",
         "Attendance timestamps and punctuality logs",

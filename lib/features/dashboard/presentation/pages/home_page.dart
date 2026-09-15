@@ -180,6 +180,7 @@ class _DashboardTabState extends State<_DashboardTab>
   bool _isLoading = true;
   int _pendingCount = 0;
   Timer? _autoRefreshTimer;
+  Timer? _localTickTimer;
   int _fetchVersion = 0;
   bool _initialLoadFinished = false;
   StreamSubscription? _syncSubscription;
@@ -195,6 +196,26 @@ class _DashboardTabState extends State<_DashboardTab>
     // Auto-refresh every 30 s
     _autoRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       _loadData(silent: true);
+    });
+
+    // Local tick every 1s for immediate banner updates (e.g., exactly when shift ends)
+    _localTickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_serverBaseline != null && mounted) {
+        final now = sl<TimeService>().currentGhanaTime;
+        final newData = OfflineStateEngine.recomputeForOfflineDay(
+          _serverBaseline!,
+          now,
+        );
+
+        if (_data == null ||
+            _data!.isAbsentToday != newData.isAbsentToday ||
+            _data!.lateStatus != newData.lateStatus ||
+            _data!.forgotToClockOut != newData.forgotToClockOut) {
+          setState(() {
+            _data = newData;
+          });
+        }
+      }
     });
 
     _syncSubscription = sl<NotificationService>().onSyncEvent.listen((_) {
@@ -217,6 +238,7 @@ class _DashboardTabState extends State<_DashboardTab>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _autoRefreshTimer?.cancel();
+    _localTickTimer?.cancel();
     _syncSubscription?.cancel();
     _connectivitySubscription?.cancel();
     super.dispose();
@@ -302,7 +324,8 @@ class _DashboardTabState extends State<_DashboardTab>
 
     if (!sl<ConnectivityService>().isOnline) {
       if (mounted) setState(() => _isLoading = false);
-      debugPrint('[Dashboard] Device is offline — skipping network fetch.');
+      debugPrint('[Dashboard] Device is offline — re-evaluating local state.');
+      _showOfflineFallback();
       return;
     }
 
@@ -330,7 +353,14 @@ class _DashboardTabState extends State<_DashboardTab>
               if (data is HomeDataModel) {
                 _serverBaseline = data;
               }
-              _data = data;
+              if (_serverBaseline != null) {
+                _data = OfflineStateEngine.recomputeForOfflineDay(
+                  _serverBaseline!,
+                  sl<TimeService>().currentGhanaTime,
+                );
+              } else {
+                _data = data;
+              }
               _isLoading = false;
             });
             sl<GeofenceService>().updateData(data);
@@ -708,10 +738,28 @@ class _DashboardTabState extends State<_DashboardTab>
     bool isPastStartTime = false;
     LateStatus effectiveLateStatus = data.lateStatus;
     DateTime? shiftStart;
+    DateTime? shiftEnd;
     bool isWithinTwoHours = false;
+    bool isShiftOver = data.isAbsentToday; // server already confirmed
 
     if (data.shiftStartTime != null) {
       shiftStart = _shiftStartForToday(data.shiftStartTime!, now);
+
+      // Compute shift end for this calendar day (accounts for overnight later)
+      if (data.shiftEndTime != null) {
+        shiftEnd = _shiftStartForToday(data.shiftEndTime!, now);
+        // Overnight shift: end time is earlier than start time on the same day
+        if (shiftEnd != null && shiftStart != null && shiftEnd.isBefore(shiftStart)) {
+          if (now.isBefore(shiftEnd)) {
+            // Post-midnight portion — start was yesterday
+            shiftStart = shiftStart.subtract(const Duration(days: 1));
+          } else {
+            // Pre-midnight portion — end is tomorrow
+            shiftEnd = shiftEnd.add(const Duration(days: 1));
+          }
+        }
+      }
+
       if (shiftStart != null) {
         final diff = shiftStart.difference(now);
         isWithinTwoHours =
@@ -719,7 +767,15 @@ class _DashboardTabState extends State<_DashboardTab>
 
         isPastStartTime = now.isAfter(shiftStart);
 
+        // Client-side shift-over detection — catches the window between the
+        // shift ending and the server returning isAbsentToday=true.
+        if (shiftEnd != null && now.isAfter(shiftEnd)) {
+          isShiftOver = true;
+        }
+
+        // Only inject a late status when the shift is still active.
         if (isPastStartTime &&
+            !isShiftOver &&
             !data.hasClockedInToday &&
             !data.isAbsentToday &&
             !data.forgotToClockOut &&
@@ -730,13 +786,10 @@ class _DashboardTabState extends State<_DashboardTab>
           final minutesLate = now.difference(shiftStart).inMinutes;
 
           int escalateAfter = 180;
-          if (data.shiftEndTime != null) {
-            final shiftEnd = _shiftStartForToday(data.shiftEndTime!, now);
-            if (shiftEnd != null) {
-              final shiftDuration = shiftEnd.difference(shiftStart).inMinutes;
-              if (shiftDuration > 0) {
-                escalateAfter = (shiftDuration * 0.5).round();
-              }
+          if (shiftEnd != null) {
+            final shiftDuration = shiftEnd.difference(shiftStart).inMinutes;
+            if (shiftDuration > 0) {
+              escalateAfter = (shiftDuration * 0.5).round();
             }
           }
 
@@ -782,6 +835,7 @@ class _DashboardTabState extends State<_DashboardTab>
           data: data,
           lateStatusOverride: effectiveLateStatus,
           hideUpcomingShift: showCountdown,
+          isShiftOverOverride: isShiftOver,
         ),
         const SizedBox(height: 16),
         _QuickActionsCard(),
@@ -1122,10 +1176,15 @@ class _LiveStatusBanner extends StatelessWidget {
 
   final bool hideUpcomingShift;
 
+  /// When true, the shift is known to be over client-side even if the server
+  /// hasn't returned isAbsentToday=true yet. Shows "Shift Ended" immediately.
+  final bool isShiftOverOverride;
+
   const _LiveStatusBanner({
     required this.data,
     this.lateStatusOverride,
     this.hideUpcomingShift = false,
+    this.isShiftOverOverride = false,
   });
 
   @override
@@ -1179,7 +1238,10 @@ class _LiveStatusBanner extends StatelessWidget {
       );
     }
 
-    if (data.isAbsentToday) {
+    // Show "Shift Ended" if the server confirmed it OR if we can detect it
+    // client-side (shift end time has passed and user never clocked in).
+    if (data.isAbsentToday ||
+        (isShiftOverOverride && !data.hasClockedInToday && !data.isVacation && !data.isWeekend && !data.isHoliday && !data.noShiftAssigned)) {
       return _buildBanner(
         context,
         color: Colors.grey,

@@ -66,7 +66,7 @@ class TimeService {
 
     if (diffMins > 5) {
       throw TimeTamperingException(
-        'Your device clock appears to be off by $diffMins minutes. '
+        'Your device clock appears to be off for about $diffMins minutes. '
         'Please correct your system clock and try again.',
       );
     }

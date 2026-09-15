@@ -818,33 +818,38 @@ class _SettingsPageState extends State<SettingsPage> {
           ],
 
           // ── Device Time ────────────────────────────────────────────────
-          _SectionHeader(title: 'Device Time Integrity'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Card(
-              child: ListTile(
-                leading: Icon(
-                  _timeStatus.contains('⚠')
-                      ? Icons.warning_amber_rounded
-                      : Icons.schedule_rounded,
-                  color: _timeStatus.contains('⚠') ? Colors.orange : cs.primary,
+          // section hidden for now (will be re-enabled when time integriry is fully configured)
+          // ignore: dead_code
+          if (false) ...[
+            _SectionHeader(title: 'Device Time Integrity'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Card(
+                child: ListTile(
+                  leading: Icon(
+                    _timeStatus.contains('⚠')
+                        ? Icons.warning_amber_rounded
+                        : Icons.schedule_rounded,
+                    color:
+                        _timeStatus.contains('⚠') ? Colors.orange : cs.primary,
+                  ),
+                  title: const Text('Device Clock Status'),
+                  subtitle: Text(_timeStatus),
+                  trailing: _timeStatus == 'Checking…'
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : IconButton(
+                          icon: const Icon(Icons.refresh_rounded),
+                          onPressed: _checkTime,
+                          tooltip: 'Check time sync',
+                        ),
                 ),
-                title: const Text('Device Clock Status'),
-                subtitle: Text(_timeStatus),
-                trailing: _timeStatus == 'Checking…'
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : IconButton(
-                        icon: const Icon(Icons.refresh_rounded),
-                        onPressed: _checkTime,
-                        tooltip: 'Check time sync',
-                      ),
               ),
             ),
-          ),
+          ],
 
           // ── GPS Diagnostics ────────────────────────────────────────────
           _SectionHeader(title: 'GPS Location Diagnostics'),
@@ -873,15 +878,15 @@ class _SettingsPageState extends State<SettingsPage> {
                   } else if (inZone == true) {
                     statusText = 'Inside Work Zone';
                     statusColor = Colors.green;
-                    statusIcon = Icons.domain_verification_rounded;
+                    statusIcon = Icons.location_on_rounded;
                   } else if (inZone == false) {
                     statusText = 'Outside Work Zone';
                     statusColor = cs.error;
-                    statusIcon = Icons.wrong_location_rounded;
+                    statusIcon = Icons.location_off_rounded;
                   } else {
                     statusText = 'Location Data Missing';
                     statusColor = cs.onSurfaceVariant;
-                    statusIcon = Icons.location_off_rounded;
+                    statusIcon = Icons.help_outline_rounded;
                   }
 
                   return Column(

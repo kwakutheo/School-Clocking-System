@@ -35,8 +35,6 @@ class InvalidCredentialsFailure extends Failure {
       [super.message = 'Invalid username or password.']);
 }
 
-/// Returned when the backend responds with HTTP 429 (ACCOUNT_LOCKED).
-/// Carries [retryAfterSeconds] so the UI can render a live countdown.
 class AccountLockedFailure extends Failure {
   const AccountLockedFailure(super.message, this.retryAfterSeconds);
 
@@ -68,8 +66,6 @@ class CacheFailure extends Failure {
 }
 
 // ── Attendance soft-block failures ────────────────────────────────────────────
-/// Returned when the user tries to clock out before their shift ends.
-/// Carry [remainingMinutes] so the UI can show the precise time left.
 class EarlyClockOutFailure extends Failure {
   const EarlyClockOutFailure(super.message, this.remainingMinutes);
 
@@ -136,7 +132,7 @@ class NotOnBreakFailure extends Failure {
 class InvalidQrCodeFailure extends Failure {
   const InvalidQrCodeFailure(
       [super.message =
-          'This QR code seems to be invalid or does not belong to your school or assigned branch.\n\nPlease turn on your internet and try again for proper verification.']);
+          'This QR code seems to be invalid or does not belong to your school.\nPlease turn on your internet and try again for proper verification.']);
 }
 
 class OutsideGeofenceFailure extends Failure {

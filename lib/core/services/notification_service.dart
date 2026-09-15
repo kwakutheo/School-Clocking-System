@@ -490,8 +490,7 @@ class NotificationService {
             date,
             slot: 3,
             title: '🚨 Still Not Clocked In',
-            body:
-                'Your shift is already halfway over. Please clock in immediately.',
+            body: 'Please make sure you clock in - your attendance is at risk.',
             scheduledDate: shiftStart.add(escalateAfter).add(osOffset),
           ),
         ].where(

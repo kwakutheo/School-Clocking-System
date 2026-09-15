@@ -721,6 +721,7 @@ class _DashboardTabState extends State<_DashboardTab>
 
         if (isPastStartTime &&
             !data.hasClockedInToday &&
+            !data.isAbsentToday &&
             !data.forgotToClockOut &&
             !data.isWeekend &&
             !data.isHoliday &&

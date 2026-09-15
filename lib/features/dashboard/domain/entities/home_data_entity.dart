@@ -1,15 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:tk_clocking_system/shared/enums/attendance_type.dart';
 
-/// Describes the employee's late-arrival state for the current day.
 enum LateStatus {
-  /// Not late or shift not started yet.
   none,
-
-  /// Late by less than 3 hours — show "You are Late!" warning.
   late,
-
-  /// Late by more than 3 hours — show persistent "Still not clocked in" alert.
   persistentLate,
 }
 

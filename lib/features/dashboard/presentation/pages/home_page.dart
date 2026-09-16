@@ -749,7 +749,9 @@ class _DashboardTabState extends State<_DashboardTab>
       if (data.shiftEndTime != null) {
         shiftEnd = _shiftStartForToday(data.shiftEndTime!, now);
         // Overnight shift: end time is earlier than start time on the same day
-        if (shiftEnd != null && shiftStart != null && shiftEnd.isBefore(shiftStart)) {
+        if (shiftEnd != null &&
+            shiftStart != null &&
+            shiftEnd.isBefore(shiftStart)) {
           if (now.isBefore(shiftEnd)) {
             // Post-midnight portion — start was yesterday
             shiftStart = shiftStart.subtract(const Duration(days: 1));
@@ -1238,10 +1240,13 @@ class _LiveStatusBanner extends StatelessWidget {
       );
     }
 
-    // Show "Shift Ended" if the server confirmed it OR if we can detect it
-    // client-side (shift end time has passed and user never clocked in).
     if (data.isAbsentToday ||
-        (isShiftOverOverride && !data.hasClockedInToday && !data.isVacation && !data.isWeekend && !data.isHoliday && !data.noShiftAssigned)) {
+        (isShiftOverOverride &&
+            !data.hasClockedInToday &&
+            !data.isVacation &&
+            !data.isWeekend &&
+            !data.isHoliday &&
+            !data.noShiftAssigned)) {
       return _buildBanner(
         context,
         color: Colors.grey,

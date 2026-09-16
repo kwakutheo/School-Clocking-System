@@ -1588,6 +1588,7 @@ export class AttendanceService {
       holidayName,
       // Used by mobile app to calculate the pre-shift countdown banner
       shiftStartTime: shift ? shift.startTime : null,
+      shiftEndTime: shift ? shift.endTime : null,
       nextShiftStartTime: shift ? shift.startTime : null,
       nextShiftDate: nextShiftDateStr,
       upcomingHolidayName,

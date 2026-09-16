@@ -1946,6 +1946,19 @@ class _UpcomingScheduleCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final formatter = DateFormat('EEE, d MMM');
 
+    String formatTime(String? time) {
+      if (time == null) return '';
+      final parts = time.split(':');
+      if (parts.length >= 2) return '${parts[0]}:${parts[1]}';
+      return time;
+    }
+
+    final formattedStartTime = formatTime(data.nextShiftStartTime);
+    final formattedEndTime = data.nextShiftEndTime != null
+        ? ' - ${formatTime(data.nextShiftEndTime)}'
+        : '';
+    final shiftString = '$formattedStartTime$formattedEndTime';
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -1989,8 +2002,8 @@ class _UpcomingScheduleCard extends StatelessWidget {
                         ),
                         Text(
                           data.nextShiftDate != null
-                              ? '${data.nextShiftStartTime!} (${formatter.format(data.nextShiftDate!)})'
-                              : data.nextShiftStartTime!,
+                              ? '$shiftString (${formatter.format(data.nextShiftDate!)})'
+                              : shiftString,
                           style: theme.textTheme.bodyMedium
                               ?.copyWith(fontWeight: FontWeight.w600),
                         ),

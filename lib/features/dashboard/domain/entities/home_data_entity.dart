@@ -35,6 +35,7 @@ class HomeDataEntity extends Equatable {
   final String? shiftEndTime;
 
   final String? nextShiftStartTime;
+  final String? nextShiftEndTime;
   final DateTime? nextShiftDate;
   final String? upcomingHolidayName;
   final DateTime? upcomingHolidayDate;
@@ -74,6 +75,7 @@ class HomeDataEntity extends Equatable {
     this.shiftStartTime,
     this.shiftEndTime,
     this.nextShiftStartTime,
+    this.nextShiftEndTime,
     this.nextShiftDate,
     this.upcomingHolidayName,
     this.upcomingHolidayDate,
@@ -112,6 +114,7 @@ class HomeDataEntity extends Equatable {
         shiftStartTime,
         shiftEndTime,
         nextShiftStartTime,
+        nextShiftEndTime,
         nextShiftDate,
         upcomingHolidayName,
         upcomingHolidayDate,

@@ -35,6 +35,7 @@ class HomeDataModel extends HomeDataEntity {
     super.shiftStartTime,
     super.shiftEndTime,
     super.nextShiftStartTime,
+    super.nextShiftEndTime,
     super.nextShiftDate,
     super.upcomingHolidayName,
     super.upcomingHolidayDate,
@@ -103,6 +104,7 @@ class HomeDataModel extends HomeDataEntity {
       shiftStartTime: json['shiftStartTime'] as String?,
       shiftEndTime: json['shiftEndTime'] as String?,
       nextShiftStartTime: json['nextShiftStartTime'] as String?,
+      nextShiftEndTime: json['nextShiftEndTime'] as String?,
       nextShiftDate: json['nextShiftDate'] != null
           ? DateTime.tryParse(json['nextShiftDate'].toString())
           : null,
@@ -161,6 +163,7 @@ class HomeDataModel extends HomeDataEntity {
       'shiftStartTime': shiftStartTime,
       'shiftEndTime': shiftEndTime,
       'nextShiftStartTime': nextShiftStartTime,
+      'nextShiftEndTime': nextShiftEndTime,
       'nextShiftDate': nextShiftDate?.toIso8601String(),
       'upcomingHolidayName': upcomingHolidayName,
       'upcomingHolidayDate': upcomingHolidayDate?.toIso8601String(),
@@ -170,7 +173,6 @@ class HomeDataModel extends HomeDataEntity {
       'branchLng': branchLng,
       'branchRadius': branchRadius,
       'branchQrCode': branchQrCode,
-      // Must match fromJson's nested structure exactly so the cache round-trips correctly
       'adminOverride': (adminOverrideName != null)
           ? {
               'adminName': adminOverrideName,

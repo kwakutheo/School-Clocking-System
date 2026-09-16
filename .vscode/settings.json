@@ -1,6 +1,7 @@
 {
     "csharp-dev-tools.solutionViewer.selectedWorkspaceSolutions": [
-        "build/_deps/nuget-subbuild/nuget-populate.slnx"
+        "build/CMakeFiles/CMakeScratch/TryCompile-v4hkp3/CMAKE_TRY_COMPILE.slnx",
+        "build/windows/x64/_deps/nuget-subbuild/nuget-populate.slnx"
     ],
     "cmake.sourceDirectory": "D:/source_codes/school_clocking_system/windows"
 }

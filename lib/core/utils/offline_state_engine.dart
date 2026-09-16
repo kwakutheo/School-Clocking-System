@@ -310,6 +310,7 @@ class OfflineStateEngine {
       shiftStartTime: stale.shiftStartTime,
       shiftEndTime: stale.shiftEndTime,
       nextShiftStartTime: stale.nextShiftStartTime,
+      nextShiftEndTime: stale.nextShiftEndTime,
       nextShiftDate: stale.nextShiftDate,
       upcomingHolidayName: stale.upcomingHolidayName,
       upcomingHolidayDate: stale.upcomingHolidayDate,

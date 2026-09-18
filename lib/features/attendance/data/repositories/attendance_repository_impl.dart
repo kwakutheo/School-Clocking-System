@@ -305,7 +305,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
 
   // ── Sync pending ──────────────────────────────────────────────────────────
   @override
-  Future<Either<Failure, ({int synced, int expired})>> syncPendingRecords() async {
+  Future<Either<Failure, ({int synced, int expired})>>
+      syncPendingRecords() async {
     var synced = 0;
     var expired = 0;
     String? firstError;
@@ -502,8 +503,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     return null;
   }
 
-  Failure? _checkOfflineRules(AttendanceType type,
-      {double? lat, double? lng}) {
+  Failure? _checkOfflineRules(AttendanceType type, {double? lat, double? lng}) {
     try {
       final trustedNow = _time.currentGhanaTime;
 
@@ -597,7 +597,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
             if (trustedNow.isBefore(allowedStart) ||
                 trustedNow.isAfter(shiftEnd)) {
               return OutsideShiftHoursFailure(
-                'Please try again when it is two hours prior to your next assigned working hours ($sTime - $eTime).',
+                'Please retry two hours before the start of your next scheduled shift ($sTime - $eTime).',
               );
             }
           }
